@@ -125,9 +125,38 @@ def cmd_mock(a: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_fingerprint(a: argparse.Namespace) -> int:
+    from furnace_bench.fingerprint import fingerprint, load_traces
+
+    records = load_traces(a.traces)
+    spec = fingerprint(
+        records,
+        name=a.name,
+        tokenizer=a.tokenizer,
+        kv_capacity_tokens=a.kv_capacity_tokens,
+    )
+    text = yaml.safe_dump(spec.model_dump(mode="json"), sort_keys=False)
+    if a.out:
+        Path(a.out).write_text(text, encoding="utf-8")
+        print(f"wrote {a.out} ({spec.n_observed} records)")
+    else:
+        print(text)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="furnace-bench")
     sub = p.add_subparsers(dest="cmd", required=True)
+
+    f = sub.add_parser("fingerprint", help="derive a WorkloadSpec from JSONL call traces")
+    f.add_argument("traces")
+    f.add_argument("--name", default="traces")
+    f.add_argument("--tokenizer", help="Hugging Face tokenizer id (falls back to an approximation)")
+    f.add_argument(
+        "--kv-capacity-tokens", type=int, help="simulate an LRU prefix cache of this size"
+    )
+    f.add_argument("--out", help="write YAML here instead of stdout")
+    f.set_defaults(fn=cmd_fingerprint)
 
     r = sub.add_parser("run", help="run a benchmark")
     r.add_argument("--config", help="YAML with target / workload / plan")
