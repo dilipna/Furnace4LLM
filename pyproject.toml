@@ -84,3 +84,4 @@ _ruff-format = "ruff format --check ."
 _imports = "lint-imports"
 typecheck = "pyright"
 openapi = "python -m furnace_api.export_openapi apps/web/lib/openapi.json"
+check = ["_ruff-check", "_ruff-format", "_imports", "typecheck", "test"]
