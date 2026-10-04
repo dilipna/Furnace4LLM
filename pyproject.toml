@@ -52,6 +52,7 @@ include = ["packages", "apps/api"]
 exclude = ["**/node_modules", "**/.venv", "**/migrations/versions", "fixtures"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
+extraPaths = ["fixtures/scenarios"]
 
 [tool.importlinter]
 root_packages = ["furnace", "furnace_bench"]

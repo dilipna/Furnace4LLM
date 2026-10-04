@@ -685,13 +685,15 @@ class PythonExtractor:
         return None
 
     def _llm_calls(self, mod: ModInfo, info: FuncInfo, fkey: str) -> None:
+        found: list[tuple[ast.Call, str, str | None]] = []
         for node in walk_own(info.node):
-            if not isinstance(node, ast.Call):
-                continue
-            d = dotted(node.func) or ""
-            api, client_var = self._llm_api(mod, d)
-            if not api:
-                continue
+            if isinstance(node, ast.Call):
+                api, client_var = self._llm_api(mod, dotted(node.func) or "")
+                if api:
+                    found.append((node, api, client_var))
+        # Stable key: ordinal within the function in source order (survives line shifts).
+        found.sort(key=lambda t: (t[0].lineno, t[0].col_offset))
+        for ordinal, (node, api, client_var) in enumerate(found):
             kw = {k.arg: k.value for k in node.keywords if k.arg}
             model = self.resolve(mod, kw.get("model"), func=info)
             stream = (
@@ -717,10 +719,9 @@ class PythonExtractor:
             ):
                 if p in kw:
                     params[p] = self.resolve(mod, kw[p], func=info).display()
-            line = node.lineno
             self._emit(
                 "llm_call",
-                node_key(NodeKind.component, mod.file.path, f"{info.qualname}@L{line}"),
+                node_key(NodeKind.component, mod.file.path, f"{info.qualname}#llm{ordinal}"),
                 {
                     "api": api,
                     "function_key": fkey,
