@@ -69,7 +69,7 @@ async def test_installation_token_is_scoped_to_one_repo_and_permissions():
         await app.installation_token(77, repository="support-rag-py", permissions=PR_PERMISSIONS)
         == "ghs_x"
     )
-    method, path, body, auth = rec.calls[0]
+    _, _, body, auth = rec.calls[0]
     assert body == {"repositories": ["support-rag-py"], "permissions": PR_PERMISSIONS}
     assert auth is not None and auth.startswith("Bearer ey")
 
