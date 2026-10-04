@@ -302,6 +302,57 @@ def extract_tests(inv: Inventory) -> list[Fact]:
     return facts
 
 
+PROMPT_DIRS = {"prompts", "prompt", "templates"}
+PROMPT_EXTS = (".md", ".txt", ".jinja", ".j2", ".prompt")
+
+
+def extract_prompt_files(inv: Inventory) -> list[Fact]:
+    """Prompt text kept in files (e.g. prompts/system.md), front matter stripped."""
+    facts: list[Fact] = []
+    for f in inv.files:
+        parts = f.path.split("/")
+        if (
+            len(parts) < 2
+            or parts[-2] not in PROMPT_DIRS
+            or not f.path.endswith(PROMPT_EXTS)
+            or not f.parseable
+        ):
+            continue
+        text = inv.read(f)
+        body, version = text, None
+        if text.startswith("---\n") and text.count("---\n") >= 2:
+            _, meta, body = text.split("---\n", 2)
+            version = next(
+                (
+                    ln.split(":", 1)[1].strip()
+                    for ln in meta.splitlines()
+                    if ln.startswith("version:")
+                ),
+                None,
+            )
+        n_lines = text.count("\n") + 1
+        facts.append(
+            Fact(
+                kind="prompt",
+                key=node_key(NodeKind.prompt, f.path),
+                data={
+                    "name": PurePosixPath(f.path).stem,
+                    "inline": False,
+                    "file_backed": True,
+                    "version": version,
+                    "static_chars": len(body),
+                    "approx_tokens": round(len(body) / 4),
+                    "dynamic_segments": [],
+                    "static_prefix_chars": len(body),
+                },
+                locator=Locator(path=f.path, line_start=1, line_end=n_lines),
+                excerpt=redact(body[:400]),
+                extractor=f"{EXTRACTOR}.prompt_file",
+            )
+        )
+    return facts
+
+
 def extract_all(inv: Inventory) -> list[Fact]:
     return [
         *extract_dependencies(inv),
@@ -309,4 +360,5 @@ def extract_all(inv: Inventory) -> list[Fact]:
         *extract_configs(inv),
         *extract_dotenv(inv),
         *extract_tests(inv),
+        *extract_prompt_files(inv),
     ]

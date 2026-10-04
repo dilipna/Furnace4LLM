@@ -7,6 +7,7 @@ config values). There is no generic checklist: no evidence, no recommendation.
 
 from __future__ import annotations
 
+import fnmatch
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -542,11 +543,36 @@ def no_benchmark_baseline(ctx: Ctx) -> list[Recommendation]:
     ]
 
 
-def run_rules(rec: Reconstruction, fact_uuid: dict[str, Any] | None = None) -> list[Recommendation]:
+# A finding is resolved when the artifact that verifies it exists in the repository.
+# forge_action -> glob of the verifying artifact (relative to the repository root).
+VERIFIED_BY: dict[str, str] = {
+    "prefix_stability_test": "tests/furnace/test_prompt_prefix.py",
+    "security_test_approval_gate": "tests/furnace/test_*_approval.py",
+    "eval_citation_required": "evals/run_evals.py",
+    "eval_grounding_judge": "evals/judges/ungrounded_answer.yaml",
+    "eval_regression_suite": "evals/datasets/*.jsonl",
+    "benchmark_workloads": "benchmarks/workloads.yaml",
+}
+
+
+def _verified(rec: Reconstruction, action: str | None) -> bool:
+    if action is None or action not in VERIFIED_BY:
+        return False
+    pattern = VERIFIED_BY[action]
+    return any(fnmatch.fnmatchcase(f.path, pattern) for f in rec.inventory.files)
+
+
+def run_rules(
+    rec: Reconstruction, fact_uuid: dict[str, Any] | None = None, *, include_resolved: bool = False
+) -> list[Recommendation]:
+    """Evaluate every rule. Findings whose verifying artifact is already present in the
+    repository are dropped unless include_resolved=True."""
     ctx = Ctx(rec=rec, fact_uuid=fact_uuid or {})
     recs: list[Recommendation] = []
     for r in RULES:
         recs.extend(r(ctx))
+    if not include_resolved:
+        recs = [r for r in recs if not _verified(rec, r.forge_action)]
     order = {Priority.P0: 0, Priority.P1: 1, Priority.P2: 2}
     recs.sort(key=lambda x: (order[x.priority], -x.confidence))
     return recs
