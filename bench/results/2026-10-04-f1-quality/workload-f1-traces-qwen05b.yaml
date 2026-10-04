@@ -1,0 +1,125 @@
+schema_version: furnace.workload/v1
+name: f1-traces
+source: traces
+synthetic: false
+model: lab
+tokenizer: Qwen/Qwen2.5-0.5B-Instruct
+n_observed: 89
+window_seconds: 42.702906370162964
+input_tokens:
+  n: 89
+  mean: 963.3258426966293
+  p50: 965.0
+  p95: 980.0
+  p99: 983.0
+  min: 945.0
+  max: 983.0
+  hist:
+  - - 950.3333333333334
+    - 8
+  - - 951.0
+    - 0
+  - - 953.0
+    - 14
+  - - 955.0
+    - 6
+  - - 962.0
+    - 4
+  - - 965.0
+    - 12
+  - - 966.3333333333334
+    - 8
+  - - 967.0
+    - 0
+  - - 972.0
+    - 14
+  - - 973.0
+    - 4
+  - - 980.0
+    - 10
+  - - 983.0
+    - 9
+output_tokens:
+  n: 89
+  mean: 43.89887640449438
+  p50: 25.0
+  p95: 162.19999999999993
+  p99: 226.96000000000015
+  min: 12.0
+  max: 256.0
+  hist:
+  - - 13.333333333333332
+    - 8
+  - - 16.0
+    - 6
+  - - 17.0
+    - 7
+  - - 19.0
+    - 6
+  - - 22.0
+    - 8
+  - - 25.0
+    - 9
+  - - 27.33333333333333
+    - 8
+  - - 32.33333333333333
+    - 7
+  - - 43.0
+    - 7
+  - - 63.66666666666663
+    - 8
+  - - 118.99999999999974
+    - 7
+  - - 256.0
+    - 8
+system_prompt_tokens:
+  n: 89
+  mean: 849.0
+  p50: 849.0
+  p95: 849.0
+  p99: 849.0
+  min: 849.0
+  max: 849.0
+  hist:
+  - - 849.0
+    - 89
+rag_context_tokens: null
+prefix:
+  block_size: 16
+  reuse_ratio_infinite: 0.9353034673573909
+  reuse_ratio_lru: 0.9353034673573909
+  lru_capacity_tokens: 120848
+  groups:
+  - prefix_hash: 7d8e4ce371c4
+    tokens: 857
+    share: 1.0
+arrival:
+  mean_rps: 2.060749665074007
+  cv_interarrival: 0.984546497680313
+  peak_concurrency: 5
+  concurrency_hist:
+  - - 0
+    - 0.42569946833606337
+  - - 1
+    - 0.3737839117364825
+  - - 2
+    - 0.12163190266693662
+  - - 3
+    - 0.05833243146672642
+  - - 4
+    - 0.016571216356665926
+  - - 5
+    - 0.003981069437125159
+streaming_ratio: 1.0
+traffic_class:
+- interactive
+slo:
+  ttft_p95_ms: null
+  tpot_p95_ms: null
+  e2e_p95_ms: null
+  max_failure_rate: 0.01
+field_provenance:
+  input_tokens: 'traces: 89 records (server usage where logged, else Qwen/Qwen2.5-0.5B-Instruct)'
+  output_tokens: 'traces: 89 records with completion token counts'
+  prefix: block-hash replay of 89 rendered prompts, block=16, tokenizer=Qwen/Qwen2.5-0.5B-Instruct
+  arrival: 'traces: 89 timestamped records'
