@@ -28,3 +28,6 @@ bench/results/**/raw/
 Thumbs.db
 .vscode/
 .idea/
+
+# fixture runtime output (curated copies live in bench/results)
+fixtures/apps/*/traces/
