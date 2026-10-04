@@ -1,0 +1,22 @@
+[project]
+name = "furnace"
+version = "0.1.0"
+description = "Furnace core: reconstruction, behavior-to-code graph, evals, forge, guard."
+requires-python = ">=3.12"
+dependencies = [
+  "furnace-bench",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "asyncpg>=0.30",
+  "alembic>=1.14",
+  "httpx>=0.27",
+  "cryptography>=43",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/furnace"]

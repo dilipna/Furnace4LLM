@@ -1,0 +1,50 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: furnace
+          POSTGRES_PASSWORD: furnace
+          POSTGRES_DB: furnace
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U furnace" --health-interval 3s --health-retries 20
+    env:
+      FURNACE_DATABASE_URL: postgresql+asyncpg://furnace:furnace@localhost:5433/furnace
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run lint-imports
+      - run: uv run pyright
+      - run: uv run alembic -c packages/furnace/src/furnace/db/alembic.ini upgrade head
+      - run: uv run pytest -q -m "not gpu"
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/web/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm exec next typegen && pnpm exec tsc --noEmit
+      - run: pnpm build

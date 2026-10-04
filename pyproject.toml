@@ -1,0 +1,83 @@
+[project]
+name = "furnace-workspace"
+version = "0.1.0"
+description = "Furnace monorepo workspace root"
+requires-python = ">=3.12,<3.13"
+dependencies = ["furnace", "furnace-api", "furnace-bench"]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "ruff>=0.8",
+  "pyright>=1.1.390",
+  "poethepoet>=0.31",
+  "import-linter>=2.1",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/inference", "packages/furnace", "apps/api"]
+
+[tool.uv.sources]
+furnace = { workspace = true }
+furnace-api = { workspace = true }
+furnace-bench = { workspace = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["packages/furnace/src/furnace/db/migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "S", "SIM", "RUF"]
+ignore = ["S101", "RUF012", "UP046", "SIM103"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S", "B"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["packages/furnace/tests", "packages/inference/tests", "apps/api/tests"]
+markers = ["db: requires postgres (FURNACE_DATABASE_URL)", "gpu: requires an NVIDIA GPU"]
+
+[tool.pyright]
+include = ["packages", "apps/api"]
+exclude = ["**/node_modules", "**/.venv", "**/migrations/versions"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"
+
+[tool.importlinter]
+root_packages = ["furnace", "furnace_bench"]
+
+[[tool.importlinter.contracts]]
+name = "furnace-bench is standalone"
+type = "forbidden"
+source_modules = ["furnace_bench"]
+forbidden_modules = ["furnace"]
+
+[[tool.importlinter.contracts]]
+name = "contracts depend on nothing internal but furnace_bench"
+type = "forbidden"
+source_modules = ["furnace.contracts"]
+forbidden_modules = ["furnace.db", "furnace.jobs", "furnace.llm", "furnace.storage", "furnace.security"]
+
+[tool.poe.tasks]
+db-up = "docker compose up -d postgres"
+db-down = "docker compose down"
+migrate = "alembic -c packages/furnace/src/furnace/db/alembic.ini upgrade head"
+makemigration = "alembic -c packages/furnace/src/furnace/db/alembic.ini revision --autogenerate -m"
+api = "uvicorn furnace_api.main:app --reload --port 8000"
+worker = "python -m furnace.jobs.worker --queues cpu"
+runner = "python -m furnace.jobs.worker --queues runner"
+test = "pytest -q"
+lint = ["_ruff-check", "_ruff-format", "_imports"]
+_ruff-check = "ruff check ."
+_ruff-format = "ruff format --check ."
+_imports = "lint-imports"
+typecheck = "pyright"
+openapi = "python -m furnace_api.export_openapi apps/web/lib/openapi.json"
