@@ -390,23 +390,56 @@ class Builder:
 
     # ------------------------------------------------------------------ components / graph
 
-    def components(self) -> None:
-        """Add component nodes for functions on any route -> interesting-function path."""
-        funcs = {f.key: f for f in self.k["function"]}
+    @staticmethod
+    def _non_app_path(key: str) -> bool:
+        return key.startswith(("component:tests/", "component:test_", "component:scripts/"))
+
+    def _compute_route_reach(self) -> None:
+        """All functions reachable from any route handler through the call graph."""
         callees: dict[str, set[str]] = defaultdict(set)
         for e in self.k["call_edge"]:
             callees[e.key].add(e.data["callee_key"])
-        interesting: set[str] = set()
-        interesting |= {c.data["function_key"] for c in self.k["llm_call"]}
-        interesting |= {r.data["function_key"] for r in self.k["retriever"]}
-        interesting |= {
-            t.data["function_key"]
-            for t in self.k["side_effect_function"]
-            if not t.data["observability_only"]
+        self.callees = callees
+        seen: set[str] = set()
+        todo = [r.data["handler_key"] for r in self.k["route"]]
+        while todo:
+            n = todo.pop()
+            if n in seen:
+                continue
+            seen.add(n)
+            todo.extend(callees.get(n, ()))
+        self.route_reach = seen
+
+    def is_action(self, f: Fact) -> bool:
+        """A side-effecting function counts as an application action (tool) when a request
+        path can reach it; without routes, any non-test, non-script function qualifies."""
+        if f.data["observability_only"]:
+            return False
+        if self.k["route"]:
+            return f.data["function_key"] in self.route_reach
+        return not self._non_app_path(f.data["function_key"])
+
+    def components(self) -> None:
+        """Add component nodes for functions on any route -> interesting-function path."""
+        self._compute_route_reach()
+        funcs = {f.key: f for f in self.k["function"]}
+        callees = self.callees
+        # Always relevant (even outside request paths, e.g. CLI apps): LLM calls, retrieval, prompts.
+        core: set[str] = set()
+        core |= {c.data["function_key"] for c in self.k["llm_call"]}
+        core |= {r.data["function_key"] for r in self.k["retriever"]}
+        core |= {u.key for u in self.k["uses_prompt"]}
+        core |= {s.data["component_key"] for s in self.k["system_message"]}
+        # Relevant only on a request path: actions and config reads.
+        gated = {
+            t.data["function_key"] for t in self.k["side_effect_function"] if self.is_action(t)
         }
-        interesting |= {u.key for u in self.k["uses_prompt"]}
-        interesting |= {s.data["component_key"] for s in self.k["system_message"]}
-        interesting |= {a.key for a in self.k["config_access"]}
+        gated |= {
+            a.key
+            for a in self.k["config_access"]
+            if (a.key in self.route_reach if self.k["route"] else not self._non_app_path(a.key))
+        }
+        interesting = core | gated
 
         def reaches(start: str) -> set[str]:
             keep: set[str] = set()
@@ -432,9 +465,7 @@ class Builder:
         keep: set[str] = set()
         for r in self.k["route"]:
             keep |= reaches(r.data["handler_key"])
-        keep |= {
-            k for k in interesting if not k.startswith(("component:tests/", "component:test_"))
-        }
+        keep |= {k for k in interesting if not self._non_app_path(k)}
         for key in keep:
             f = funcs.get(key)
             if f is None:
@@ -653,7 +684,7 @@ class Builder:
     def tools(self) -> list[Tool]:
         out: list[Tool] = []
         for t in self.k["side_effect_function"]:
-            if t.data["observability_only"]:
+            if not self.is_action(t):
                 continue
             se = SideEffect(t.data["side_effect"])
             effects = ", ".join(f"{e['call']} (line {e['line']})" for e in t.data["effects"])
