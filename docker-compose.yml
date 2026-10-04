@@ -1,0 +1,42 @@
+name: furnace
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: furnace
+      POSTGRES_PASSWORD: furnace
+      POSTGRES_DB: furnace
+    ports: ["5433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U furnace"]
+      interval: 3s
+      retries: 20
+
+  # Laptop inference lab. `docker compose --profile gpu up -d vllm`
+  vllm:
+    profiles: ["gpu"]
+    image: vllm/vllm-openai:latest
+    command:
+      - --model=${FURNACE_LAB_MODEL:-Qwen/Qwen2.5-0.5B-Instruct}
+      - --served-model-name=lab
+      - --gpu-memory-utilization=${FURNACE_LAB_GPU_UTIL:-0.70}
+      - --max-model-len=${FURNACE_LAB_MAX_LEN:-4096}
+      - --max-num-seqs=${FURNACE_LAB_MAX_SEQS:-32}
+    ports: ["8100:8000"]
+    volumes: ["${HF_HOME_HOST:-~/.cache/huggingface}:/root/.cache/huggingface"]
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices: [{ driver: nvidia, count: 1, capabilities: [gpu] }]
+    networks: [default, furnace-sbx]
+
+networks:
+  # Sandbox network: containers attached here can reach the lab endpoint but not the internet.
+  furnace-sbx:
+    internal: true
+
+volumes:
+  pgdata:

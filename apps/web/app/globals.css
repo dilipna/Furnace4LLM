@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/*
+ * Furnace design tokens.
+ * Graphite surfaces, warm off-white text, one accent ("ember") that only ever
+ * means heat: attention, regression, or the primary action.
+ * Depth comes from background steps and 1px lines, never shadows.
+ */
+:root {
+  --bg-0: #0f0e0d;
+  --bg-1: #161514;
+  --bg-2: #1e1c1a;
+  --bg-3: #272421;
+  --line: #2e2a26;
+  --line-strong: #3d3833;
+
+  --fg-0: #f3eee6;
+  --fg-1: #cfc7ba;
+  --fg-2: #948c80;
+  --fg-3: #625c54;
+
+  --ember: #f26a1b;
+  --ember-hi: #ff8a3d;
+  --ember-lo: #3a2014;
+
+  --ok: #86a872;
+  --warn: #c9a43a;
+  --bad: #d45a45;
+
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg-0: var(--fg-0);
+  --color-fg-1: var(--fg-1);
+  --color-fg-2: var(--fg-2);
+  --color-fg-3: var(--fg-3);
+  --color-ember: var(--ember);
+  --color-ember-hi: var(--ember-hi);
+  --color-ember-lo: var(--ember-lo);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+
+  --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius-ctl: 3px;
+  --radius-panel: 6px;
+}
+
+html,
+body {
+  background: var(--bg-0);
+  color: var(--fg-0);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--ember-lo);
+  color: var(--fg-0);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+}
+
+/* Metrics are always tabular so columns of numbers align. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
