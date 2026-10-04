@@ -3,7 +3,7 @@ import os
 import pytest
 
 DB_URL = os.environ.get(
-    "FURNACE_DATABASE_URL", "postgresql+asyncpg://furnace:furnace@localhost:5433/furnace"
+    "FURNACE_DATABASE_URL", "postgresql+asyncpg://furnace:furnace@localhost:5433/furnace_test"
 )
 
 
