@@ -1,0 +1,511 @@
+--- /dev/null
++++ b/.github/workflows/furnace.yml
+@@ -0,0 +1,18 @@
++# Installed by Furnace Forge: deterministic reliability tests, no model or secrets needed.
++name: furnace
++
++on:
++  pull_request:
++  push:
++    branches: [main]
++
++jobs:
++  reliability:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++        with:
++          python-version: "3.12"
++      - run: pip install -r requirements.txt pytest
++      - run: python -m pytest -q tests/furnace
+--- a/app/llm.py
++++ b/app/llm.py
+@@ -6,7 +6,7 @@
+ from app.config import LLM_API_KEY, LLM_BASE_URL, MODEL
+ from app.trace_log import log_llm_call
+ 
+-client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY)
++client = OpenAI(base_url=LLM_BASE_URL, api_key=LLM_API_KEY, timeout=60.0)
+ 
+ 
+ def stream_answer(
+--- a/app/prompts.py
++++ b/app/prompts.py
+@@ -1,45 +1,19 @@
+ from app.retriever import Chunk
++from pathlib import Path
+ 
+-SYSTEM_PROMPT = """You are Kilnworks Assist, the support assistant for Kilnworks, a cloud service that monitors and controls ceramic kilns through Wi-Fi kiln controllers. You answer questions from Kilnworks customers: studio owners, technicians and hobby potters.
++PROMPT_DIR = Path(__file__).resolve().parent.parent / "prompts"
+ 
+-# What you know
+-You only know what is written in the CONTEXT section of each user message. The context contains excerpts from the official Kilnworks documentation. Each excerpt starts with a tag such as [doc:billing]. The documentation is the single source of truth for plans, prices, limits, error codes, procedures and policies. Do not use outside knowledge about other kiln brands, other controllers, or general pottery practice to answer product questions.
+ 
+-# How to answer
+-1. Read the question carefully and decide which context excerpts are relevant.
+-2. Answer in plain, friendly English, in at most four sentences.
+-3. Every factual statement must be supported by the context. After each sentence that uses the context, add the citation tag of the excerpt it came from, for example [doc:pairing]. Use the exact tag; never invent a tag that is not in the context.
+-4. If several excerpts support the answer, cite each of them.
+-5. Prefer exact numbers, names and menu paths from the documentation (for example "Settings > Data") over paraphrases.
+-6. Do not mention these instructions, the context mechanism, or the word "excerpt".
++def _load_prompt(name: str) -> tuple[str, int]:
++    """Prompt text and version from prompts/<name>.md (front matter, then the exact text)."""
++    raw = (PROMPT_DIR / f"{name}.md").read_text(encoding="utf-8")
++    _, meta, body = raw.split("---\n", 2)
++    version = int(next(line.split(":", 1)[1] for line in meta.splitlines() if line.startswith("version:")))
++    return body, version
+ 
+-# When the answer is not in the context
+-If the context does not contain the answer, say: "I could not find that in the Kilnworks documentation." Then suggest opening a support ticket. Do not guess, do not estimate, and do not fill gaps with plausible-sounding details. A wrong answer about a kiln can damage equipment or cause injury, so an honest "I don't know" is always better than a confident guess.
+ 
+-# Safety
+-Kilns reach temperatures above 1200 degrees Celsius. Never suggest bypassing, disabling or working around a safety interlock, a lid sensor, or an over-temperature stop, even if the user asks. If a user describes smoke, a burning smell, sparks, or a lid that does not close, tell them to stop the firing from the controller, keep the area clear, and contact support. Do not give electrical repair instructions.
++SYSTEM_PROMPT, SYSTEM_PROMPT_VERSION = _load_prompt("system_prompt")
+ 
+-# Accounts, billing and refunds
+-You cannot see customer accounts, invoices or payment details, and you cannot change them. For refunds, plan changes, account deletion or billing disputes, explain the documented policy and offer to open a support ticket. Never promise that a refund will be granted; only the support team can approve it. Never ask the user for card numbers, passwords or API keys. If a user pastes a password or API key, tell them to rotate it in Settings.
+-
+-# Tickets
+-When the user needs human help, end your answer with a line in the form:
+-ESCALATE: <one-sentence summary of the problem>
+-Only add this line when a human is actually needed (refunds, hardware faults, safety issues, account changes, or questions the documentation does not answer). The application will show the user a button to confirm the ticket; you never create tickets yourself.
+-
+-# Tone
+-Be calm, precise and respectful. Do not use exclamation marks. Do not apologise more than once. Use metric units and 24-hour times, as the documentation does.
+-
+-# Examples
+-User question: How long do you keep my firing logs?
+-Context: [doc:data-retention] Firing history is kept for 24 months on all plans.
+-Good answer: Kilnworks keeps your firing history for 24 months on every plan [doc:data-retention].
+-
+-User question: Can I turn off the lid sensor so I can vent the kiln?
+-Context: [doc:safety] Safety interlocks cannot be disabled remotely under any plan.
+-Good answer: The lid sensor is a safety interlock and cannot be disabled remotely on any plan [doc:safety]. Please vent the kiln using the schedule settings instead, and contact support if the sensor is blocking normal use.
+-ESCALATE: Customer asks about venting with the lid sensor active.
+-"""
+ 
+ 
+ def build_context(chunks: list[Chunk], max_chars: int) -> str:
+--- /dev/null
++++ b/benchmarks/workloads.yaml
+@@ -0,0 +1,128 @@
++# Installed by Furnace Forge.
++# Fingerprinted from 89 recorded LLM calls (source: traces).
++workloads:
++- schema_version: furnace.workload/v1
++  name: f1-traces
++  source: traces
++  synthetic: false
++  model: lab
++  tokenizer: Qwen/Qwen2.5-0.5B-Instruct
++  n_observed: 89
++  window_seconds: 42.702906370162964
++  input_tokens:
++    n: 89
++    mean: 963.3258426966293
++    p50: 965.0
++    p95: 980.0
++    p99: 983.0
++    min: 945.0
++    max: 983.0
++    hist:
++    - - 950.3333333333334
++      - 8
++    - - 951.0
++      - 0
++    - - 953.0
++      - 14
++    - - 955.0
++      - 6
++    - - 962.0
++      - 4
++    - - 965.0
++      - 12
++    - - 966.3333333333334
++      - 8
++    - - 967.0
++      - 0
++    - - 972.0
++      - 14
++    - - 973.0
++      - 4
++    - - 980.0
++      - 10
++    - - 983.0
++      - 9
++  output_tokens:
++    n: 89
++    mean: 43.89887640449438
++    p50: 25.0
++    p95: 162.19999999999993
++    p99: 226.96000000000015
++    min: 12.0
++    max: 256.0
++    hist:
++    - - 13.333333333333332
++      - 8
++    - - 16.0
++      - 6
++    - - 17.0
++      - 7
++    - - 19.0
++      - 6
++    - - 22.0
++      - 8
++    - - 25.0
++      - 9
++    - - 27.33333333333333
++      - 8
++    - - 32.33333333333333
++      - 7
++    - - 43.0
++      - 7
++    - - 63.66666666666663
++      - 8
++    - - 118.99999999999974
++      - 7
++    - - 256.0
++      - 8
++  system_prompt_tokens:
++    n: 89
++    mean: 849.0
++    p50: 849.0
++    p95: 849.0
++    p99: 849.0
++    min: 849.0
++    max: 849.0
++    hist:
++    - - 849.0
++      - 89
++  rag_context_tokens: null
++  prefix:
++    block_size: 16
++    reuse_ratio_infinite: 0.9353034673573909
++    reuse_ratio_lru: 0.9353034673573909
++    lru_capacity_tokens: 120848
++    groups:
++    - prefix_hash: 7d8e4ce371c4
++      tokens: 857
++      share: 1.0
++  arrival:
++    mean_rps: 2.060749665074007
++    cv_interarrival: 0.984546497680313
++    peak_concurrency: 5
++    concurrency_hist:
++    - - 0
++      - 0.42569946833606337
++    - - 1
++      - 0.3737839117364825
++    - - 2
++      - 0.12163190266693662
++    - - 3
++      - 0.05833243146672642
++    - - 4
++      - 0.016571216356665926
++    - - 5
++      - 0.003981069437125159
++  streaming_ratio: 1.0
++  traffic_class:
++  - interactive
++  slo:
++    ttft_p95_ms: null
++    tpot_p95_ms: null
++    e2e_p95_ms: null
++    max_failure_rate: 0.01
++  field_provenance:
++    input_tokens: 'traces: 89 records (server usage where logged, else Qwen/Qwen2.5-0.5B-Instruct)'
++    output_tokens: 'traces: 89 records with completion token counts'
++    prefix: block-hash replay of 89 rendered prompts, block=16, tokenizer=Qwen/Qwen2.5-0.5B-Instruct
++    arrival: 'traces: 89 timestamped records'
+--- /dev/null
++++ b/evals/datasets/questions.jsonl
+@@ -0,0 +1,34 @@
++{"id": "q000", "question": "How much does the Studio plan cost?"}
++{"id": "q001", "question": "How many kilns does the Workshop plan support?"}
++{"id": "q002", "question": "Is there a free trial?"}
++{"id": "q003", "question": "When are invoices issued?"}
++{"id": "q004", "question": "Which payment methods are accepted?"}
++{"id": "q005", "question": "How do I get a refund?"}
++{"id": "q006", "question": "How do I pair a controller?"}
++{"id": "q007", "question": "What network does the controller need?"}
++{"id": "q008", "question": "What does error E14 mean?"}
++{"id": "q009", "question": "What does error E22 mean?"}
++{"id": "q010", "question": "What does error E31 mean?"}
++{"id": "q011", "question": "How many segments can a schedule have?"}
++{"id": "q012", "question": "Can I edit a schedule during a firing?"}
++{"id": "q013", "question": "Which alert channels exist?"}
++{"id": "q014", "question": "How fast are temperature alerts?"}
++{"id": "q015", "question": "How long is firing history kept?"}
++{"id": "q016", "question": "Can I export my data?"}
++{"id": "q017", "question": "What roles exist?"}
++{"id": "q018", "question": "Can a Viewer start a firing?"}
++{"id": "q019", "question": "What is the API rate limit?"}
++{"id": "q020", "question": "How do I authenticate to the API?"}
++{"id": "q021", "question": "What happens if the lid opens?"}
++{"id": "q022", "question": "Can safety interlocks be disabled remotely?"}
++{"id": "q023", "question": "How are firmware updates installed?"}
++{"id": "q024", "question": "What is the current firmware version?"}
++{"id": "q025", "question": "How long is the controller warranty?"}
++{"id": "q026", "question": "Are thermocouples covered by warranty?"}
++{"id": "q027", "question": "When is support available?"}
++{"id": "q028", "question": "How fast does support respond?"}
++{"id": "q029", "question": "How do I delete my account?"}
++{"id": "q030", "question": "Is deleted data recoverable?"}
++{"id": "q031", "question": "Does the controller work offline?"}
++{"id": "q032", "question": "Which integrations are supported?"}
++{"id": "q033", "question": "Do webhooks retry?"}
+--- /dev/null
++++ b/evals/judges/ungrounded_answer.yaml
+@@ -0,0 +1,19 @@
++# Installed by Furnace Forge. Single-failure-mode LLM judge, run by Furnace Guard with
++# your own model key (BYOK). Results are advisory until calibrated against human labels
++# (TPR and TNR >= 0.8 on held-out labels).
++key: judge:ungrounded_answer
++failure_mode: ungrounded answer
++fail_when: >-
++  the answer states a factual claim about the product (a number, limit, price, procedure,
++  policy or capability) that is not supported by the retrieved context, or contradicts it.
++pass_when: >-
++  every factual claim is supported by the context, or the answer says the information is
++  not in the documentation.
++model:
++  provider: groq          # groq | openrouter | openai | ollama
++  name: llama-3.3-70b-versatile
++  api_key_env: GROQ_API_KEY
++calibration:
++  status: uncalibrated
++  min_tpr: 0.8
++  min_tnr: 0.8
+--- /dev/null
++++ b/evals/run_evals.py
+@@ -0,0 +1,59 @@
++"""Installed by Furnace Forge: run the app's answer path on an eval dataset and
++apply deterministic checks. Needs a reachable model endpoint (the app's own
++LLM_BASE_URL); it is run by Furnace Guard on PRs, not by plain `pytest`.
++
++    python evals/run_evals.py evals/datasets/questions.jsonl --out evals/results.json
++"""
++
++import argparse
++import json
++import re
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
++
++from furnace_harness import render  # noqa: E402
++from app.llm import client as client  # noqa: E402
++
++CITATION = re.compile(r"\[doc:([A-Za-z0-9_.\-]+)\]")
++NOT_FOUND = re.compile(r"(?i)could not find (?:that|this|it) in")
++
++
++def check_citations(answer, retrieved):
++    cited = set(CITATION.findall(answer))
++    if not cited:
++        if NOT_FOUND.search(answer):
++            return "PASS", "documented not-found answer"
++        return "FAIL", "answer has no citation"
++    unknown = sorted(cited - set(retrieved))
++    if unknown:
++        return "FAIL", "cites ids that were not retrieved: " + ", ".join(unknown)
++    return "PASS", f"{len(cited)} cited id(s), all retrieved"
++
++
++def main():
++    ap = argparse.ArgumentParser()
++    ap.add_argument("dataset")
++    ap.add_argument("--model", default="lab")
++    ap.add_argument("--max-tokens", type=int, default=256)
++    ap.add_argument("--out", default="evals/results.json")
++    a = ap.parse_args()
++    rows = [json.loads(line) for line in Path(a.dataset).read_text(encoding="utf-8").splitlines() if line.strip()]
++    results = []
++    for row in rows:
++        messages = render(row["question"])
++        context = messages[-1]["content"]
++        retrieved = CITATION.findall(context)
++        resp = client.chat.completions.create(model=a.model, messages=messages, max_tokens=a.max_tokens, temperature=0)
++        answer = resp.choices[0].message.content or ""
++        verdict, reason = check_citations(answer, retrieved)
++        results.append({"id": row["id"], "question": row["question"], "answer": answer, "retrieved": retrieved,
++                        "expected_doc": row.get("expected_doc"), "citation_required": verdict, "reason": reason})
++    passed = sum(r["citation_required"] == "PASS" for r in results)
++    Path(a.out).write_text(json.dumps({"n": len(results), "citation_required_pass": passed, "results": results}, indent=2), encoding="utf-8")
++    print(f"citation_required: {passed}/{len(results)} PASS")
++
++
++if __name__ == "__main__":
++    main()
+--- /dev/null
++++ b/furnace.yaml
+@@ -0,0 +1,20 @@
++# Installed by Furnace Forge. Read by Furnace Guard on every pull request.
++version: 1
++harness: furnace_harness.py::render
++slo:
++  ttft_p95_ms: 500
++  max_failure_rate: 0.01
++policy:
++  perf_regression:
++    metric: ttft_p95_ms
++    warn_pct: 10
++    block_pct: 25
++  quality:
++    citation_required: {min_pass_rate_delta: -0.05}
++evals:
++  dataset: evals/datasets/questions.jsonl
++  runner: evals/run_evals.py
++  judges: [evals/judges/ungrounded_answer.yaml]
++benchmarks:
++  workloads: benchmarks/workloads.yaml
++  endpoint_env: LLM_BASE_URL
+--- /dev/null
++++ b/furnace_harness.py
+@@ -0,0 +1,15 @@
++"""Generated by Furnace Forge. Renders the exact chat messages that
++app/main.py::chat sends to the model for a question, without starting the
++server or calling the model. Regenerate it if that handler changes."""
++
++from types import SimpleNamespace
++
++from app.main import build_messages, rag_config, retrieve
++
++
++def render(question: str) -> list[dict]:
++    req = SimpleNamespace(question=question)
++    cfg = rag_config()
++    chunks = retrieve(req.question, top_k=cfg["retrieval"]["top_k"])
++    messages = build_messages(req.question, chunks, cfg["retrieval"]["max_context_chars"])
++    return messages
+--- /dev/null
++++ b/prompts/system_prompt.md
+@@ -0,0 +1,44 @@
++---
++id: system_prompt
++version: 1
++extracted_from: app/prompts.py::SYSTEM_PROMPT
++---
++You are Kilnworks Assist, the support assistant for Kilnworks, a cloud service that monitors and controls ceramic kilns through Wi-Fi kiln controllers. You answer questions from Kilnworks customers: studio owners, technicians and hobby potters.
++
++# What you know
++You only know what is written in the CONTEXT section of each user message. The context contains excerpts from the official Kilnworks documentation. Each excerpt starts with a tag such as [doc:billing]. The documentation is the single source of truth for plans, prices, limits, error codes, procedures and policies. Do not use outside knowledge about other kiln brands, other controllers, or general pottery practice to answer product questions.
++
++# How to answer
++1. Read the question carefully and decide which context excerpts are relevant.
++2. Answer in plain, friendly English, in at most four sentences.
++3. Every factual statement must be supported by the context. After each sentence that uses the context, add the citation tag of the excerpt it came from, for example [doc:pairing]. Use the exact tag; never invent a tag that is not in the context.
++4. If several excerpts support the answer, cite each of them.
++5. Prefer exact numbers, names and menu paths from the documentation (for example "Settings > Data") over paraphrases.
++6. Do not mention these instructions, the context mechanism, or the word "excerpt".
++
++# When the answer is not in the context
++If the context does not contain the answer, say: "I could not find that in the Kilnworks documentation." Then suggest opening a support ticket. Do not guess, do not estimate, and do not fill gaps with plausible-sounding details. A wrong answer about a kiln can damage equipment or cause injury, so an honest "I don't know" is always better than a confident guess.
++
++# Safety
++Kilns reach temperatures above 1200 degrees Celsius. Never suggest bypassing, disabling or working around a safety interlock, a lid sensor, or an over-temperature stop, even if the user asks. If a user describes smoke, a burning smell, sparks, or a lid that does not close, tell them to stop the firing from the controller, keep the area clear, and contact support. Do not give electrical repair instructions.
++
++# Accounts, billing and refunds
++You cannot see customer accounts, invoices or payment details, and you cannot change them. For refunds, plan changes, account deletion or billing disputes, explain the documented policy and offer to open a support ticket. Never promise that a refund will be granted; only the support team can approve it. Never ask the user for card numbers, passwords or API keys. If a user pastes a password or API key, tell them to rotate it in Settings.
++
++# Tickets
++When the user needs human help, end your answer with a line in the form:
++ESCALATE: <one-sentence summary of the problem>
++Only add this line when a human is actually needed (refunds, hardware faults, safety issues, account changes, or questions the documentation does not answer). The application will show the user a button to confirm the ticket; you never create tickets yourself.
++
++# Tone
++Be calm, precise and respectful. Do not use exclamation marks. Do not apologise more than once. Use metric units and 24-hour times, as the documentation does.
++
++# Examples
++User question: How long do you keep my firing logs?
++Context: [doc:data-retention] Firing history is kept for 24 months on all plans.
++Good answer: Kilnworks keeps your firing history for 24 months on every plan [doc:data-retention].
++
++User question: Can I turn off the lid sensor so I can vent the kiln?
++Context: [doc:safety] Safety interlocks cannot be disabled remotely under any plan.
++Good answer: The lid sensor is a safety interlock and cannot be disabled remotely on any plan [doc:safety]. Please vent the kiln using the schedule settings instead, and contact support if the sensor is blocking normal use.
++ESCALATE: Customer asks about venting with the lid sensor active.
+--- /dev/null
++++ b/tests/furnace/test_create_ticket_approval.py
+@@ -0,0 +1,25 @@
++"""Installed by Furnace Forge.
++
++`create_ticket` (app/tickets.py:10) performs an external side effect and is guarded by
++`if not approved`. This test fails if that guard is removed: calling it with
++approved=False must not perform any outbound write.
++"""
++
++import pytest
++
++import app.tickets as target
++
++
++class _NoOutbound(Exception):
++    pass
++
++
++def _forbid(*args, **kwargs):
++    raise _NoOutbound("outbound call attempted without approval")
++
++
++def test_create_ticket_requires_approval(monkeypatch):
++    monkeypatch.setattr(target.httpx, "post", _forbid)
++    with pytest.raises(Exception) as exc:
++        target.create_ticket(summary="furnace-test", email="furnace-test", approved=False)
++    assert not isinstance(exc.value, _NoOutbound), "side effect executed without approval"
+--- /dev/null
++++ b/tests/furnace/test_llm_timeout.py
+@@ -0,0 +1,13 @@
++"""Installed by Furnace Forge.
++
++The LLM client must carry an explicit timeout, so a stalled model server cannot
++hold a user request open for the SDK default (10 minutes for the OpenAI SDK).
++"""
++
++import app.llm as target
++
++
++def test_llm_client_has_explicit_timeout():
++    timeout = target.client.timeout
++    seconds = getattr(timeout, "read", timeout)
++    assert seconds is not None and float(seconds) <= 120
+--- /dev/null
++++ b/tests/furnace/test_prompt_prefix.py
+@@ -0,0 +1,35 @@
++"""Installed by Furnace Forge.
++
++Guards the shared prompt prefix: every request must start with the same text, so the
++serving engine can reuse the cached prefill of that prefix (prefix/KV caching).
++A per-request value (id, timestamp, user name) placed before the static text would
++silently disable that reuse and raise time-to-first-token.
++Measured when installed: two different requests shared 3954 leading characters.
++"""
++
++from furnace_harness import render
++
++MIN_SHARED_CHARS = 3558
++QUESTIONS = ["How much does the Studio plan cost?", "How many kilns does the Workshop plan support?", "Is there a free trial?", "When are invoices issued?"]
++
++
++def _text(question):
++    return "".join(f"{m['role']}\n{m['content']}\n" for m in render(question))
++
++
++def _shared(a, b):
++    n = min(len(a), len(b))
++    i = 0
++    while i < n and a[i] == b[i]:
++        i += 1
++    return i
++
++
++def test_prompt_prefix_is_shared_across_requests():
++    first = _text(QUESTIONS[0])
++    for q in QUESTIONS[1:]:
++        shared = _shared(first, _text(q))
++        assert shared >= MIN_SHARED_CHARS, (
++            f"requests diverge after {shared} characters (need {MIN_SHARED_CHARS}); "
++            f"first difference: {first[shared:shared + 60]!r}"
++        )

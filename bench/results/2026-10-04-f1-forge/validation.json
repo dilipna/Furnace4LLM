@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "prompts_identical": true,
+  "installed_tests": "pass",
+  "existing_tests": "pass",
+  "resolved_findings": [
+    "eval.citation_contract",
+    "eval.grounding_judge",
+    "eval.regression_suite",
+    "inf.context_budget_gate",
+    "inf.prefix_stability_guard",
+    "inf.serving_baseline",
+    "obs.prompt_versioning",
+    "rel.llm_timeout",
+    "sec.approval_gate_regression_test"
+  ],
+  "remaining_findings": [
+    "obs.genai_tracing",
+    "rel.fallback_gateway"
+  ]
+}

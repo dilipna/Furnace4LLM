@@ -195,6 +195,9 @@ class ModInfo:
     funcs: dict[str, FuncInfo] = field(default_factory=dict)
     clients: dict[str, ast.Call] = field(default_factory=dict)  # var -> constructor call
     web_apps: set[str] = field(default_factory=set)
+    module_bound: set[str] = field(default_factory=set)  # every name bound at module level
+    # name -> call that produced it (`X = f(...)`, or first target of `X, Y = f(...)`)
+    call_bindings: dict[str, ast.Call] = field(default_factory=dict)
 
 
 class PythonExtractor:
@@ -236,13 +239,23 @@ class PythonExtractor:
                     base = ".".join([*up, base] if base else up)
                 for a in node.names:
                     mod.imports[a.asname or a.name] = (base, a.name)
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                mod.module_bound.add(node.name)
             elif isinstance(node, (ast.Assign, ast.AnnAssign)):
                 targets = node.targets if isinstance(node, ast.Assign) else [node.target]
                 value = node.value
                 if value is None:
                     continue
                 for t in targets:
+                    if isinstance(t, ast.Tuple):
+                        names = [e.id for e in t.elts if isinstance(e, ast.Name)]
+                        mod.module_bound.update(names)
+                        if names and isinstance(value, ast.Call):
+                            mod.call_bindings[names[0]] = value
                     if isinstance(t, ast.Name):
+                        mod.module_bound.add(t.id)
+                        if isinstance(value, ast.Call):
+                            mod.call_bindings[t.id] = value
                         mod.consts[t.id] = value
                         if isinstance(value, ast.Call):
                             cls = dotted(value.func) or ""
@@ -548,11 +561,9 @@ class PythonExtractor:
                     out.append(("static", str(v.value)))
                 elif isinstance(v, ast.FormattedValue):
                     inner = v.value
-                    if isinstance(inner, ast.Name) and inner.id not in func.params:
-                        res = self.resolve(mod, inner, func=func)
-                        if res.kind == "literal" and isinstance(res.value, str):
-                            out.append(("static", res.value))
-                            continue
+                    if isinstance(inner, ast.Name):
+                        out.append(self._name_segment(mod, inner, func))
+                        continue
                     out.append(("dynamic", ast.unparse(inner)))
             return out
         if isinstance(expr, ast.BinOp) and isinstance(expr.op, ast.Add):
@@ -560,10 +571,64 @@ class PythonExtractor:
                 mod, expr.right, func, depth + 1
             )
         if isinstance(expr, ast.Name):
-            res = self.resolve(mod, expr, func=func)
-            if res.kind == "literal" and isinstance(res.value, str):
-                return [("static", res.value)]
+            return [self._name_segment(mod, expr, func)]
         return [("dynamic", ast.unparse(expr))]
+
+    def _name_segment(self, mod: ModInfo, expr: ast.Name, func: FuncInfo) -> tuple[str, str]:
+        """A name inside a prompt expression. Module-level bindings are evaluated once at
+        import time, so they are the same for every request ("static"); parameters and
+        function-local values can differ per request ("dynamic")."""
+        name = expr.id
+        if name in func.params or name in self._locals(func):
+            return ("dynamic", name)
+        res = self.resolve(mod, expr, func=func)
+        if res.kind == "literal" and isinstance(res.value, str):
+            return ("static", res.value)
+        text = self._file_prompt(mod, name)
+        if text is not None:
+            return ("static", text)
+        if name in mod.module_bound or name in mod.imports:
+            return ("static_ext", name)
+        return ("dynamic", name)
+
+    @staticmethod
+    def _locals(func: FuncInfo) -> set[str]:
+        out: set[str] = set()
+        for n in walk_own(func.node):
+            if isinstance(n, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+                targets = n.targets if isinstance(n, ast.Assign) else [n.target]
+                for t in targets:
+                    out |= {x.id for x in ast.walk(t) if isinstance(x, ast.Name)}
+            elif isinstance(n, (ast.For, ast.AsyncFor, ast.comprehension)):
+                out |= {x.id for x in ast.walk(n.target) if isinstance(x, ast.Name)}
+        return out
+
+    def _file_prompt(self, mod: ModInfo, name: str) -> str | None:
+        """Resolve `NAME = load("x")` / `NAME, VERSION = load("x")` to the text of a prompt
+        file named x in a prompts/ or templates/ directory (front matter stripped)."""
+        call = mod.call_bindings.get(name)
+        if call is None or not call.args:
+            if name in mod.imports:
+                origin_mod, origin_name = mod.imports[name]
+                target = self._find_module(origin_mod)
+                if target is not None and origin_name:
+                    return self._file_prompt(target, origin_name)
+            return None
+        arg = call.args[0]
+        if not (isinstance(arg, ast.Constant) and isinstance(arg.value, str)):
+            return None
+        for f in self.inv.files:
+            p = f.path.split("/")
+            if (
+                len(p) >= 2
+                and p[-2] in ("prompts", "prompt", "templates")
+                and p[-1].rsplit(".", 1)[0] == arg.value
+            ):
+                text = self.inv.read(f)
+                if text.startswith("---\n") and text.count("---\n") >= 2:
+                    text = text.split("---\n", 2)[2]
+                return text
+        return None
 
     def _message_assembly(self, mod: ModInfo, info: FuncInfo, fkey: str) -> None:
         for node in walk_own(info.node):
@@ -583,6 +648,8 @@ class PythonExtractor:
             static_total = sum(len(t) for k, t in segs if k == "static")
             prefix = 0
             dynamic: list[dict[str, Any]] = []
+            external: list[str] = []  # module-level text of unknown length
+            ext_before_dynamic = ext_after_dynamic = False
             offset = 0
             seen_dynamic = False
             for k, t in segs:
@@ -590,9 +657,23 @@ class PythonExtractor:
                     if not seen_dynamic:
                         prefix += len(t)
                     offset += len(t)
+                elif k == "static_ext":
+                    external.append(t)
+                    if seen_dynamic:
+                        ext_after_dynamic = True
+                    else:
+                        ext_before_dynamic = True
                 else:
                     seen_dynamic = True
                     dynamic.append({"name": t, "char_offset": offset})
+            if not dynamic:
+                dynamic_head = False
+            elif ext_before_dynamic:
+                dynamic_head = False  # shared module-level text comes first
+            elif ext_after_dynamic:
+                dynamic_head = True  # a per-request value precedes the shared prompt text
+            else:
+                dynamic_head = prefix < 0.5 * static_total
             content = pairs["content"]
             refs = [n.id for n in ast.walk(content) if isinstance(n, ast.Name)]
             self._emit(
@@ -603,8 +684,9 @@ class PythonExtractor:
                     "static_chars": static_total,
                     "static_prefix_chars": prefix,
                     "dynamic_segments": dynamic,
+                    "external_static": external,
                     # A dynamic value before most static text defeats prefix (KV) caching.
-                    "dynamic_head": bool(dynamic) and prefix < 0.5 * static_total,
+                    "dynamic_head": dynamic_head,
                     "references": refs,
                     "component_key": fkey,
                 },

@@ -1,0 +1,121 @@
+{
+  "changes": [
+    {
+      "path": "furnace_harness.py",
+      "change_type": "add_file",
+      "reason": "Evals and benchmarks need the exact messages the app sends; this renders them from app/main.py::chat without starting the server or calling the model.",
+      "evidence_ids": [],
+      "target": "eval harness (all evals, prefix test, perf gate)",
+      "risk": "None at runtime: imported only by tests, evals and benchmarks.",
+      "recommendation_rule_id": null
+    },
+    {
+      "path": "tests/furnace/test_prompt_prefix.py",
+      "change_type": "add_file",
+      "reason": "Every request starts with the same ~982-token system prompt (estimated at 4 chars/token; built in `build_messages`, app/prompts.py:60), which the serving engine can serve from its prefix cache instead of recomputing. The vllm service `llm` has prefix caching enabled. A one-line change that puts a timestamp or request id at the top of this prompt would silently throw that away.",
+      "evidence_ids": [],
+      "target": "check:prompt_prefix_stable",
+      "risk": "Test-only.",
+      "recommendation_rule_id": "inf.prefix_stability_guard"
+    },
+    {
+      "path": "tests/furnace/test_create_ticket_approval.py",
+      "change_type": "add_file",
+      "reason": "`create_ticket` (app/tickets.py:10) is guarded by `if not approved` on line 12, but nothing fails if a refactor removes it. This is the only thing standing between a model answer and an external side effect.",
+      "evidence_ids": [],
+      "target": "security:approval_gate",
+      "risk": "Test-only; outbound calls are patched to fail.",
+      "recommendation_rule_id": "sec.approval_gate_regression_test"
+    },
+    {
+      "path": "app/llm.py",
+      "change_type": "codemod",
+      "reason": "`openai.chat.completions.create` at app/llm.py:19 sets no timeout on the call or its client, so the openai SDK default (10 minutes) applies. A stalled stream holds the HTTP response open for the user for that whole time.",
+      "evidence_ids": [],
+      "target": "rel.llm_timeout",
+      "risk": "Requests slower than 60 s now fail instead of hanging; raise the value if your longest legitimate generation takes longer.",
+      "recommendation_rule_id": "rel.llm_timeout"
+    },
+    {
+      "path": "tests/furnace/test_llm_timeout.py",
+      "change_type": "add_file",
+      "reason": "Keeps the timeout from being removed later.",
+      "evidence_ids": [],
+      "target": "rel.llm_timeout",
+      "risk": "Test-only.",
+      "recommendation_rule_id": "rel.llm_timeout"
+    },
+    {
+      "path": "prompts/system_prompt.md",
+      "change_type": "add_file",
+      "reason": "`SYSTEM_PROMPT` is a 3,927-character string inlined in app/prompts.py:3. Edits to it are invisible in traces and eval results, so a quality change cannot be attributed to the prompt revision that caused it.",
+      "evidence_ids": [],
+      "target": "obs.prompt_versioning",
+      "risk": "None: the loader returns the exact original text (verified byte-identical).",
+      "recommendation_rule_id": "obs.prompt_versioning"
+    },
+    {
+      "path": "app/prompts.py",
+      "change_type": "codemod",
+      "reason": "Load `SYSTEM_PROMPT` from prompts/system_prompt.md and expose `SYSTEM_PROMPT_VERSION` for traces and eval results.",
+      "evidence_ids": [],
+      "target": "obs.prompt_versioning",
+      "risk": "Prompt text unchanged (verified byte-identical through the harness); the file must ship with the app.",
+      "recommendation_rule_id": "obs.prompt_versioning"
+    },
+    {
+      "path": "evals/run_evals.py",
+      "change_type": "add_file",
+      "reason": "`SYSTEM_PROMPT` (app/prompts.py:3) instructs the model to cite retrieved documents, but nothing checks that answers carry citations or that cited ids were actually retrieved.",
+      "evidence_ids": [],
+      "target": "check:citation_required",
+      "risk": "Not run by plain pytest; Furnace Guard runs it against your endpoint.",
+      "recommendation_rule_id": "eval.citation_contract"
+    },
+    {
+      "path": "evals/datasets/questions.jsonl",
+      "change_type": "add_file",
+      "reason": "Bootstrap dataset of real user questions for the citation and grounding evals.",
+      "evidence_ids": [],
+      "target": "check:citation_required, judge:ungrounded_answer",
+      "risk": "Data-only.",
+      "recommendation_rule_id": "eval.citation_contract"
+    },
+    {
+      "path": "evals/judges/ungrounded_answer.yaml",
+      "change_type": "add_file",
+      "reason": "Answers in this app are generated from retrieved documents (app/retriever.py:37). A citation can be present while the claim it supports is not in the cited text; only a semantic check catches that.",
+      "evidence_ids": [],
+      "target": "judge:ungrounded_answer",
+      "risk": "Advisory until calibrated against human labels.",
+      "recommendation_rule_id": "eval.grounding_judge"
+    },
+    {
+      "path": "benchmarks/workloads.yaml",
+      "change_type": "add_file",
+      "reason": "The app is served by self-hosted vllm (--gpu-memory-utilization=0.70, --max-model-len=4096, --max-num-seqs=32, --enable-prefix-caching=True), but the repository has no load benchmark, so neither configuration changes nor code changes that alter prompt length can be compared against a known-good number.",
+      "evidence_ids": [],
+      "target": "bench:chat_perf_gate",
+      "risk": "Data-only.",
+      "recommendation_rule_id": "inf.serving_baseline"
+    },
+    {
+      "path": "furnace.yaml",
+      "change_type": "add_file",
+      "reason": "Tells Furnace Guard which harness, evals, benchmarks and regression budget apply to this repository.",
+      "evidence_ids": [],
+      "target": "Guard configuration",
+      "risk": "Configuration only.",
+      "recommendation_rule_id": "inf.serving_baseline"
+    },
+    {
+      "path": ".github/workflows/furnace.yml",
+      "change_type": "add_file",
+      "reason": "Runs the installed deterministic reliability tests on every pull request; no model or secrets required.",
+      "evidence_ids": [],
+      "target": "CI",
+      "risk": "Adds a CI job (~1 minute).",
+      "recommendation_rule_id": null
+    }
+  ]
+}
