@@ -1,0 +1,23 @@
+services:
+  llm:
+    image: vllm/vllm-openai:latest
+    command:
+      - Qwen/Qwen2.5-0.5B-Instruct
+      - --served-model-name=lab
+      - --gpu-memory-utilization=0.70
+      - --max-model-len=4096
+      - --max-num-seqs=32
+      - --enable-prefix-caching
+    ports: ["8100:8000"]
+    deploy:
+      resources:
+        reservations:
+          devices: [{ driver: nvidia, count: 1, capabilities: [gpu] }]
+
+  app:
+    build: .
+    environment:
+      LLM_BASE_URL: http://llm:8000/v1
+      LLM_MODEL: lab
+    ports: ["8080:8080"]
+    depends_on: [llm]

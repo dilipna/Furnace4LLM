@@ -1,0 +1,172 @@
+[
+  {
+    "doc_id": "plans",
+    "question": "How much does the Studio plan cost?",
+    "answer": "The Studio plan costs $29 per month and supports up to 3 kilns."
+  },
+  {
+    "doc_id": "plans",
+    "question": "How many kilns does the Workshop plan support?",
+    "answer": "The Workshop plan costs $79 per month and supports up to 12 kilns."
+  },
+  {
+    "doc_id": "plans",
+    "question": "Is there a free trial?",
+    "answer": "Every plan starts with a 14-day free trial; no card is required."
+  },
+  {
+    "doc_id": "billing",
+    "question": "When are invoices issued?",
+    "answer": "Invoices are issued on the 1st of each month in UTC."
+  },
+  {
+    "doc_id": "billing",
+    "question": "Which payment methods are accepted?",
+    "answer": "Kilnworks accepts Visa, Mastercard and SEPA direct debit."
+  },
+  {
+    "doc_id": "billing",
+    "question": "How do I get a refund?",
+    "answer": "Refunds are available within 30 days of a charge and are processed by the support team after a ticket is opened."
+  },
+  {
+    "doc_id": "pairing",
+    "question": "How do I pair a controller?",
+    "answer": "Hold the PAIR button for 5 seconds until the LED blinks blue, then enter the 6-digit code shown in the app."
+  },
+  {
+    "doc_id": "pairing",
+    "question": "What network does the controller need?",
+    "answer": "Controllers require 2.4 GHz Wi-Fi; 5 GHz networks are not supported."
+  },
+  {
+    "doc_id": "error-codes",
+    "question": "What does error E14 mean?",
+    "answer": "E14 means the thermocouple is disconnected; reseat the thermocouple connector and restart the firing."
+  },
+  {
+    "doc_id": "error-codes",
+    "question": "What does error E22 mean?",
+    "answer": "E22 means the kiln exceeded its configured maximum temperature and the firing was stopped automatically."
+  },
+  {
+    "doc_id": "error-codes",
+    "question": "What does error E31 mean?",
+    "answer": "E31 means the controller lost Wi-Fi for more than 10 minutes; the firing continues locally."
+  },
+  {
+    "doc_id": "firing-schedules",
+    "question": "How many segments can a schedule have?",
+    "answer": "A firing schedule can have up to 16 segments."
+  },
+  {
+    "doc_id": "firing-schedules",
+    "question": "Can I edit a schedule during a firing?",
+    "answer": "Schedules cannot be edited while a firing is running; you can only skip to the next segment."
+  },
+  {
+    "doc_id": "alerts",
+    "question": "Which alert channels exist?",
+    "answer": "Alerts can be sent by push notification, email and SMS; SMS is available on the Workshop plan only."
+  },
+  {
+    "doc_id": "alerts",
+    "question": "How fast are temperature alerts?",
+    "answer": "Temperature alerts are delivered within 60 seconds of the threshold being crossed."
+  },
+  {
+    "doc_id": "data-retention",
+    "question": "How long is firing history kept?",
+    "answer": "Firing history is kept for 24 months on all plans."
+  },
+  {
+    "doc_id": "data-retention",
+    "question": "Can I export my data?",
+    "answer": "You can export all firing logs as CSV from Settings > Data."
+  },
+  {
+    "doc_id": "team-access",
+    "question": "What roles exist?",
+    "answer": "Kilnworks has three roles: Owner, Technician and Viewer."
+  },
+  {
+    "doc_id": "team-access",
+    "question": "Can a Viewer start a firing?",
+    "answer": "Viewers cannot start or stop firings; only Owners and Technicians can."
+  },
+  {
+    "doc_id": "api",
+    "question": "What is the API rate limit?",
+    "answer": "The public API allows 600 requests per minute per organization."
+  },
+  {
+    "doc_id": "api",
+    "question": "How do I authenticate to the API?",
+    "answer": "API requests use a bearer token created in Settings > API keys."
+  },
+  {
+    "doc_id": "safety",
+    "question": "What happens if the lid opens?",
+    "answer": "If the lid sensor detects an open lid, heating elements are cut within 2 seconds."
+  },
+  {
+    "doc_id": "safety",
+    "question": "Can safety interlocks be disabled remotely?",
+    "answer": "Safety interlocks cannot be disabled remotely under any plan."
+  },
+  {
+    "doc_id": "firmware",
+    "question": "How are firmware updates installed?",
+    "answer": "Firmware updates install automatically between firings and never during an active firing."
+  },
+  {
+    "doc_id": "firmware",
+    "question": "What is the current firmware version?",
+    "answer": "The current controller firmware is version 4.2.1."
+  },
+  {
+    "doc_id": "warranty",
+    "question": "How long is the controller warranty?",
+    "answer": "Kiln controllers have a 2-year limited hardware warranty."
+  },
+  {
+    "doc_id": "warranty",
+    "question": "Are thermocouples covered by warranty?",
+    "answer": "Thermocouples are consumables and are not covered by the warranty."
+  },
+  {
+    "doc_id": "support-hours",
+    "question": "When is support available?",
+    "answer": "Human support is available Monday to Friday, 08:00 to 18:00 CET."
+  },
+  {
+    "doc_id": "support-hours",
+    "question": "How fast does support respond?",
+    "answer": "Support responds to tickets within 1 business day; Workshop plan tickets within 4 business hours."
+  },
+  {
+    "doc_id": "account-deletion",
+    "question": "How do I delete my account?",
+    "answer": "Account deletion is requested from Settings > Account and completes within 7 days."
+  },
+  {
+    "doc_id": "account-deletion",
+    "question": "Is deleted data recoverable?",
+    "answer": "Deleted accounts and firing history cannot be recovered."
+  },
+  {
+    "doc_id": "offline-mode",
+    "question": "Does the controller work offline?",
+    "answer": "Controllers run stored schedules offline and sync logs when the connection returns."
+  },
+  {
+    "doc_id": "integrations",
+    "question": "Which integrations are supported?",
+    "answer": "Kilnworks integrates with Slack and with generic webhooks."
+  },
+  {
+    "doc_id": "integrations",
+    "question": "Do webhooks retry?",
+    "answer": "Failed webhook deliveries are retried 5 times with exponential backoff."
+  }
+]
