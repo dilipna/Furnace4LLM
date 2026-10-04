@@ -13,6 +13,7 @@ dev = [
   "pyright>=1.1.390",
   "poethepoet>=0.31",
   "import-linter>=2.1",
+  "playwright>=1.63.0",
 ]
 
 [tool.uv]
@@ -72,7 +73,7 @@ db-up = "docker compose up -d postgres"
 db-down = "docker compose down"
 migrate = "alembic -c packages/furnace/src/furnace/db/alembic.ini upgrade head"
 makemigration = "alembic -c packages/furnace/src/furnace/db/alembic.ini revision --autogenerate -m"
-api = "uvicorn furnace_api.main:app --reload --port 8000"
+api = "uvicorn furnace_api.main:app --reload --port 8010"
 worker = "python -m furnace.jobs.worker --queues cpu"
 runner = "python -m furnace.jobs.worker --queues runner"
 test = "pytest -q"

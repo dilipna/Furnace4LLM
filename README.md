@@ -27,7 +27,7 @@ performance regressions (TTFT, TPOT, SLO goodput).
 ```bash
 uv sync
 uv run poe db-up && uv run poe migrate
-uv run poe api          # http://localhost:8000
+uv run poe api          # http://localhost:8010
 uv run poe runner       # laptop runner: GPU / sandbox jobs
 cd apps/web && pnpm install && pnpm dev   # http://localhost:3000
 
