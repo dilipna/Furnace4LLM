@@ -81,6 +81,7 @@ def test_prompt_extraction_keeps_exact_text_and_is_still_prefix_stable(plan, tmp
         and n.targets[0].id == "SYSTEM_PROMPT"
         and isinstance(n.value, ast.Constant)
     )
+    assert isinstance(original, str)
     assert body == original
     rec = reconstruct(forged)
     (sysmsg,) = [p for p in rec.appspec.prompts if p.key.endswith("#system")]
