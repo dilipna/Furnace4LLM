@@ -47,11 +47,12 @@ class PromptMode(str, Enum):
 
 
 class BenchPlan(BaseModel):
-    concurrency_levels: list[int] = Field(default_factory=lambda: [1, 2, 4, 8, 16])
+    # Closed loop: number of concurrent workers. Open loop: offered rate in requests/s.
+    concurrency_levels: list[float] = Field(default_factory=lambda: [1, 2, 4, 8, 16])
     requests_per_level: int = 200
     warmup_requests: int = 8
+    cooldown_s: float = 2.0  # idle time between levels so queues drain
     arrival: ArrivalMode = ArrivalMode.closed_loop
-    rate_rps: float | None = None  # open-loop only
     gamma_shape: float | None = None  # open-loop gamma only; <1 is burstier than Poisson
     length_mode: LengthMode = LengthMode.fixed
     prompt_mode: PromptMode = PromptMode.synthetic
@@ -83,7 +84,7 @@ class RequestRecord(BaseModel):
     """One request's raw timings. All times are milliseconds relative to request send."""
 
     idx: int
-    level: int
+    level: float
     repeat: int = 0
     ok: bool
     error: ErrorClass | None = None
@@ -116,7 +117,7 @@ class Percentiles(BaseModel):
 
 
 class LevelSummary(BaseModel):
-    level: int  # concurrency (closed loop) or offered rate (open loop)
+    level: float  # concurrency (closed loop) or offered rate in req/s (open loop)
     repeat: int = 0
     n: int
     n_ok: int

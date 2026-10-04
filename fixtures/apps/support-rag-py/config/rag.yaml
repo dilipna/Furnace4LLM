@@ -1,0 +1,8 @@
+retrieval:
+  top_k: 3
+  max_context_chars: 6000
+  chunk_by: heading
+
+generation:
+  max_tokens: 256
+  temperature: 0.2

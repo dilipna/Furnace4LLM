@@ -3,7 +3,7 @@ name = "furnace-workspace"
 version = "0.1.0"
 description = "Furnace monorepo workspace root"
 requires-python = ">=3.12,<3.13"
-dependencies = ["furnace", "furnace-api", "furnace-bench"]
+dependencies = ["furnace", "furnace-api", "furnace-bench[gpu,lab]"]
 
 [dependency-groups]
 dev = [
@@ -29,14 +29,15 @@ furnace-bench = { workspace = true }
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = ["packages/furnace/src/furnace/db/migrations/versions"]
+extend-exclude = ["packages/furnace/src/furnace/db/migrations/versions", "fixtures"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC", "S", "SIM", "RUF"]
-ignore = ["S101", "RUF012", "UP046", "SIM103"]
+ignore = ["S101", "RUF001", "RUF012", "UP046", "SIM103"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S", "B"]
+"**/report/writer.py" = ["E501"]  # markdown table templates
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -47,7 +48,7 @@ markers = ["db: requires postgres (FURNACE_DATABASE_URL)", "gpu: requires an NVI
 
 [tool.pyright]
 include = ["packages", "apps/api"]
-exclude = ["**/node_modules", "**/.venv", "**/migrations/versions"]
+exclude = ["**/node_modules", "**/.venv", "**/migrations/versions", "fixtures"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 

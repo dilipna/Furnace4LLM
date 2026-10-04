@@ -15,6 +15,7 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from typing import Any
 
+from furnace_bench.telemetry.nvml import NVMLSampler
 from sqlalchemy.dialects.postgresql import insert
 
 from furnace.db.models import Job, Runner
@@ -60,18 +61,13 @@ async def _ping(ctx: JobContext) -> dict[str, Any]:
 
 
 def detect_capabilities() -> dict[str, Any]:
-    caps: dict[str, Any] = {"platform": platform.platform(), "docker": bool(shutil.which("docker"))}
-    try:
-        import pynvml  # type: ignore[import-not-found]
-
-        pynvml.nvmlInit()
-        h = pynvml.nvmlDeviceGetHandleByIndex(0)
-        name = pynvml.nvmlDeviceGetName(h)
-        caps["gpu"] = name.decode() if isinstance(name, bytes) else name
-        caps["vram_mb"] = pynvml.nvmlDeviceGetMemoryInfo(h).total // 2**20
-    except Exception:
-        caps["gpu"] = None
-    return caps
+    nvml = NVMLSampler()
+    return {
+        "platform": platform.platform(),
+        "docker": bool(shutil.which("docker")),
+        "gpu": nvml.name if nvml.available else None,
+        "gpu_driver": nvml.driver if nvml.available else None,
+    }
 
 
 async def _register(worker_id: str, queues: list[str]) -> None:

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from functools import lru_cache
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -15,10 +15,23 @@ from sqlalchemy.ext.asyncio import (
 
 from furnace.settings import get_settings
 
+# asyncpg connections belong to the event loop that created them, so engines are
+# cached per (url, loop). Production has one loop per process; tests and the
+# TestClient each get their own.
+_ENGINES: dict[tuple[str, int], AsyncEngine] = {}
 
-@lru_cache
+
 def get_engine(url: str | None = None) -> AsyncEngine:
-    return create_async_engine(url or get_settings().database_url, pool_pre_ping=True)
+    url = url or get_settings().database_url
+    try:
+        loop_id = id(asyncio.get_running_loop())
+    except RuntimeError:
+        loop_id = 0
+    key = (url, loop_id)
+    engine = _ENGINES.get(key)
+    if engine is None:
+        engine = _ENGINES[key] = create_async_engine(url, pool_pre_ping=True)
+    return engine
 
 
 def get_sessionmaker(url: str | None = None) -> async_sessionmaker[AsyncSession]:
