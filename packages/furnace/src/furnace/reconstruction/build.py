@@ -879,7 +879,7 @@ class Builder:
                     self._capability(r, f"action_{name}", f"Perform side effect: {name}", [t])
                 )
             label = f"{r.data['method']} {r.data['path']}"
-            wkey = node_key(NodeKind.workflow, label)
+            wkey = node_key(NodeKind.workflow, r.locator.path or "", label)
             self.node(
                 NodeKind.workflow, wkey, label, {"route": r.key, "deterministic": True}, 0.9, [r]
             )
@@ -904,7 +904,7 @@ class Builder:
         return out
 
     def _capability(self, route: Fact, kind: str, label: str, members: list[str]) -> str:
-        key = node_key(NodeKind.capability, f"{route.data['method']} {route.data['path']}", kind)
+        key = node_key(NodeKind.capability, route.key, kind)
         self.node(NodeKind.capability, key, label, {"kind": kind, "route": route.key}, 0.85)
         for m in members:
             self.edge(EdgeKind.implements, m, key, 0.85)

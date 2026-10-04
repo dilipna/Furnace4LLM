@@ -7,7 +7,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-_DEV = os.environ.get("FURNACE_DATABASE_URL", "postgresql+asyncpg://furnace:furnace@localhost:5433/furnace")
+_DEV = os.environ.get(
+    "FURNACE_DATABASE_URL", "postgresql+asyncpg://furnace:furnace@localhost:5433/furnace"
+)
 _BASE, _, _DBNAME = _DEV.rpartition("/")
 TEST_DB = _DBNAME if _DBNAME.endswith("_test") else f"{_DBNAME}_test"
 os.environ["FURNACE_DATABASE_URL"] = f"{_BASE}/{TEST_DB}"
