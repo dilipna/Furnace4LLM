@@ -1,0 +1,53 @@
+# Hand-written ground truth for FurnaceBench RQ1 (reconstruction).
+# Written from the source by the fixture author, independent of Furnace's output.
+app: support-rag-py
+purpose: customer-support chatbot answering from product documentation, with human ticket hand-off
+
+routes:
+  - GET /health
+  - POST /chat
+  - POST /tickets
+
+llm_calls:
+  - file: app/llm.py
+    function: stream_answer
+    api: openai.chat.completions.create
+    streaming: true
+    has_timeout: false
+
+model: Qwen/Qwen2.5-0.5B-Instruct
+serving_engine: vllm
+serving_flags:
+  enable-prefix-caching: true
+  max-num-seqs: "32"
+
+uses_rag: true
+retrievers:
+  - file: app/retriever.py
+    function: retrieve
+    store: bm25
+    top_k: 3
+
+tools:
+  - name: create_ticket
+    side_effect: external
+    approval_gate: true
+
+prompts:
+  - app/prompts.py::SYSTEM_PROMPT
+dynamic_head: false
+
+workflows:
+  - POST /chat
+  - POST /tickets
+
+existing_reliability:
+  tests: true
+  tracing: custom_log  # JSONL call log, no OpenTelemetry
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions:
+  - predicate: model
+    values: [Qwen/Qwen2.5-0.5B-Instruct, GPT-4o]

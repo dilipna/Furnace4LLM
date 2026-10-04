@@ -33,7 +33,7 @@ extend-exclude = ["packages/furnace/src/furnace/db/migrations/versions", "fixtur
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC", "S", "SIM", "RUF"]
-ignore = ["S101", "RUF001", "RUF012", "UP046", "SIM103"]
+ignore = ["S101", "E501", "RUF001", "RUF012", "UP046", "SIM103"]  # E501: ruff format owns line length
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S", "B"]
