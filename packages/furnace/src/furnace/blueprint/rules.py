@@ -145,39 +145,49 @@ def tool_approval_regression_guard(ctx: Ctx) -> list[Recommendation]:
 
 @rule
 def llm_call_without_timeout(ctx: Ctx) -> list[Recommendation]:
-    out = []
-    for call in ctx.spec.llm_calls:
-        if call.has_timeout:
-            continue
-        f = next(x for x in ctx.facts("llm_call") if x.key == call.key)
-        streaming = call.streaming is not None and call.streaming.value is True
-        client = next((c for c in ctx.facts("llm_client") if c.key == call.endpoint_key), None)
-        sdk = client.data.get("sdk") if client else None
-        default = SDK_DEFAULT_TIMEOUT.get(sdk or "")
-        wait = f"the {sdk} SDK default ({default}) applies" if default else "no deadline applies"
-        out.append(
-            Recommendation(
-                rule_id="rel.llm_timeout",
-                area=Area.reliability,
-                title="Set explicit timeouts on the LLM call",
-                why=(
-                    f"`{call.api}` at {call.locator.short()} sets no timeout on the call or its client, so "
-                    f"{wait}. "
-                    + (
-                        "A stalled stream holds the HTTP response open for the user for that whole time."
-                        if streaming
-                        else "A stalled request blocks the caller for that whole time."
-                    )
-                ),
-                evidence_ids=ctx.ev(f),
-                priority=Priority.P0,
-                confidence=0.9,
-                verification_method="Fault-injection test against a mock endpoint that stalls after the first token; the request must fail within the configured budget.",
-                node_keys=[call.key],
-                forge_action="add_llm_timeout",
-            )
+    """One finding listing every LLM call site that has no timeout."""
+    missing = [c for c in ctx.spec.llm_calls if not c.has_timeout]
+    if not missing:
+        return []
+    facts = [next(x for x in ctx.facts("llm_call") if x.key == c.key) for c in missing]
+    sdks = set()
+    for c in missing:
+        client = next((x for x in ctx.facts("llm_client") if x.key == c.endpoint_key), None)
+        sdks.add(client.data.get("sdk") if client else None)
+    defaults = {SDK_DEFAULT_TIMEOUT.get(s or "") for s in sdks}
+    if len(sdks) == 1 and None not in defaults:
+        sdk = next(iter(sdks))
+        wait = f"the {sdk} SDK default ({SDK_DEFAULT_TIMEOUT[sdk or '']}) applies"
+    else:
+        wait = "only library defaults (up to 10 minutes for the OpenAI and Anthropic SDKs) apply"
+    streaming = any(c.streaming is not None and c.streaming.value is True for c in missing)
+    if len(missing) == 1:
+        where = f"`{missing[0].api}` at {missing[0].locator.short()} sets"
+    else:
+        where = f"{len(missing)} LLM call sites ({', '.join(c.locator.short() for c in missing[:5])}{'…' if len(missing) > 5 else ''}) set"
+    return [
+        Recommendation(
+            rule_id="rel.llm_timeout",
+            area=Area.reliability,
+            title="Set explicit timeouts on the LLM call"
+            if len(missing) == 1
+            else f"Set explicit timeouts on {len(missing)} LLM calls",
+            why=(
+                f"{where} no timeout on the call or its client, so {wait}. "
+                + (
+                    "A stalled stream holds the HTTP response open for the user for that whole time."
+                    if streaming
+                    else "A stalled request blocks the caller for that whole time."
+                )
+            ),
+            evidence_ids=ctx.ev(*facts),
+            priority=Priority.P0,
+            confidence=0.9,
+            verification_method="Fault-injection test against a mock endpoint that stalls after the first token; the request must fail within the configured budget.",
+            node_keys=[c.key for c in missing],
+            forge_action="add_llm_timeout",
         )
-    return out
+    ]
 
 
 @rule
@@ -273,15 +283,19 @@ def no_evals(ctx: Ctx) -> list[Recommendation]:
     if rel.evals or not ctx.spec.llm_calls:
         return []
     tests = ctx.facts("test_file")
-    tested = ", ".join(sorted({t.locator.path or "" for t in tests})[:3]) or "none"
+    tested = ", ".join(sorted({t.locator.path or "" for t in tests})[:3])
+    have = (
+        f"The repository has {len(tests)} test file{'s' if len(tests) != 1 else ''} ({tested}) but"
+        if tests
+        else "The repository has no tests,"
+    )
     return [
         Recommendation(
             rule_id="eval.regression_suite",
             area=Area.reliability,
             title="Start a regression suite for LLM behaviour",
             why=(
-                f"The repository has {len(tests)} test file{'s' if len(tests) != 1 else ''} ({tested}) but no "
-                "evaluation framework or eval dataset; "
+                f"{have} no evaluation framework or eval dataset; "
                 "nothing exercises the model's answers, so prompt, model or retrieval changes ship unmeasured."
             ),
             evidence_ids=ctx.ev(*tests),

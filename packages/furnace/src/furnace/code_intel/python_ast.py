@@ -42,6 +42,10 @@ LLM_CLIENT_CLASSES = {
 
 # dotted-suffix -> API name
 LLM_CALL_SUFFIXES = {
+    "threads.runs.create": "openai.assistants.runs.create",
+    "threads.runs.create_and_poll": "openai.assistants.runs.create",
+    "threads.runs.stream": "openai.assistants.runs.stream",
+    "threads.create_and_run": "openai.assistants.runs.create",
     "chat.completions.create": "openai.chat.completions.create",
     "chat.completions.parse": "openai.chat.completions.parse",
     "beta.chat.completions.parse": "openai.chat.completions.parse",
@@ -52,6 +56,9 @@ LLM_CALL_SUFFIXES = {
     "messages.create": "anthropic.messages.create",
     "messages.stream": "anthropic.messages.stream",
 }
+# `client.beta.threads.messages.create` appends a message to an Assistants thread: not inference.
+NOT_INFERENCE_PARTS = {"threads"}
+ANTHROPIC_ONLY_APIS = {"anthropic.messages.create", "anthropic.messages.stream"}
 LLM_FUNCS = {
     ("litellm", "completion"): "litellm.completion",
     ("litellm", "acompletion"): "litellm.acompletion",
@@ -97,6 +104,20 @@ LOGGING_NAME = re.compile(r"(?i)(^|_)(log|logger|logging|trace|tracing|telemetry
 
 
 # ---------------------------------------------------------------------------- helpers
+
+
+_SCOPES = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+
+
+def walk_own(fn: ast.AST):
+    """Like ast.walk(fn) but does not descend into nested functions/classes/lambdas,
+    which are indexed as their own FuncInfo (avoids double-attributing their calls)."""
+    todo = list(ast.iter_child_nodes(fn))
+    while todo:
+        node = todo.pop()
+        yield node
+        if not isinstance(node, _SCOPES):
+            todo.extend(ast.iter_child_nodes(node))
 
 
 def dotted(node: ast.AST) -> str | None:
@@ -238,7 +259,7 @@ class PythonExtractor:
                     node=node,
                     params=[a.arg for a in node.args.args + node.args.kwonlyargs],
                 )
-                for sub in ast.walk(node):
+                for sub in walk_own(node):
                     if isinstance(sub, ast.Call):
                         d = dotted(sub.func)
                         if d:
@@ -545,7 +566,7 @@ class PythonExtractor:
         return [("dynamic", ast.unparse(expr))]
 
     def _message_assembly(self, mod: ModInfo, info: FuncInfo, fkey: str) -> None:
-        for node in ast.walk(info.node):
+        for node in walk_own(info.node):
             if not isinstance(node, ast.Dict):
                 continue
             pairs = {
@@ -625,7 +646,7 @@ class PythonExtractor:
             for m_ in methods:
                 self._emit(
                     "route",
-                    node_key(NodeKind.route, f"{m_} {path}"),
+                    node_key(NodeKind.route, mod.file.path, f"{m_} {path}"),
                     {"method": m_, "path": path, "handler_key": fkey, "framework_owner": owner},
                     mod,
                     dec,
@@ -638,6 +659,8 @@ class PythonExtractor:
         """Return (api_name, client_var) if dotted callee `d` is an LLM call."""
         for suffix, api in LLM_CALL_SUFFIXES.items():
             if d.endswith("." + suffix):
+                if api in ANTHROPIC_ONLY_APIS and NOT_INFERENCE_PARTS & set(d.split(".")):
+                    return None, None
                 root = d.split(".")[0]
                 return api, root
         parts = d.split(".")
@@ -662,7 +685,7 @@ class PythonExtractor:
         return None
 
     def _llm_calls(self, mod: ModInfo, info: FuncInfo, fkey: str) -> None:
-        for node in ast.walk(info.node):
+        for node in walk_own(info.node):
             if not isinstance(node, ast.Call):
                 continue
             d = dotted(node.func) or ""
@@ -677,6 +700,10 @@ class PythonExtractor:
                 else Resolved("literal", api.endswith(".stream"))
             )
             client = self._client_for(mod, client_var)
+            if client and api in ANTHROPIC_ONLY_APIS:
+                ctor = (dotted(client[0].clients[client[1]].func) or "").split(".")[-1]
+                if LLM_CLIENT_CLASSES.get(ctor) not in ("anthropic", None):
+                    continue
             endpoint_key = (
                 node_key(NodeKind.endpoint, client[0].file.path, client[1]) if client else None
             )
@@ -805,7 +832,7 @@ class PythonExtractor:
 
     def _side_effects(self, mod: ModInfo, info: FuncInfo, fkey: str) -> None:
         effects: list[tuple[str, str, int]] = []
-        for node in ast.walk(info.node):
+        for node in walk_own(info.node):
             if isinstance(node, ast.Call):
                 d = dotted(node.func) or ""
                 k = self._side_effect_kind(mod, d, node)
@@ -844,7 +871,7 @@ class PythonExtractor:
         before the first side-effect call."""
         approval = [p for p in info.params if APPROVAL_PARAMS.match(p)]
         first_effect_line = min(ln for _, _, ln in effects)
-        for node in ast.walk(info.node):
+        for node in walk_own(info.node):
             if not isinstance(node, ast.If) or node.lineno >= first_effect_line:
                 continue
             names = {n.id for n in ast.walk(node.test) if isinstance(n, ast.Name)}
@@ -883,7 +910,7 @@ class PythonExtractor:
         keys can be linked to the code that reads them. Local aliases such as
         ``gen = cfg["generation"]`` are followed within the function."""
         aliases: dict[str, list[str]] = {}
-        for node in ast.walk(info.node):
+        for node in walk_own(info.node):
             if (
                 isinstance(node, ast.Assign)
                 and len(node.targets) == 1
@@ -893,7 +920,7 @@ class PythonExtractor:
                 if root and keys:
                     aliases[node.targets[0].id] = aliases.get(root, []) + keys
         seen: set[str] = set()
-        for node in ast.walk(info.node):
+        for node in walk_own(info.node):
             if not isinstance(node, ast.Subscript) or isinstance(
                 getattr(node, "ctx", None), ast.Store
             ):
@@ -921,7 +948,7 @@ class PythonExtractor:
     def _call_edges(self, mod: ModInfo, info: FuncInfo, fkey: str) -> None:
         seen: set[str] = set()
         for d, line in info.calls:
-            target = self._resolve_callee(mod, d)
+            target = self._resolve_callee(mod, d, info)
             if target and target != fkey and target not in seen:
                 seen.add(target)
                 self.facts.append(
@@ -939,9 +966,11 @@ class PythonExtractor:
                     )
                 )
 
-    def _resolve_callee(self, mod: ModInfo, d: str) -> str | None:
+    def _resolve_callee(self, mod: ModInfo, d: str, caller: FuncInfo | None = None) -> str | None:
         parts = d.split(".")
         if len(parts) == 1:
+            if caller and f"{caller.qualname}.{parts[0]}" in mod.funcs:  # nested function
+                return self._func_key(mod, f"{caller.qualname}.{parts[0]}")
             if parts[0] in mod.funcs:
                 return self._func_key(mod, parts[0])
             if parts[0] in mod.imports:

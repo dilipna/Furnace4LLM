@@ -85,8 +85,12 @@ def test_graph_links_prompt_and_config_to_the_chat_workflow(rec):
     g = rec.graph
     kinds = {n.key: n.kind for n in g.nodes}
     edges = {(e.kind, e.src_key, e.dst_key) for e in g.edges}
-    assert kinds["route:POST /chat"] == NodeKind.route
-    assert (EdgeKind.routes_to, "route:POST /chat", "component:app/main.py::chat") in edges
+    assert kinds["route:app/main.py::POST /chat"] == NodeKind.route
+    assert (
+        EdgeKind.routes_to,
+        "route:app/main.py::POST /chat",
+        "component:app/main.py::chat",
+    ) in edges
     assert (
         EdgeKind.uses_prompt,
         "component:app/prompts.py::build_messages",

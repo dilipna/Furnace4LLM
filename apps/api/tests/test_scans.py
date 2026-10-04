@@ -42,7 +42,7 @@ def test_fixture_scan_end_to_end():
         assert any(c["predicate"] == "model" for c in contradictions)
 
         g = c.get(f"/api/scans/{scan_id}/graph").json()
-        assert any(n["key"] == "route:POST /chat" for n in g["nodes"])
+        assert any(n["key"] == "route:app/main.py::POST /chat" for n in g["nodes"])
 
         events = c.get(f"/api/scans/{scan_id}/events")
         assert "Blueprint ready" in events.text
