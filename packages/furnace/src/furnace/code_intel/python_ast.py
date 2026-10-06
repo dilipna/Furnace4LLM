@@ -65,7 +65,39 @@ LLM_FUNCS = {
     ("ollama", "chat"): "ollama.chat",
     ("ollama", "generate"): "ollama.generate",
 }
-LANGCHAIN_INVOKE = {"invoke", "ainvoke", "stream", "astream"}
+# Model wrappers of LLM frameworks: count only when imported from a `langchain*` module, so
+# `from openai import OpenAI` (an SDK client) and `from langchain.llms import OpenAI` differ.
+FRAMEWORK_MODELS = {
+    "ChatOpenAI": "openai",
+    "AzureChatOpenAI": "openai",
+    "OpenAI": "openai",
+    "AzureOpenAI": "openai",
+    "ChatAnthropic": "anthropic",
+    "Anthropic": "anthropic",
+    "ChatOllama": "ollama",
+    "Ollama": "ollama",
+    "OllamaLLM": "ollama",
+    "ChatGroq": "groq",
+    "ChatMistralAI": "other_api",
+    "ChatGoogleGenerativeAI": "other_api",
+    "HuggingFaceHub": "other_api",
+    "HuggingFaceEndpoint": "other_api",
+}
+# Methods that run a framework model (a bare `llm(prompt)` call counts too).
+FRAMEWORK_INVOKE = {
+    "invoke",
+    "ainvoke",
+    "stream",
+    "astream",
+    "predict",
+    "apredict",
+    "batch",
+    "abatch",
+    "generate",
+    "agenerate",
+}
+FRAMEWORK_MODEL_KWARGS = ("model", "model_name", "repo_id", "model_id", "deployment_name")
+_COMPOUND = (ast.If, ast.With, ast.AsyncWith, ast.For, ast.AsyncFor, ast.While, ast.Try)
 
 ROUTE_METHODS = {"get", "post", "put", "patch", "delete", "route", "api_route", "websocket"}
 WEB_APP_CLASSES = {"FastAPI", "APIRouter", "Flask", "Blueprint"}
@@ -79,8 +111,25 @@ RETRIEVAL_CALLS = {
     "similarity_search_by_vector": "vector",
     "max_marginal_relevance_search": "vector",
     "get_relevant_documents": "vector",
+    "as_retriever": "vector",  # wires a vector store into a chain as its retriever
     "query_points": "qdrant",
 }
+# Vector-store classes of LLM frameworks (counted only when imported from `langchain*`).
+VECTORSTORE_CLASSES = {
+    "Chroma": "chroma",
+    "FAISS": "faiss",
+    "Qdrant": "qdrant",
+    "QdrantVectorStore": "qdrant",
+    "Pinecone": "pinecone",
+    "PineconeVectorStore": "pinecone",
+    "PGVector": "pgvector",
+    "Weaviate": "weaviate",
+    "LanceDB": "lancedb",
+    "ElasticsearchStore": "elasticsearch",
+    "Milvus": "milvus",
+}
+TOPK_KWARGS = ("k", "top_k", "n_results", "limit")
+MARKUP = re.compile(r"(?i)<(style|div|html|script|span|img|body|head)\b")
 # Generic method names that count only when the module imports a retrieval library.
 GENERIC_RETRIEVAL_CALLS = {"query", "search"}
 RETRIEVAL_MODULES = {
@@ -194,6 +243,9 @@ class ModInfo:
     )  # local -> (module, name)
     funcs: dict[str, FuncInfo] = field(default_factory=dict)
     clients: dict[str, ast.Call] = field(default_factory=dict)  # var -> constructor call
+    # Top-level statements other than defs/classes/imports, as a pseudo-function `<module>`
+    # (scripts such as Streamlit pages run their LLM calls at module level).
+    module_func: FuncInfo | None = None
     web_apps: set[str] = field(default_factory=set)
     module_bound: set[str] = field(default_factory=set)  # every name bound at module level
     # name -> call that produced it (`X = f(...)`, or first target of `X, Y = f(...)`)
@@ -258,12 +310,36 @@ class PythonExtractor:
                             mod.call_bindings[t.id] = value
                         mod.consts[t.id] = value
                         if isinstance(value, ast.Call):
-                            cls = dotted(value.func) or ""
-                            short = cls.split(".")[-1]
-                            if short in LLM_CLIENT_CLASSES and self._is_llm_client(mod, cls):
+                            short = (dotted(value.func) or "").split(".")[-1]
+                            if self._client_kind(mod, value):
                                 mod.clients[t.id] = value
                             if short in WEB_APP_CLASSES:
                                 mod.web_apps.add(t.id)
+        # Clients bound inside top-level if/with/for/try blocks (common in scripts).
+        for node in self._module_level(mod.tree.body):
+            for var, call in self._client_bindings(mod, node):
+                mod.clients.setdefault(var, call)
+        body = [
+            s
+            for s in mod.tree.body
+            if not isinstance(
+                s, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Import, ast.ImportFrom)
+            )
+        ]
+        if body:
+            fn = ast.FunctionDef(
+                name="<module>",
+                args=ast.arguments(
+                    posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[]
+                ),
+                body=body,
+                decorator_list=[],
+                returns=None,
+                type_params=[],
+            )
+            fn.lineno, fn.col_offset = body[0].lineno, 0
+            fn.end_lineno = getattr(body[-1], "end_lineno", body[-1].lineno)
+            mod.module_func = FuncInfo(qualname="<module>", node=fn, params=[])
         for node in ast.walk(mod.tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 qual = self._qualname(mod.tree, node)
@@ -281,13 +357,50 @@ class PythonExtractor:
                         info.names.add(sub.id)
                 mod.funcs[qual] = info
 
-    def _is_llm_client(self, mod: ModInfo, cls: str) -> bool:
-        short = cls.split(".")[-1]
-        if short != "Client":
-            return True
-        root = cls.split(".")[0]
+    def _client_kind(self, mod: ModInfo, call: ast.expr) -> tuple[str, str | None] | None:
+        """(sdk, framework) if `call` constructs an LLM client or framework model, else None."""
+        if not isinstance(call, ast.Call):
+            return None
+        cls = dotted(call.func) or ""
+        short, root = cls.split(".")[-1], cls.split(".")[0]
         origin = mod.imports.get(root) or mod.imports.get(short)
-        return bool(origin and origin[0].startswith("ollama"))
+        origin_mod = origin[0] if origin else ""
+        if origin_mod.startswith("langchain") and short in FRAMEWORK_MODELS:
+            return FRAMEWORK_MODELS[short], "langchain"
+        if short == "Client":  # generic name: only the SDKs that really export it
+            for sdk in ("ollama", "anthropic"):
+                if origin_mod.startswith(sdk) or root == sdk:
+                    return sdk, None
+            return None
+        if short in LLM_CLIENT_CLASSES:
+            return LLM_CLIENT_CLASSES[short], None
+        return None
+
+    @staticmethod
+    def _module_level(stmts: list[ast.stmt]):
+        """Statements nested in top-level compound blocks (not defs or classes)."""
+        for s in stmts:
+            if isinstance(s, _COMPOUND):
+                inner = [
+                    *getattr(s, "body", []),
+                    *getattr(s, "orelse", []),
+                    *getattr(s, "finalbody", []),
+                ]
+                for h in getattr(s, "handlers", []):
+                    inner += h.body
+                yield from inner
+                yield from PythonExtractor._module_level(inner)
+
+    def _client_bindings(self, mod: ModInfo, node: ast.AST) -> list[tuple[str, ast.Call]]:
+        """`x = Client(...)` / `(x := Client(...))` bindings of LLM clients in one statement."""
+        out = []
+        if isinstance(node, ast.Assign) and len(node.targets) == 1:
+            t = node.targets[0]
+            if isinstance(t, ast.Name) and self._client_kind(mod, node.value):
+                out.append((t.id, node.value))  # type: ignore[arg-type]
+        elif isinstance(node, ast.NamedExpr) and self._client_kind(mod, node.value):
+            out.append((node.target.id, node.value))  # type: ignore[arg-type]
+        return out
 
     @staticmethod
     def _qualname(tree: ast.Module, target: ast.AST) -> str:
@@ -403,6 +516,10 @@ class PythonExtractor:
         )
         for var, call in mod.clients.items():
             self._client_fact(mod, var, call)
+        if mod.module_func is not None:
+            # Only LLM calls are taken from module-level code; routes, tools and the call
+            # graph stay function-scoped.
+            self._llm_calls(mod, mod.module_func, node_key(NodeKind.component, mod.file.path))
         self._prompt_constants(mod)
         imported_modules = {origin for origin, _ in mod.imports.values()}
         for info in mod.funcs.values():
@@ -495,6 +612,7 @@ class PythonExtractor:
 
     def _client_fact(self, mod: ModInfo, var: str, call: ast.Call) -> None:
         cls = (dotted(call.func) or "").split(".")[-1]
+        sdk, framework = self._client_kind(mod, call) or (None, None)
         kw = {k.arg: k.value for k in call.keywords if k.arg}
         base = self.resolve(mod, kw.get("base_url") or kw.get("api_base") or kw.get("host"))
         timeout = kw.get("timeout")
@@ -505,7 +623,8 @@ class PythonExtractor:
             {
                 "var": var,
                 "class": cls,
-                "sdk": LLM_CLIENT_CLASSES.get(cls),
+                "sdk": sdk,
+                "framework": framework,
                 "base_url": base.display(),
                 "base_url_effective": base.effective(),
                 "base_url_env": base.env,
@@ -524,6 +643,8 @@ class PythonExtractor:
         if not (isinstance(value, ast.Constant) and isinstance(value.value, str)):
             return False
         text = value.value
+        if MARKUP.search(text):  # HTML/CSS templates are UI, not prompts
+            return False
         return len(text) >= 400 or (bool(PROMPT_NAME.search(name)) and len(text) >= 40)
 
     def _prompt_constants(self, mod: ModInfo) -> None:
@@ -754,9 +875,13 @@ class PythonExtractor:
                 return LLM_FUNCS[(origin[0], origin[1] or "")], None
         return None, None
 
-    def _client_for(self, mod: ModInfo, var: str | None) -> tuple[ModInfo, str] | None:
+    def _client_for(
+        self, mod: ModInfo, var: str | None, local: dict[str, tuple[str, ast.Call]] | None = None
+    ) -> tuple[ModInfo, str] | None:
         if not var:
             return None
+        if local and var in local:
+            return mod, local[var][0]
         if var in mod.clients:
             return mod, var
         if var in mod.imports:
@@ -766,28 +891,122 @@ class PythonExtractor:
                 return target, origin_name  # type: ignore[return-value]
         return None
 
+    def _ctor(self, mod: ModInfo, client: tuple[ModInfo, str], local) -> ast.Call | None:
+        owner, name = client
+        if owner is mod:
+            for key, call in (local or {}).values():
+                if key == name:
+                    return call
+        return owner.clients.get(name)
+
+    def _local_clients(self, mod: ModInfo, info: FuncInfo) -> dict[str, tuple[str, ast.Call]]:
+        """Clients constructed inside this function: var -> (client fact name, ctor call).
+        Their client facts are emitted here, keyed by the function so names cannot collide."""
+        out: dict[str, tuple[str, ast.Call]] = {}
+        if info.qualname == "<module>":
+            return out  # module-level bindings are already in mod.clients
+        for node in walk_own(info.node):
+            for var, call in self._client_bindings(mod, node):
+                name = f"{info.qualname}.{var}"
+                if var not in out:
+                    out[var] = (name, call)
+                    self._client_fact(mod, name, call)
+        return out
+
+    def _framework_calls(
+        self, mod: ModInfo, info: FuncInfo, local: dict[str, tuple[str, ast.Call]]
+    ) -> list[tuple[ast.Call, str, tuple[ModInfo, str] | None, ast.Call, str | None]]:
+        """Framework model invocations: `llm.invoke(...)`, `llm(...)`, `Ollama(...).invoke(...)`;
+        and a model handed to a chain or agent (`from_llm(llm=llm)`, `initialize_agent(t, llm)`),
+        located at the call that consumes it when the function never invokes it directly."""
+        out = []
+        invoked: set[str] = set()
+        handed: dict[str, ast.Call] = {}
+
+        def framework(var: str) -> tuple[tuple[ModInfo, str], ast.Call] | None:
+            client = self._client_for(mod, var, local)
+            if not client:
+                return None
+            ctor = self._ctor(mod, client, local)
+            kind = self._client_kind(client[0], ctor) if ctor is not None else None
+            return (client, ctor) if ctor is not None and kind and kind[1] else None  # type: ignore[return-value]
+
+        inline = 0
+        for node in walk_own(info.node):
+            if not isinstance(node, ast.Call):
+                continue
+            f = node.func
+            if isinstance(f, ast.Attribute) and f.attr in FRAMEWORK_INVOKE:
+                if isinstance(f.value, ast.Name) and (fw := framework(f.value.id)):
+                    out.append((node, f.attr, fw[0], fw[1], f.value.id))
+                    invoked.add(f.value.id)
+                elif (
+                    isinstance(f.value, ast.Call)
+                    and (k := self._client_kind(mod, f.value))
+                    and k[1]
+                ):
+                    name = f"{info.qualname}.{(dotted(f.value.func) or 'model').split('.')[-1]}@{inline}"
+                    inline += 1
+                    self._client_fact(mod, name, f.value)
+                    out.append((node, f.attr, (mod, name), f.value, None))
+            elif isinstance(f, ast.Name) and (fw := framework(f.id)):
+                out.append((node, "__call__", fw[0], fw[1], f.id))
+                invoked.add(f.id)
+            else:
+                args = [*node.args, *(k.value for k in node.keywords)]
+                for a in args:
+                    if isinstance(a, ast.Name) and a.id not in handed and framework(a.id):
+                        handed[a.id] = node
+        for var, node in handed.items():
+            if var in invoked:
+                continue
+            fw = framework(var)
+            if fw:
+                callee = (dotted(node.func) or "chain").split(".")[-1]
+                out.append((node, f"via {callee}", fw[0], fw[1], var))
+        return out
+
     def _llm_calls(self, mod: ModInfo, info: FuncInfo, fkey: str) -> None:
-        found: list[tuple[ast.Call, str, str | None]] = []
+        local = self._local_clients(mod, info)
+        # (call node, api, resolved client, constructor or None for SDK calls)
+        found: list[tuple[ast.Call, str, tuple[ModInfo, str] | None, ast.Call | None]] = []
         for node in walk_own(info.node):
             if isinstance(node, ast.Call):
                 api, client_var = self._llm_api(mod, dotted(node.func) or "")
                 if api:
-                    found.append((node, api, client_var))
+                    found.append((node, api, self._client_for(mod, client_var, local), None))
+        for node, method, client, ctor, _ in self._framework_calls(mod, info, local):
+            cls = (dotted(ctor.func) or "model").split(".")[-1]
+            api = (
+                f"langchain.{cls}.{method}"
+                if not method.startswith("via ")
+                else f"langchain.{cls} ({method})"
+            )
+            found.append((node, api, client, ctor))
         # Stable key: ordinal within the function in source order (survives line shifts).
         found.sort(key=lambda t: (t[0].lineno, t[0].col_offset))
-        for ordinal, (node, api, client_var) in enumerate(found):
+        for ordinal, (node, api, client, ctor) in enumerate(found):
             kw = {k.arg: k.value for k in node.keywords if k.arg}
-            model = self.resolve(mod, kw.get("model"), func=info)
-            stream = (
-                self.resolve(mod, kw.get("stream"), func=info)
-                if "stream" in kw
-                else Resolved("literal", api.endswith(".stream"))
-            )
-            client = self._client_for(mod, client_var)
-            if client and api in ANTHROPIC_ONLY_APIS:
-                ctor = (dotted(client[0].clients[client[1]].func) or "").split(".")[-1]
-                if LLM_CLIENT_CLASSES.get(ctor) not in ("anthropic", None):
+            ctor_kw = {k.arg: k.value for k in ctor.keywords if k.arg} if ctor is not None else {}
+            model_expr = kw.get("model")
+            if ctor is not None:
+                model_expr = next(
+                    (ctor_kw[k] for k in FRAMEWORK_MODEL_KWARGS if k in ctor_kw), None
+                )
+            model = self.resolve(mod, model_expr, func=info)
+            if "stream" in kw:
+                stream = self.resolve(mod, kw.get("stream"), func=info)
+            elif ctor is not None and "streaming" in ctor_kw:
+                stream = self.resolve(mod, ctor_kw["streaming"], func=info)
+            else:
+                stream = Resolved("literal", api.endswith((".stream", ".astream")))
+            if client and ctor is None:
+                cctor = self._ctor(mod, client, local)
+                sdk = (self._client_kind(client[0], cctor) or (None, None))[0] if cctor else None
+                if api in ANTHROPIC_ONLY_APIS and sdk not in ("anthropic", None):
                     continue
+                if sdk == "anthropic" and api.startswith("openai."):
+                    api = "anthropic." + api.split(".", 1)[1]  # legacy anthropic completions API
             endpoint_key = (
                 node_key(NodeKind.endpoint, client[0].file.path, client[1]) if client else None
             )
@@ -798,9 +1017,12 @@ class PythonExtractor:
                 "temperature",
                 "top_p",
                 "max_output_tokens",
+                "max_tokens_to_sample",
             ):
                 if p in kw:
                     params[p] = self.resolve(mod, kw[p], func=info).display()
+                elif p in ctor_kw:
+                    params[p] = self.resolve(mod, ctor_kw[p], func=info).display()
             self._emit(
                 "llm_call",
                 node_key(NodeKind.component, mod.file.path, f"{info.qualname}#llm{ordinal}"),
@@ -816,7 +1038,10 @@ class PythonExtractor:
                     or "text_format" in kw
                     or api.endswith(".parse"),
                     "tools_passed": "tools" in kw or "functions" in kw,
-                    "has_timeout": "timeout" in kw or "request_timeout" in kw,
+                    "has_timeout": "timeout" in kw
+                    or "request_timeout" in kw
+                    or "timeout" in ctor_kw
+                    or "request_timeout" in ctor_kw,
                     "endpoint_key": endpoint_key,
                     "params": params,
                 },
@@ -838,21 +1063,50 @@ class PythonExtractor:
             ),
             None,
         )
-        store = None
-        for d, _ in info.calls:
+        lib = lib or next(
+            (
+                VECTORSTORE_CLASSES[name]
+                for name, (origin, _) in mod.imports.items()
+                if name in VECTORSTORE_CLASSES and origin.startswith("langchain")
+            ),
+            None,
+        )
+        store, call = None, None
+        for node in walk_own(info.node):
+            if not isinstance(node, ast.Call):
+                continue
+            d = dotted(node.func) or ""
             last = d.split(".")[-1]
-            if last in RETRIEVAL_CALLS or (lib and last in GENERIC_RETRIEVAL_CALLS and "." in d):
-                store = RETRIEVAL_CALLS.get(last, lib)
-                break
-        if store is None:
+            hit = last in RETRIEVAL_CALLS or (lib and last in GENERIC_RETRIEVAL_CALLS and "." in d)
+            if hit and (call is None or node.lineno < call.lineno):
+                store, call = RETRIEVAL_CALLS.get(last, lib), node
+        if store is None or call is None:
             return
         topk_param = next(
             (p for p in info.params if p in ("top_k", "k", "n_results", "limit")), None
         )
+        kw = {k.arg: k.value for k in call.keywords if k.arg}
+        topk_expr = next((kw[k] for k in TOPK_KWARGS if k in kw), None)
+        if topk_expr is None and isinstance(kw.get("search_kwargs"), ast.Dict):
+            sk = kw["search_kwargs"]
+            topk_expr = next(
+                (
+                    v
+                    for k, v in zip(sk.keys, sk.values, strict=False)  # type: ignore[union-attr]
+                    if isinstance(k, ast.Constant) and k.value in TOPK_KWARGS
+                ),
+                None,
+            )
+        topk_literal = self.resolve(mod, topk_expr, func=info).effective() if topk_expr else None
         self._emit(
             "retriever",
             node_key(NodeKind.retriever, mod.file.path, info.qualname),
-            {"store": lib or store, "function_key": fkey, "top_k_param": topk_param},
+            {
+                "store": lib or store,
+                "function_key": fkey,
+                "top_k_param": topk_param,
+                "top_k_literal": topk_literal if isinstance(topk_literal, int) else None,
+            },
             mod,
             info.node,
             symbol=info.qualname,

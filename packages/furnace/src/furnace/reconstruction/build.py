@@ -182,7 +182,7 @@ class Builder:
                         engine, src, [cf.id] + ([sf.id] if sf else []), why, direct=sf is None
                     )
                 )
-            elif base is None and cf.data.get("sdk") in ("openai", "anthropic", "groq"):
+            elif base is None and cf.data.get("sdk") in ("openai", "anthropic", "groq", "ollama"):
                 sdk = cf.data["sdk"]
                 cands.append(
                     Candidate(
@@ -284,6 +284,8 @@ class Builder:
         sites: list[LLMCallSite] = []
         app_model_cands: list[Candidate] = []
         for c in self.k["llm_call"]:
+            if self._is_test_file(c.locator.path):
+                continue  # counted as existing evals, not as an app call site
             cands: list[Candidate] = []
             served = self._served_model(c)
             if served:
@@ -372,6 +374,7 @@ class Builder:
                 if c.data.get("endpoint_key") in self.nodes:
                     self.edge(EdgeKind.served_by, mkey, c.data["endpoint_key"], 0.9, [c])
         # app-level model: code-derived values vs. what the docs say
+        code_models = {str(c.value).strip().lower() for c in app_model_cands}
         for d in self.k["doc_model_mention"]:
             app_model_cands.append(
                 Candidate(
@@ -381,6 +384,13 @@ class Builder:
                     f"{d.data['path']}:{d.locator.line_start} says '{d.data['model']}'",
                 )
             )
+        if len(code_models) > 1 and not any(
+            c.source == "readme" and str(c.value).strip().lower() not in code_models
+            for c in app_model_cands
+        ):
+            # Several models in code is a multi-model app, not a disagreement; only a documented
+            # model that matches none of them contradicts the code.
+            return sites, []
         app_model = self._record(reconcile("app", "model", app_model_cands))
         return sites, app_model
 
@@ -393,6 +403,21 @@ class Builder:
     @staticmethod
     def _non_app_path(key: str) -> bool:
         return key.startswith(("component:tests/", "component:test_", "component:scripts/"))
+
+    @staticmethod
+    def _is_test_file(path: str | None) -> bool:
+        """Test code: evaluation assets, not the app's own call sites or prompts."""
+        if not path:
+            return False
+        parts = path.split("/")
+        name = parts[-1]
+        return (
+            "tests" in parts[:-1]
+            or "test" in parts[:-1]
+            or name.startswith("test_")
+            or name.endswith("_test.py")
+            or name == "conftest.py"
+        )
 
     def _compute_route_reach(self) -> None:
         """All functions reachable from any route handler through the call graph."""
@@ -507,6 +532,8 @@ class Builder:
     def prompts(self) -> list[PromptInfo]:
         out: list[PromptInfo] = []
         for p in self.k["prompt"]:
+            if self._is_test_file(p.locator.path):
+                continue
             self.node(
                 NodeKind.prompt,
                 p.key,
@@ -644,6 +671,24 @@ class Builder:
                         ),
                         self.fact_uuid,
                     )
+        if isinstance(r.data.get("top_k_literal"), int):
+            return _claim(
+                self._record(
+                    reconcile(
+                        r.key,
+                        "top_k",
+                        [
+                            Candidate(
+                                r.data["top_k_literal"],
+                                "ast",
+                                [r.id],
+                                f"k={r.data['top_k_literal']} at the retrieval call",
+                            )
+                        ],
+                    )
+                ),
+                self.fact_uuid,
+            )
         return None
 
     def config_links(self) -> None:
@@ -793,6 +838,18 @@ class Builder:
                 ", ".join(t.locator.path or "" for t in tests[:5]),
             )
             rel.tests.append(c)
+        test_calls = [f for f in self.k["llm_call"] if self._is_test_file(f.locator.path)]
+        if test_calls:
+            rel.evals.append(
+                one(
+                    "app",
+                    "llm_in_tests",
+                    f"tests call an LLM ({len(test_calls)} call site(s): live-model or LLM-judged tests)",
+                    "ast",
+                    test_calls,
+                    ", ".join(sorted({f.locator.path or "" for f in test_calls})),
+                )
+            )
         for d in self.k["dependency"]:
             if d.data["category"] == "eval":
                 rel.evals.append(
