@@ -1,0 +1,50 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 2.
+# Labeled from source at the pinned commit BEFORE Furnace was run on this repository and
+# BEFORE any scanner change made in response to set-1 errors. Author: the developer agent
+# (Claude), not independently reviewed yet.
+app: openai-chat-app-quickstart
+split: held-out-2
+repo: https://github.com/Azure-Samples/openai-chat-app-quickstart
+commit: 0339489e477e91151ebe986394b08a5cf80bbff1
+purpose: Quart chat app streaming Azure OpenAI Responses API output to a browser as JSON Lines
+
+routes:
+  - GET /
+  - POST /chat/stream
+
+llm_calls:
+  - file: src/quartapp/chat.py
+    function: response_stream        # nested async generator inside chat_handler
+    also_accept: [chat_handler]
+    api: openai.responses.stream (AsyncOpenAI)
+    streaming: true
+    has_timeout: false
+
+model: null       # Azure deployment name from env AZURE_OPENAI_CHAT_DEPLOYMENT, not a model id
+models: []
+serving_engine: openai   # Azure OpenAI via its OpenAI-compatible v1 endpoint (no separate enum value)
+serving_flags: {}
+
+uses_rag: false
+retrievers: []
+tools: []
+
+prompts:
+  - src/quartapp/templates/index.html::system   # "You are a helpful assistant." sent by the frontend JS
+dynamic_head: false
+
+workflows:
+  - POST /chat/stream
+
+existing_reliability:
+  tests: true      # pytest + snapshot tests with a mocked Responses stream
+  tracing: none    # stdlib logging only
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions: []
+
+notes:
+  - The system prompt is built in the browser, so a Python-only scanner cannot see it; it is still part of the truth.
+  - .env.sample's 'gpt-5.4' is a deployment name sample (the comment says it differs from the model name).

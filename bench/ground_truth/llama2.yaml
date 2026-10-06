@@ -1,0 +1,73 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 2.
+# Labeled from source at the pinned commit BEFORE Furnace was run on this repository and
+# BEFORE any scanner change made in response to set-1 errors. Author: the developer agent
+# (Claude), not independently reviewed yet.
+app: llama2
+split: held-out-2
+repo: https://github.com/dataprofessor/llama2
+commit: cb787d293fbd58e7d7ff2a1b1dc422d9a0609a34
+purpose: Streamlit Llama 2 chatbot on Replicate (three app variants) plus a local llama.cpp script
+
+routes: []
+
+llm_calls:
+  - file: streamlit_app.py
+    function: generate_llama2_response
+    api: replicate.run
+    model: a16z-infra/llama13b-v2-chat
+    streaming: true      # replicate.run returns an iterator that the UI streams
+    has_timeout: false
+  - file: streamlit_app_v2.py
+    function: generate_llama2_response
+    api: replicate.run
+    model: null          # sidebar-selected variable `llm` (7B / 13B / 70B)
+    streaming: true
+    has_timeout: false
+  - file: app_v1.py
+    function: generate_llama2_response
+    api: replicate.run
+    model: a16z-infra/llama13b-v2-chat
+    streaming: true
+    has_timeout: false
+  - file: llama2-local.py
+    function: <module>
+    api: llama_cpp.Llama.__call__
+    model: llama-2-7b-chat.ggmlv3.q2_K.bin
+    streaming: false
+    has_timeout: false
+
+model: null
+models: [a16z-infra/llama13b-v2-chat, llama-2-7b-chat.ggmlv3.q2_K.bin]
+serving_engine: [replicate, llama_cpp]
+serving_flags: {}
+
+uses_rag: false
+retrievers: []
+tools: []
+
+prompts:
+  - streamlit_app.py::string_dialogue
+  - streamlit_app_v2.py::string_dialogue
+  - app_v1.py::string_dialogue
+dynamic_head: false   # static instruction first, then the dialogue
+
+workflows:
+  - streamlit:streamlit_app.py
+  - streamlit:streamlit_app_v2.py
+  - streamlit:app_v1.py
+  - cli:llama2-local.py
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions:
+  - predicate: model
+    values: [Llama2-7B, a16z-infra/llama13b-v2-chat]   # README: "we're using the Llama2-7B model"; streamlit_app.py hardcodes 13B
+
+notes:
+  - Bug, not a contradiction with docs - streamlit_app.py computes `llm` from the sidebar but replicate.run hardcodes the 13B version, so the selection is ignored.
+  - Model ids are written without the ':<version hash>' suffix; a scanner reporting the full id with hash counts as correct.
