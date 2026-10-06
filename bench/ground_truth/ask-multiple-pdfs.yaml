@@ -1,0 +1,53 @@
+# Hand-written ground truth for FurnaceBench RQ1 (held-out app, never used during development).
+# Written from the source at the pinned commit BEFORE Furnace was run on this repository
+# (committed separately, ahead of the first scan). Author: the developer agent (Claude), not
+# independently reviewed yet. Ambiguous calls are listed under `notes`.
+app: ask-multiple-pdfs
+repo: https://github.com/alejandro-ao/ask-multiple-pdfs
+commit: dc0155b3f909bc8a56b70d91d8ec550ace0fa921
+purpose: Streamlit chat over uploaded PDFs (LangChain ConversationalRetrievalChain, FAISS, OpenAI)
+
+routes: []
+
+llm_calls:
+  - file: app.py
+    function: get_conversation_chain   # ChatOpenAI() constructed here; invoked via the chain
+    also_accept: [handle_userinput]    # where st.session_state.conversation(...) runs
+    api: langchain.chat_models.ChatOpenAI (via ConversationalRetrievalChain)
+    streaming: false
+    has_timeout: false
+
+model: null       # not in source; ChatOpenAI() library default (gpt-3.5-turbo in langchain 0.0.184)
+models: []        # a scanner should report the model as unknown/default, not invent one
+serving_engine: openai
+serving_flags: {}
+
+uses_rag: true
+retrievers:
+  - file: app.py
+    function: get_vectorstore          # FAISS.from_texts; retriever via vectorstore.as_retriever()
+    also_accept: [get_conversation_chain]
+    store: faiss
+    top_k: null   # implicit LangChain default (4); not in source
+
+tools: []
+
+prompts: []       # chain uses LangChain's built-in prompts; the app defines none
+
+workflows:
+  - streamlit:app.py
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: false
+  retries: false  # no explicit retry; ChatOpenAI's internal default retries are not app code
+  evals: false
+
+contradictions:
+  - predicate: entrypoint
+    values: [app.py, main.py]   # readme: "Run the main.py file"; the file is app.py
+
+notes:
+  - HuggingFaceHub / HuggingFaceInstructEmbeddings are imported but only used in commented code.
+  - .env.example lists HUGGINGFACEHUB_API_TOKEN although no live code path uses it.

@@ -1,0 +1,87 @@
+# Hand-written ground truth for FurnaceBench RQ1 (held-out app, never used during development).
+# Written from the source at the pinned commit BEFORE Furnace was run on this repository
+# (committed separately, ahead of the first scan). Author: the developer agent (Claude), not
+# independently reviewed yet. Ambiguous calls are listed under `notes`.
+app: llm-examples
+repo: https://github.com/streamlit/llm-examples
+commit: 7cf260745675e41f92e7436d3777aafdab9dad9f
+purpose: gallery of six Streamlit LLM examples (OpenAI chat, Anthropic file Q&A, LangChain agent with search, LangChain LLM, prompt template, feedback logging)
+
+routes: []
+
+llm_calls:
+  - file: Chatbot.py
+    function: <module>
+    api: openai.chat.completions.create
+    model: gpt-3.5-turbo
+    streaming: false
+    has_timeout: false
+  - file: pages/1_File_Q&A.py
+    function: <module>
+    api: anthropic.completions.create
+    model: claude-v1
+    streaming: false
+    has_timeout: false
+  - file: pages/2_Chat_with_search.py
+    function: <module>
+    api: langchain ChatOpenAI via agent.run
+    model: gpt-3.5-turbo
+    streaming: true
+    has_timeout: false
+  - file: pages/3_Langchain_Quickstart.py
+    function: generate_response
+    api: langchain.llms.OpenAI.__call__
+    model: null   # library default
+    streaming: false
+    has_timeout: false
+  - file: pages/4_Langchain_PromptTemplate.py
+    function: blog_outline
+    api: langchain.llms.OpenAI.__call__
+    model: text-davinci-003
+    streaming: false
+    has_timeout: false
+  - file: pages/5_Chat_with_user_feedback.py
+    function: <module>
+    api: openai.chat.completions.create
+    model: gpt-3.5-turbo
+    streaming: false
+    has_timeout: false
+
+model: null       # several models; no single app model
+models: [gpt-3.5-turbo, claude-v1, text-davinci-003]
+serving_engine: [openai, anthropic]
+serving_flags: {}
+
+uses_rag: false   # File Q&A stuffs the whole article into the prompt; no retrieval
+retrievers: []
+
+tools:
+  - name: Search          # DuckDuckGoSearchRun given to a ReAct agent
+    side_effect: none     # read-only web search
+    approval_gate: false
+
+prompts:
+  - pages/1_File_Q&A.py::prompt
+  - pages/4_Langchain_PromptTemplate.py::template
+dynamic_head: false
+
+workflows:
+  - streamlit:Chatbot.py
+  - streamlit:pages/1_File_Q&A.py
+  - streamlit:pages/2_Chat_with_search.py
+  - streamlit:pages/3_Langchain_Quickstart.py
+  - streamlit:pages/4_Langchain_PromptTemplate.py
+  - streamlit:pages/5_Chat_with_user_feedback.py
+
+existing_reliability:
+  tests: true      # app_test.py (streamlit AppTest with mocked OpenAI)
+  tracing: none    # Trubrics stores user thumbs feedback, which is not request tracing
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions: []
+
+notes:
+  - pages/5 writes user feedback to the Trubrics backend (external side effect, not an LLM tool).
+  - API keys come from sidebar text inputs, not environment variables.
