@@ -17,6 +17,7 @@ from typing import Any
 
 import yaml
 
+from furnace.code_intel.facts import Fact
 from furnace.contracts.blueprint import Recommendation
 from furnace.contracts.guard import ChangeType, ForgeChange, ForgePlan
 from furnace.forge import templates as T
@@ -165,37 +166,13 @@ class Planner:
             if f is None or not f.data["approval_gate_detail"].get("present"):
                 self.skip(r.rule_id, "approval gate not found")
                 continue
-            path = f.locator.path or ""
-            func = f.data["name"]
-            param = f.data["approval_gate_detail"]["param"]
-            mod = _module(path)
-            fn = next(x for x in self.rec.facts.of("function") if x.key == f.data["function_key"])
-            args = ", ".join(
-                f"{p}=False" if p == param else f'{p}="furnace-test"' for p in fn.data["params"]
-            )
-            patches = []
-            for eff in f.data["effects"]:
-                call = eff["call"]
-                if "." in call:
-                    owner, attr = call.rsplit(".", 1)
-                    patches.append(f'    monkeypatch.setattr(target.{owner}, "{attr}", _forbid)')
-            if not patches:
+            generated = approval_test_source(self.rec, f)
+            if generated is None:
                 self.skip(r.rule_id, "side effect calls could not be patched safely")
                 continue
-            src = T.fill(
-                T.APPROVAL_TEST,
-                FUNC=func,
-                LOCATION=f.locator.short(),
-                EFFECT="an " + f.data["side_effect"]
-                if f.data["side_effect"][0] in "aeiou"
-                else "a " + f.data["side_effect"],
-                PARAM=param,
-                MODULE=mod,
-                PATCHES="\n".join(patches),
-                ARGS=args,
-            )
+            path, src = generated
             self.write(
-                f"tests/furnace/test_{func}_approval.py",
+                path,
                 src,
                 change=ChangeType.add_file,
                 reason=r.why,
@@ -451,6 +428,44 @@ class Planner:
         else:
             self.result.files.setdefault("tests/furnace/__init__.py", "")
         return self.result
+
+
+def approval_test_source(rec: Reconstruction, f: Fact) -> tuple[str, str] | None:
+    """(path, source) of a test asserting that `f` (a side-effecting function with an
+    approval gate) refuses to act when the approval parameter is False. Outbound calls
+    are patched to raise, so the test proves no side effect happens. Generated from the
+    revision where the gate exists; it can then be run against any later revision."""
+    path = f.locator.path or ""
+    func = f.data["name"]
+    param = f.data["approval_gate_detail"].get("param")
+    if not param:
+        return None
+    fn = next((x for x in rec.facts.of("function") if x.key == f.data["function_key"]), None)
+    if fn is None:
+        return None
+    args = ", ".join(
+        f"{p}=False" if p == param else f'{p}="furnace-test"' for p in fn.data["params"]
+    )
+    patches = []
+    for eff in f.data["effects"]:
+        call = eff["call"]
+        if "." in call:
+            owner, attr = call.rsplit(".", 1)
+            patches.append(f'    monkeypatch.setattr(target.{owner}, "{attr}", _forbid)')
+    if not patches:
+        return None
+    effect = f.data["side_effect"]
+    src = T.fill(
+        T.APPROVAL_TEST,
+        FUNC=func,
+        LOCATION=f.locator.short(),
+        EFFECT=("an " if effect[0] in "aeiou" else "a ") + effect,
+        PARAM=param,
+        MODULE=_module(path),
+        PATCHES="\n".join(patches),
+        ARGS=args,
+    )
+    return f"tests/furnace/test_{func}_approval.py", src
 
 
 def _add_import(src: str, line: str) -> str:

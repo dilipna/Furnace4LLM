@@ -57,7 +57,19 @@ SCENARIOS: list[Scenario] = [
     ),
     Scenario(
         "r3_citation_strip",
-        "R3: strip citation tags from streamed output 'for a cleaner UI'",
+        "R3: prompt told to drop citation tags 'because the UI shows sources separately'",
+        [
+            (
+                "app/prompts.py",
+                "After each sentence that uses the context, add the citation tag of the excerpt it came from, for example [doc:pairing]. Use the exact tag; never invent a tag that is not in the context.",
+                "Do not include citation tags such as [doc:...] in your answer; the interface shows the sources separately.",
+            ),
+        ],
+        {"prompt"},
+    ),
+    Scenario(
+        "r3b_chunk_regex_strip",
+        "Per-chunk regex meant to strip citation tags from the stream (ineffective: tags span chunks)",
         [
             ("app/llm.py", "import time\n", "import re\nimport time\n"),
             ("app/llm.py", "            yield chunk.choices[0].delta.content\n", '            yield re.sub(r"\\[doc:[^\\]]*\\]", "", chunk.choices[0].delta.content)\n'),

@@ -1,0 +1,9 @@
+[
+ {
+  "key": "security:approval_gate",
+  "verdict": "pass",
+  "detail": "1 approval test(s) (generated from the base revision): 1 passed in 0.17s",
+  "metrics": {},
+  "seconds": 1.2
+ }
+]

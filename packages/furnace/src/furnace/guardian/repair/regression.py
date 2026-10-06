@@ -37,6 +37,46 @@ def render_in_sandbox(repo: Path, questions: list[str]) -> list[list[dict]]:
     return json.loads(line.removeprefix("FURNACE_RENDER "))
 
 
+_ANSWER_SCRIPT = """import json, re
+from concurrent.futures import ThreadPoolExecutor
+from furnace_harness import answer, render
+
+CITATION = re.compile(r"\\[doc:([A-Za-z0-9_.\\-]+)\\]")
+questions = json.load(open("_furnace_questions.json", encoding="utf-8"))
+
+def one(q):
+    retrieved = CITATION.findall(render(q)[-1]["content"])
+    return {"question": q, "answer": answer(q), "retrieved": retrieved}
+
+with ThreadPoolExecutor(8) as pool:
+    rows = list(pool.map(one, questions))
+print("FURNACE_ANSWERS " + json.dumps(rows))
+"""
+
+
+def answers_in_sandbox(
+    repo: Path, questions: list[str], env: dict[str, str], network: str
+) -> list[dict]:
+    """Run the app's full answer path (harness.answer) for each question inside the
+    sandbox, with network access only to the internal lab network."""
+    r = run_in_sandbox(
+        repo,
+        ["python", "_furnace_answer.py"],
+        network=network,
+        env=env,
+        timeout_s=600,
+        files={
+            "_furnace_answer.py": _ANSWER_SCRIPT,
+            "_furnace_questions.json": json.dumps(questions),
+        },
+        output_limit=20 * 2**20,
+    )
+    line = next((ln for ln in r.stdout.splitlines() if ln.startswith("FURNACE_ANSWERS ")), None)
+    if not r.ok or line is None:
+        raise RuntimeError(f"answer path failed in sandbox: {(r.stderr or r.stdout)[-800:]}")
+    return json.loads(line.removeprefix("FURNACE_ANSWERS "))
+
+
 def as_text(messages: list[dict]) -> str:
     return "".join(f"{m['role']}\n{m['content']}\n" for m in messages)
 
