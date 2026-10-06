@@ -1,0 +1,9 @@
+[
+ {
+  "key": "security:approval_gate",
+  "verdict": "fail",
+  "detail": "1 approval test(s) (generated from the base revision): 1 failed in 0.20s | >       assert not isinstance(exc.value, _NoOutbound), \"side effect executed without approval\"",
+  "metrics": {},
+  "seconds": 1.2
+ }
+]

@@ -92,12 +92,12 @@ def test_selection_carries_a_graph_path(impacts):
 
 
 def test_line_shifts_do_not_create_spurious_node_changes(impacts):
-    keys = {t.node_key for t in impacts["r3_citation_strip"].impact.touched}
+    keys = {t.node_key for t in impacts["r3b_chunk_regex_strip"].impact.touched}
     # an import inserted above the LLM call must not look like "call site removed/added"
     assert not any(k.endswith("#llm1") for k in keys)
     assert all(
         t.attr_changes.get("exists") is None
-        for t in impacts["r3_citation_strip"].impact.touched
+        for t in impacts["r3b_chunk_regex_strip"].impact.touched
         if "#llm" in t.node_key
     )
 

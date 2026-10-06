@@ -14,9 +14,10 @@ import asyncio
 import json
 import tempfile
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from furnace_bench.runner import run_benchmark
 from furnace_bench.schema import BenchPlan, BenchReport, BenchTarget, LengthMode, PromptMode
@@ -30,6 +31,10 @@ class GatePolicy:
     warn_pct: float = 10.0
     block_pct: float = 25.0
     metric: str = "ttft_p95_ms"
+
+
+class MetricSource(Protocol):
+    def metric(self, name: str) -> float | None: ...
 
 
 @dataclass
@@ -87,26 +92,48 @@ async def benchmark_variant(
     return VariantResult(name, result.report)
 
 
-def compare(baseline: VariantResult, other: VariantResult, policy: GatePolicy) -> dict[str, Any]:
-    b, o = baseline.metric(policy.metric), other.metric(policy.metric)
-    if b is None or o is None:
+def _median(xs: list[float]) -> float:
+    s = sorted(xs)
+    n = len(s)
+    return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2
+
+
+def compare(
+    baseline: Sequence[MetricSource], other: Sequence[MetricSource], policy: GatePolicy
+) -> dict[str, Any]:
+    """Median-of-runs comparison. A *block* additionally requires the runs not to overlap
+    (every run of `other` worse than every run of `baseline`), so run-to-run noise on a
+    shared GPU cannot block a change by itself; without separation the verdict is warn."""
+    bs = [v for v in (r.metric(policy.metric) for r in baseline) if v is not None]
+    os_ = [v for v in (r.metric(policy.metric) for r in other) if v is not None]
+    if not bs or not os_:
         return {"verdict": "error", "reason": f"{policy.metric} not measured"}
+    b, o = _median(bs), _median(os_)
     change_pct = (o - b) / b * 100
-    verdict = (
-        "block"
-        if change_pct > policy.block_pct
-        else "warn"
-        if change_pct > policy.warn_pct
-        else "pass"
-    )
+    separated = min(os_) > max(bs)
+    if change_pct > policy.block_pct:
+        verdict = "block" if separated or len(bs) == 1 else "warn"
+    elif change_pct > policy.warn_pct:
+        verdict = "warn"
+    else:
+        verdict = "pass"
+
+    def med(rs: Sequence[MetricSource], name: str) -> float | None:
+        vals = [v for v in (r.metric(name) for r in rs) if v is not None]
+        return _median(vals) if vals else None
+
     return {
         "metric": policy.metric,
         "baseline": round(b, 1),
         "value": round(o, 1),
         "change_pct": round(change_pct, 1),
         "verdict": verdict,
-        "prefix_hit_rate": (baseline.metric("prefix_hit_rate"), other.metric("prefix_hit_rate")),
-        "goodput_rps": (baseline.metric("goodput_rps"), other.metric("goodput_rps")),
+        "runs": len(os_),
+        "baseline_runs": [round(x, 1) for x in bs],
+        "value_runs": [round(x, 1) for x in os_],
+        "separated": separated,
+        "prefix_hit_rate": (med(baseline, "prefix_hit_rate"), med(other, "prefix_hit_rate")),
+        "goodput_rps": (med(baseline, "goodput_rps"), med(other, "goodput_rps")),
     }
 
 
@@ -114,15 +141,18 @@ def run_gate(
     variants: dict[str, Path],
     questions: list[str],
     target: BenchTarget,
-    policy: GatePolicy | None = None,
+    *,
+    repeats: int = 3,
     **kw: Any,
-) -> dict[str, VariantResult]:
-    """Benchmark several revisions sequentially (never concurrently: they share the GPU)."""
+) -> dict[str, list[VariantResult]]:
+    """Benchmark revisions sequentially (they share the GPU), interleaving repeats
+    (A, B, A, B, ...) so drift in clocks or temperature affects all revisions alike."""
 
-    async def go() -> dict[str, VariantResult]:
-        out = {}
-        for name, repo in variants.items():
-            out[name] = await benchmark_variant(name, repo, questions, target, **kw)
+    async def go() -> dict[str, list[VariantResult]]:
+        out: dict[str, list[VariantResult]] = {name: [] for name in variants}
+        for _ in range(repeats):
+            for name, repo in variants.items():
+                out[name].append(await benchmark_variant(name, repo, questions, target, **kw))
         return out
 
     return asyncio.run(go())
