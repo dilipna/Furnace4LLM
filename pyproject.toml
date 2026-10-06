@@ -30,7 +30,7 @@ furnace-bench = { workspace = true }
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-extend-exclude = ["packages/furnace/src/furnace/db/migrations/versions", "fixtures"]
+extend-exclude = ["packages/furnace/src/furnace/db/migrations/versions", "fixtures", "bench/.cache"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC", "S", "SIM", "RUF"]
@@ -48,11 +48,11 @@ testpaths = ["packages/furnace/tests", "packages/inference/tests", "apps/api/tes
 markers = ["db: requires postgres (FURNACE_DATABASE_URL)", "gpu: requires an NVIDIA GPU"]
 
 [tool.pyright]
-include = ["packages", "apps/api"]
-exclude = ["**/node_modules", "**/.venv", "**/migrations/versions", "fixtures"]
+include = ["packages", "apps/api", "bench"]
+exclude = ["**/node_modules", "**/.venv", "**/migrations/versions", "fixtures", "bench/.cache"]
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
-extraPaths = ["fixtures/scenarios"]
+extraPaths = ["fixtures/scenarios", "bench"]
 
 [tool.importlinter]
 root_packages = ["furnace", "furnace_bench"]
@@ -85,3 +85,11 @@ _imports = "lint-imports"
 typecheck = "pyright"
 openapi = "python -m furnace_api.export_openapi apps/web/lib/openapi.json"
 check = ["_ruff-check", "_ruff-format", "_imports", "typecheck", "test"]
+# FurnaceBench (see bench/README.md). Results go to bench/results/<date>/ (FURNACE_BENCH_DATE overrides).
+bench-setup = "python bench/setup.py"
+bench-rq1 = "python bench/rq1.py"
+bench-rq2 = "python bench/rq2.py"
+bench-rq3 = "python bench/rq3.py"
+bench-rq4 = "python bench/rq4.py"
+bench-rq5 = "python bench/rq5.py"
+bench-report = "python bench/report.py"
