@@ -31,7 +31,9 @@ from common import (
     W1,
     manifest,
     md_table,
+    power_state,
     read_json,
+    require_ac_power,
     results_dir,
     write_json,
 )
@@ -153,6 +155,7 @@ def sweep(args: argparse.Namespace) -> None:
             for cfg in configs[k:] + configs[:k]:
                 if (cfg["name"], rep) in done:
                     continue
+                before = require_ac_power(args.allow_battery)
                 print(f"== {cfg['name']} repeat {rep}: launching", flush=True)
                 t0 = time.monotonic()
                 ok, log = launch(cfg, args.model, args.gpu_util)
@@ -168,8 +171,15 @@ def sweep(args: argparse.Namespace) -> None:
                     print(f"   ready in {time.monotonic() - t0:.0f}s", flush=True)
                     time.sleep(args.settle_s)  # let post-load compilation and clocks settle
                     entry = run_one(cfg, rep, args, out / "runs")
+                after = power_state()
+                entry["power"] = {"before": before, "after": after}
                 index["runs"].append(entry)
                 write_json(index_path, index)
+                if before["on_ac"] and after["on_ac"] is False and not args.allow_battery:
+                    raise SystemExit(
+                        f"power switched to battery during {cfg['name']} repeat {rep}; "
+                        "that run is marked in runs.json and the sweep stops"
+                    )
     finally:
         sh("docker", "rm", "-f", CONTAINER)
         sh("docker", "compose", "--profile", "gpu", "up", "-d", "vllm", timeout=180)
@@ -310,6 +320,11 @@ def render(s: dict[str, Any]) -> str:
         "",
         "Cells: median across repeats [min, max]. Each repeat is a fresh server launch.",
         "",
+        "Caveats: one laptop GPU (thermals and clocks not pinned; max GPU temperature per level is in "
+        "`rq4.json`). The host was not idle: development work (editor, linters, a few short Docker "
+        "sandbox test runs) continued during the sweep, which can add client-side and scheduling noise. "
+        "Repeats are interleaved so such noise spreads across configs rather than biasing one.",
+        "",
         "## TTFT p95 (ms) by config and concurrency",
         "",
     ]
@@ -385,6 +400,7 @@ def main() -> None:
     p.add_argument("--gpu-util", type=float, default=0.70)
     p.add_argument("--settle-s", type=float, default=10.0)
     p.add_argument("--configs", help="comma-separated subset of config names")
+    p.add_argument("--allow-battery", action="store_true", help="run on battery (labeled)")
     p.add_argument("--summarize-only", action="store_true")
     args = p.parse_args()
     if not args.summarize_only:

@@ -1,0 +1,1862 @@
+{
+  "manifest": {
+    "date": "2026-10-06",
+    "started_at": "2026-10-06T02:33:06+00:00",
+    "git": {
+      "sha": "979350bef260640c7bdc59e3c49758138f763ad2",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "argv": [
+      "bench/rq1.py",
+      "--tag",
+      "first_scan"
+    ]
+  },
+  "apps": [
+    {
+      "app": "support-rag-py (F1)",
+      "split": "dev",
+      "commit": null,
+      "seconds": 0.6570000000065193,
+      "score": {
+        "categories": {
+          "routes": {
+            "tp": 3,
+            "n_pred": 3,
+            "n_truth": 3,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "llm_call_sites": {
+            "tp": 1,
+            "n_pred": 1,
+            "n_truth": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "models": {
+            "tp": 1,
+            "n_pred": 1,
+            "n_truth": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "serving_engines": {
+            "tp": 1,
+            "n_pred": 1,
+            "n_truth": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "retrievers": {
+            "tp": 1,
+            "n_pred": 1,
+            "n_truth": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "tools": {
+            "tp": 1,
+            "n_pred": 1,
+            "n_truth": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "prompts": {
+            "tp": 1,
+            "n_pred": 1,
+            "n_truth": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": [],
+            "duplicates": [
+              "app/prompts.py::build_messages#system"
+            ]
+          },
+          "workflows": {
+            "tp": 2,
+            "n_pred": 2,
+            "n_truth": 2,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "contradictions": {
+            "tp": 1,
+            "n_pred": 1,
+            "n_truth": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          }
+        },
+        "attributes": [
+          {
+            "attr": "call.streaming",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "call.has_timeout",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "rag.present",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "retriever.store",
+            "truth": "bm25",
+            "pred": "bm25",
+            "correct": true
+          },
+          {
+            "attr": "retriever.top_k",
+            "truth": 3,
+            "pred": 3,
+            "correct": true
+          },
+          {
+            "attr": "tool.side_effect",
+            "truth": "external",
+            "pred": "external",
+            "correct": true
+          },
+          {
+            "attr": "tool.approval_gate",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "prompt.dynamic_head",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.tests",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "existing.tracing",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "existing.timeouts",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.retries",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.evals",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          }
+        ],
+        "calibration": [
+          [
+            0.95,
+            true,
+            "call.streaming"
+          ],
+          [
+            0.9,
+            true,
+            "model"
+          ],
+          [
+            0.9,
+            true,
+            "engine"
+          ],
+          [
+            0.995,
+            true,
+            "rag.present"
+          ],
+          [
+            0.95,
+            true,
+            "retriever.store"
+          ],
+          [
+            0.9,
+            true,
+            "retriever.top_k"
+          ],
+          [
+            0.95,
+            true,
+            "tool.side_effect"
+          ],
+          [
+            0.7,
+            true,
+            "tool.approval_gate"
+          ]
+        ]
+      },
+      "empty_scan_attributes": [
+        {
+          "attr": "rag.present",
+          "truth": true,
+          "pred": false,
+          "correct": false
+        },
+        {
+          "attr": "prompt.dynamic_head",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.tests",
+          "truth": true,
+          "pred": false,
+          "correct": false
+        },
+        {
+          "attr": "existing.tracing",
+          "truth": true,
+          "pred": false,
+          "correct": false
+        },
+        {
+          "attr": "existing.timeouts",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.retries",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.evals",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        }
+      ],
+      "appspec": {
+        "schema_version": "furnace.appspec/v1",
+        "purpose": {
+          "value": "Kilnworks Assist",
+          "confidence": 0.5,
+          "observation": "inference",
+          "method": "deterministic",
+          "evidence_ids": [],
+          "contradicted_by": [],
+          "status": "supported",
+          "alternatives": []
+        },
+        "architecture": {
+          "languages": {
+            "markdown": 17,
+            "python": 12,
+            "yaml": 3,
+            "dockerfile": 1
+          },
+          "frameworks": [
+            {
+              "value": "FastAPI",
+              "confidence": 0.6,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "services": [
+            "llm",
+            "app"
+          ],
+          "entrypoints": [
+            "component:app/main.py::health",
+            "component:app/main.py::chat",
+            "component:app/main.py::tickets"
+          ],
+          "deploy": []
+        },
+        "workflows": [
+          {
+            "key": "workflow:app/main.py::POST /chat",
+            "name": "POST /chat",
+            "description": "Requests to POST /chat",
+            "steps": [
+              "chat",
+              "stream_answer",
+              "build_messages",
+              "retrieve",
+              "LLM call \u00b7 chat.completions.create"
+            ],
+            "route_keys": [
+              "route:app/main.py::POST /chat"
+            ],
+            "capability_keys": [
+              "capability:route:app/main.py::POST /chat::rag_answer"
+            ],
+            "confidence": 0.9
+          },
+          {
+            "key": "workflow:app/main.py::POST /tickets",
+            "name": "POST /tickets",
+            "description": "Requests to POST /tickets",
+            "steps": [
+              "tickets",
+              "create_ticket"
+            ],
+            "route_keys": [
+              "route:app/main.py::POST /tickets"
+            ],
+            "capability_keys": [
+              "capability:route:app/main.py::POST /tickets::action_create_ticket"
+            ],
+            "confidence": 0.9
+          }
+        ],
+        "routes": [
+          {
+            "key": "route:app/main.py::GET /health",
+            "method": "GET",
+            "path": "/health",
+            "handler": "component:app/main.py::health",
+            "locator": {
+              "path": "app/main.py",
+              "line_start": 24,
+              "line_end": 24,
+              "symbol": "health",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          },
+          {
+            "key": "route:app/main.py::POST /chat",
+            "method": "POST",
+            "path": "/chat",
+            "handler": "component:app/main.py::chat",
+            "locator": {
+              "path": "app/main.py",
+              "line_start": 29,
+              "line_end": 29,
+              "symbol": "chat",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          },
+          {
+            "key": "route:app/main.py::POST /tickets",
+            "method": "POST",
+            "path": "/tickets",
+            "handler": "component:app/main.py::tickets",
+            "locator": {
+              "path": "app/main.py",
+              "line_start": 46,
+              "line_end": 46,
+              "symbol": "tickets",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          }
+        ],
+        "llm_calls": [
+          {
+            "key": "component:app/llm.py::stream_answer#llm0",
+            "locator": {
+              "path": "app/llm.py",
+              "line_start": 19,
+              "line_end": 26,
+              "symbol": "stream_answer",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "api": "openai.chat.completions.create",
+            "provider": {
+              "value": "vllm",
+              "confidence": 0.9,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            },
+            "model": {
+              "value": "Qwen/Qwen2.5-0.5B-Instruct",
+              "confidence": 0.9,
+              "observation": "direct_observation",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            },
+            "streaming": {
+              "value": true,
+              "confidence": 0.95,
+              "observation": "direct_observation",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            },
+            "structured_output": false,
+            "tools_passed": false,
+            "params": {
+              "max_tokens": "param:max_tokens",
+              "temperature": "param:temperature"
+            },
+            "prompt_keys": [],
+            "endpoint_key": "endpoint:app/llm.py::client",
+            "has_timeout": false
+          }
+        ],
+        "endpoints": [
+          {
+            "key": "endpoint:app/llm.py::client",
+            "base_url_ref": "env:LLM_BASE_URL (default 'http://localhost:8100/v1')",
+            "engine": {
+              "value": "vllm",
+              "confidence": 0.9,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            },
+            "serving_flags": {
+              "served-model-name": "lab",
+              "gpu-memory-utilization": "0.70",
+              "max-model-len": "4096",
+              "max-num-seqs": "32",
+              "enable-prefix-caching": true
+            },
+            "locator": {
+              "path": "app/llm.py",
+              "line_start": 9,
+              "line_end": 9,
+              "symbol": "client",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          }
+        ],
+        "prompts": [
+          {
+            "key": "prompt:app/prompts.py::SYSTEM_PROMPT",
+            "locator": {
+              "path": "app/prompts.py",
+              "line_start": 3,
+              "line_end": 42,
+              "symbol": "SYSTEM_PROMPT",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "static_chars": 3927,
+            "static_tokens": 982,
+            "dynamic_segments": [],
+            "dynamic_head": false
+          },
+          {
+            "key": "prompt:app/prompts.py::build_messages#system",
+            "locator": {
+              "path": "app/prompts.py",
+              "line_start": 60,
+              "line_end": 60,
+              "symbol": "build_messages",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "static_chars": 3927,
+            "static_tokens": 982,
+            "dynamic_segments": [],
+            "dynamic_head": false
+          }
+        ],
+        "rag": {
+          "present": {
+            "value": true,
+            "confidence": 0.995,
+            "observation": "direct_observation",
+            "method": "deterministic",
+            "evidence_ids": [],
+            "contradicted_by": [],
+            "status": "supported",
+            "alternatives": []
+          },
+          "retrievers": [
+            {
+              "key": "retriever:app/retriever.py::retrieve",
+              "locator": {
+                "path": "app/retriever.py",
+                "line_start": 37,
+                "line_end": 41,
+                "symbol": "retrieve",
+                "url": null,
+                "frame_ts": null,
+                "bbox": null,
+                "trace_ids": null
+              },
+              "store": {
+                "value": "bm25",
+                "confidence": 0.95,
+                "observation": "direct_observation",
+                "method": "deterministic",
+                "evidence_ids": [],
+                "contradicted_by": [],
+                "status": "supported",
+                "alternatives": []
+              },
+              "top_k": {
+                "value": 3,
+                "confidence": 0.9,
+                "observation": "direct_observation",
+                "method": "deterministic",
+                "evidence_ids": [],
+                "contradicted_by": [],
+                "status": "supported",
+                "alternatives": []
+              },
+              "chunking": {}
+            }
+          ],
+          "context_assembly": null
+        },
+        "tools": [
+          {
+            "key": "tool:app/tickets.py::create_ticket",
+            "name": "create_ticket",
+            "locator": {
+              "path": "app/tickets.py",
+              "line_start": 10,
+              "line_end": 16,
+              "symbol": "create_ticket",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "side_effect": {
+              "value": "external",
+              "confidence": 0.95,
+              "observation": "direct_observation",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            },
+            "approval_gate": {
+              "value": true,
+              "confidence": 0.7,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          }
+        ],
+        "reliability_existing": {
+          "evals": [],
+          "tests": [
+            {
+              "value": "2 test files",
+              "confidence": 0.95,
+              "observation": "direct_observation",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "tracing": [
+            {
+              "value": "custom log: log_llm_call",
+              "confidence": 0.7,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "retries": [],
+          "timeouts": [],
+          "fallbacks": [],
+          "rate_limits": [],
+          "guardrails": []
+        },
+        "contradictions": [
+          {
+            "subject_key": "app",
+            "predicate": "model",
+            "values": [
+              {
+                "value": "Qwen/Qwen2.5-0.5B-Instruct",
+                "confidence": 0.675,
+                "sources": [
+                  "config"
+                ],
+                "rationale": "code requests 'lab', which llm serves as Qwen/Qwen2.5-0.5B-Instruct (base_url port 8100 is published by compose service 'llm')",
+                "evidence": [
+                  "E5",
+                  "E7",
+                  "E82"
+                ]
+              },
+              {
+                "value": "GPT-4o",
+                "confidence": 0.275,
+                "sources": [
+                  "readme"
+                ],
+                "rationale": "README.md:9 says 'GPT-4o'",
+                "evidence": [
+                  "E104"
+                ]
+              }
+            ],
+            "note": "2 sources disagree on model; strongest evidence: config"
+          }
+        ]
+      }
+    },
+    {
+      "app": "ask-multiple-pdfs",
+      "split": "held-out",
+      "commit": "dc0155b3f909bc8a56b70d91d8ec550ace0fa921",
+      "seconds": 0.030999999988125637,
+      "score": {
+        "categories": {
+          "routes": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          },
+          "llm_call_sites": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "app.py::get_conversation_chain"
+            ],
+            "false_positives": []
+          },
+          "models": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          },
+          "serving_engines": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "openai"
+            ],
+            "false_positives": []
+          },
+          "retrievers": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "app.py::get_vectorstore"
+            ],
+            "false_positives": []
+          },
+          "tools": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          },
+          "prompts": {
+            "tp": 0,
+            "n_pred": 3,
+            "n_truth": 0,
+            "precision": 0.0,
+            "recall": null,
+            "f1": 0.0,
+            "missed": [],
+            "false_positives": [
+              "htmlTemplates.py::css",
+              "htmlTemplates.py::bot_template",
+              "htmlTemplates.py::user_template"
+            ],
+            "duplicates": []
+          },
+          "workflows": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "streamlit:app.py"
+            ],
+            "false_positives": []
+          },
+          "contradictions": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "entrypoint: ['app.py', 'main.py']"
+            ],
+            "false_positives": []
+          }
+        },
+        "attributes": [
+          {
+            "attr": "rag.present",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "existing.tests",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.tracing",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.timeouts",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.retries",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.evals",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          }
+        ],
+        "calibration": [
+          [
+            0.8,
+            true,
+            "rag.present"
+          ]
+        ]
+      },
+      "empty_scan_attributes": [
+        {
+          "attr": "rag.present",
+          "truth": true,
+          "pred": false,
+          "correct": false
+        },
+        {
+          "attr": "existing.tests",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.tracing",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.timeouts",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.retries",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.evals",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        }
+      ],
+      "appspec": {
+        "schema_version": "furnace.appspec/v1",
+        "purpose": {
+          "value": "MultiPDF Chat App",
+          "confidence": 0.5,
+          "observation": "inference",
+          "method": "deterministic",
+          "evidence_ids": [],
+          "contradicted_by": [],
+          "status": "supported",
+          "alternatives": []
+        },
+        "architecture": {
+          "languages": {
+            "python": 2,
+            "dotenv": 1,
+            "markdown": 1
+          },
+          "frameworks": [
+            {
+              "value": "langchain",
+              "confidence": 0.6,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "services": [],
+          "entrypoints": [],
+          "deploy": []
+        },
+        "workflows": [],
+        "routes": [],
+        "llm_calls": [],
+        "endpoints": [],
+        "prompts": [
+          {
+            "key": "prompt:htmlTemplates.py::css",
+            "locator": {
+              "path": "htmlTemplates.py",
+              "line_start": 1,
+              "line_end": 26,
+              "symbol": "css",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "static_chars": 440,
+            "static_tokens": 110,
+            "dynamic_segments": [],
+            "dynamic_head": false
+          },
+          {
+            "key": "prompt:htmlTemplates.py::bot_template",
+            "locator": {
+              "path": "htmlTemplates.py",
+              "line_start": 28,
+              "line_end": 35,
+              "symbol": "bot_template",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "static_chars": 279,
+            "static_tokens": 70,
+            "dynamic_segments": [],
+            "dynamic_head": false
+          },
+          {
+            "key": "prompt:htmlTemplates.py::user_template",
+            "locator": {
+              "path": "htmlTemplates.py",
+              "line_start": 37,
+              "line_end": 44,
+              "symbol": "user_template",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "static_chars": 181,
+            "static_tokens": 45,
+            "dynamic_segments": [],
+            "dynamic_head": false
+          }
+        ],
+        "rag": {
+          "present": {
+            "value": true,
+            "confidence": 0.8,
+            "observation": "inference",
+            "method": "deterministic",
+            "evidence_ids": [],
+            "contradicted_by": [],
+            "status": "supported",
+            "alternatives": []
+          },
+          "retrievers": [],
+          "context_assembly": null
+        },
+        "tools": [],
+        "reliability_existing": {
+          "evals": [],
+          "tests": [],
+          "tracing": [],
+          "retries": [],
+          "timeouts": [],
+          "fallbacks": [],
+          "rate_limits": [],
+          "guardrails": []
+        },
+        "contradictions": []
+      }
+    },
+    {
+      "app": "llm-examples",
+      "split": "held-out",
+      "commit": "7cf260745675e41f92e7436d3777aafdab9dad9f",
+      "seconds": 0.031000000017229468,
+      "score": {
+        "categories": {
+          "routes": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          },
+          "llm_call_sites": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 6,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "Chatbot.py::<module>",
+              "pages/1_File_Q&A.py::<module>",
+              "pages/2_Chat_with_search.py::<module>",
+              "pages/3_Langchain_Quickstart.py::generate_response",
+              "pages/4_Langchain_PromptTemplate.py::blog_outline",
+              "pages/5_Chat_with_user_feedback.py::<module>"
+            ],
+            "false_positives": []
+          },
+          "models": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 3,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "gpt-3.5-turbo",
+              "claude-v1",
+              "text-davinci-003"
+            ],
+            "false_positives": []
+          },
+          "serving_engines": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 2,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "openai",
+              "anthropic"
+            ],
+            "false_positives": []
+          },
+          "retrievers": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          },
+          "tools": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "Search"
+            ],
+            "false_positives": []
+          },
+          "prompts": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 2,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "pages/1_File_Q&A.py::prompt",
+              "pages/4_Langchain_PromptTemplate.py::template"
+            ],
+            "false_positives": [],
+            "duplicates": []
+          },
+          "workflows": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 6,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "streamlit:Chatbot.py",
+              "streamlit:pages/1_File_Q&A.py",
+              "streamlit:pages/2_Chat_with_search.py",
+              "streamlit:pages/3_Langchain_Quickstart.py",
+              "streamlit:pages/4_Langchain_PromptTemplate.py",
+              "streamlit:pages/5_Chat_with_user_feedback.py"
+            ],
+            "false_positives": []
+          },
+          "contradictions": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          }
+        },
+        "attributes": [
+          {
+            "attr": "rag.present",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "prompt.dynamic_head",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.tests",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "existing.tracing",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.timeouts",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.retries",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.evals",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          }
+        ],
+        "calibration": [
+          [
+            0.6,
+            true,
+            "rag.present"
+          ]
+        ]
+      },
+      "empty_scan_attributes": [
+        {
+          "attr": "rag.present",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "prompt.dynamic_head",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.tests",
+          "truth": true,
+          "pred": false,
+          "correct": false
+        },
+        {
+          "attr": "existing.tracing",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.timeouts",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.retries",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.evals",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        }
+      ],
+      "appspec": {
+        "schema_version": "furnace.appspec/v1",
+        "purpose": {
+          "value": "\ud83c\udf88 Streamlit + LLM Examples App",
+          "confidence": 0.5,
+          "observation": "inference",
+          "method": "deterministic",
+          "evidence_ids": [],
+          "contradicted_by": [],
+          "status": "supported",
+          "alternatives": []
+        },
+        "architecture": {
+          "languages": {
+            "python": 7,
+            "yaml": 2,
+            "toml": 1,
+            "markdown": 1
+          },
+          "frameworks": [
+            {
+              "value": "langchain",
+              "confidence": 0.6,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            },
+            {
+              "value": "langchain-community",
+              "confidence": 0.6,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "services": [],
+          "entrypoints": [],
+          "deploy": []
+        },
+        "workflows": [],
+        "routes": [],
+        "llm_calls": [],
+        "endpoints": [],
+        "prompts": [],
+        "rag": {
+          "present": {
+            "value": false,
+            "confidence": 0.6,
+            "observation": "inference",
+            "method": "deterministic",
+            "evidence_ids": [],
+            "contradicted_by": [],
+            "status": "supported",
+            "alternatives": []
+          },
+          "retrievers": [],
+          "context_assembly": null
+        },
+        "tools": [],
+        "reliability_existing": {
+          "evals": [],
+          "tests": [
+            {
+              "value": "1 test files",
+              "confidence": 0.95,
+              "observation": "direct_observation",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "tracing": [],
+          "retries": [],
+          "timeouts": [],
+          "fallbacks": [],
+          "rate_limits": [],
+          "guardrails": []
+        },
+        "contradictions": []
+      }
+    },
+    {
+      "app": "rag-tutorial-v2",
+      "split": "held-out",
+      "commit": "5e71164a3ab0f78e734e0d79b8c82d4954197fc7",
+      "seconds": 0.046999999991385266,
+      "score": {
+        "categories": {
+          "routes": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          },
+          "llm_call_sites": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "query_data.py::query_rag"
+            ],
+            "false_positives": []
+          },
+          "models": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "mistral"
+            ],
+            "false_positives": []
+          },
+          "serving_engines": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "ollama"
+            ],
+            "false_positives": []
+          },
+          "retrievers": {
+            "tp": 1,
+            "n_pred": 1,
+            "n_truth": 1,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "tools": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          },
+          "prompts": {
+            "tp": 1,
+            "n_pred": 2,
+            "n_truth": 1,
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1": 0.6666666666666666,
+            "missed": [],
+            "false_positives": [
+              "test_rag.py::EVAL_PROMPT"
+            ],
+            "duplicates": []
+          },
+          "workflows": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 2,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "cli:populate_database.py",
+              "cli:query_data.py"
+            ],
+            "false_positives": []
+          },
+          "contradictions": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          }
+        },
+        "attributes": [
+          {
+            "attr": "rag.present",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "retriever.store",
+            "truth": "chroma",
+            "pred": "vector",
+            "correct": false
+          },
+          {
+            "attr": "retriever.top_k",
+            "truth": 5,
+            "pred": null,
+            "correct": false
+          },
+          {
+            "attr": "prompt.dynamic_head",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.tests",
+            "truth": true,
+            "pred": true,
+            "correct": true
+          },
+          {
+            "attr": "existing.tracing",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.timeouts",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.retries",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.evals",
+            "truth": true,
+            "pred": false,
+            "correct": false
+          }
+        ],
+        "calibration": [
+          [
+            0.99,
+            true,
+            "rag.present"
+          ],
+          [
+            0.95,
+            false,
+            "retriever.store"
+          ]
+        ]
+      },
+      "empty_scan_attributes": [
+        {
+          "attr": "rag.present",
+          "truth": true,
+          "pred": false,
+          "correct": false
+        },
+        {
+          "attr": "prompt.dynamic_head",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.tests",
+          "truth": true,
+          "pred": false,
+          "correct": false
+        },
+        {
+          "attr": "existing.tracing",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.timeouts",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.retries",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.evals",
+          "truth": true,
+          "pred": false,
+          "correct": false
+        }
+      ],
+      "appspec": {
+        "schema_version": "furnace.appspec/v1",
+        "purpose": {
+          "value": "rag-tutorial-v2",
+          "confidence": 0.5,
+          "observation": "inference",
+          "method": "deterministic",
+          "evidence_ids": [],
+          "contradicted_by": [],
+          "status": "supported",
+          "alternatives": []
+        },
+        "architecture": {
+          "languages": {
+            "python": 4,
+            "markdown": 1
+          },
+          "frameworks": [
+            {
+              "value": "langchain",
+              "confidence": 0.6,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "services": [],
+          "entrypoints": [],
+          "deploy": []
+        },
+        "workflows": [],
+        "routes": [],
+        "llm_calls": [],
+        "endpoints": [],
+        "prompts": [
+          {
+            "key": "prompt:query_data.py::PROMPT_TEMPLATE",
+            "locator": {
+              "path": "query_data.py",
+              "line_start": 10,
+              "line_end": 18,
+              "symbol": "PROMPT_TEMPLATE",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "static_chars": 134,
+            "static_tokens": 34,
+            "dynamic_segments": [],
+            "dynamic_head": false
+          },
+          {
+            "key": "prompt:test_rag.py::EVAL_PROMPT",
+            "locator": {
+              "path": "test_rag.py",
+              "line_start": 4,
+              "line_end": 9,
+              "symbol": "EVAL_PROMPT",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            },
+            "static_chars": 166,
+            "static_tokens": 42,
+            "dynamic_segments": [],
+            "dynamic_head": false
+          }
+        ],
+        "rag": {
+          "present": {
+            "value": true,
+            "confidence": 0.99,
+            "observation": "direct_observation",
+            "method": "deterministic",
+            "evidence_ids": [],
+            "contradicted_by": [],
+            "status": "supported",
+            "alternatives": []
+          },
+          "retrievers": [
+            {
+              "key": "retriever:query_data.py::query_rag",
+              "locator": {
+                "path": "query_data.py",
+                "line_start": 30,
+                "line_end": 49,
+                "symbol": "query_rag",
+                "url": null,
+                "frame_ts": null,
+                "bbox": null,
+                "trace_ids": null
+              },
+              "store": {
+                "value": "vector",
+                "confidence": 0.95,
+                "observation": "direct_observation",
+                "method": "deterministic",
+                "evidence_ids": [],
+                "contradicted_by": [],
+                "status": "supported",
+                "alternatives": []
+              },
+              "top_k": null,
+              "chunking": {}
+            }
+          ],
+          "context_assembly": null
+        },
+        "tools": [],
+        "reliability_existing": {
+          "evals": [],
+          "tests": [
+            {
+              "value": "1 test files",
+              "confidence": 0.95,
+              "observation": "direct_observation",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "tracing": [],
+          "retries": [],
+          "timeouts": [],
+          "fallbacks": [],
+          "rate_limits": [],
+          "guardrails": []
+        },
+        "contradictions": []
+      }
+    }
+  ],
+  "micro": {
+    "dev": {
+      "routes": {
+        "tp": 3,
+        "n_pred": 3,
+        "n_truth": 3,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "llm_call_sites": {
+        "tp": 1,
+        "n_pred": 1,
+        "n_truth": 1,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "models": {
+        "tp": 1,
+        "n_pred": 1,
+        "n_truth": 1,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "serving_engines": {
+        "tp": 1,
+        "n_pred": 1,
+        "n_truth": 1,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "retrievers": {
+        "tp": 1,
+        "n_pred": 1,
+        "n_truth": 1,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "tools": {
+        "tp": 1,
+        "n_pred": 1,
+        "n_truth": 1,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "prompts": {
+        "tp": 1,
+        "n_pred": 1,
+        "n_truth": 1,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "workflows": {
+        "tp": 2,
+        "n_pred": 2,
+        "n_truth": 2,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "contradictions": {
+        "tp": 1,
+        "n_pred": 1,
+        "n_truth": 1,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "_attributes": {
+        "correct": 13,
+        "n": 13,
+        "empty_scan_correct": 4,
+        "empty_scan_n": 7
+      }
+    },
+    "held-out": {
+      "routes": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      },
+      "llm_call_sites": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 8,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "models": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 4,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "serving_engines": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 4,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "retrievers": {
+        "tp": 1,
+        "n_pred": 1,
+        "n_truth": 2,
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6666666666666666
+      },
+      "tools": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "prompts": {
+        "tp": 1,
+        "n_pred": 5,
+        "n_truth": 3,
+        "precision": 0.2,
+        "recall": 0.3333333333333333,
+        "f1": 0.25
+      },
+      "workflows": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 9,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "contradictions": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "_attributes": {
+        "correct": 19,
+        "n": 22,
+        "empty_scan_correct": 15,
+        "empty_scan_n": 20
+      }
+    }
+  },
+  "calibration": {
+    "ece": 0.08208333333333333,
+    "n": 12,
+    "table": [
+      {
+        "bin": "[0.6, 0.8)",
+        "n": 2,
+        "mean_conf": 0.6499999999999999,
+        "accuracy": 1.0
+      },
+      {
+        "bin": "[0.8, 1.0)",
+        "n": 10,
+        "mean_conf": 0.9285,
+        "accuracy": 0.9
+      }
+    ]
+  }
+}

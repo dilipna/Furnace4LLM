@@ -1,0 +1,42 @@
+{
+  "manifest": {
+    "date": "2026-10-06",
+    "started_at": "2026-10-06T02:30:35+00:00",
+    "git": {
+      "sha": "979350bef260640c7bdc59e3c49758138f763ad2",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "argv": [
+      "bench/rq4.py"
+    ],
+    "image_digest": "vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct"
+  },
+  "runs": [
+    {
+      "config": "pc-on_seqs-8",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/171f44a86240"
+    },
+    {
+      "config": "pc-on_seqs-32",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/b78d2e123b62"
+    },
+    {
+      "config": "pc-on_seqs-128",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/7d347b034ebf"
+    },
+    {
+      "config": "pc-off_seqs-8",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/6d4306571396"
+    }
+  ]
+}
