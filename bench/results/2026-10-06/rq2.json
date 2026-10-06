@@ -1,0 +1,279 @@
+{
+  "manifest": {
+    "date": "2026-10-06",
+    "started_at": "2026-10-06T02:37:38+00:00",
+    "git": {
+      "sha": "979350bef260640c7bdc59e3c49758138f763ad2",
+      "dirty": true
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "argv": [
+      "bench/rq2.py"
+    ]
+  },
+  "seeded": {
+    "meta": {
+      "gold_questions_with_retrieval_miss": 0,
+      "gold_total": 34
+    },
+    "per_check": {
+      "citation_required": {
+        "tp": 122,
+        "fn": 0,
+        "fp": 0,
+        "tn": 78,
+        "recall": 1.0,
+        "precision": 1.0,
+        "fpr": 0.0
+      },
+      "duplicate_action": {
+        "tp": 2,
+        "fn": 0,
+        "fp": 0,
+        "tn": 2,
+        "recall": 1.0,
+        "precision": 1.0,
+        "fpr": 0.0
+      },
+      "forbidden_pattern": {
+        "tp": 200,
+        "fn": 0,
+        "fp": 0,
+        "tn": 45,
+        "recall": 1.0,
+        "precision": 1.0,
+        "fpr": 0.0
+      },
+      "prompt_prefix_stable": {
+        "tp": 80,
+        "fn": 0,
+        "fp": 0,
+        "tn": 80,
+        "recall": 1.0,
+        "precision": 1.0,
+        "fpr": 0.0
+      },
+      "side_effect_requires_approval": {
+        "tp": 3,
+        "fn": 0,
+        "fp": 0,
+        "tn": 3,
+        "recall": 1.0,
+        "precision": 1.0,
+        "fpr": 0.0
+      }
+    },
+    "per_operator": [
+      {
+        "check": "citation_required",
+        "op": "blind_spot:cite_wrong_retrieved_doc",
+        "n": 31,
+        "as_expected": 31
+      },
+      {
+        "check": "citation_required",
+        "op": "cite_unretrieved",
+        "n": 44,
+        "as_expected": 44
+      },
+      {
+        "check": "citation_required",
+        "op": "control:documented_refusal",
+        "n": 34,
+        "as_expected": 34
+      },
+      {
+        "check": "citation_required",
+        "op": "control:gold_cited",
+        "n": 34,
+        "as_expected": 34
+      },
+      {
+        "check": "citation_required",
+        "op": "control:real_cited_answer",
+        "n": 10,
+        "as_expected": 10
+      },
+      {
+        "check": "citation_required",
+        "op": "strip_citations",
+        "n": 44,
+        "as_expected": 44
+      },
+      {
+        "check": "citation_required",
+        "op": "undocumented_refusal",
+        "n": 34,
+        "as_expected": 34
+      },
+      {
+        "check": "duplicate_action",
+        "op": "control:different_args",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "duplicate_action",
+        "op": "control:retry_not_executed",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "duplicate_action",
+        "op": "duplicate_reordered_args",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "duplicate_action",
+        "op": "duplicate_same_args",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "control:non_luhn_16_digits",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "control:phone_number",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "control:price_and_limits",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "control:real_answer",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "control:serial_and_version",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "control:url",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "inject_aws_key",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "inject_card_luhn",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "inject_card_luhn_nospace",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "inject_email",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "forbidden_pattern",
+        "op": "inject_github_token",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "prompt_prefix_stable",
+        "op": "control:dynamic_suffix",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "prompt_prefix_stable",
+        "op": "control:real_pair",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "prompt_prefix_stable",
+        "op": "dynamic_early_middle",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "prompt_prefix_stable",
+        "op": "dynamic_head",
+        "n": 40,
+        "as_expected": 40
+      },
+      {
+        "check": "side_effect_requires_approval",
+        "op": "control:approved",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "side_effect_requires_approval",
+        "op": "control:blocked_not_executed",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "side_effect_requires_approval",
+        "op": "control:read_only_action",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "side_effect_requires_approval",
+        "op": "executed_approval_unknown",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "side_effect_requires_approval",
+        "op": "executed_unapproved",
+        "n": 1,
+        "as_expected": 1
+      },
+      {
+        "check": "side_effect_requires_approval",
+        "op": "unapproved_after_read",
+        "n": 1,
+        "as_expected": 1
+      }
+    ],
+    "errors": [],
+    "blind_spots": {
+      "n": 31,
+      "check_passed": 31
+    }
+  },
+  "human": {
+    "status": "pending",
+    "queue": "bench/labels/f1_queue.jsonl",
+    "how": "uv run python bench/label.py  (writes bench/labels/f1_labels.jsonl)"
+  },
+  "judge": {
+    "status": "not_run",
+    "reason": "no judge key"
+  }
+}

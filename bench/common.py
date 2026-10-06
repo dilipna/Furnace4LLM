@@ -7,6 +7,7 @@ be traced to the command and machine that produced it.
 
 from __future__ import annotations
 
+import contextlib
 import datetime as dt
 import json
 import os
@@ -68,6 +69,49 @@ def gpu_info() -> dict[str, Any]:
     return {"gpu": name, "driver": driver, "memory_mb": int(float(mem))}
 
 
+def power_state() -> dict[str, Any]:
+    """AC/battery state and the GPU power limit the driver enforces right now. On a laptop,
+    battery mode caps the GPU (observed: 25 W, ~780 MHz vs 72 W, ~1,950 MHz on AC)."""
+    state: dict[str, Any] = {"on_ac": None, "battery_pct": None, "gpu_enforced_power_limit_w": None}
+    if platform.system() == "Windows":
+        q = _out(
+            [
+                "powershell",
+                "-NoProfile",
+                "-Command",
+                '$b = Get-CimInstance Win32_Battery; if ($b) { "$($b.BatteryStatus),$($b.EstimatedChargeRemaining)" }',
+            ]
+        )
+        if q:
+            status, pct = q.split(",")
+            # BatteryStatus 1 = discharging; 2 = on AC; 3-9 = charging/charged variants.
+            state["on_ac"] = status.strip() != "1"
+            state["battery_pct"] = int(pct)
+        else:
+            state["on_ac"] = True  # no battery: a desktop
+    elif Path("/sys/class/power_supply").exists():
+        online = list(Path("/sys/class/power_supply").glob("*/online"))
+        if online:
+            state["on_ac"] = any(p.read_text().strip() == "1" for p in online)
+    lim = _out(["nvidia-smi", "--query-gpu=enforced.power.limit", "--format=csv,noheader,nounits"])
+    if lim:
+        with contextlib.suppress(ValueError):
+            state["gpu_enforced_power_limit_w"] = float(lim.splitlines()[0])
+    return state
+
+
+def require_ac_power(allow_battery: bool = False) -> dict[str, Any]:
+    """GPU drivers call this first: measurements on battery are not comparable."""
+    st = power_state()
+    if st["on_ac"] is False and not allow_battery:
+        raise SystemExit(
+            f"refusing to benchmark on battery ({st['battery_pct']}% left, GPU power limit "
+            f"{st['gpu_enforced_power_limit_w']} W). Plug in AC power, or pass --allow-battery "
+            "to record a labeled battery run."
+        )
+    return st
+
+
 def manifest(**extra: Any) -> dict[str, Any]:
     return {
         "date": run_date(),
@@ -76,6 +120,7 @@ def manifest(**extra: Any) -> dict[str, Any]:
         "python": platform.python_version(),
         "platform": platform.platform(),
         **gpu_info(),
+        "power": power_state(),
         "argv": sys.argv,
         **extra,
     }
