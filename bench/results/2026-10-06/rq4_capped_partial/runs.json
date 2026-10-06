@@ -1,0 +1,112 @@
+{
+  "manifest": {
+    "date": "2026-10-06",
+    "started_at": "2026-10-06T03:28:34+00:00",
+    "git": {
+      "sha": "03c6b6279bc211ff19224cf7c29c589be65c5864",
+      "dirty": true
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 14,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/rq4.py"
+    ],
+    "image_digest": "vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct"
+  },
+  "runs": [
+    {
+      "config": "pc-on_seqs-8",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/9be39d998060",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 14,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 20,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-32",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/a8984e519adb",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 20,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 27,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-128",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/305637c2e422",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 27,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 32,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-8",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/3dd882d6dba2",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 32,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 36,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-32",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/f7e3e22da4ba",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 36,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 40,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    }
+  ]
+}

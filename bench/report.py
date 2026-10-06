@@ -92,10 +92,13 @@ def rq1_section(d: Path, negatives: list[str]) -> list[str]:
             "l" * (len(cols) + 1),
         ),
     ]
-    for name, r, _ in cols:
-        if r and name.endswith(("first scan", "fixed scanner")):
+    for label, r in (
+        ("first scan (old scanner; dev + set 1)", first),
+        ("current scanner (all apps)", now),
+    ):
+        if r:
             out.append(
-                f"\nConfidence ECE ({name} run, all apps in that run): {fmt(r['calibration']['ece'], 3)} over n = {r['calibration']['n']} decidable claims."
+                f"\nConfidence ECE, {label}: {fmt(r['calibration']['ece'], 3)} over n = {r['calibration']['n']} decidable claims."
             )
     if first:
         ho = first["micro"]["held-out"]["llm_call_sites"]
@@ -106,6 +109,27 @@ def rq1_section(d: Path, negatives: list[str]) -> list[str]:
                 "module level (Streamlit scripts), and LangChain wrappers were not extracted as call sites at all. Both were fixed "
                 "afterwards; set 1 is therefore no longer held-out, and set 2 (labeled before the fixes) is the clean test."
             )
+    if now and set2_old:
+        a, b = set2_old["micro"]["held-out-2"], now["micro"]["held-out-2"]
+        if all(a.get(c, {}).get("tp") == b.get(c, {}).get("tp") for c in RQ1_CATS):
+            negatives.append(
+                "**RQ1 (set 2):** the scanner fixes motivated by set 1 changed nothing on set 2 "
+                f"(LLM call sites {b['llm_call_sites']['tp']}/{b['llm_call_sites']['n_truth']} before and after). "
+                "Set 2 uses SDKs the scanner has no rules for (Replicate, llama.cpp) and Azure OpenAI behind a "
+                "custom base_url: coverage is bounded by hand-written SDK rules, so every unseen SDK is a miss."
+            )
+        for app in now["apps"]:
+            if app["split"] != "held-out-2":
+                continue
+            sc = app["score"]
+            fps = [fp for c in RQ1_CATS for fp in sc["categories"][c]["false_positives"]]
+            wrong = [f"{x['attr']}={x['pred']!r}" for x in sc["attributes"] if not x["correct"]]
+            if fps or wrong:
+                negatives.append(
+                    f"**RQ1 (set 2, {app['app']}):** false positives: {'; '.join(map(str, fps)) or 'none'}"
+                    + (f"; wrong attributes: {', '.join(wrong)}" if wrong else "")
+                    + ". Left unfixed so set 2 stays a clean test."
+                )
     if now:
         for sp, label in (("held-out", "set 1 after fixes"), ("held-out-2", "set 2")):
             m = now["micro"].get(sp, {})
@@ -353,6 +377,11 @@ def main() -> None:
         + (" (working tree dirty)" if m["git"]["dirty"] else "")
         + f". Hardware: {m.get('gpu', 'no GPU detected')} ({m.get('memory_mb', '?')} MB), driver {m.get('driver', '?')}, {m['platform']}.",
         "Protocols: `docs/furnacebench.md`. Every number below is copied from a results file named in its section.",
+        *(
+            [f"**Read first:** campaign conditions in `{rel(d / 'NOTES.md')}`."]
+            if (d / "NOTES.md").exists()
+            else []
+        ),
         "",
     ]
     tail = ["## Negative results", ""] + ([f"- {n}" for n in negatives] or ["- none recorded"])

@@ -220,12 +220,26 @@ def summarize() -> dict[str, Any]:
 
     per: dict[tuple[str, float], dict[str, list[Any]]] = {}
     failed = [r for r in index["runs"] if r.get("launch_failed")]
+    clocks: list[dict[str, Any]] = []
     env = None
     for r in index["runs"]:
         if r.get("launch_failed"):
             continue
         rep = read_json(ROOT / r["run_dir"] / "report.json")
         env = env or rep["env"]
+        tel = [lv["telemetry"] for lv in rep["levels"]]
+        clocks.append(
+            {
+                "config": r["config"],
+                "repeat": r["repeat"],
+                "sm_clock_mhz_mean": statistics.mean(
+                    t.get("gpu_sm_clock_mhz_mean", 0) for t in tel
+                ),
+                "power_w_max": max(t.get("gpu_power_w_max", 0) for t in tel),
+                "temp_c_max": max(t.get("gpu_temp_c_max", 0) for t in tel),
+                "on_ac": ((r.get("power") or {}).get("before") or {}).get("on_ac"),
+            }
+        )
         for lv in rep["levels"]:
             slot = per.setdefault((r["config"], lv["level"]), {m: [] for m in METRICS})
             slot.setdefault("_repeats", []).append(r["repeat"])
@@ -290,6 +304,18 @@ def summarize() -> dict[str, Any]:
         "rows": rows,
         "prefix_effect": effects,
         "launch_failures": failed,
+        "clocks": clocks,
+        # Runs are comparable only if the GPU ran at the same clock throughout the campaign.
+        "clock_spread_pct": (
+            (
+                max(c["sm_clock_mhz_mean"] for c in clocks)
+                - min(c["sm_clock_mhz_mean"] for c in clocks)
+            )
+            / max(c["sm_clock_mhz_mean"] for c in clocks)
+            * 100
+            if clocks
+            else None
+        ),
     }
     write_json(out / "rq4.json", summary)
     (out / "rq4.md").write_text(render(summary), encoding="utf-8")
@@ -382,6 +408,21 @@ def render(s: dict[str, Any]) -> str:
         f"{wl['expected_prefix_hit_rate'] * 100:.1f}% (prefix tokens / mean input tokens; the "
         f"F1 trace replay estimated {wl['trace_reuse_ratio'] * 100:.1f}%). Measured vLLM hit rates are in the table above.",
     ]
+    if s.get("clocks"):
+        cl = [c["sm_clock_mhz_mean"] for c in s["clocks"]]
+        lines += [
+            "",
+            "## GPU state during the sweep",
+            "",
+            f"Mean SM clock per run: {min(cl):,.0f}–{max(cl):,.0f} MHz (spread {s['clock_spread_pct']:.1f}%); "
+            f"max power {max(c['power_w_max'] for c in s['clocks']):.0f} W; max temperature "
+            f"{max(c['temp_c_max'] for c in s['clocks']):.0f} °C; all runs on AC: "
+            f"{'yes' if all(c['on_ac'] for c in s['clocks']) else 'NO'}.",
+            "",
+            "Config comparisons inside one sweep assume a steady clock (small spread above). Absolute "
+            "latencies depend on the clock the laptop allowed; compare them across days only at equal "
+            "clocks (see NOTES.md in this directory for the conditions of this campaign).",
+        ]
     if s["launch_failures"]:
         lines += ["", "## Launch failures", ""]
         lines += [
