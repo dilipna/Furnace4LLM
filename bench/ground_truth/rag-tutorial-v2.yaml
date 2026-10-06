@@ -1,0 +1,54 @@
+# Hand-written ground truth for FurnaceBench RQ1 (held-out app, never used during development).
+# Written from the source at the pinned commit BEFORE Furnace was run on this repository
+# (committed separately, ahead of the first scan). Author: the developer agent (Claude), not
+# independently reviewed yet. Ambiguous calls are listed under `notes`.
+app: rag-tutorial-v2
+repo: https://github.com/pixegami/rag-tutorial-v2
+commit: 5e71164a3ab0f78e734e0d79b8c82d4954197fc7
+purpose: CLI RAG over board-game rule PDFs (Chroma + Bedrock embeddings, Ollama 'mistral' generation)
+
+routes: []
+
+llm_calls:
+  - file: query_data.py
+    function: query_rag
+    api: langchain_community.llms.ollama.Ollama.invoke
+    streaming: false
+    has_timeout: false
+  # test_rag.py::query_and_validate also calls Ollama('mistral') as an LLM judge inside a test;
+  # it is evaluation code, counted under existing_reliability.evals, not as an app call site.
+
+model: mistral
+models: [mistral]
+serving_engine: ollama
+serving_flags: {}
+
+uses_rag: true
+retrievers:
+  - file: query_data.py
+    function: query_rag
+    store: chroma
+    top_k: 5
+
+tools: []
+
+prompts:
+  - query_data.py::PROMPT_TEMPLATE
+dynamic_head: false  # static instruction first, then {context}; the static head is short (~60 chars)
+
+workflows:
+  - cli:populate_database.py
+  - cli:query_data.py
+
+existing_reliability:
+  tests: true      # test_rag.py (pytest)
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: true      # LLM-as-judge assertions in test_rag.py
+
+contradictions: []
+
+notes:
+  - README is a single title line, so there is nothing for docs to contradict.
+  - Embeddings use Bedrock (boto3 profile, us-east-1); an Ollama embedding is commented out.

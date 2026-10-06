@@ -31,3 +31,6 @@ Thumbs.db
 
 # fixture runtime output (curated copies live in bench/results)
 fixtures/apps/*/traces/
+
+# FurnaceBench: cloned external repos (pinned SHAs in bench/ground_truth)
+bench/.cache/
