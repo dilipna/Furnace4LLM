@@ -95,3 +95,5 @@ bench-rq4 = "python bench/rq4.py"
 bench-rq5 = "python bench/rq5.py"
 bench-report = "python bench/report.py"
 bench-gpu = "bash bench/run_gpu.sh"   # RQ4 -> RQ3 -> RQ5 -> report, resumable
+kernel-correctness = "bash kernel_lab/run_docker.sh correctness"
+kernel-bench = "bash kernel_lab/run_docker.sh benchmark"
