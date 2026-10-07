@@ -27,6 +27,7 @@ export function LabCharts({ rows, slo }: { rows: Rq4Row[]; slo: number }) {
     [true, false].map((pc) => ({
       id: pc ? "on" : "off",
       label: pc ? "prefix cache on" : "prefix cache off",
+      short: pc ? "on" : "off",
       color: pc ? "var(--viz-base)" : "var(--viz-focus)",
       points: levels.map((lv) =>
         pt(rows.find((r) => r.level === lv && parseConfig(r.config).prefixCache === pc && parseConfig(r.config).seqs === seqs)?.[metric]),

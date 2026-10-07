@@ -1,0 +1,333 @@
+{
+  "manifest": {
+    "date": "2026-10-06",
+    "started_at": "2026-10-06T23:59:15+00:00",
+    "git": {
+      "sha": "3dfa766fb153d3e7dca48ba4255d1256c0b70b64",
+      "dirty": true
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 62,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/rq4.py"
+    ],
+    "image_digest": "vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct"
+  },
+  "runs": [
+    {
+      "config": "pc-on_seqs-8",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/48da87a7002d",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 62,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 65,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-32",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/7e269d3354b5",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 65,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 69,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-128",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/8fc094665265",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 69,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 73,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-8",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/7dfbdf3e5743",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 73,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 77,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-32",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/1bbd0f378a90",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 77,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 80,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-128",
+      "repeat": 0,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/71ce793f7b00",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 80,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 83,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-32",
+      "repeat": 1,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/305fab333559",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 83,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 85,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-128",
+      "repeat": 1,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/7940499190c6",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 85,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 87,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-8",
+      "repeat": 1,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/c96109bad788",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 87,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 89,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-32",
+      "repeat": 1,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/cfa8e4848099",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 89,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 90,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-128",
+      "repeat": 1,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/b96e026fa342",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 90,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 92,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-8",
+      "repeat": 1,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/30f0f560dcd4",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 92,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 93,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-128",
+      "repeat": 2,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/15f96289b645",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 93,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 94,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-8",
+      "repeat": 2,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/e48e27b17243",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 94,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 96,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-32",
+      "repeat": 2,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/fe2d454a5ba9",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 96,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 97,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-off_seqs-128",
+      "repeat": 2,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/4ae2a9cd3cc0",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 97,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 97,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-8",
+      "repeat": 2,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/4dfbc2f07447",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 97,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 98,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "config": "pc-on_seqs-32",
+      "repeat": 2,
+      "run_dir": "bench/results/2026-10-06/rq4/runs/f8c17ae79d8a",
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 98,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 98,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    }
+  ]
+}

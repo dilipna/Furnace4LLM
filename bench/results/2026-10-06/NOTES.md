@@ -3,8 +3,8 @@
 - **Power.** The first RQ4 sweep ran on battery and was discarded (`rq4_battery_invalid/NOTES.md`).
   A second sweep on AC was cut short by a session end and discarded (`rq4_capped_partial/NOTES.md`).
 - **GPU clock cap.** On AC, before and after a reboot, at 14% and at 56% battery, the laptop held
-  the RTX 3050 Ti at a flat **~780 MHz SM clock, ~30-34 W** under load (P0, 80 W enforced power
-  limit, no NVML throttle reason active). The GPU's maximum is 2,100 MHz; the 2026-10-04 runs
+  the RTX 3050 Ti at **~780-830 MHz mean SM clock** under load (spot samples: P0, ~30-34 W, 80 W
+  enforced power limit, no NVML throttle reason active; RQ4 telemetry recorded power peaks up to 64 W). The GPU's maximum is 2,100 MHz; the 2026-10-04 runs
   averaged 1,948 MHz and 72 W. This is a platform policy (OEM performance mode, Windows power
   mode or charger wattage), not something Furnace controls; it was not changed for this campaign.
 - **Consequence.** The final RQ3, RQ4 and RQ5 results in this directory ran at that capped clock.
