@@ -12,8 +12,23 @@ const COLUMNS: { title: string; kinds: string[] }[] = [
   { title: "Prompt · model · endpoint · tools", kinds: ["prompt", "model", "endpoint", "serving_config", "retriever", "tool", "security_boundary"] },
   { title: "Configuration", kinds: ["config_key", "dependency"] },
 ];
-const COL_W = 210;
-const GAP = 70;
+const COL_W = 176;
+const GAP = 40;
+const TAG: Record<string, string> = {
+  workflow: "flow",
+  capability: "cap",
+  route: "route",
+  component: "code",
+  prompt: "prompt",
+  model: "model",
+  endpoint: "api",
+  serving_config: "serve",
+  retriever: "rag",
+  tool: "tool",
+  security_boundary: "gate",
+  config_key: "cfg",
+  dependency: "dep",
+};
 const ROW_H = 34;
 const NODE_H = 24;
 const TOP = 34;
@@ -22,7 +37,7 @@ const colOf = (kind: string) => {
   const i = COLUMNS.findIndex((c) => c.kinds.includes(kind));
   return i >= 0 ? i : COLUMNS.length - 1;
 };
-const clip = (s: string, n = 30) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+const clip = (s: string, n = 19) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
 /** Layered behavior-to-code graph. Hover highlights everything connected (both directions). */
 export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) {
@@ -88,7 +103,7 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
   const selEdges = sel ? edges.filter((e) => e.src === sel || e.dst === sel) : [];
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="overflow-x-auto rounded-[6px] border border-line bg-bg-1 p-4">
         <svg width={width} height={layout.height} role="img" aria-label="Behavior-to-code reliability graph">
           {COLUMNS.map((c, i) => (
@@ -150,9 +165,9 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
               >
                 <rect width={COL_W} height={NODE_H} rx="3" fill={isSel ? "var(--ember-lo)" : "var(--bg-2)"} stroke={isSel || (hover === n.key) ? "var(--ember)" : "var(--line)"} />
                 <text x="8" y="16" fontSize="11" fill="var(--fg-3)" className="num">
-                  {n.kind === "security_boundary" ? "gate" : n.kind.replace("_", " ").slice(0, 8)}
+                  {TAG[n.kind] ?? n.kind.slice(0, 5)}
                 </text>
-                <text x="66" y="16" fontSize="12" fill="var(--fg-0)">
+                <text x="52" y="16" fontSize="12" fill="var(--fg-0)">
                   {clip(n.label)}
                   <title>{n.label}</title>
                 </text>
@@ -161,7 +176,7 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
           })}
         </svg>
       </div>
-      <aside className="xl:sticky xl:top-6 xl:self-start" aria-live="polite">
+      <aside className="2xl:sticky 2xl:top-6 2xl:self-start" aria-live="polite">
         {!selected && <p className="text-[12px] text-fg-3">Hover a node to trace its path; click it for details.</p>}
         {selected && (
           <div className="rounded-[6px] border border-line bg-bg-1 p-4">
