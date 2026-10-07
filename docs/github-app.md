@@ -85,5 +85,20 @@ Without `--open-pr`, Forge and repair run as a dry run and print what they would
 - PRs from forks are refused by default: their code would run in the sandbox.
 - The suite file (`fixtures/scenarios/f1_suite.py`) binds F1's checks to graph nodes; for
   another repository, write a suite file with the same `SuiteItem` shape.
-- Webhook-driven runs (Guard on every push) need a public URL (e.g. smee.io) and the
-  `FURNACE_GITHUB_WEBHOOK_SECRET` setting; the CLI path above does not.
+## 5. Optional: Guard on every push (webhook mode)
+
+1. Deploy the API (docs/deploy.md); its public URL receives the webhook.
+2. App settings → Webhook: **Active**, URL `https://<render-app>.onrender.com/api/github/webhook`,
+   a random **secret**; Subscribe to events → **Pull request**.
+3. Render: add `FURNACE_GITHUB_WEBHOOK_SECRET=<same secret>`.
+4. Laptop runner `.env` (in addition to step 3 above):
+   ```
+   FURNACE_DATABASE_URL=<the same Supabase URI the API uses>
+   FURNACE_GUARD_SUITE_PATH=C:/dev/furnace/fixtures/scenarios/f1_suite.py
+   FURNACE_GUARD_QUESTIONS_PATH=C:/dev/furnace/fixtures/apps/support-rag-py/docs/facts.json
+   FURNACE_GUARD_MAX_PROMPT_TOKENS=3840
+   ```
+   then `uv run poe runner`. Opening or pushing to a (non-draft, non-fork) PR enqueues a
+   `guard.pr` job; the runner claims it and posts the check run.
+
+The API verifies the HMAC signature and only enqueues; it never runs repository code.

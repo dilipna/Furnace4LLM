@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from furnace.jobs.worker import run_forever
 from furnace.settings import get_settings
 
-from furnace_api.routers import bench, scans, system
+from furnace_api.routers import bench, github, scans, system
 
 log = logging.getLogger("furnace.api")
 
@@ -34,3 +34,4 @@ app = FastAPI(title="Furnace API", version=furnace.__version__, lifespan=lifespa
 app.include_router(system.router)
 app.include_router(scans.router)
 app.include_router(bench.router)
+app.include_router(github.router)
