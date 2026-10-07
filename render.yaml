@@ -1,0 +1,21 @@
+# Render blueprint for the Furnace control plane (free web service).
+# Secrets marked sync:false are entered in the Render dashboard, never committed.
+services:
+  - type: web
+    name: furnace-api
+    runtime: docker
+    plan: free
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: FURNACE_ENV
+        value: prod
+      - key: FURNACE_DATABASE_URL
+        sync: false # Supabase "Session pooler" URI, scheme postgresql+asyncpg://
+      - key: FURNACE_MASTER_KEY
+        sync: false # python -c "import os,base64;print(base64.b64encode(os.urandom(32)).decode())"
+      - key: FURNACE_SESSION_SECRET
+        sync: false # any long random string
+      - key: FURNACE_WEB_ORIGIN
+        sync: false # https://<your-vercel-app>.vercel.app

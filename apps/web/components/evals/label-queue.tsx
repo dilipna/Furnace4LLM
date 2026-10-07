@@ -108,6 +108,7 @@ export function LabelQueue() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="num text-[12px] text-fg-2">
           {done}/{q.items.length} labeled · item {i + 1} · <span className="text-fg-3">{item.id}</span>
+          {!q.writable && <span className="ml-3 font-sans text-warn">Read-only on this deployment: labeling is disabled.</span>}
         </div>
         <div className="h-1 w-48 overflow-hidden rounded-full bg-bg-3" aria-hidden="true">
           <div className="h-full bg-ember" style={{ width: `${(done / q.items.length) * 100}%` }} />

@@ -187,3 +187,21 @@ def test_validate_url_rejects(url):
 def test_private_allowed_only_when_explicit():
     v = validate_url("http://127.0.0.1:8100/v1", allow_private=True)
     assert v.ip == "127.0.0.1" and v.port == 8100
+
+
+def test_production_refuses_dev_secrets(monkeypatch, tmp_path):
+    import pytest
+    from furnace.settings import Settings
+
+    monkeypatch.chdir(tmp_path)  # no .env file here: only the variables set below apply
+    monkeypatch.setenv("FURNACE_ENV", "prod")
+    with pytest.raises(ValueError, match="FURNACE_MASTER_KEY"):
+        Settings()
+    monkeypatch.setenv("FURNACE_MASTER_KEY", "cHJvZC1rZXktZm9yLXRlc3RzLW9ubHktMzItYnl0ZXM=")
+    with pytest.raises(ValueError, match="FURNACE_SESSION_SECRET"):
+        Settings()
+    monkeypatch.setenv("FURNACE_SESSION_SECRET", "s3cret-for-tests")
+    with pytest.raises(ValueError, match="LABELS_WRITABLE"):
+        Settings()
+    monkeypatch.setenv("FURNACE_LABELS_WRITABLE", "false")
+    assert Settings().env == "prod"
