@@ -26,7 +26,8 @@ Click **Create GitHub App**. On the next page:
 ## 2. Create the demo repository and install the App
 
 ```bash
-# a new PRIVATE repository on GitHub named furnace-demo-f1 (empty, no README), then:
+# a new PUBLIC repository on GitHub named furnace-demo-f1 (empty, no README); F1 contains no
+# secrets, and the landing-page scan (no login) only reads public repositories. Then:
 git clone https://github.com/<you>/furnace-demo-f1 C:/dev/furnace-demo-f1
 cd C:/dev/furnace
 uv run python scripts/demo_repo.py init C:/dev/furnace-demo-f1
