@@ -11,4 +11,7 @@
   Comparisons inside each RQ (configs, base vs PR vs repair) share the clock and are valid;
   absolute latencies are not comparable to the 2026-10-04 results. Each RQ4 run records its SM
   clock and AC state (`rq4/rq4.json` -> `clocks`, `clock_spread_pct`).
-- **Host.** Development tools (editor) stayed open on the same machine during the runs.
+- **Host.** Development continued on the same machine during the GPU runs: editor, a Next.js dev
+  server, the FastAPI dev server, the test suite (`poe check`, including short Docker sandbox tests)
+  and Playwright screenshots. This adds CPU noise to client-side timing; repeats and revisions are
+  interleaved so it spreads across configs rather than biasing one.

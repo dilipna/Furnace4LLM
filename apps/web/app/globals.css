@@ -27,6 +27,12 @@
   --warn: #c9a43a;
   --bad: #d45a45;
 
+  /* Chart series, stepped for the dark surface and validated (lightness band, chroma,
+     CVD and normal-vision separation, 3:1 contrast): focal series = heat, base = reference. */
+  --viz-focus: #e2632c;
+  --viz-base: #3b82d6;
+  --viz-grid: #2a2724;
+
   color-scheme: dark;
 }
 
@@ -47,6 +53,8 @@
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-bad: var(--bad);
+  --color-viz-focus: var(--viz-focus);
+  --color-viz-base: var(--viz-base);
 
   --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;

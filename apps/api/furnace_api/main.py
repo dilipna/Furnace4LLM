@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from furnace.jobs.worker import run_forever
 from furnace.settings import get_settings
 
-from furnace_api.routers import scans, system
+from furnace_api.routers import bench, scans, system
 
 log = logging.getLogger("furnace.api")
 
@@ -33,3 +33,4 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Furnace API", version=furnace.__version__, lifespan=lifespan)
 app.include_router(system.router)
 app.include_router(scans.router)
+app.include_router(bench.router)

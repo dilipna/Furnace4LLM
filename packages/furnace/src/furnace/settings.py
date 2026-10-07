@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     worker_id: str = Field(default="worker-local")
     job_lease_seconds: int = 120
     embedded_worker: bool = False  # run the cpu queue inside the API process
+    # FurnaceBench results and labels served read-only by the API (default: <repo>/bench).
+    bench_dir: Path | None = None
+    # The labeling endpoint appends human labels to bench/labels; off in hosted deployments.
+    labels_writable: bool = True
 
 
 @lru_cache
