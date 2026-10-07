@@ -1,9 +1,9 @@
 {
   "manifest": {
     "date": "2026-10-06",
-    "started_at": "2026-10-06T02:37:38+00:00",
+    "started_at": "2026-10-07T00:53:13+00:00",
     "git": {
-      "sha": "979350bef260640c7bdc59e3c49758138f763ad2",
+      "sha": "2bf61626a9ad33711a8cb7194e3d5bc5d9dfadbd",
       "dirty": true
     },
     "python": "3.12.13",
@@ -11,6 +11,11 @@
     "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
     "driver": "592.82",
     "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 97,
+      "gpu_enforced_power_limit_w": 80.0
+    },
     "argv": [
       "bench/rq2.py"
     ]
@@ -274,6 +279,6 @@
   },
   "judge": {
     "status": "not_run",
-    "reason": "no judge key"
+    "reason": "no judge model requested"
   }
 }

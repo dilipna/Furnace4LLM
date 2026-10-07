@@ -57,6 +57,6 @@ Gold questions whose gold document was not retrieved by F1's BM25 top-3 (exclude
 
 **Pending.** Labeling queue `bench/labels/f1_queue.jsonl` (60 real answers, stratified by model and question kind). Label with `uv run python bench/label.py  (writes bench/labels/f1_labels.jsonl)`.
 
-## 3. LLM judge
+## 3. LLM judge (ungrounded answer)
 
-**Not run**: no judge key configured (BYOK Groq/OpenRouter). Judge TPR/TNR on held-out labels is pending.
+**Not run**: no judge model requested. Run `uv run python bench/rq2.py --judge groq:<model>` with GROQ_API_KEY set.

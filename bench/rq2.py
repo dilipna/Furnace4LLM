@@ -425,6 +425,101 @@ def human_part(traces) -> dict[str, Any]:
     }
 
 
+def _labeled() -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """(queue item, label) for every item with a grounded yes/no label (last label wins)."""
+    if not LABELS.exists():
+        return []
+    labels: dict[str, dict[str, Any]] = {}
+    for line in LABELS.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            o = json.loads(line)
+            labels[o["id"]] = o
+    queue = {
+        q["id"]: q for q in map(json.loads, QUEUE.read_text(encoding="utf-8").splitlines()) if q
+    }
+    return [
+        (queue[i], lab)
+        for i, lab in labels.items()
+        if i in queue and lab.get("grounded") in (True, False)
+    ]
+
+
+async def judge_part(client: Any, *, max_few_shot: int = 4) -> dict[str, Any]:
+    """Judge `ungrounded_answer` on human-labeled items. Few-shot examples come only from the
+    train split; results are reported separately on dev and on the held-out test split.
+    Human verdict FAIL = labeled not grounded."""
+    import asyncio
+    from dataclasses import replace as dc_replace
+
+    from furnace.contracts.evals import Verdict
+    from furnace.evals.calibration import LabeledPair, calibrate, is_trusted, split_items
+    from furnace.evals.judges import UNGROUNDED_ANSWER, FewShot, judge
+
+    rows = _labeled()
+    if not rows:
+        return {"status": "not_run", "reason": "no human labels yet"}
+    split = split_items([q["id"] for q, _ in rows])
+    human = {q["id"]: (Verdict.PASS if lab["grounded"] else Verdict.FAIL) for q, lab in rows}
+    train = [(q, lab) for q, lab in rows if split[q["id"]] == "train"]
+    shots: list[FewShot] = []
+    used: set[str] = set()
+    for want in [Verdict.FAIL, Verdict.PASS] * max_few_shot:  # alternate classes when possible
+        if len(shots) >= max_few_shot:
+            break
+        pick = next(
+            ((q, lab) for q, lab in train if human[q["id"]] == want and q["id"] not in used), None
+        )
+        if pick is None:
+            continue
+        q, lab = pick
+        used.add(q["id"])
+        default = "Unsupported claim." if want == Verdict.FAIL else "Supported by the context."
+        shots.append(
+            FewShot(
+                input=q["question"],
+                context=q["context"],
+                output=q["answer"],
+                verdict=want,
+                critique=lab.get("notes") or default,
+            )
+        )
+    spec = dc_replace(UNGROUNDED_ANSWER, few_shot=shots)
+    targets = [(q, lab) for q, lab in rows if split[q["id"]] in ("dev", "test")]
+    results = await asyncio.gather(
+        *(
+            judge(client, spec, EvalCase(input=q["question"], output=q["answer"]), q["context"])
+            for q, _ in targets
+        )
+    )
+    out: dict[str, Any] = {
+        "status": "run",
+        "model": client.model,
+        "few_shot": len(shots),
+        "spec_hash": spec.content_hash(client.model),
+        "errors": sum(r.verdict == Verdict.ERROR for r in results),
+    }
+    for part in ("dev", "test"):
+        pairs = [
+            LabeledPair(human[q["id"]], r.verdict)
+            for (q, _), r in zip(targets, results, strict=True)
+            if split[q["id"]] == part
+        ]
+        c = calibrate(pairs, label_set_version=f"f1_labels:{len(rows)}", split=part)
+        out[part] = {
+            "n": c.n,
+            "tp": c.tp,
+            "fn": c.fn,
+            "fp": c.fp,
+            "tn": c.tn,
+            "tpr": c.tpr,
+            "tnr": c.tnr,
+            "trusted": is_trusted(c),
+        }
+    usage = getattr(client, "usage", None)
+    out["usage"] = dict(usage.__dict__) if usage is not None else None
+    return out
+
+
 def render(res: dict[str, Any]) -> str:
     s = res["seeded"]
     lines = [
@@ -487,16 +582,60 @@ def render(res: dict[str, Any]) -> str:
             f"{h['n']} labeled answers, {h['ungrounded']} ungrounded. `citation_required` as an ungrounded-answer detector: "
             f"recall {fmt(m['recall'], 2)}, FPR {fmt(m['fpr'], 2)} (TP {m['tp']}, FN {m['fn']}, FP {m['fp']}, TN {m['tn']})."
         )
-    lines += [
-        "",
-        "## 3. LLM judge",
-        "",
-        "**Not run**: no judge key configured (BYOK Groq/OpenRouter). Judge TPR/TNR on held-out labels is pending.",
-    ]
+    j = res["judge"]
+    lines += ["", "## 3. LLM judge (ungrounded answer)", ""]
+    if j["status"] != "run":
+        lines.append(
+            f"**Not run**: {j.get('reason', 'no judge key')}. "
+            "Run `uv run python bench/rq2.py --judge groq:<model>` with GROQ_API_KEY set."
+        )
+    else:
+        lines.append(
+            f"Model `{j['model']}`, {j['few_shot']} few-shot examples from the train split only; "
+            f"{j['errors']} judge errors excluded. FAIL = ungrounded."
+        )
+        lines.append("")
+        lines.append(
+            md_table(
+                [
+                    "split",
+                    "n",
+                    "TPR",
+                    "TNR",
+                    "TP",
+                    "FN",
+                    "FP",
+                    "TN",
+                    "trusted (n>=20, TPR and TNR >= 0.8)",
+                ],
+                [
+                    [
+                        part,
+                        j[part]["n"],
+                        fmt(j[part]["tpr"], 2),
+                        fmt(j[part]["tnr"], 2),
+                        j[part]["tp"],
+                        j[part]["fn"],
+                        j[part]["fp"],
+                        j[part]["tn"],
+                        "yes" if j[part]["trusted"] else "no",
+                    ]
+                    for part in ("dev", "test")
+                ],
+            )
+        )
     return "\n".join(lines) + "\n"
 
 
 def main() -> None:
+    import argparse
+    import asyncio
+
+    p = argparse.ArgumentParser()
+    p.add_argument(
+        "--judge", help="provider:model, e.g. groq:llama-3.3-70b-versatile (needs the provider key)"
+    )
+    args = p.parse_args()
     traces = load_traces()
     QUEUE.parent.mkdir(parents=True, exist_ok=True)
     if not QUEUE.exists():  # the queue is fixed once written, so labels stay attached to items
@@ -507,8 +646,14 @@ def main() -> None:
         "manifest": manifest(),
         "seeded": evaluate_seeded(seeded_items(traces)),
         "human": human_part(traces),
-        "judge": {"status": "not_run", "reason": "no judge key"},
+        "judge": {"status": "not_run", "reason": "no judge model requested"},
     }
+    if args.judge:
+        from furnace.llm.client import LLMClient
+
+        provider, _, model = args.judge.partition(":")
+        client = LLMClient.from_provider(provider, model, requests_per_minute=20)
+        res["judge"] = asyncio.run(judge_part(client))
     out = results_dir()
     write_json(out / "rq2.json", res)
     (out / "rq2.md").write_text(render(res), encoding="utf-8")
