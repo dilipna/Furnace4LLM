@@ -3,7 +3,7 @@
 import { useId, useMemo, useState } from "react";
 
 export type Point = { y: number | null; lo?: number | null; hi?: number | null };
-export type Series = { id: string; label: string; color: string; points: Point[] };
+export type Series = { id: string; label: string; short?: string; color: string; points: Point[] };
 
 type Props = {
   title: string;
@@ -17,7 +17,7 @@ type Props = {
 
 const W = 640;
 const H = 260;
-const M = { top: 12, right: 64, bottom: 36, left: 56 };
+const M = { top: 12, right: 40, bottom: 36, left: 56 };
 
 function niceMax(v: number): number {
   if (v <= 0) return 1;
@@ -143,7 +143,7 @@ export function LineChart({ title, subtitle, xs, xLabel, series, format, rangeNo
             series.map((s, k) =>
               ends[k] == null ? null : (
                 <text key={`d-${s.id}`} x={x(xs.length - 1) + 10} y={(ends[k] as number) + 4} fontSize="11" fill="var(--fg-1)">
-                  {s.label}
+                  {s.short ?? s.label}
                 </text>
               ),
             )}
@@ -164,7 +164,7 @@ export function LineChart({ title, subtitle, xs, xLabel, series, format, rangeNo
         </div>
         {hover != null && (
           <div
-            className="pointer-events-none absolute top-2 z-10 min-w-[170px] rounded-[3px] border border-line-strong bg-bg-2 px-3 py-2 text-[12px]"
+            className="pointer-events-none absolute top-2 z-10 w-max rounded-[3px] border border-line-strong bg-bg-2 px-3 py-2 text-[12px] whitespace-nowrap"
             style={{
               left: `${(x(hover) / W) * 100}%`,
               transform: hover > (xs.length - 1) / 2 ? "translateX(calc(-100% - 12px))" : "translateX(12px)",
