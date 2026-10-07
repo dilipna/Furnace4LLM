@@ -67,6 +67,12 @@ Priority is the demo path in `docs/demo.md` working end to end, live, with fallb
    held-out set labeled first), perf-gate noise calibration.
 Do not start new features before 1-3 work. Keep every claim on screen backed by a file in bench/results.
 
+## Open issue
+- One `poe check` run on Oct 7 failed in pytest and the next two passed (211/211); the failing test name was
+  cut off. Most likely the timing-based `packages/inference/tests/test_mock_accuracy.py` under host load.
+  Reproduce with `uv run pytest -q packages/inference/tests/test_mock_accuracy.py --count`-style loops (or run
+  the suite 5x) and fix the flake before CI is relied on.
+
 ## Known gaps (say them if asked; do not hide)
 Not built: auth/orgs/RLS, BYOK storage, TypeScript extraction, LLM synthesis/VLM, URL inspection, LLM-patch repair,
 Stripe, T4/Ollama runs. Scanner misses unseen SDKs (RQ1 set 2). Perf-gate WARN is inside noise. Citation check floor
