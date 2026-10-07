@@ -205,3 +205,58 @@ def test_production_refuses_dev_secrets(monkeypatch, tmp_path):
         Settings()
     monkeypatch.setenv("FURNACE_LABELS_WRITABLE", "false")
     assert Settings().env == "prod"
+
+
+async def test_dns_rebinding_is_defeated_by_pinning(monkeypatch):
+    """The name resolves to a public IP once; a rebinding resolver would answer 127.0.0.1
+    afterwards. The connection must go to the validated IP and never resolve again."""
+    import socket
+
+    import httpx
+    import pytest
+    from furnace.security import ssrf
+
+    lookups: list[str] = []
+
+    def fake_getaddrinfo(host, port, *a, **kw):
+        lookups.append(host)
+        ip = "93.184.216.34" if len(lookups) == 1 else "127.0.0.1"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, port))]
+
+    seen: list[httpx.Request] = []
+
+    async def fake_send(self, request):
+        seen.append(request)
+        if len(seen) == 1:  # first hop redirects to the cloud metadata service
+            return httpx.Response(
+                302,
+                headers={"location": "http://169.254.169.254/latest/meta-data"},
+                request=request,
+            )
+        return httpx.Response(200, content=b"ok", request=request)
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
+    monkeypatch.setattr(httpx.AsyncHTTPTransport, "handle_async_request", fake_send)
+
+    with pytest.raises(ssrf.UnsafeURL, match="non-public"):
+        await ssrf.safe_get("http://rebind.example/start")
+    first = seen[0]
+    assert first.url.host == "93.184.216.34"  # pinned to the validated address
+    assert first.headers["Host"] == "rebind.example"  # virtual host preserved
+    assert first.extensions["sni_hostname"] == "rebind.example"  # TLS verifies the name
+    assert lookups[0] == "rebind.example"  # resolved once for this hop; the redirect target
+    assert "169.254.169.254" in lookups[1]  # is re-validated (and blocked) before any connect
+    assert len(seen) == 1
+
+
+async def test_pinned_transport_refuses_a_different_host():
+    import httpx
+    import pytest
+    from furnace.security.ssrf import PinnedTransport, UnsafeURL, ValidatedURL
+
+    v = ValidatedURL(
+        url="http://a.example/", scheme="http", host="a.example", port=80, ip="93.184.216.34"
+    )
+    async with httpx.AsyncClient(transport=PinnedTransport(v)) as c:
+        with pytest.raises(UnsafeURL, match="does not match"):
+            await c.get("http://b.example/")
