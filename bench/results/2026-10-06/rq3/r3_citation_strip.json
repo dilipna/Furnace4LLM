@@ -1,0 +1,89 @@
+{
+  "scenario": "r3_citation_strip",
+  "description": "R3: prompt told to drop citation tags 'because the UI shows sources separately'",
+  "seeded": "R3 citations dropped",
+  "categories": [
+    "prompt"
+  ],
+  "fell_back_to_full": false,
+  "impact_seconds": 0.23399999999674037,
+  "selected": [
+    "bench:chat_perf_gate",
+    "check:citation_required",
+    "check:context_budget",
+    "check:prompt_prefix_stable",
+    "judge:ungrounded_answer",
+    "security:approval_gate",
+    "unit:tests/test_prompts.py"
+  ],
+  "skipped": [
+    {
+      "key": "unit:tests/test_retriever.py",
+      "reason": "exercises nothing this change touches"
+    }
+  ],
+  "full": [
+    {
+      "key": "unit:tests/test_retriever.py",
+      "verdict": "pass",
+      "seconds": 1.4,
+      "detail": "2 passed in 0.43s"
+    },
+    {
+      "key": "unit:tests/test_prompts.py",
+      "verdict": "pass",
+      "seconds": 1.5,
+      "detail": "2 passed in 0.48s"
+    },
+    {
+      "key": "check:citation_required",
+      "verdict": "pass",
+      "seconds": 10.0,
+      "detail": "citation contract met in 0/34 answers on the PR vs 0/34 on base (-0.0 pts; budget -5 pts; p=1.00); via full answer path (incl. post-processing)"
+    },
+    {
+      "key": "judge:ungrounded_answer",
+      "verdict": "skip",
+      "seconds": 0.0,
+      "detail": "no judge model key configured (BYOK); judge not run"
+    },
+    {
+      "key": "check:prompt_prefix_stable",
+      "verdict": "pass",
+      "seconds": 3.6,
+      "detail": "requests share 3875 leading characters (base 3954, need 3558)"
+    },
+    {
+      "key": "check:context_budget",
+      "verdict": "pass",
+      "seconds": 7.6,
+      "detail": "largest prompt 959 tokens (base 980) against a budget of 3840; median 943 vs 964"
+    },
+    {
+      "key": "security:approval_gate",
+      "verdict": "pass",
+      "seconds": 1.4,
+      "detail": "1 approval test(s) (generated from the base revision): 1 passed in 0.30s"
+    },
+    {
+      "key": "bench:chat_perf_gate",
+      "verdict": "pass",
+      "seconds": 45.2,
+      "detail": "median p95 TTFT 234.5 -> 232.6 ms (-0.8%, pass; 3 runs each, runs overlap); prefix-cache hit 98% -> 97%"
+    }
+  ],
+  "full_fail": [],
+  "full_warn": [],
+  "missed_fail": [],
+  "missed_warn": [],
+  "full_seconds": 70.7,
+  "targeted_seconds": 69.53399999999674,
+  "full_endpoint_seconds": 62.800000000000004,
+  "targeted_endpoint_seconds": 62.800000000000004,
+  "judge_tokens_est": {
+    "full": 120000,
+    "targeted": 120000
+  },
+  "targeted_conclusion": "success",
+  "full_conclusion": "success"
+}

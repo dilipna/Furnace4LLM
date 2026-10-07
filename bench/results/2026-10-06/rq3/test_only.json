@@ -1,0 +1,104 @@
+{
+  "scenario": "test_only",
+  "description": "New retriever unit test",
+  "seeded": null,
+  "categories": [
+    "tests"
+  ],
+  "fell_back_to_full": false,
+  "impact_seconds": 0.15600000001722947,
+  "selected": [
+    "security:approval_gate",
+    "unit:tests/test_retriever.py"
+  ],
+  "skipped": [
+    {
+      "key": "unit:tests/test_prompts.py",
+      "reason": "exercises nothing this change touches"
+    },
+    {
+      "key": "check:citation_required",
+      "reason": "exercises nothing this change touches"
+    },
+    {
+      "key": "judge:ungrounded_answer",
+      "reason": "exercises nothing this change touches"
+    },
+    {
+      "key": "check:prompt_prefix_stable",
+      "reason": "exercises nothing this change touches"
+    },
+    {
+      "key": "check:context_budget",
+      "reason": "exercises nothing this change touches"
+    },
+    {
+      "key": "bench:chat_perf_gate",
+      "reason": "exercises nothing this change touches"
+    }
+  ],
+  "full": [
+    {
+      "key": "unit:tests/test_retriever.py",
+      "verdict": "pass",
+      "seconds": 1.6,
+      "detail": "3 passed in 0.54s"
+    },
+    {
+      "key": "unit:tests/test_prompts.py",
+      "verdict": "pass",
+      "seconds": 1.7,
+      "detail": "2 passed in 0.56s"
+    },
+    {
+      "key": "check:citation_required",
+      "verdict": "pass",
+      "seconds": 10.2,
+      "detail": "citation contract met in 0/34 answers on the PR vs 0/34 on base (-0.0 pts; budget -5 pts; p=1.00); via full answer path (incl. post-processing)"
+    },
+    {
+      "key": "judge:ungrounded_answer",
+      "verdict": "skip",
+      "seconds": 0.0,
+      "detail": "no judge model key configured (BYOK); judge not run"
+    },
+    {
+      "key": "check:prompt_prefix_stable",
+      "verdict": "pass",
+      "seconds": 3.8,
+      "detail": "requests share 3954 leading characters (base 3954, need 3558)"
+    },
+    {
+      "key": "check:context_budget",
+      "verdict": "pass",
+      "seconds": 7.9,
+      "detail": "largest prompt 980 tokens (base 980) against a budget of 3840; median 964 vs 964"
+    },
+    {
+      "key": "security:approval_gate",
+      "verdict": "pass",
+      "seconds": 1.5,
+      "detail": "1 approval test(s) (generated from the base revision): 1 passed in 0.37s"
+    },
+    {
+      "key": "bench:chat_perf_gate",
+      "verdict": "pass",
+      "seconds": 45.5,
+      "detail": "median p95 TTFT 238.0 -> 236.5 ms (-0.7%, pass; 3 runs each, runs overlap); prefix-cache hit 98% -> 98%"
+    }
+  ],
+  "full_fail": [],
+  "full_warn": [],
+  "missed_fail": [],
+  "missed_warn": [],
+  "full_seconds": 72.2,
+  "targeted_seconds": 3.2560000000172296,
+  "full_endpoint_seconds": 63.6,
+  "targeted_endpoint_seconds": 0,
+  "judge_tokens_est": {
+    "full": 120000,
+    "targeted": 0
+  },
+  "targeted_conclusion": "success",
+  "full_conclusion": "success"
+}

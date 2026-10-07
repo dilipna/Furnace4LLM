@@ -1,0 +1,208 @@
+{
+  "scenario": "r1_dynamic_head",
+  "repeat": 0,
+  "status": "rejected",
+  "repro": {
+    "head_fails": true,
+    "base_passes": true,
+    "logs": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________ test_prompt_prefix_is_shared_across_requests _________________\n\n    def test_prompt_prefix_is_shared_across_requests():\n        first = _text(QUESTIONS[0])\n        for q in QUESTIONS[1:]:\n            shared = _shared(first, _text(q))\n>           assert shared >= MIN_SHARED_CHARS, (\n                f\"requests diverge after {shared} characters (need {MIN_SHARED_CHARS}); \"\n                f\"first difference: {first[shared:shared + 60]!r}\"\n            )\nE           AssertionError: requests diverge after 15 characters (need 3558); first difference: '73c154b8 at 2026-10-07T01:19:47.721310+00:00\\nYou are Kilnwor'\nE           assert 15 >= 3558\n\ntests/furnace_regression/test_prefix_stability_a4eaf424.py:34: AssertionError\n=========================== short test summary info ============================\nFAILED tests/furnace_regression/test_prefix_stability_a4eaf424.py::test_prompt_prefix_is_shared_across_requests\n1 failed in 1.48s"
+  },
+  "localization": [
+    {
+      "node_key": "prompt:app/prompts.py::build_messages#system",
+      "file": "app/prompts.py",
+      "hunk": {
+        "old_start": 1,
+        "old_lines": 0,
+        "new_start": 1,
+        "new_lines": 3
+      },
+      "score": 1.0,
+      "reasons": [
+        "hunk lies in the system-message construction whose dynamic_head changed False -> True",
+        "static prefix shrank from 3927 to 8 chars"
+      ]
+    },
+    {
+      "node_key": "prompt:app/prompts.py::build_messages#system",
+      "file": "app/prompts.py",
+      "hunk": {
+        "old_start": 60,
+        "old_lines": 1,
+        "new_start": 63,
+        "new_lines": 4
+      },
+      "score": 1.0,
+      "reasons": [
+        "hunk lies in the system-message construction whose dynamic_head changed False -> True",
+        "static prefix shrank from 3927 to 8 chars"
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "strategy": "rule:prefix_stability.move_dynamic_to_suffix",
+      "verdict": "fail",
+      "explanation": "Moved the per-request value(s) f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\" from the start of the system message to its end. They are still sent to the model, but every request now begins with the same static text, so the serving engine's prefix cache can reuse its prefill.",
+      "regression_test": "pass",
+      "existing_tests": "pass"
+    }
+  ],
+  "perf": {
+    "head_vs_base": {
+      "metric": "ttft_p95_ms",
+      "baseline": 244.1,
+      "value": 1100.2,
+      "change_pct": 350.6,
+      "verdict": "block",
+      "runs": 3,
+      "baseline_runs": [
+        280.3,
+        244.1,
+        200.1
+      ],
+      "value_runs": [
+        1082.1,
+        1111.1,
+        1100.2
+      ],
+      "separated": true,
+      "prefix_hit_rate": [
+        0.9809040367416002,
+        0.0
+      ],
+      "goodput_rps": [
+        6.285513614108184,
+        1.0848249468429427
+      ]
+    },
+    "candidate_vs_base": {
+      "metric": "ttft_p95_ms",
+      "baseline": 244.1,
+      "value": 436.4,
+      "change_pct": 78.7,
+      "verdict": "block",
+      "runs": 3,
+      "baseline_runs": [
+        280.3,
+        244.1,
+        200.1
+      ],
+      "value_runs": [
+        436.4,
+        442.7,
+        397.2
+      ],
+      "separated": true,
+      "prefix_hit_rate": [
+        0.9809040367416002,
+        0.8335839019313056
+      ],
+      "goodput_rps": [
+        6.285513614108184,
+        5.46492372460303
+      ]
+    },
+    "within_budget": false,
+    "summary": "p95 TTFT base 244.1 | PR 1100.2 (+350.6%, block) | repair 436.4 (+78.7%, block)"
+  },
+  "logs": {
+    "repro_head": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________ test_prompt_prefix_is_shared_across_requests _________________\n\n    def test_prompt_prefix_is_shared_across_requests():\n        first = _text(QUESTIONS[0])\n        for q in QUESTIONS[1:]:\n            shared = _shared(first, _text(q))\n>           assert shared >= MIN_SHARED_CHARS, (\n                f\"requests diverge after {shared} characters (need {MIN_SHARED_CHARS}); \"\n                f\"first difference: {first[shared:shared + 60]!r}\"\n            )\nE           AssertionError: requests diverge after 15 characters (need 3558); first difference: '73c154b8 at 2026-10-07T01:19:47.721310+00:00\\nYou are Kilnwor'\nE           assert 15 >= 3558\n\ntests/furnace_regression/test_prefix_stability_a4eaf424.py:34: AssertionError\n=========================== short test summary info ============================\nFAILED tests/furnace_regression/test_prefix_stability_a4eaf424.py::test_prompt_prefix_is_shared_across_requests\n1 failed in 1.48s",
+    "repro_base": ".                                                                        [100%]\n1 passed in 1.49s"
+  },
+  "stages": [
+    {
+      "t": 0.3,
+      "stage": "harness",
+      "msg": "generated furnace_harness.py from the route handler"
+    },
+    {
+      "t": 4.1,
+      "stage": "regression_test",
+      "msg": "wrote tests/furnace_regression/test_prefix_stability_a4eaf424.py: base shares 3954 chars, PR head shares 15"
+    },
+    {
+      "t": 9.5,
+      "stage": "reproduce",
+      "msg": "regression test fails on the PR head and passes on the base revision"
+    },
+    {
+      "t": 9.5,
+      "stage": "localize",
+      "msg": "2 hunk(s) in app/prompts.py::build_messages"
+    },
+    {
+      "t": 9.6,
+      "stage": "generate",
+      "msg": "Moved the per-request value(s) f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\" from the start of the system message to its end. They are still sent to the model, but every request now begins with the same static text, so the serving engine's prefix cache can reuse its prefill."
+    },
+    {
+      "t": 15.0,
+      "stage": "validate",
+      "msg": "regression test pass, existing tests pass"
+    },
+    {
+      "t": 97.1,
+      "stage": "benchmark",
+      "msg": "p95 TTFT base 244.1 | PR 1100.2 (+350.6%, block) | repair 436.4 (+78.7%, block)"
+    }
+  ],
+  "repair_seconds": 97.125,
+  "patch": "",
+  "audit": {
+    "conclusion": "failure",
+    "items": [
+      {
+        "key": "unit:tests/test_retriever.py",
+        "verdict": "pass",
+        "detail": "2 passed in 0.51s",
+        "seconds": 1.6
+      },
+      {
+        "key": "unit:tests/test_prompts.py",
+        "verdict": "pass",
+        "detail": "2 passed in 0.68s",
+        "seconds": 1.7
+      },
+      {
+        "key": "check:citation_required",
+        "verdict": "pass",
+        "detail": "citation contract met in 0/34 answers on the PR vs 0/34 on base (-0.0 pts; budget -5 pts; p=1.00); via full answer path (incl. post-processing)",
+        "seconds": 10.4
+      },
+      {
+        "key": "judge:ungrounded_answer",
+        "verdict": "skip",
+        "detail": "no judge model key configured (BYOK); judge not run",
+        "seconds": 0.0
+      },
+      {
+        "key": "check:prompt_prefix_stable",
+        "verdict": "pass",
+        "detail": "requests share 3943 leading characters (base 3954, need 3558)",
+        "seconds": 3.7
+      },
+      {
+        "key": "check:context_budget",
+        "verdict": "pass",
+        "detail": "largest prompt 1023 tokens (base 980) against a budget of 3840; median 1007 vs 964",
+        "seconds": 7.8
+      },
+      {
+        "key": "security:approval_gate",
+        "verdict": "pass",
+        "detail": "1 approval test(s) (generated from the base revision): 1 passed in 0.36s",
+        "seconds": 1.5
+      },
+      {
+        "key": "bench:chat_perf_gate",
+        "verdict": "fail",
+        "detail": "median p95 TTFT 219.1 -> 449.3 ms (+105.1%, block; 3 runs each, runs separated); prefix-cache hit 98% -> 83%",
+        "seconds": 46.6
+      }
+    ],
+    "new_failures": [
+      "bench:chat_perf_gate"
+    ]
+  }
+}
