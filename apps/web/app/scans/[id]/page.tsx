@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Recommendations } from "@/components/blueprint/recommendations";
 import { SystemPanel } from "@/components/blueprint/system-panel";
 import { ScanLive } from "@/components/scan/scan-live";
-import { Wordmark } from "@/components/ui/wordmark";
+import { AppHeader } from "@/components/ui/app-header";
 import { ApiError, apiGet } from "@/lib/api";
 import type { Blueprint, ScanInfo } from "@/lib/types";
 
@@ -32,14 +32,11 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
 
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-line">
-        <div className="mx-auto flex h-14 w-full max-w-[1280px] items-center justify-between px-4 sm:px-6">
-          <Link href="/">
-            <Wordmark />
-          </Link>
-          <span className="num text-[12px] text-fg-3">scan {scan.id.slice(0, 8)}</span>
-        </div>
-      </header>
+      <AppHeader
+        right={
+          <span className="num border-l border-line pl-5 text-[12px] text-fg-3">scan {scan.id.slice(0, 8)}</span>
+        }
+      />
 
       <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 py-8 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-6 border-b border-line pb-6">
@@ -51,7 +48,10 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
             </p>
           </div>
           {bp && (
-            <div className="flex gap-8">
+            <div className="flex items-end gap-8">
+              <Link href={`/scans/${scan.id}/graph`} className="text-[13px] text-fg-1 hover:text-ember-hi">
+                Graph →
+              </Link>
               <Stat label="files" value={s.files} />
               <Stat label="evidence" value={s.facts} />
               <Stat label="claims" value={s.claims} />

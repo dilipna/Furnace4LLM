@@ -1,6 +1,9 @@
-import Link from "next/link";
+import { BenchStrip } from "@/components/marketing/bench-strip";
 import { EvidenceInput } from "@/components/marketing/evidence-input";
-import { Wordmark } from "@/components/ui/wordmark";
+import { AppHeader } from "@/components/ui/app-header";
+
+// Live FurnaceBench numbers: render per request, never frozen at build time.
+export const dynamic = "force-dynamic";
 
 const QUESTIONS = [
   "Where are the LLM calls, and which models serve them?",
@@ -34,22 +37,7 @@ const STAGES = [
 export default function Landing() {
   return (
     <div className="flex min-h-full flex-col">
-      <header className="border-b border-line">
-        <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center justify-between px-4 sm:px-6">
-          <Wordmark />
-          <nav className="flex items-center gap-5 text-[13px] text-fg-2">
-            <a href="#how" className="hover:text-fg-0">
-              How it works
-            </a>
-            <Link href="/pricing" className="hover:text-fg-0">
-              Pricing
-            </Link>
-            <a href="/api/auth/github/login" className="text-fg-1 hover:text-fg-0">
-              Sign in with GitHub
-            </a>
-          </nav>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="flex-1">
         <section className="mx-auto grid w-full max-w-[1200px] gap-12 px-4 pt-20 pb-24 sm:px-6 lg:grid-cols-12 lg:pt-28">
@@ -102,6 +90,8 @@ export default function Landing() {
             ))}
           </div>
         </section>
+
+        <BenchStrip />
 
         <section className="border-t border-line">
           <div className="mx-auto grid w-full max-w-[1200px] gap-8 px-4 py-16 sm:px-6 md:grid-cols-3">
