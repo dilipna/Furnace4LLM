@@ -38,7 +38,7 @@ export async function BenchStrip() {
   const m = (a: Agg | undefined) => a?.median;
   if (eff && m(eff.ttft_p95_off_vs_on_pct) != null) {
     tiles.push({
-      label: "p95 TTFT when prefix caching is off (c=16)",
+      label: "p95 TTFT when prefix caching is off (c=16, max-num-seqs 32)",
       value: `${(m(eff.ttft_p95_off_vs_on_pct) as number) > 0 ? "+" : ""}${(m(eff.ttft_p95_off_vs_on_pct) as number).toFixed(0)}%`,
       note: `RQ4, real F1 workload on a laptop RTX 3050 Ti, ${eff.n_pairs} paired repeats`,
     });

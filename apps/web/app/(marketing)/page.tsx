@@ -6,24 +6,24 @@ import { AppHeader } from "@/components/ui/app-header";
 export const dynamic = "force-dynamic";
 
 const QUESTIONS = [
-  "Where are the LLM calls, and which models serve them?",
+  "Where are the LLM calls, and which models and engines serve them?",
   "Is it RAG? Which tools have side effects, and are they gated?",
-  "What does the real workload look like: prompt lengths, prefix reuse, concurrency?",
-  "Which evals should this app have, and which already exist?",
-  "Where is serving slow, and which optimization would help without hurting quality?",
+  "Does the documentation contradict the code?",
+  "Which evals and checks should this app have, and which already exist?",
+  "With traces and an endpoint: what does the workload look like, and which serving change helps without hurting quality?",
 ];
 
 const STAGES = [
   {
     name: "Scan",
     price: "Free",
-    body: "Reconstructs the application from code, docs, screenshots, traces and endpoints. Every finding cites its evidence and confidence; conflicts between README and code are shown, not hidden.",
+    body: "Reconstructs the application from its code, configs and docs. Every finding cites its evidence and confidence; conflicts between README and code are shown, not hidden.",
     output: "Reliability + Inference Blueprint",
   },
   {
     name: "Forge",
     price: "$15 once",
-    body: "Opens a draft pull request that installs only what the Blueprint justified: deterministic checks, targeted judges, tracing, workload configs and a CI gate. Each change states its reason and risk.",
+    body: "Opens a draft pull request that installs only what the Blueprint justified: deterministic checks, a targeted judge, workload and benchmark configs and a CI gate. Each change states its reason and risk.",
     output: "Draft PR or patch",
   },
   {
@@ -60,7 +60,7 @@ export default function Landing() {
 
           <aside className="lg:col-span-5 lg:pt-14">
             <div className="border-l border-line pl-6">
-              <p className="text-[12px] text-fg-3">A scan answers, with evidence</p>
+              <p className="text-[12px] text-fg-3">Furnace answers, with evidence</p>
               <ol className="mt-4 space-y-3">
                 {QUESTIONS.map((q, i) => (
                   <li key={q} className="flex gap-3 text-[14px] leading-snug text-fg-1">

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-type Mode = "github" | "url" | "upload";
+type Mode = "github" | "upload";
 
 const MODES: { id: Mode; label: string; hint: string; placeholder: string }[] = [
   {
@@ -14,15 +14,9 @@ const MODES: { id: Mode; label: string; hint: string; placeholder: string }[] = 
     placeholder: "github.com/acme/support-bot",
   },
   {
-    id: "url",
-    label: "App URL",
-    hint: "Furnace inspects the page and its network calls. No logins, GET only.",
-    placeholder: "https://support.acme.dev",
-  },
-  {
     id: "upload",
     label: "Upload",
-    hint: "Source ZIP, README, screenshots, diagrams, JSONL traces.",
+    hint: "One .zip of the project source. Read-only; nothing is executed during a scan.",
     placeholder: "",
   },
 ];
@@ -102,14 +96,13 @@ export function EvidenceInput() {
                 {files.map((f) => f.name).join(", ")}
               </span>
             ) : (
-              "Choose files…"
+              "Choose a .zip…"
             )}
             <input
               ref={fileRef}
               type="file"
-              multiple
               className="hidden"
-              accept=".zip,.md,.txt,.png,.jpg,.jpeg,.webp,.jsonl,.json,.yaml,.yml"
+              accept=".zip"
               onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
             />
           </button>
