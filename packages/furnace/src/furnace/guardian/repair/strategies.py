@@ -2,9 +2,11 @@
 
 `move_dynamic_to_suffix` repairs a prefix-unstable system message: it keeps every
 runtime value the author added (so the PR's intent, e.g. "log the request id in the
-prompt", survives) but moves those values *after* the static text, so all requests
-share the static prefix again. The edit replaces exactly the content expression's
-character span, leaving the rest of the file byte-identical.
+prompt", survives) but moves those values to the end of the last user message when the
+messages are built as one list literal (so the system prompt and the retrieved context
+both stay cacheable), otherwise to the end of the system message. The edit replaces
+exactly the content expressions' character spans, leaving the rest of the file
+byte-identical.
 """
 
 from __future__ import annotations
@@ -78,18 +80,33 @@ def move_dynamic_to_suffix(path: str, source: str, function: str) -> Edit:
     )
     if fn is None:
         raise StrategyError(f"function {function} not found in {path}")
+
+    def fields(d: ast.Dict) -> dict[object, ast.expr]:
+        return {
+            k.value: v for k, v in zip(d.keys, d.values, strict=True) if isinstance(k, ast.Constant)
+        }
+
+    def role_of(d: ast.Dict) -> object:
+        r = fields(d).get("role")
+        return r.value if isinstance(r, ast.Constant) else None
+
     content = None
-    for d in ast.walk(fn):
-        if isinstance(d, ast.Dict):
-            pairs = {
-                k.value: v
-                for k, v in zip(d.keys, d.values, strict=True)
-                if isinstance(k, ast.Constant)
-            }
-            role = pairs.get("role")
-            if isinstance(role, ast.Constant) and role.value == "system" and "content" in pairs:
-                content = pairs["content"]
-                break
+    last_content = None  # content of the last user message after the system one, if any
+    for lst in ast.walk(fn):
+        if not isinstance(lst, ast.List):
+            continue
+        dicts = [e for e in lst.elts if isinstance(e, ast.Dict)]
+        sys_idx = next(
+            (i for i, d in enumerate(dicts) if role_of(d) == "system" and "content" in fields(d)),
+            None,
+        )
+        if sys_idx is None:
+            continue
+        content = fields(dicts[sys_idx])["content"]
+        later = [d for d in dicts[sys_idx + 1 :] if "content" in fields(d)]
+        if later and role_of(later[-1]) == "user":
+            last_content = fields(later[-1])["content"]
+        break
     if content is None:
         raise StrategyError(f"no system message in {function}")
 
@@ -105,18 +122,41 @@ def move_dynamic_to_suffix(path: str, source: str, function: str) -> Edit:
         raise StrategyError("static text already comes first; prefix is stable")
 
     seg = lambda n: ast.get_source_segment(source, n) or ""  # noqa: E731
-    new_expr = " + ".join([*(seg(p) for p in statics), '"\\n"', *(seg(p) for p in dynamics)])
-    start, end = _span(source, content)
-    after = source[:start] + new_expr + source[end:]
-    ast.parse(after)  # the edit must still be valid Python
     moved = ", ".join(seg(p) for p in dynamics)
+    if last_content is not None:
+        # Preferred: per-request values go to the very end of the last user message, so the
+        # system prompt AND everything after it (e.g. the retrieved context) stay reusable.
+        edits = [
+            (_span(source, content), " + ".join(seg(p) for p in statics)),
+            (
+                _span(source, last_content),
+                " + ".join([f"({seg(last_content)})", '"\\n\\n"', *(seg(p) for p in dynamics)]),
+            ),
+        ]
+        where = "to the end of the last user message"
+        why = (
+            "every request now begins with the same static system prompt and nothing per-request "
+            "precedes the retrieved context, so the prefix cache can reuse both"
+        )
+    else:
+        edits = [
+            (
+                _span(source, content),
+                " + ".join([*(seg(p) for p in statics), '"\\n"', *(seg(p) for p in dynamics)]),
+            )
+        ]
+        where = "to the end of the system message"
+        why = "every request now begins with the same static text, so the prefix cache can reuse it"
+    after = source
+    for (start, end), text in sorted(edits, key=lambda e: e[0][0], reverse=True):
+        after = after[:start] + text + after[end:]
+    ast.parse(after)  # the edit must still be valid Python
     return Edit(
         path=path,
         before=source,
         after=after,
         explanation=(
-            f"Moved the per-request value(s) {moved} from the start of the system message to its end. "
-            "They are still sent to the model, but every request now begins with the same static text, "
-            "so the serving engine's prefix cache can reuse its prefill."
+            f"Moved the per-request value(s) {moved} from the start of the system message {where}. "
+            f"They are still sent to the model, but {why}."
         ),
     )

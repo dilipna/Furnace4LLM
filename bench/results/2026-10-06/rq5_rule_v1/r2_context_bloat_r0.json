@@ -1,0 +1,15 @@
+{
+  "scenario": "r2_context_bloat",
+  "repeat": 0,
+  "status": "rejected",
+  "repro": null,
+  "localization": [],
+  "candidates": [],
+  "perf": {},
+  "logs": {
+    "diagnosis": "no system message changed from prefix-stable to dynamic-head"
+  },
+  "stages": [],
+  "repair_seconds": 0.40600000001722947,
+  "patch": ""
+}

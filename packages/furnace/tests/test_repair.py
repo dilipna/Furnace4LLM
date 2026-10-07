@@ -50,12 +50,18 @@ def test_move_dynamic_to_suffix_on_r1(tmp_path):
     head = materialize(by_name("r1_dynamic_head"), tmp_path / "head")
     src = (head / "app" / "prompts.py").read_text(encoding="utf-8")
     edit = move_dynamic_to_suffix("app/prompts.py", src, "build_messages")
-    assert '"content": SYSTEM_PROMPT + "\\n" + f"Request {uuid.uuid4().hex[:8]}' in edit.after
-    # only the content expression changed
+    # the system message is fully static; the per-request value ends the user message
+    assert '"content": SYSTEM_PROMPT,' in edit.after
+    assert (
+        '"content": (f"CONTEXT:\\n{context}\\n\\nQUESTION: {question}") + "\\n\\n" + '
+        'f"Request {uuid.uuid4().hex[:8]}'
+    ) in edit.after
+    assert "end of the last user message" in edit.explanation
+    # only the two content expressions changed
     changed = [
         (a, b) for a, b in zip(src.splitlines(), edit.after.splitlines(), strict=True) if a != b
     ]
-    assert len(changed) == 1
+    assert len(changed) == 2
     # the repaired file is prefix-stable again according to the extractor
     (head / "app" / "prompts.py").write_text(edit.after, encoding="utf-8")
     (sysmsg,) = [p for p in reconstruct(head).appspec.prompts if p.key.endswith("#system")]

@@ -8,6 +8,7 @@ Each section links the file it came from.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -232,6 +233,84 @@ def rq3_section(d: Path, negatives: list[str]) -> list[str]:
                 + (f" (WARN: {', '.join(sc['full_warn'])})" if sc["full_warn"] else "")
                 + "; the suite cannot see it on this setup."
             )
+    # Floor effect: a citation regression cannot show if the base already fails the contract.
+    bases: dict[str, tuple[int, int]] = {}
+    for sc in r["scenarios"]:
+        c = next((x for x in sc["full"] if x["key"] == "check:citation_required"), None)
+        m = re.search(r"vs (\d+)/(\d+) on base", c["detail"]) if c else None
+        if m:
+            bases[sc["scenario"]] = (int(m.group(1)), int(m.group(2)))
+    r3 = bases.get("r3_citation_strip")
+    if r3 and r3[0] == 0:
+        lo, hi = min(b for b, _ in bases.values()), max(b for b, _ in bases.values())
+        # Citation WARN/FAIL on PRs that do not touch prompts or generation = serving nondeterminism.
+        noisy = [
+            sc["scenario"]
+            for sc in r["scenarios"]
+            if not set(sc["categories"])
+            & {"prompt", "code", "generation_config", "retrieval_config", "model"}
+            and any(
+                x["key"] == "check:citation_required" and x["verdict"] in ("warn", "fail")
+                for x in sc["full"]
+            )
+        ]
+        negatives.append(
+            f"**RQ3:** in the R3 run the base revision met the citation contract in 0/{r3[1]} answers, so a "
+            "citation regression could not show: a floor effect, not a pass. Across the runs the base rate "
+            f"varied from {lo}/{r3[1]} to {hi}/{r3[1]} with identical base code (serving nondeterminism)"
+            + (
+                f"; the citation check warned on {', '.join(f'`{s}`' for s in noisy)}, which does not change prompts"
+                if noisy
+                else ""
+            )
+            + ". The 2026-10-04 live Guard run (`bench/results/2026-10-04-guard`, serving model not recorded "
+            "there) had 5/34 on base."
+        )
+    # Perf-gate noise floor: PRs whose change categories cannot touch the serving path.
+    serving = {
+        "prompt",
+        "retrieval_config",
+        "retrieval",
+        "serving_config",
+        "model",
+        "llm_call",
+        "endpoint",
+        "generation_config",
+    }
+    noise = []
+    for sc in r["scenarios"]:
+        if set(sc["categories"]) & serving:
+            continue
+        b = next((x for x in sc["full"] if x["key"] == "bench:chat_perf_gate"), None)
+        m = re.search(r"\(([+-]\d+(?:\.\d+)?)%", b["detail"]) if b else None
+        if b and m:
+            noise.append((sc["scenario"], float(m.group(1)), b["verdict"]))
+    if noise:
+        lo, hi = min(n[1] for n in noise), max(n[1] for n in noise)
+        out += [
+            "",
+            f"Perf-gate noise on {len(noise)} PRs that cannot affect serving (full-suite runs): p95 TTFT change "
+            f"{lo:+.1f}% to {hi:+.1f}% ("
+            + ", ".join(f"`{s}` {v:+.1f}%" for s, v, _ in noise)
+            + ").",
+        ]
+        warns = [s for s, _, v in noise if v == "warn"]
+        fails = [s for s, _, v in noise if v == "fail"]
+        if warns:
+            negatives.append(
+                f"**RQ3:** the perf gate's +10% WARN threshold is inside run-to-run noise on this host "
+                f"({lo:+.1f}% to {hi:+.1f}% on PRs that cannot affect serving); it warned on "
+                f"{', '.join(f'`{s}`' for s in warns)}."
+                + (
+                    ""
+                    if fails
+                    else " None of these PRs was blocked: BLOCK also requires separated runs."
+                )
+            )
+        if fails:
+            negatives.append(
+                f"**RQ3:** the perf gate BLOCKED PRs that cannot affect serving: {', '.join(f'`{s}`' for s in fails)}."
+            )
     return out
 
 
@@ -298,55 +377,84 @@ def _rng(a: dict[str, Any], nd: int = 1) -> str:
     return f"{a['median']:+.{nd}f} [{a['min']:+.{nd}f}, {a['max']:+.{nd}f}]"
 
 
-def rq5_section(d: Path, negatives: list[str]) -> list[str]:
-    r = load(d, "rq5.json")
-    if not r:
-        return ["## RQ5 Repair", "", "Not run in this campaign."]
+def _rq5_run(r: dict[str, Any], label: str, negatives: list[str]) -> list[str]:
     r1 = [a for a in r["attempts"] if a["scenario"] == "r1_dynamic_head"]
     ok = sum(a["status"] == "verified" for a in r1)
-    out = ["## RQ5 Repair", "", f"Source: `{rel(d / 'rq5.md')}`.", ""]
     rows = []
     for a in r1:
         h, c = a["perf"].get("head_vs_base") or {}, a["perf"].get("candidate_vs_base") or {}
+        hit_pair = c.get("prefix_hit_rate") or (None, None)
+        h0: float | None = hit_pair[0]
+        h1: float | None = hit_pair[1]
         rows.append(
             [
                 a["repeat"],
                 a["status"],
-                f"{h.get('baseline', '–')} → {h.get('value', '–')}",
+                f"{h.get('baseline', '–')} → {h.get('value', '–')} ({h.get('change_pct', 0):+.0f}%)",
                 f"{c.get('value', '–')} ({c.get('change_pct', 0):+.1f}%, {c.get('verdict', '–')})",
+                "–" if h0 is None or h1 is None else f"{h0 * 100:.0f}% → {h1 * 100:.0f}%",
                 (a.get("audit") or {}).get("conclusion", "–"),
             ]
         )
-    out.append(
+    out = [
         md_table(
             [
                 "repeat",
                 "status",
-                "p95 TTFT base → PR (ms)",
-                "repair p95 TTFT (ms)",
+                "p95 TTFT base → PR, ms",
+                "repair p95 TTFT, ms",
+                "repair hit rate",
                 "full-suite audit",
             ],
             rows,
-            "rllll",
-        )
-    )
-    out += ["", f"{ok}/{len(r1)} verified."]
+            "rlllll",
+        ),
+        "",
+        f"{label}: {ok}/{len(r1)} verified; {sum(not (a.get('audit') or {}).get('new_failures') and 'audit' in a for a in r1)}/{len(r1)} audits without a FAIL.",
+    ]
     if ok < len(r1):
-        negatives.append(f"**RQ5:** {len(r1) - ok}/{len(r1)} R1 repair attempts were not verified.")
+        negatives.append(
+            f"**RQ5 ({label}):** {len(r1) - ok}/{len(r1)} R1 repair attempts were rejected by the gate."
+        )
+    audits = [a for a in r1 if (a.get("audit") or {}).get("new_failures")]
+    if audits:
+        negatives.append(
+            f"**RQ5 ({label}):** the full-suite audit of the repaired tree failed in {len(audits)}/{len(r1)} repeats "
+            f"({', '.join(sorted({f for a in audits for f in a['audit']['new_failures']}))})."
+        )
     for a in r1:
-        if (a.get("audit") or {}).get("new_failures"):
+        c = a["perf"].get("candidate_vs_base") or {}
+        if c.get("verdict") == "warn" and c.get("change_pct", 0) > 25:
             negatives.append(
-                f"**RQ5:** audit of repeat {a['repeat']} found FAIL in {', '.join(a['audit']['new_failures'])}."
+                f"**RQ5 ({label}):** in repeat {a['repeat']} the gate passed the repair as WARN at "
+                f"{c['change_pct']:+.1f}% p95 TTFT because its runs overlapped the base runs; a BLOCK needs "
+                "separated runs, so a large but noisy regression can pass."
             )
-        if (a["perf"].get("candidate_vs_base") or {}).get("verdict") == "warn":
-            negatives.append(
-                f"**RQ5:** repair repeat {a['repeat']} is within budget but not neutral: p95 TTFT {a['perf']['candidate_vs_base']['change_pct']:+.1f}% vs base (WARN); the request id still sits before the retrieved context."
-            )
-    for a in r["attempts"]:
-        if a["scenario"] != "r1_dynamic_head":
-            negatives.append(
-                f"**RQ5:** `{a['scenario']}`: no repair strategy (status `{a['status']}`)."
-            )
+    return out
+
+
+def rq5_section(d: Path, negatives: list[str]) -> list[str]:
+    r = load(d, "rq5.json")
+    v1 = load(d, "rq5_rule_v1.json")
+    if not r and not v1:
+        return ["## RQ5 Repair", "", "Not run in this campaign."]
+    out = ["## RQ5 Repair", ""]
+    if r:
+        out += [f"Source: `{rel(d / 'rq5.md')}` (current rule strategy).", ""]
+        out += _rq5_run(r, "current strategy", negatives)
+        for a in r["attempts"]:
+            if a["scenario"] != "r1_dynamic_head":
+                negatives.append(
+                    f"**RQ5:** `{a['scenario']}`: no repair strategy (status `{a['status']}`)."
+                )
+    if v1:
+        out += [
+            "",
+            f"First run (`{rel(d / 'rq5_rule_v1.md')}`): the rule moved the per-request value to the end of "
+            "the *system* message, which still sits before the retrieved context. Kept for the record:",
+            "",
+        ]
+        out += _rq5_run(v1, "first strategy", negatives)
     return out
 
 
