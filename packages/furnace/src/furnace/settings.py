@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     bench_dir: Path | None = None
     # The labeling endpoint appends human labels to bench/labels; off in hosted deployments.
     labels_writable: bool = True
+    # GitHub App (see docs/github-app.md). The private key is read from a file, never from env text.
+    github_app_id: str | None = None
+    github_private_key_path: Path | None = None
+    github_webhook_secret: SecretStr | None = None
+    # Inference endpoint the runner benchmarks and evaluates against (OpenAI-compatible).
+    lab_base_url: str = "http://localhost:8100/v1"
+    lab_model: str = "lab"
 
 
 @lru_cache

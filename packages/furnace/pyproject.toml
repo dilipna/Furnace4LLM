@@ -23,3 +23,6 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/furnace"]
+
+[project.scripts]
+furnace = "furnace.cli:main"

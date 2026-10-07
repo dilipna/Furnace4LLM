@@ -48,7 +48,7 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
             </p>
           </div>
           {bp && (
-            <div className="flex items-end gap-8">
+            <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
               <Link href={`/scans/${scan.id}/graph`} className="text-[13px] text-fg-1 hover:text-ember-hi">
                 Graph →
               </Link>
