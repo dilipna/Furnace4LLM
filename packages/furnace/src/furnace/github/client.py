@@ -33,6 +33,13 @@ HEADERS = {
 SCAN_PERMISSIONS = {"contents": "read", "metadata": "read"}
 PR_PERMISSIONS = {"contents": "write", "pull_requests": "write", "metadata": "read"}
 CHECKS_PERMISSIONS = {"checks": "write", "metadata": "read"}
+# Guard reads both revisions of a pull request and reports a check run; nothing else.
+GUARD_PERMISSIONS = {
+    "contents": "read",
+    "pull_requests": "read",
+    "checks": "write",
+    "metadata": "read",
+}
 
 
 class GitHubError(Exception):
@@ -73,6 +80,45 @@ class GitHubApp:
     private_key_pem: str
     transport: httpx.AsyncBaseTransport | None = None
 
+    async def app_info(self) -> dict[str, Any]:
+        """The App itself and its installations: proves the id and key are right."""
+        jwt = app_jwt(self.app_id, self.private_key_pem)
+        async with httpx.AsyncClient(
+            base_url=API,
+            headers={**HEADERS, "Authorization": f"Bearer {jwt}"},
+            transport=self.transport,
+            timeout=20,
+        ) as c:
+            app = await c.get("/app")
+            inst = await c.get("/app/installations")
+        if app.status_code != 200:
+            raise GitHubError(f"GET /app failed: {app.status_code} {app.text[:200]}")
+        return {
+            "slug": app.json().get("slug"),
+            "name": app.json().get("name"),
+            "permissions": app.json().get("permissions", {}),
+            "events": app.json().get("events", []),
+            "installations": [
+                {"id": i["id"], "account": (i.get("account") or {}).get("login")}
+                for i in (inst.json() if inst.status_code == 200 else [])
+            ],
+        }
+
+    async def installation_for(self, full_name: str) -> int:
+        """Installation id of this App on `owner/name` (404 -> the App is not installed there)."""
+        jwt = app_jwt(self.app_id, self.private_key_pem)
+        async with httpx.AsyncClient(
+            base_url=API, headers=HEADERS, transport=self.transport, timeout=20
+        ) as c:
+            r = await c.get(
+                f"/repos/{full_name}/installation", headers={"Authorization": f"Bearer {jwt}"}
+            )
+        if r.status_code == 404:
+            raise GitHubError(f"the GitHub App is not installed on {full_name}")
+        if r.status_code != 200:
+            raise GitHubError(f"installation lookup failed: {r.status_code} {r.text[:200]}")
+        return int(r.json()["id"])
+
     async def installation_token(
         self, installation_id: int, *, repository: str, permissions: dict[str, str]
     ) -> str:
@@ -110,6 +156,28 @@ class Repo:
         if r.status_code >= 400:
             raise GitHubError(f"{method} {path}: {r.status_code} {r.text[:300]}")
         return r.json() if r.content else {}
+
+    async def pull(self, number: int) -> dict[str, Any]:
+        """{number, title, base_ref, base_sha, head_ref, head_sha, head_repo} of a pull request."""
+        async with self._client() as c:
+            pr = await self._req(c, "GET", f"/pulls/{number}")
+        return {
+            "number": pr["number"],
+            "title": pr["title"],
+            "base_ref": pr["base"]["ref"],
+            "base_sha": pr["base"]["sha"],
+            "head_ref": pr["head"]["ref"],
+            "head_sha": pr["head"]["sha"],
+            "head_repo": (pr["head"].get("repo") or {}).get("full_name"),
+        }
+
+    async def default_branch(self) -> tuple[str, str]:
+        """(default branch, its head commit sha)."""
+        async with self._client() as c:
+            repo = await self._req(c, "GET", "")
+            branch = repo["default_branch"]
+            ref = await self._req(c, "GET", f"/git/ref/heads/{branch}")
+        return branch, ref["object"]["sha"]
 
     async def compare(self, base: str, head: str) -> dict[str, Any]:
         async with self._client() as c:

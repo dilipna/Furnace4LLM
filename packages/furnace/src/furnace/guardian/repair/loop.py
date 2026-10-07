@@ -45,6 +45,8 @@ class RepairOutcome:
     test_path: str = ""
     logs: dict[str, str] = field(default_factory=dict)
     perf: dict[str, Any] = field(default_factory=dict)
+    # Full new contents of every file the repair PR changes (path -> text); set when verified.
+    files: dict[str, str] = field(default_factory=dict)
 
 
 def _copy(src: Path, dest: Path) -> Path:
@@ -228,5 +230,16 @@ def repair_prefix_instability(
     attempt.selected = 0 if passed else None
     attempt.status = RepairStatus.verified if passed else RepairStatus.rejected
     outcome.patch = diff if passed else ""
+    if passed:
+        outcome.files = {
+            p: (cand / p).read_text(encoding="utf-8")
+            for p in (sys_path, test_path, HARNESS_FILE)
+            if (cand / p).is_file()
+            and (
+                not (head_root / p).is_file()
+                or (head_root / p).read_text(encoding="utf-8")
+                != (cand / p).read_text(encoding="utf-8")
+            )
+        }
     shutil.rmtree(work, ignore_errors=True)
     return outcome

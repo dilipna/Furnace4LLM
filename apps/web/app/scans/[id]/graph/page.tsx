@@ -29,7 +29,7 @@ export default async function GraphPage({ params }: PageProps<"/scans/[id]/graph
           Behavior-to-code graph <span className="text-fg-3">· {scan.repo ?? scan.project}</span>
         </h1>
         <p className="mt-1 mb-6 text-[12px] text-fg-3">
-          {g ? `${g.nodes.length} nodes, ${g.edges.length} edges` : "The scan has not finished."} Every node and edge is
+          {g ? `${g.nodes.length} nodes, ${g.edges.length} edges.` : "The scan has not finished."} Every node and edge is
           derived from evidence in the repository.
         </p>
         {g && <GraphView nodes={g.nodes} edges={g.edges} />}
