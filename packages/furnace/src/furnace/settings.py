@@ -5,8 +5,11 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEV_MASTER_KEY = "ZGV2LW9ubHktbWFzdGVyLWtleS0zMi1ieXRlcy0hISE="
+DEV_SESSION_SECRET = "dev-only-session-secret"  # noqa: S105 - dev placeholder, rejected when env=prod
 
 
 class Settings(BaseSettings):
@@ -14,10 +17,10 @@ class Settings(BaseSettings):
 
     env: str = "dev"
     database_url: str = "postgresql+asyncpg://furnace:furnace@localhost:5433/furnace"
-    # AES-GCM master key for BYOK secrets at rest (base64, 32 bytes). Dev default is
-    # deliberately obvious; production refuses to start with it (see security.crypto).
-    master_key: SecretStr = SecretStr("ZGV2LW9ubHktbWFzdGVyLWtleS0zMi1ieXRlcy0hISE=")
-    session_secret: SecretStr = SecretStr("dev-only-session-secret")
+    # Master key for BYOK secrets at rest (base64, 32 bytes) and the session signing secret.
+    # Dev defaults are deliberately obvious; with env=prod the settings refuse to load them.
+    master_key: SecretStr = SecretStr(DEV_MASTER_KEY)
+    session_secret: SecretStr = SecretStr(DEV_SESSION_SECRET)
     blob_backend: str = "local"  # local | s3
     blob_dir: Path = Path(".data/blobs")
     s3_endpoint: str | None = None
@@ -39,6 +42,17 @@ class Settings(BaseSettings):
     # Inference endpoint the runner benchmarks and evaluates against (OpenAI-compatible).
     lab_base_url: str = "http://localhost:8100/v1"
     lab_model: str = "lab"
+
+    @model_validator(mode="after")
+    def _no_dev_secrets_in_prod(self) -> Settings:
+        if self.env == "prod":
+            if self.master_key.get_secret_value() == DEV_MASTER_KEY:
+                raise ValueError("FURNACE_MASTER_KEY must be set in production")
+            if self.session_secret.get_secret_value() == DEV_SESSION_SECRET:
+                raise ValueError("FURNACE_SESSION_SECRET must be set in production")
+            if self.labels_writable:
+                raise ValueError("set FURNACE_LABELS_WRITABLE=false in production")
+        return self
 
 
 @lru_cache
