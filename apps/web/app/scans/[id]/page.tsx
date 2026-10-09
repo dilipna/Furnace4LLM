@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Recommendations } from "@/components/blueprint/recommendations";
 import { SystemPanel } from "@/components/blueprint/system-panel";
-import { ScanLive } from "@/components/scan/scan-live";
+import { ScanLive, ScanLog } from "@/components/scan/scan-live";
 import { AppHeader } from "@/components/ui/app-header";
 import { ApiError, apiGet } from "@/lib/api";
 import type { Blueprint, ScanInfo } from "@/lib/types";
@@ -49,7 +49,7 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
           </div>
           {bp && (
             <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
-              <Link href={`/scans/${scan.id}/graph`} className="text-[13px] text-fg-1 hover:text-ember-hi">
+              <Link href={`/scans/${scan.id}/graph`} className="text-[13px] text-fg-1 hover:text-fg-0 hover:underline">
                 Graph →
               </Link>
               <Stat label="files" value={s.files} />
@@ -71,6 +71,7 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
             {scan.error ?? "The scan failed."}
           </p>
         )}
+        {bp && <ScanLog scanId={scan.id} />}
         {bp && (
           <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
             <Recommendations recs={bp.recommendations} evidence={bp.evidence} />

@@ -210,9 +210,10 @@ export function RunNow({ reference, campaign }: { reference: Reference[]; campai
           {msg && <span className={phase === "failed" ? "text-bad" : "text-warn"}>{msg}</span>}
         </div>
 
+        <div className="-mx-1 overflow-x-auto px-1">
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="mt-2 h-auto w-full"
+          className="mt-2 h-auto w-full min-w-[520px]"
           role="img"
           tabIndex={0}
           aria-label="Time to first token per request by concurrency, log scale. Arrow keys step through requests; the table view lists every level."
@@ -300,6 +301,7 @@ export function RunNow({ reference, campaign }: { reference: Reference[]; campai
             </g>
           )}
         </svg>
+        </div>
 
         <ul className="flex flex-wrap gap-x-5 gap-y-1 pb-3 text-[11px] text-fg-2">
           <li className="inline-flex items-center gap-1.5">

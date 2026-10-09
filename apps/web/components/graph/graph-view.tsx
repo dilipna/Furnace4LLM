@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type GNode = { key: string; kind: string; label: string; attrs: Record<string, unknown>; confidence: number };
 export type GEdge = { kind: string; src: string; dst: string; confidence: number };
@@ -38,6 +38,45 @@ const colOf = (kind: string) => {
   return i >= 0 ? i : COLUMNS.length - 1;
 };
 const clip = (s: string, n = 19) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+const STEP_MS = 160; // one hop of the path trace
+
+type Layout = { byKey: Map<string, GNode>; neighbors: Map<string, string[]>; calls: Set<string> };
+
+/** Hop distance from `start`, moving only leftward (dir -1) or rightward (dir 1) by column. */
+function walk(start: string, dir: -1 | 1, layout: Layout): Map<string, number> {
+  const dist = new Map([[start, 0]]);
+  const c0 = colOf(layout.byKey.get(start)?.kind ?? "");
+  let frontier = [start];
+  let d = 0;
+  while (frontier.length) {
+    d += 1;
+    const next: string[] = [];
+    for (const k of frontier) {
+      const ck = colOf(layout.byKey.get(k)?.kind ?? "");
+      for (const m of layout.neighbors.get(k) ?? []) {
+        const cm = colOf(layout.byKey.get(m)?.kind ?? "");
+        // within a column (code calling code) follow the call: callers upstream, callees down
+        const sameColOk = cm !== ck || layout.calls.has(dir === 1 ? `${k}>${m}` : `${m}>${k}`);
+        if (!dist.has(m) && sameColOk && (cm - ck) * dir >= 0 && (cm - c0) * dir >= 0) {
+          dist.set(m, d);
+          next.push(m);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return dist;
+}
+
+/** The selected node's path in trace order: upstream hops first, then downstream. */
+function trace(start: string, layout: Layout) {
+  const up = walk(start, -1, layout);
+  const down = walk(start, 1, layout);
+  const upMax = Math.max(0, ...up.values());
+  const level = new Map<string, number>(up);
+  for (const [k, d] of down) if (d > 0 && !level.has(k)) level.set(k, upMax + d);
+  return { level, max: Math.max(0, ...level.values()), up, upMax };
+}
 
 /** Layered behavior-to-code graph. Hover highlights everything connected (both directions). */
 export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) {
@@ -49,8 +88,10 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
     const cols: GNode[][] = COLUMNS.map(() => []);
     for (const n of nodes) cols[colOf(n.kind)].push(n);
     const neighbors = new Map<string, string[]>();
+    const calls = new Set<string>();
     for (const e of edges) {
       if (!byKey.has(e.src) || !byKey.has(e.dst)) continue;
+      calls.add(`${e.src}>${e.dst}`);
       neighbors.set(e.src, [...(neighbors.get(e.src) ?? []), e.dst]);
       neighbors.set(e.dst, [...(neighbors.get(e.dst) ?? []), e.src]);
     }
@@ -68,10 +109,30 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
     const xy = new Map<string, { x: number; y: number }>();
     cols.forEach((col, c) => col.forEach((n, i) => xy.set(n.key, { x: c * (COL_W + GAP), y: TOP + i * ROW_H })));
     const height = TOP + Math.max(1, ...cols.map((c) => c.length)) * ROW_H + 8;
-    return { cols, xy, neighbors, height, byKey };
+    return { cols, xy, neighbors, calls, height, byKey };
   }, [nodes, edges]);
 
-  const focus = hover ?? sel;
+  const [step, setStep] = useState(0);
+  const timers = useRef<number[]>([]);
+  const tr = useMemo(() => (sel ? trace(sel, layout) : null), [sel, layout]);
+  function select(k: string | null) {
+    setSel(k);
+    setStep(0);
+  }
+  // Animate the selected node's path: upstream hops light first, then downstream.
+  useEffect(() => {
+    timers.current.forEach(clearTimeout);
+    if (!tr) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    timers.current = reduce
+      ? [window.setTimeout(() => setStep(tr.max), 0)]
+      : Array.from({ length: tr.max }, (_, i) => window.setTimeout(() => setStep(i + 1), (i + 1) * STEP_MS));
+    const t = timers.current;
+    return () => t.forEach(clearTimeout);
+  }, [tr]);
+
+  // Hover previews connections instantly; the selection's trace is animated.
+  const focus = hover && hover !== sel ? hover : null;
   const lit = useMemo(() => {
     if (!focus) return null;
     // Connected component reachable from the focused node along edges in both directions,
@@ -115,7 +176,14 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
             const a = layout.xy.get(e.src);
             const b = layout.xy.get(e.dst);
             if (!a || !b) return null;
-            const on = lit ? lit.has(e.src) && lit.has(e.dst) : false;
+            const ls = tr?.level.get(e.src);
+            const ld = tr?.level.get(e.dst);
+            const traced = !lit && ls != null && ld != null && Math.max(ls, ld) <= step;
+            const on = lit ? lit.has(e.src) && lit.has(e.dst) : traced;
+            const dim = (lit && !on) || (tr != null && !lit && !traced);
+            // draw from the node already reached toward the next hop
+            const upLeg = tr != null && ls != null && ld != null && Math.max(ls, ld) <= tr.upMax;
+            const drawCls = traced ? (upLeg ? "trace-draw-rev" : "trace-draw") : "";
             const [l, r] = a.x <= b.x ? [a, b] : [b, a];
             if (l.x === r.x) {
               // same column (e.g. a call between functions): a small arc on the left edge
@@ -123,7 +191,7 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
               const y2 = r.y + NODE_H / 2;
               return (
                 <path key={i} d={`M${l.x},${y1} C${l.x - 22},${y1} ${l.x - 22},${y2} ${l.x},${y2}`} fill="none"
-                  stroke={on ? "var(--ember)" : "var(--line-strong)"} strokeWidth={on ? 1.5 : 1} opacity={lit && !on ? 0.25 : 1} />
+                  stroke={on ? "var(--fg-1)" : "var(--line-strong)"} strokeWidth={on ? 1.5 : 1} opacity={dim ? 0.25 : 1} pathLength={1} className={drawCls} />
               );
             }
             const x1 = l.x + COL_W;
@@ -133,27 +201,29 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
             const mx = (x1 + x2) / 2;
             return (
               <path key={i} d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`} fill="none"
-                stroke={on ? "var(--ember)" : "var(--line-strong)"} strokeWidth={on ? 1.5 : 1} opacity={lit && !on ? 0.25 : 1} />
+                stroke={on ? "var(--fg-1)" : "var(--line-strong)"} strokeWidth={on ? 1.5 : 1} opacity={dim ? 0.25 : 1} pathLength={1} className={drawCls} />
             );
           })}
           {layout.cols.flat().map((n) => {
             const p = layout.xy.get(n.key);
             if (!p) return null;
-            const on = !lit || lit.has(n.key);
+            const nl = tr?.level.get(n.key);
+            const on = lit ? lit.has(n.key) : tr ? nl != null && nl <= step : true;
             const isSel = sel === n.key;
             return (
               <g
                 key={n.key}
                 transform={`translate(${p.x},${p.y})`}
                 opacity={on ? 1 : 0.3}
+                style={{ transition: "opacity 180ms ease-out" }}
                 onPointerEnter={() => setHover(n.key)}
                 onPointerLeave={() => setHover(null)}
-                onClick={() => setSel(isSel ? null : n.key)}
+                onClick={() => select(isSel ? null : n.key)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setSel(isSel ? null : n.key);
-                  }
+                    select(isSel ? null : n.key);
+                  } else if (e.key === "Escape") select(null);
                 }}
                 onFocus={() => setHover(n.key)}
                 onBlur={() => setHover(null)}
@@ -163,7 +233,14 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
                 aria-pressed={isSel}
                 className="cursor-pointer outline-none"
               >
-                <rect width={COL_W} height={NODE_H} rx="3" fill={isSel ? "var(--ember-lo)" : "var(--bg-2)"} stroke={isSel || (hover === n.key) ? "var(--ember)" : "var(--line)"} />
+                <rect
+                  width={COL_W}
+                  height={NODE_H}
+                  rx="3"
+                  fill={isSel ? "var(--bg-3)" : "var(--bg-2)"}
+                  stroke={isSel ? "var(--fg-0)" : hover === n.key ? "var(--fg-2)" : tr && on && !lit ? "var(--line-strong)" : "var(--line)"}
+                  strokeWidth={isSel ? 1.5 : 1}
+                />
                 <text x="8" y="16" fontSize="11" fill="var(--fg-3)" className="num">
                   {TAG[n.kind] ?? n.kind.slice(0, 5)}
                 </text>
@@ -177,7 +254,29 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
         </svg>
       </div>
       <aside className="2xl:sticky 2xl:top-6 2xl:self-start" aria-live="polite">
-        {!selected && <p className="text-[12px] text-fg-3">Hover a node to trace its path; click it for details.</p>}
+        {!selected && (
+          <p className="text-[12px] text-fg-3">
+            Hover a node to see what it connects to. Click it (or Tab, then Enter) to trace its path, upstream then
+            downstream; Esc clears.
+          </p>
+        )}
+        {selected && tr && (
+          <ol className="mb-3 max-h-[340px] overflow-y-auto rounded-[6px] border border-line bg-bg-1 p-3 text-[12px]" aria-label="Traced path, in order">
+            {[...tr.level.entries()]
+              .sort((x, y) => x[1] - y[1])
+              .map(([k, lv]) => {
+                const n = layout.byKey.get(k);
+                const up = k !== sel && tr.up.has(k);
+                return (
+                  <li key={k} className={`flex gap-2 transition-opacity duration-200 ${lv <= step ? "opacity-100" : "opacity-30"}`}>
+                    <span className="num w-8 shrink-0 text-fg-3">{k === sel ? "·" : up ? "↑" : "↓"}</span>
+                    <span className="num w-12 shrink-0 text-fg-3">{TAG[n?.kind ?? ""] ?? n?.kind}</span>
+                    <span className="truncate text-fg-1">{n?.label ?? k}</span>
+                  </li>
+                );
+              })}
+          </ol>
+        )}
         {selected && (
           <div className="rounded-[6px] border border-line bg-bg-1 p-4">
             <div className="text-[11px] text-fg-3">{selected.kind}</div>
@@ -201,7 +300,7 @@ export function GraphView({ nodes, edges }: { nodes: GNode[]; edges: GEdge[] }) 
                   return (
                     <li key={i}>
                       <span className="text-fg-3">{e.src === sel ? `${e.kind} →` : `← ${e.kind}`}</span>{" "}
-                      <button className="text-fg-1 hover:text-ember-hi" onClick={() => setSel(other)}>
+                      <button className="text-fg-1 hover:text-fg-0 hover:underline" onClick={() => select(other)}>
                         {layout.byKey.get(other)?.label ?? other}
                       </button>
                     </li>

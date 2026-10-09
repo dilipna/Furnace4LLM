@@ -54,7 +54,7 @@ function Attempt({ a, open }: { a: RepairAttempt; open: boolean }) {
               <span className="num w-[52px] text-[11px] text-fg-3">{s.t.toFixed(1)}s</span>
               <span className="num text-[12px] text-fg-1">{s.stage}</span>
             </div>
-            <p className="ml-[64px] text-[12px] text-fg-2">{s.msg}</p>
+            <p className="text-[12px] break-words text-fg-2 sm:ml-[64px]">{s.msg}</p>
           </li>
         ))}
       </ol>
