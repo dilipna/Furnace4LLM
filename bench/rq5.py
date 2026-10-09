@@ -144,19 +144,33 @@ def attempt(
     return rec
 
 
+def _short(strategy: str) -> str:
+    return strategy.removeprefix("rule:prefix_stability.")
+
+
+def _chosen(a: dict[str, Any]) -> dict[str, Any]:
+    """The candidate the attempt proposed, or the last one it tried."""
+    cs = a["candidates"]
+    return next((c for c in cs if c.get("verdict") == "pass"), cs[-1] if cs else {})
+
+
 def render(res: dict[str, Any]) -> str:
     r1 = [a for a in res["attempts"] if a["scenario"] == "r1_dynamic_head"]
+    tried = list(dict.fromkeys(_short(c["strategy"]) for a in r1 for c in a["candidates"]))
     lines = [
         "# RQ5: failing-test-first repair",
         "",
-        f"R1 repaired {len(r1)} times end to end (rule strategy `prefix_stability.move_dynamic_to_suffix`), "
-        "lab vLLM Qwen2.5-0.5B on the laptop GPU, perf gate at concurrency 8 with 3 interleaved runs per revision. "
+        f"R1 repaired {len(r1)} times end to end, lab vLLM Qwen2.5-0.5B on the laptop GPU, perf gate "
+        "at concurrency 8 with 3 interleaved runs per revision. Rule strategies tried in order: "
+        + ", ".join(f"`{t}`" for t in tried)
+        + "; the first that passes the tests and the perf budget is proposed. "
         "The LLM-patch strategy is not built, so there is no rule-vs-LLM comparison.",
         "",
         md_table(
             [
                 "repeat",
                 "status",
+                "proposed",
                 "fails on head / passes on base",
                 "regression test",
                 "existing tests",
@@ -170,11 +184,12 @@ def render(res: dict[str, Any]) -> str:
                 [
                     a["repeat"],
                     a["status"],
+                    f"`{_short(_chosen(a)['strategy'])}`" if a["status"] == "verified" else "–",
                     f"{a['repro']['head_fails']} / {a['repro']['base_passes']}"
                     if a["repro"]
                     else "–",
-                    (a["candidates"][0].get("regression_test") if a["candidates"] else "–"),
-                    (a["candidates"][0].get("existing_tests") if a["candidates"] else "–"),
+                    _chosen(a).get("regression_test", "–"),
+                    _chosen(a).get("existing_tests", "–"),
                     _cmp(a["perf"].get("head_vs_base")),
                     _cmp(a["perf"].get("candidate_vs_base")),
                     _hit(a["perf"].get("candidate_vs_base")),
@@ -188,12 +203,22 @@ def render(res: dict[str, Any]) -> str:
                 ]
                 for a in r1
             ],
-            "rlllllllll",
+            "rllllllllll",
         ),
         "",
         f"Success: {sum(a['status'] == 'verified' for a in r1)}/{len(r1)} verified repairs; "
         f"{sum(not (a.get('audit') or {}).get('new_failures') and 'audit' in a for a in r1)}/{len(r1)} audits without a FAIL.",
     ]
+    for a in r1:
+        if len(a["candidates"]) > 1 or any(c.get("verdict") != "pass" for c in a["candidates"]):
+            lines.append(
+                f"\nRepeat {a['repeat']} candidates, in order: "
+                + "; ".join(
+                    f"{i + 1}. `{_short(c['strategy'])}` {str(c.get('verdict')).upper()}"
+                    + (f" ({c['perf_summary']})" if c.get("perf_summary") else "")
+                    for i, c in enumerate(a["candidates"])
+                )
+            )
     for a in r1:
         audit = a.get("audit")
         if audit:

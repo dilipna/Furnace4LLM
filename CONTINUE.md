@@ -6,6 +6,13 @@ Paste this file's path into a new Claude Code session ("read CONTINUE.md and con
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
 ## Oct 8-9 session (live demo work), newest first
+- **Oct 9 (late): perf gate fixed, RQ5 re-measured.** A/A calibration (`bench/gate_noise.py`) found the
+  gate biased (identical revisions up to 60% apart; cold first wave after idle set the p95, base
+  measured first). Fix: one unmeasured warmup wave per run -> A/A within 9.7%. Re-measured RQ5:
+  suffix strategy blocked (+40-50%, `2026-10-09-gate-warmup/`); new `move_dynamic_to_log` strategy,
+  tried second -> 3/3 verified, -2.0..+8.5%, audits clean (`2026-10-09-gate-warmup-v2/`). The
+  2026-10-06 report carries a CORRECTIONS.md shown on /bench. Stage tooling: `poe demo-up`,
+  `poe preflight`, `rehearse.py --video`. CI green for the first time (sandbox perms on Linux, pnpm).
 - **Live views, all on real data** (no tweened counters, no invented activity):
   - `/api/live/telemetry` (SSE): vLLM /metrics (running, waiting, KV use, prefix-cache hit and
     output tok/s from counter deltas) + NVML clock/power/temp, one shared 1 s poller started with
@@ -61,7 +68,7 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
   Blind spots R2/R3/R3b/R5; citation floor (0/34 on base with Qwen 0.5B); perf-gate noise −17.6%…+10.7%.
 - **RQ4** 18 runs, AC, 780–830 MHz (capped): prefix cache off → TTFT p95 +181…+433% in all 15 cells, same sign in
   every paired repeat; hit 88.1–89.3% measured vs 89.0% predicted; max-num-seqs 8 collapses at c=16.
-- **RQ5** first rule (rq5_rule_v1): repair +73…+86% vs base, 2/3 rejected, audits FAIL. Rule changed to append the
+- **RQ5 (superseded on Oct 9, see CORRECTIONS.md in 2026-10-06)** first rule (rq5_rule_v1): repair +73…+86% vs base, 2/3 rejected, audits FAIL. Rule changed to append the
   per-request value to the end of the last user message. **v2 (rq5.md): 3/3 verified, 3/3 full-suite audits
   without a FAIL, prefix-cache hit 98% → 94%, repair p95 TTFT +15.7% to +54.1% vs base (PR: +336% to +414%).**
   The +54% repeat passed as WARN only because runs overlapped (reported as a gate weakness). v1 stays in the report.
@@ -109,5 +116,5 @@ Do not start new features before 1-3 work. Keep every claim on screen backed by 
 ## Known gaps (say them if asked; do not hide)
 Not built: auth/orgs/RLS, BYOK storage, TypeScript extraction, LLM synthesis/VLM, URL inspection, LLM-patch repair,
 Stripe, T4/Ollama runs. Scanner misses unseen SDKs (RQ1 set 2). Perf-gate WARN is inside noise. Citation check floor
-effect on Qwen 0.5B. GPU numbers are at a capped laptop clock. Dev servers (API :8010, web :3100) may still be
+effect on Qwen 0.5B. GPU numbers are at the ~780 MHz the driver picks for this load (not throttled). Dev servers (API :8010, web :3100) may still be
 running from the last session; restart them if pages look stale.

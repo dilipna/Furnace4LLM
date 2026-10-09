@@ -55,9 +55,10 @@ the pre-flight below. `uv run poe demo-down` stops them. The steps it automates:
 ## Script
 
 1. **(0:00) Problem.** "You already built the AI app. Nobody can tell you whether the next PR
-   makes it slower or wrong." The landing hero replays one PR: main 232 ms p95 TTFT, the R1 PR
-   1,043 ms with the prefix-cache hit at 0%, Furnace's repair 276 ms at 94% (RQ5, median of 3
-   repeats; ticks are the repeats). Press **Replay**; the source links are under it.
+   makes it slower or wrong." The landing hero replays one PR: main 84 ms p95 TTFT, the R1 PR
+   896 ms with the prefix-cache hit at 0%, Furnace's repair 89 ms at 98% (RQ5 2026-10-09, median
+   of 3 repeats; ticks are the repeats). Under it: Furnace's *first* candidate was blocked by its
+   own perf gate (+44% to +50%), so it proposed the second. Press **Replay**; sources are linked.
 2. **(0:30) The furnace is on.** Scroll to "The lab endpoint, right now": vLLM's own counters
    and the GPU's power, clock and temperature, every second. Nothing on it is animated unless
    the system moved.
@@ -80,10 +81,15 @@ the pre-flight below. `uv run poe demo-down` stops them. The steps it automates:
    and come back) — the impact graph lights the changed prompt, then what it reaches; each check
    flips to its verdict with its time; hover a check to see the path that selected it.
 8. **(4:00) Repair.** Same page, below: regression test written first (fails on the PR, passes on
-   main), localized hunk, rule-based fix, sandbox validation, perf gate, full-suite audit, and
-   the draft repair PR. "A human merges. Furnace never touches production."
-9. **(4:30) Evidence** (`/bench`). RQ1 held-out recall including the misses (unseen SDKs), RQ3
-   recall at the share of the suite executed, RQ5 verified repairs, the negative results. Close.
+   main), localized hunk, then two candidates in order: keeping the request id in the prompt (moved
+   to the end) is still +44-50% and the gate blocks it; logging it instead of sending it is within
+   noise and passes, with its trade-off stated (the model no longer sees the id). Full-suite audit
+   clean, draft repair PR. "Furnace rejected its own first fix. A human merges; Furnace never
+   touches production."
+9. **(4:30) Evidence** (`/bench`). The yellow "Corrections" box first: we found our own perf gate
+   was biased (A/A test, up to 60% between identical revisions), fixed it (now within 9.7%), and
+   re-measured. Then RQ1 held-out recall including the misses (unseen SDKs), RQ3 recall at the
+   share of the suite executed, the negative results. Close.
 
 ## If something fails live
 

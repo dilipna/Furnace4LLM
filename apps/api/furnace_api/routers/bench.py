@@ -85,6 +85,8 @@ def get_campaign(name: str) -> dict[str, Any]:
         "available": _available(d),
         "report_md": text("REPORT.md"),
         "notes_md": text("NOTES.md"),
+        # dated corrections to a generated report; shown above it, never folded into it
+        "corrections_md": text("CORRECTIONS.md"),
     }
 
 

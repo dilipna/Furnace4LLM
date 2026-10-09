@@ -146,7 +146,7 @@ export type RepairAttempt = {
   status: string;
   repro: { head_fails: boolean; base_passes: boolean; logs: string } | null;
   localization: { node_key: string; file: string; hunk: { new_start: number; new_lines: number } | null; score: number; reasons: string[] }[];
-  candidates: { strategy: string; verdict: string | null; regression_test?: string; existing_tests?: string; explanation?: string }[];
+  candidates: { strategy: string; verdict: string | null; regression_test?: string; existing_tests?: string; explanation?: string; perf_summary?: string | null }[];
   perf: { head_vs_base?: GateCompare; candidate_vs_base?: GateCompare; within_budget?: boolean; summary?: string };
   logs: Record<string, string>;
   stages: { t: number; stage: string; msg: string }[];
