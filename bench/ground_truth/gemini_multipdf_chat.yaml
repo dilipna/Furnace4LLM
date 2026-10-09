@@ -1,0 +1,57 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 3.
+# Labeled from source at the pinned commit on 2026-10-09 BEFORE Furnace was run on this
+# repository and BEFORE the SDK-coverage change made after RQ1 set 2. Author: the developer
+# agent (Claude), not independently reviewed yet.
+app: gemini_multipdf_chat
+split: held-out-3
+repo: https://github.com/kaifcoder/gemini_multipdf_chat
+commit: fe5a97c4cc32fbfd0b37ba0900c6feabf052e449
+purpose: Streamlit chat over uploaded PDFs with LangChain (FAISS + Gemini via ChatGoogleGenerativeAI)
+
+routes: []
+
+llm_calls:
+  - file: app.py
+    function: get_conversational_chain   # ChatGoogleGenerativeAI constructed; run via load_qa_chain
+    also_accept: [user_input]            # where chain({...}) runs
+    api: langchain.ChatGoogleGenerativeAI (via load_qa_chain)
+    model: gemini-pro
+    streaming: false
+    has_timeout: false
+
+model: gemini-pro
+models: [gemini-pro]
+serving_engine: google
+serving_flags: {}
+
+uses_rag: true
+retrievers:
+  - file: app.py
+    function: user_input          # FAISS.load_local(...).similarity_search(question)
+    also_accept: [get_vector_store]
+    store: faiss
+    top_k: null                   # similarity_search default (4); not in source
+
+tools: []
+
+prompts:
+  - app.py::get_conversational_chain   # prompt_template: instruction, then {context}, {question}
+dynamic_head: false
+
+workflows:
+  - streamlit:app.py
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions:
+  - predicate: entrypoint
+    values: [app.py, main.py]   # README: "streamlit run main.py"; the file (and the Dockerfile CMD) is app.py
+
+notes:
+  - google.generativeai is configured (genai.configure) and passed as client=genai; the call itself goes through LangChain.
+  - GoogleGenerativeAIEmbeddings (models/embedding-001) is an embedding call, not an LLM call.
