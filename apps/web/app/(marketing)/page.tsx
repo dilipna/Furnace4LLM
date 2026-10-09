@@ -1,17 +1,11 @@
+import { FurnacePanel } from "@/components/live/furnace-panel";
 import { BenchStrip } from "@/components/marketing/bench-strip";
 import { EvidenceInput } from "@/components/marketing/evidence-input";
+import { HeroEvidence } from "@/components/marketing/hero-evidence";
 import { AppHeader } from "@/components/ui/app-header";
 
 // Live FurnaceBench numbers: render per request, never frozen at build time.
 export const dynamic = "force-dynamic";
-
-const QUESTIONS = [
-  "Where are the LLM calls, and which models and engines serve them?",
-  "Is it RAG? Which tools have side effects, and are they gated?",
-  "Does the documentation contradict the code?",
-  "Which evals and checks should this app have, and which already exist?",
-  "With traces and an endpoint: what does the workload look like, and which serving change helps without hurting quality?",
-];
 
 const STAGES = [
   {
@@ -58,19 +52,24 @@ export default function Landing() {
             </div>
           </div>
 
-          <aside className="lg:col-span-5 lg:pt-14">
-            <div className="border-l border-line pl-6">
-              <p className="text-[12px] text-fg-3">Furnace answers, with evidence</p>
-              <ol className="mt-4 space-y-3">
-                {QUESTIONS.map((q, i) => (
-                  <li key={q} className="flex gap-3 text-[14px] leading-snug text-fg-1">
-                    <span className="num pt-px text-[12px] text-fg-3">{String(i + 1).padStart(2, "0")}</span>
-                    {q}
-                  </li>
-                ))}
-              </ol>
-            </div>
+          <aside className="lg:col-span-5 lg:pt-2">
+            <p className="mb-3 text-[12px] text-fg-3">One pull request, measured</p>
+            <HeroEvidence />
           </aside>
+        </section>
+
+        <section aria-labelledby="lab-now" className="border-t border-line">
+          <div className="mx-auto w-full max-w-[1200px] px-4 py-12 sm:px-6">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+              <h2 id="lab-now" className="font-display text-[20px] font-semibold tracking-[-0.01em]">
+                The lab endpoint, right now
+              </h2>
+              <a href="/lab" className="text-[13px] text-fg-2 hover:text-fg-0">
+                Inference Lab · run a benchmark →
+              </a>
+            </div>
+            <FurnacePanel compact />
+          </div>
         </section>
 
         <section id="how" className="border-t border-line bg-bg-1">

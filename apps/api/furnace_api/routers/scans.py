@@ -37,6 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
 from furnace_api.deps import db_session
+from furnace_api.sse import sse
 
 router = APIRouter(prefix="/api")
 DB = Annotated[AsyncSession, Depends(db_session)]
@@ -260,7 +261,7 @@ async def scan_events(scan_id: str, db: DB) -> EventSourceResponse:
                 return
             await asyncio.sleep(0.5)
 
-    return EventSourceResponse(stream())
+    return sse(stream())
 
 
 @router.get("/scans/{scan_id}/blueprint")

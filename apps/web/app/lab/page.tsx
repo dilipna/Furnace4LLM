@@ -1,4 +1,6 @@
 import { LabCharts } from "@/components/lab/lab-charts";
+import { FurnacePanel } from "@/components/live/furnace-panel";
+import { type Reference, RunNow } from "@/components/live/run-now";
 import { AppHeader } from "@/components/ui/app-header";
 import { apiGet } from "@/lib/api";
 import { type Agg, getRq, latestWith, type Rq4, type Workload } from "@/lib/bench";
@@ -35,6 +37,8 @@ export default async function LabPage() {
   const hitOn = rq4?.rows.filter((r) => r.config.startsWith("pc-on") && r.prefix_hit_rate.median != null) ?? [];
   const configs = rq4 ? [...new Set(rq4.rows.map((r) => r.config))].sort() : [];
   const levels = rq4 ? [...new Set(rq4.rows.map((r) => r.level))].sort((a, b) => a - b) : [];
+  const p95At = (cfg: string, lv: number) => rq4?.rows.find((r) => r.config === cfg && r.level === lv)?.ttft_p95_ms.median ?? null;
+  const reference: Reference[] = [1, 2, 4, 8].map((lv) => ({ level: lv, on: p95At("pc-on_seqs-32", lv), off: p95At("pc-off_seqs-32", lv) }));
 
   return (
     <div className="flex min-h-full flex-col">
@@ -51,6 +55,11 @@ export default async function LabPage() {
             <span className="num text-fg-1">bench/results/{campaign ?? "…"}</span>; nothing is simulated except where
             labeled.
           </p>
+        </div>
+
+        <div className="mt-6 grid gap-6 xl:grid-cols-2">
+          <FurnacePanel compact />
+          <RunNow reference={reference} campaign={campaign} />
         </div>
 
         {!rq4 && (
