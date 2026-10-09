@@ -159,3 +159,48 @@ async def test_check_run_lifecycle_and_conclusion_validation():
     )
     with pytest.raises(GitHubError):
         await repo.complete_check(cid, conclusion="maybe", title="", summary="")
+
+
+async def test_draft_pr_takes_next_free_branch_and_caps_the_body():
+    r = "/repos/acme/app"
+    calls = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        body = json.loads(req.content) if req.content else {}
+        calls.append((req.method, req.url.path.removeprefix(r), body))
+        p = req.url.path.removeprefix(r)
+        if p == "/git/refs":
+            if body["ref"] in ("refs/heads/furnace/forge-1", "refs/heads/furnace/forge-1-2"):
+                return httpx.Response(422, json={"message": "Reference already exists"})
+            return httpx.Response(201, json={})
+        if p == "/pulls":
+            return httpx.Response(201, json={"number": 9, "html_url": "u"})
+        if p.startswith("/git/commits/"):
+            return httpx.Response(200, json={"tree": {"sha": "t0"}})
+        return httpx.Response(201, json={"sha": "s"})
+
+    repo = Repo("acme/app", "t", transport=httpx.MockTransport(handler))
+    out = await repo.open_draft_pr(
+        base_branch="main", new_branch="furnace/forge-1", files={"a": "x"}, title="t",
+        body="x" * 70_000, commit_message="m", base_sha="b",
+    )  # fmt: skip
+    assert out["branch"] == "furnace/forge-1-3"
+    pr = calls[-1][2]
+    assert pr["head"] == "furnace/forge-1-3" and len(pr["body"]) < 65_536
+    assert pr["body"].endswith("65,536 characters)_")
+
+
+async def test_draft_pr_other_ref_errors_still_raise():
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.path.endswith("/git/refs"):
+            return httpx.Response(403, json={"message": "Resource not accessible by integration"})
+        if "/git/commits/" in req.url.path:
+            return httpx.Response(200, json={"tree": {"sha": "t0"}})
+        return httpx.Response(201, json={"sha": "s"})
+
+    repo = Repo("acme/app", "t", transport=httpx.MockTransport(handler))
+    with pytest.raises(GitHubError, match="403"):
+        await repo.open_draft_pr(
+            base_branch="main", new_branch="furnace/x", files={"a": "x"}, title="t",
+            body="b", commit_message="m", base_sha="b",
+        )  # fmt: skip
