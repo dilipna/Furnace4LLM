@@ -36,11 +36,14 @@ def copy_bandwidth_gbs() -> float:
     return 2 * n * src.element_size() / (ms * 1e-3) / 1e9
 
 
+def _mhz(v: float | None) -> str:
+    return "–" if v is None else f"{v:.0f}"
+
+
 def main() -> None:
     torch.manual_seed(0)
     manifest = env()
     copy_gbs = copy_bandwidth_gbs()
-    compiled = torch.compile(rmsnorm_eager, dynamic=False)
     rows, clocks = [], []
     for dname, dtype in DTYPES.items():
         if dtype == torch.bfloat16 and not torch.cuda.is_bf16_supported():
@@ -50,16 +53,22 @@ def main() -> None:
                 x = torch.randn(t, h, device="cuda", dtype=dtype)
                 w = (1 + 0.1 * torch.randn(h, device="cuda")).to(dtype)
                 nbytes = (2 * t * h + h) * x.element_size()
+                # A fresh compile per shape: one shared compiled function hits dynamo's
+                # recompile limit (8 shapes) and silently falls back to eager after that.
+                torch._dynamo.reset()
+                compiled = torch.compile(rmsnorm_eager, dynamic=False)
                 compiled(x, w)  # compile outside the timed region
                 row = {"dtype": dname, "tokens": t, "hidden": h, "bytes": nbytes}
                 for name, fn in (
                     ("eager", lambda x=x, w=w: rmsnorm_eager(x, w)),
-                    ("compile", lambda x=x, w=w: compiled(x, w)),
+                    ("compile", lambda x=x, w=w, c=compiled: c(x, w)),
                     ("triton", lambda x=x, w=w: rmsnorm_triton(x, w)),
                 ):
                     ms, lo, hi = bench(fn)
                     row[name] = {"ms": ms, "p20": lo, "p80": hi, "gbs": nbytes / (ms * 1e-3) / 1e9}
-                clocks.append(sm_clock_mhz())
+                clk = sm_clock_mhz()
+                clocks.append(clk)
+                row["sm_clock_mhz"] = clk
                 row["speedup_vs_eager"] = row["eager"]["ms"] / row["triton"]["ms"]
                 row["speedup_vs_compile"] = row["compile"]["ms"] / row["triton"]["ms"]
                 row["triton_pct_of_copy"] = row["triton"]["gbs"] / copy_gbs * 100
@@ -96,14 +105,14 @@ def main() -> None:
         ),
         "Times are medians of triton.testing.do_bench; GB/s counts x read + weight read + y write.",
         "",
-        "| dtype | tokens x hidden | eager us | compile us | Triton us | Triton GB/s | % of copy | vs eager | vs compile |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
+        "| dtype | tokens x hidden | eager us | compile us | Triton us | Triton GB/s | % of copy | vs eager | vs compile | SM MHz |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for r in rows:
         lines.append(
             f"| {r['dtype']} | {r['tokens']} x {r['hidden']} | {r['eager']['ms'] * 1e3:.1f} | {r['compile']['ms'] * 1e3:.1f} | "
             f"{r['triton']['ms'] * 1e3:.1f} | {r['triton']['gbs']:.0f} | {r['triton_pct_of_copy']:.0f}% | "
-            f"{r['speedup_vs_eager']:.2f}x | {r['speedup_vs_compile']:.2f}x |"
+            f"{r['speedup_vs_eager']:.2f}x | {r['speedup_vs_compile']:.2f}x | {_mhz(r['sm_clock_mhz'])} |"
         )
     lines += [
         "",
