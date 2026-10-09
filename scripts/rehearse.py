@@ -32,7 +32,10 @@ def main() -> int:
     p.add_argument("--repo", default="github.com/Azure-Samples/openai-chat-app-quickstart")
     p.add_argument("--out", default="docs/demo-shots/rehearsal")
     p.add_argument("--skip-gpu", action="store_true", help="skip Run it now and the Guard run")
+    p.add_argument("--video", help="record a fallback screen video (.webm) into this directory")
+    p.add_argument("--pace", type=float, default=None, help="seconds to dwell after each step")
     a = p.parse_args()
+    pace = a.pace if a.pace is not None else (3.0 if a.video else 0.0)
     out = ROOT / a.out
     out.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, object]] = []
@@ -47,13 +50,23 @@ def main() -> int:
         secs = time.monotonic() - t0
         slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:32]
         shot = f"{len(rows) + 1:02d}-{slug}.png"
+        if pace:
+            page.wait_for_timeout(pace * 1000)  # let a viewer of the recording read the result
         page.screenshot(path=str(out / shot), full_page=False)
         rows.append({"step": name, "ok": ok, "seconds": round(secs, 1), "note": note, "shot": shot})
         print(f"{'ok ' if ok else 'BAD'} {secs:6.1f} s  {name}  {note}", flush=True)
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        page = browser.new_page(viewport={"width": 1440, "height": 900}, color_scheme="dark")
+        size = {"width": 1440, "height": 900}
+        video_dir = ROOT / a.video if a.video else None
+        ctx = browser.new_context(
+            viewport=size,
+            color_scheme="dark",
+            record_video_dir=str(video_dir) if video_dir else None,
+            record_video_size=size if video_dir else None,
+        )
+        page = ctx.new_page()
         errors: list[str] = []
         page.on("pageerror", lambda exc: errors.append(str(exc)))
 
@@ -62,6 +75,12 @@ def main() -> int:
             page.get_by_text("Lab endpoint").first.wait_for(timeout=20_000)
             page.locator("text=/live · 1 s|lab offline/").first.wait_for(timeout=20_000)
             live = page.get_by_text("live · 1 s").count() > 0
+            if pace:  # the hero replays, then the live panel, then back to the scan box
+                page.wait_for_timeout(3000)
+                page.locator("#lab-now").scroll_into_view_if_needed()
+                page.wait_for_timeout(pace * 1500)
+                page.evaluate("window.scrollTo({top: 0, behavior: 'smooth'})")
+                page.wait_for_timeout(800)
             return "lab live" if live else "lab offline (recorded run shown)"
 
         def scan() -> str:
@@ -88,6 +107,7 @@ def main() -> int:
 
         def guard() -> str:
             page.goto(a.base + "/guard/r1_dynamic_head", wait_until="load")
+            page.locator("#guard-live").scroll_into_view_if_needed()
             page.get_by_role("button", name="Run Guard on this PR").click()
             page.get_by_text("waiting for the runner").or_(
                 page.get_by_text("Impact ·")
@@ -108,6 +128,12 @@ def main() -> int:
             step("Lab: Run it now", run_now, page)
             step("Guard run on R1", guard, page)
         step("FurnaceBench report", bench, page)
+        video = page.video
+        ctx.close()  # finalizes the recording
+        if video and video_dir:
+            final = video_dir / f"demo-{time.strftime('%Y-%m-%d-%H%M')}.webm"
+            Path(video.path()).replace(final)
+            print(f"video: {final.relative_to(ROOT).as_posix()}")
         browser.close()
 
     (out / "timings.json").write_text(json.dumps({"rows": rows, "page_errors": errors}, indent=2))

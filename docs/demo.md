@@ -1,8 +1,10 @@
 # Demo script (about 5 minutes) and pre-flight checklist
 
 Every number shown comes from the running system or `bench/results/`; say "measured on a laptop
-RTX 3050 Ti" when showing latency. On this laptop the GPU has run at 780-900 MHz under load
-even on AC (Windows "Balanced"); say "power-capped laptop" unless pre-flight shows more.
+RTX 3050 Ti" when showing latency. Under the lab's serving load the driver holds the GPU at about
+780 MHz (it reaches 1,850 MHz under a saturating load, so this is not throttling; see the
+2026-10-09 addendum in `bench/results/2026-10-06/NOTES.md`). If asked: "a 0.5B model on a laptop
+GPU, which the driver does not even boost for"; the comparisons share that clock.
 
 Timings below are from two full rehearsals on 2026-10-09 (`scripts/rehearse.py`, results and
 screenshots in `docs/demo-shots/rehearsal-1/` and `rehearsal-2/`): every step passed both times.
@@ -22,9 +24,14 @@ GitHub App steps (Forge PR, R1 PR check run, repair PR) — they need the App (d
 
 ## Pre-flight (30 minutes before)
 
-- [ ] Laptop on AC; OMEN/Windows power mode on performance. Under load check
-      `nvidia-smi --query-gpu=clocks.sm,power.draw --format=csv`; if it still shows ~780 MHz,
-      say "power-capped laptop" when showing latency.
+**One command:** `uv run poe demo-up` starts Docker, Postgres, the lab vLLM, the API, the scan
+worker, the Guard runner and a production build of the web app (logs in `.data/logs/`), then runs
+the pre-flight below. `uv run poe demo-down` stops them. The steps it automates:
+
+- [ ] Laptop on AC. `uv run python scripts/preflight.py --load --owner <you>` prints OK/WARN/FAIL
+      for power mode, API + database, lab vLLM, GPU clock under load (with the driver's
+      clock-event reasons), every page, a live sample through the web proxy, worker + runner,
+      the offline fallback and the GitHub App. Fix every FAIL.
 - [ ] Docker Desktop running; `docker compose up -d postgres`; lab vLLM up
       (`HF_HOME_HOST=C:/Users/Dilip/.cache/huggingface docker compose --profile gpu up -d vllm`,
       ready after ~60 s: `curl localhost:8100/v1/models`).
@@ -40,8 +47,10 @@ GitHub App steps (Forge PR, R1 PR check run, repair PR) — they need the App (d
       repo, `git remote add origin ...`, `git push -u origin main r1-request-id`, open the PR).
 - [ ] Browser tabs: landing, the F1 scan Blueprint, its graph, /lab, /guard/r1_dynamic_head,
       /bench, the demo repo's PR and the repair draft PR.
-- [ ] Fallback: `docs/demo-shots/` (desktop), `docs/demo-shots/mobile/` (390 px) and the two
-      rehearsal folders; regenerate with `uv run python scripts/demo_shots.py --base http://localhost:3100 --scan <id>`.
+- [ ] Fallback: `docs/demo-shots/` (desktop), `docs/demo-shots/mobile/` (390 px), the rehearsal
+      folders, and a screen recording of the whole local path
+      (`uv run python scripts/rehearse.py --video docs/demo-video`, about 2:40, saved as .webm;
+      not committed). Copy the video to a USB stick as well.
 
 ## Script
 

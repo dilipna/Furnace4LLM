@@ -29,7 +29,9 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
   shapes (Triton looked 9x faster than compile; it is at parity).
 - **Kernel Lab ran**: `kernel_lab/results/2026-10-09/`: 36/36 correct; 4096x4096 Triton 378 us vs
   compile 391 us vs eager 3,701 us (fp16), 178 GB/s = 99% of measured copy bandwidth, 780-900 MHz.
-- **GPU clock**: 780 MHz at ~32 W under load on AC with Windows "Balanced" (Oct 9). Still capped.
+- **GPU clock**: NOT a power cap (Oct 9): a saturating matmul runs at 1,850 MHz / 80 W; vLLM serving
+  sits at 780 MHz / 30 W with only the "Idle" clock-event reason (driver DVFS for a light load).
+  Windows power mode is already "Best performance". Addendum in `bench/results/2026-10-06/NOTES.md`.
 - **Rehearsed** `docs/demo.md` twice with `scripts/rehearse.py` (all steps pass; timings in demo.md).
 - **Flaky test (Oct 7)**: not reproduced in 4 full-suite runs + 12 runs of the inference/live tests
   under 4 busy CPU burners. The only failures seen were with Postgres down. Not fixed, not found.
