@@ -1,0 +1,46 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 3.
+# Labeled from source at the pinned commit on 2026-10-09 BEFORE Furnace was run on this
+# repository and BEFORE the SDK-coverage change made after RQ1 set 2. Author: the developer
+# agent (Claude), not independently reviewed yet.
+app: llamav2-chat
+split: held-out-3
+repo: https://github.com/peterw/llamav2-chat
+commit: 25364ad9071834f47108a05d2fce1c77a8544e64
+purpose: Streamlit chat with Llama 2 70B on Replicate
+
+routes: []
+
+llm_calls:
+  - file: main.py
+    function: generate_response
+    api: replicate.run
+    model: replicate/llama70b-v2-chat
+    streaming: true          # replicate.run returns an iterator that is consumed (not shown incrementally)
+    has_timeout: false
+
+model: replicate/llama70b-v2-chat
+models: [replicate/llama70b-v2-chat]
+serving_engine: replicate
+serving_flags: {}
+
+uses_rag: false
+retrievers: []
+tools: []
+
+prompts: []          # the raw user input is the prompt
+dynamic_head: false
+
+workflows:
+  - streamlit:main.py
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions: []
+
+notes:
+  - Model id written without the ':<version hash>' suffix; a scanner reporting the full id with hash counts as correct.

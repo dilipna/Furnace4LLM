@@ -1,0 +1,46 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 3.
+# Labeled from source at the pinned commit on 2026-10-09 BEFORE Furnace was run on this
+# repository and BEFORE the SDK-coverage change made after RQ1 set 2. Author: the developer
+# agent (Claude), not independently reviewed yet.
+app: mistral-streamlit-chat
+split: held-out-3
+repo: https://github.com/vindiw/mistral-streamlit-chat
+commit: 9136faf487ce8baaf0cce54528fd9ee35245d0cd
+purpose: Streamlit chat with the Mistral API (legacy mistralai 0.0.8 client), user-selected model
+
+routes: []
+
+llm_calls:
+  - file: mistral_chat.py
+    function: <module>                 # Streamlit script: the call runs at module level
+    api: mistralai.MistralClient.chat_stream
+    model: null                        # st.session_state["mistral_model"]: selectbox, default mistral-tiny
+    streaming: true
+    has_timeout: false
+
+model: null
+models: [mistral-tiny, mistral-small, mistral-medium]   # the selectbox options
+serving_engine: mistral
+serving_flags: {}
+
+uses_rag: false
+retrievers: []
+tools: []
+
+prompts: []        # the system prompt is typed by the user at runtime; none in source
+dynamic_head: false
+
+workflows:
+  - streamlit:mistral_chat.py
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions: []
+
+notes:
+  - A scanner that reports the model as "unknown/runtime" is correct; reporting only mistral-tiny (the default) is acceptable for models.

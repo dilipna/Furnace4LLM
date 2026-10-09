@@ -1,0 +1,92 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 3.
+# Labeled from source at the pinned commit on 2026-10-09 BEFORE Furnace was run on this
+# repository and BEFORE the SDK-coverage change made after RQ1 set 2. Author: the developer
+# agent (Claude), not independently reviewed yet.
+app: Bedrock-ChatBot-with-LangChain-and-Streamlit
+split: held-out-3
+repo: https://github.com/davidshtian/Bedrock-ChatBot-with-LangChain-and-Streamlit
+commit: 222fe4f78f5389747b8f5ee38c33118dc7da9c37
+purpose: Four Streamlit chat apps on Amazon Bedrock through LangChain (main app with RAG and web search, a container variant, a simple and a streaming variant)
+
+routes: []
+
+llm_calls:
+  - file: bedrock/models.py
+    function: ChatModel.__init__          # ChatBedrockConverse constructed here
+    also_accept: [init_runnablewithmessagehistory, generate_response]   # piped into the runnable / .stream()
+    api: langchain.ChatBedrockConverse (via RunnableWithMessageHistory)
+    model: null                           # config.yml entry chosen in the sidebar
+    streaming: true
+    has_timeout: false
+  - file: container/app.py
+    function: init_conversationchain      # BedrockChat(model_id=..., streaming=True)
+    also_accept: [generate_response]      # conversation.invoke(...)
+    api: langchain.BedrockChat (via ConversationChain)
+    model: null                           # sidebar: Claude 3 Sonnet / Claude 3 Haiku / Mistral Large
+    streaming: true
+    has_timeout: false
+  - file: simple/bedrock_chatbot.py
+    function: init_conversationchain
+    also_accept: [generate_response]
+    api: langchain.Bedrock (via ConversationChain)
+    model: anthropic.claude-v2
+    streaming: false
+    has_timeout: false
+  - file: streaming/bedrock_simple.py
+    function: init_conversationchain
+    also_accept: [generate_response]
+    api: langchain.Bedrock (via ConversationChain)
+    model: anthropic.claude-v2
+    streaming: true
+    has_timeout: false
+
+model: null
+models:
+  - anthropic.claude-v2
+  - anthropic.claude-3-sonnet-20240229-v1:0
+  - anthropic.claude-3-haiku-20240307-v1:0
+  - mistral.mistral-large-2402-v1:0
+  - us.deepseek.r1-v1:0
+  - us.anthropic.claude-3-7-sonnet-20250219-v1:0
+  - anthropic.claude-3-5-haiku-20241022-v1:0
+  - us.amazon.nova-pro-v1:0
+  - us.amazon.nova-lite-v1:0
+  - us.amazon.nova-micro-v1:0
+serving_engine: bedrock
+serving_flags: {}
+
+uses_rag: true
+retrievers:
+  - file: bedrock/bedrock_chatbot.py
+    function: rag_search                  # FAISS.load_local(...).similarity_search(prompt)
+    also_accept: [bedrock/bedrock_embedder.py::search_index]
+    store: faiss
+    top_k: null
+
+tools: []          # SerpAPIWrapper is called directly by the app (web search), not given to the model as a tool
+
+prompts:
+  - bedrock/role_prompt.py              # role prompts selected in the sidebar
+dynamic_head: false
+
+workflows:
+  - streamlit:bedrock/bedrock_chatbot.py
+  - streamlit:container/app.py
+  - streamlit:simple/bedrock_chatbot.py
+  - streamlit:streaming/bedrock_simple.py
+  - cli:bedrock_indexer.py
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: false
+  retries: false     # README suggests configuring retries in the AWS profile; not in code
+  evals: false
+
+contradictions:
+  - predicate: entrypoint
+    values: [bedrock/bedrock_chatbot.py, bedrock_chatbot_claude_3_sonnet_vision.py, bedrock_chatbot_claude_3_sonnet.py]   # README runs files that do not exist
+
+notes:
+  - BedrockEmbeddings (titan / cohere embed) are embedding calls, not LLM calls.
+  - Main-app model ids come from bedrock/config.yml; container ids from a dict in container/app.py.

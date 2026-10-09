@@ -1,0 +1,55 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 3.
+# Labeled from source at the pinned commit on 2026-10-09 BEFORE Furnace was run on this
+# repository and BEFORE the SDK-coverage change made after RQ1 set 2. Author: the developer
+# agent (Claude), not independently reviewed yet.
+app: sandbox-conversant-lib
+split: held-out-3
+repo: https://github.com/cohere-ai/sandbox-conversant-lib
+commit: eeb7c808c2ab59f553f3500b90681019f79365be
+purpose: Library for persona chatbots on Cohere's generate API, with a Streamlit demo
+
+routes: []
+
+llm_calls:
+  - file: conversant/prompt_chatbot.py
+    function: PromptChatbot.reply
+    api: cohere.Client.generate
+    model: null                          # self.client_config["model"]; default "xlarge", personas set their own
+    streaming: false
+    has_timeout: false
+  - file: conversant/prompt_chatbot.py
+    function: PromptChatbot._dispatch_concurrent_generate_call   # exe.submit(self.co.generate, **kwargs)
+    also_accept: [PromptChatbot.partial_reply]
+    api: cohere.Client.generate
+    model: null
+    streaming: false                     # partial replies come from repeated non-streaming calls
+    has_timeout: false
+
+model: null
+models: [xlarge, command-xlarge-nightly]   # default client_config and persona config.json files
+serving_engine: cohere
+serving_flags: {}
+
+uses_rag: false     # Searcher / LocalSearcher (co.embed + cosine) exist but nothing wires them into a chatbot
+retrievers: []
+tools: []
+
+prompts: []          # prompts are Prompt objects filled from persona config.json files at runtime
+dynamic_head: false
+
+workflows:
+  - streamlit:conversant/demo/streamlit_example.py
+
+existing_reliability:
+  tests: true        # tests/ with pytest
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions: []
+
+notes:
+  - The client is injected (constructor parameter annotated cohere.Client, stored as self.co); a scanner must follow that annotation to find these calls.
+  - co.embed and co.tokenize are not LLM generation calls.
+  - Reporting the Searcher classes as retrievers is defensible (library code) and is not counted as a false positive.
