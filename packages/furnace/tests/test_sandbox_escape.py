@@ -6,6 +6,7 @@ compose network exists.
 
 import json
 import subprocess
+import sys
 
 import pytest
 from furnace.sandbox.docker_sandbox import LAB_NETWORK, SandboxError, run_in_sandbox
@@ -84,3 +85,21 @@ def test_other_networks_and_path_escapes_are_refused(tmp_path):
 def test_timeout_is_enforced(tmp_path):
     r = run_in_sandbox(tmp_path, ["python", "-c", "import time; time.sleep(30)"], timeout_s=3)
     assert r.timed_out and not r.ok
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX permission bits")
+def test_disposable_copy_is_opened_to_the_sandbox_user(tmp_path):
+    """Regression (Linux CI): a 0700 source made the copy unreadable to uid 10001."""
+    from furnace.sandbox.docker_sandbox import open_to_sandbox_user
+
+    root = tmp_path / "repo"
+    (root / "pkg").mkdir(parents=True)
+    (root / "pkg" / "a.py").write_text("x = 1\n")
+    (root / "run.sh").write_text("#!/bin/sh\n")
+    (root / "run.sh").chmod(0o700)
+    root.chmod(0o700)
+    open_to_sandbox_user(root)
+    assert root.stat().st_mode & 0o777 == 0o777
+    assert (root / "pkg").stat().st_mode & 0o777 == 0o777
+    assert (root / "pkg" / "a.py").stat().st_mode & 0o777 == 0o666
+    assert (root / "run.sh").stat().st_mode & 0o777 == 0o777

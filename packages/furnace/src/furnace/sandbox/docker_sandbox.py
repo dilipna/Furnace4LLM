@@ -114,6 +114,24 @@ def _deps_volume(repo: Path) -> str | None:
     return vol
 
 
+def open_to_sandbox_user(root: Path) -> None:
+    """Make the disposable copy readable and writable by the sandbox's uid 10001.
+
+    copytree keeps source modes, so a 0700 source (pytest's tmp_path, mkdtemp) is unreadable
+    to the container user on Linux; Docker Desktop on Windows does not enforce this, which hid
+    it. Only the copy is opened: its mkdtemp parent stays 0700, so other host users still
+    cannot reach it.
+    """
+    for p in [root, *root.rglob("*")]:
+        if p.is_symlink():
+            continue
+        mode = p.stat().st_mode
+        if p.is_dir():
+            p.chmod(0o777)
+        else:
+            p.chmod(0o777 if mode & 0o111 else 0o666)
+
+
 def run_in_sandbox(
     repo: Path,
     cmd: list[str],
@@ -143,6 +161,7 @@ def run_in_sandbox(
             raise SandboxError(f"file path escapes the sandbox copy: {rel}")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text, encoding="utf-8")
+    open_to_sandbox_user(work / "repo")
     name = f"furnace-sbx-{uuid.uuid4().hex[:10]}"
     args = [
         "run",
