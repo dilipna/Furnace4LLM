@@ -11,7 +11,9 @@ export default async function BenchPage({ searchParams }: PageProps<"/bench">) {
   const wanted = typeof sp.c === "string" ? sp.c : undefined;
   const chosen: Campaign | undefined = list.find((c) => c.name === wanted) ?? list[0];
   const data = chosen
-    ? await apiGet<{ report_md: string | null; notes_md: string | null }>(`/api/bench/campaigns/${chosen.name}`)
+    ? await apiGet<{ report_md: string | null; notes_md: string | null; corrections_md?: string | null }>(
+        `/api/bench/campaigns/${chosen.name}`,
+      )
     : null;
 
   return (
@@ -42,6 +44,11 @@ export default async function BenchPage({ searchParams }: PageProps<"/bench">) {
             </nav>
           )}
         </div>
+        {data?.corrections_md && (
+          <section aria-label="Corrections" className="mt-6 rounded-[6px] border border-warn/50 bg-bg-1 px-5 py-3">
+            <Markdown source={data.corrections_md} />
+          </section>
+        )}
         {data?.notes_md && (
           <details className="mt-6 rounded-[6px] border border-line bg-bg-1 px-5 py-3">
             <summary className="cursor-pointer text-[13px] text-fg-1">Campaign conditions (read first)</summary>

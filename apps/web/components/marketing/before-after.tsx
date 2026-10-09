@@ -18,7 +18,17 @@ const STEP_MS = 650;
  * Replayable before/after for the R1 regression: main, the PR, Furnace's verified repair.
  * Every value is from bench/results (RQ5); the animation only reveals them in order.
  */
-export function BeforeAfter({ stages, source, n }: { stages: Stage[]; source: string; n: number }) {
+export function BeforeAfter({
+  stages,
+  source,
+  n,
+  footnote,
+}: {
+  stages: Stage[];
+  source: string;
+  n: number;
+  footnote?: string | null;
+}) {
   const [step, setStep] = useState(0);
   const timers = useRef<number[]>([]);
 
@@ -113,6 +123,7 @@ export function BeforeAfter({ stages, source, n }: { stages: Stage[]; source: st
         })}
       </div>
 
+      {footnote && <p className="border-t border-line px-4 py-2.5 text-[11px] leading-relaxed text-fg-2">{footnote}</p>}
       <figcaption className="border-t border-line px-4 py-2.5 text-[11px] leading-relaxed text-fg-3">
         p95 time to first token on the F1 support assistant, laptop RTX 3050 Ti (vLLM, Qwen2.5-0.5B). Bar: median of {n}{" "}
         repeats; ticks: each repeat. Source{" "}

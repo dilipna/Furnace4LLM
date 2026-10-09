@@ -24,6 +24,20 @@ export async function HeroEvidence() {
     return v.length ? median(v) : null;
   };
   const verified = att.filter((a) => a.status === "verified").length;
+  // the candidate each attempt proposed (or, if none passed, the last one it measured)
+  const chosen = att.map((a) => a.candidates.find((c) => c.verdict === "pass") ?? a.candidates[a.candidates.length - 1]);
+  const toLog = chosen.length > 0 && chosen.every((c) => c?.strategy.includes("to_log"));
+  const rejected = att.flatMap((a) => a.candidates.filter((c) => c.verdict === "fail" && c.perf_summary));
+  const pcts = rejected
+    .map((c) => /repair [\d.]+ \(\+?(-?[\d.]+)%/.exec(c.perf_summary ?? "")?.[1])
+    .filter((x): x is string => x != null)
+    .map(Number);
+  const footnote =
+    rejected.length > 0
+      ? `Furnace's first candidate kept the values in the prompt (moved to the end) and was blocked by its own perf gate in ${rejected.length}/${att.length} attempts` +
+        (pcts.length ? ` (+${Math.min(...pcts).toFixed(0)}% to +${Math.max(...pcts).toFixed(0)}% p95 vs main)` : "") +
+        "."
+      : null;
   const stages: Stage[] = [
     {
       key: "base",
@@ -44,11 +58,13 @@ export async function HeroEvidence() {
     {
       key: "repair",
       label: "Furnace repair",
-      note: `values moved to the end of the user message · ${verified}/${att.length} verified`,
+      note: `${toLog ? "values logged, no longer sent in the prompt" : "values moved to the end of the user message"} · ${verified}/${att.length} verified`,
       p95: median(cv.map((c) => c.value)),
       runs: cv.map((c) => c.value),
       hit: hits(cv.map((c) => c.prefix_hit_rate?.[1])),
     },
   ];
-  return <BeforeAfter stages={stages} n={att.length} source={`${REPO}/bench/results/${campaign}/rq5.md`} />;
+  return (
+    <BeforeAfter stages={stages} n={att.length} footnote={footnote} source={`${REPO}/bench/results/${campaign}/rq5.md`} />
+  );
 }

@@ -17,6 +17,7 @@ def client(tmp_path, monkeypatch):
     )
     (camp / "rq4" / "rq4.json").write_text(json.dumps({"rows": [1]}))
     (camp / "REPORT.md").write_text("# report")
+    (camp / "CORRECTIONS.md").write_text("# correction")
     (camp / "rq3").mkdir()
     (camp / "rq3" / "r1_dynamic_head.targeted.check.md").write_text("# 1 regression found")
     (tmp_path / "results" / "not-a-campaign").mkdir()
@@ -44,6 +45,7 @@ def test_campaigns_and_results(client):
     assert [x["name"] for x in camps] == ["2026-10-06"]
     assert set(camps[0]["available"]) == {"rq1", "rq4"} and camps[0]["has_report"]
     assert c.get("/api/bench/campaigns/2026-10-06").json()["report_md"] == "# report"
+    assert c.get("/api/bench/campaigns/2026-10-06").json()["corrections_md"] == "# correction"
     assert c.get("/api/bench/campaigns/2026-10-06/rq4").json() == {"rows": [1]}
     assert "appspec" not in c.get("/api/bench/campaigns/2026-10-06/rq1").json()["apps"][0]
     assert c.get("/api/bench/campaigns/2026-10-06/rq5").status_code == 404

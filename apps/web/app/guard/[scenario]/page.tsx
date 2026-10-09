@@ -88,6 +88,22 @@ function Attempt({ a, open }: { a: RepairAttempt; open: boolean }) {
         </div>
       )}
 
+      {a.candidates.length > 0 && (
+        <ol className="mt-4 space-y-2 text-[12px]" aria-label="Repair candidates, in the order tried">
+          {a.candidates.map((c, i) => (
+            <li key={c.strategy} className="rounded-[4px] border border-line px-3 py-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="num text-fg-3">candidate {i + 1}</span>
+                <span className="num text-fg-0">{c.strategy.replace("rule:prefix_stability.", "")}</span>
+                <Verdict v={c.verdict ?? "skip"} />
+              </div>
+              {c.perf_summary && <p className="num mt-1 text-fg-2">{c.perf_summary}</p>}
+              {c.explanation && <p className="mt-1 text-fg-3">{c.explanation}</p>}
+            </li>
+          ))}
+        </ol>
+      )}
+
       {a.audit && a.audit.items.some((i) => i.verdict !== "pass") && (
         <ul className="mt-3 space-y-1 text-[12px]">
           {a.audit.items

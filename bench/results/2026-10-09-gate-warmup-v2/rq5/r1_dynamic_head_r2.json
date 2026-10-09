@@ -1,0 +1,235 @@
+{
+  "scenario": "r1_dynamic_head",
+  "repeat": 2,
+  "status": "verified",
+  "repro": {
+    "head_fails": true,
+    "base_passes": true,
+    "logs": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________ test_prompt_prefix_is_shared_across_requests _________________\n\n    def test_prompt_prefix_is_shared_across_requests():\n        first = _text(QUESTIONS[0])\n        for q in QUESTIONS[1:]:\n            shared = _shared(first, _text(q))\n>           assert shared >= MIN_SHARED_CHARS, (\n                f\"requests diverge after {shared} characters (need {MIN_SHARED_CHARS}); \"\n                f\"first difference: {first[shared:shared + 60]!r}\"\n            )\nE           AssertionError: requests diverge after 15 characters (need 3558); first difference: '8a2e3c81 at 2026-10-09T04:01:08.834797+00:00\\nYou are Kilnwor'\nE           assert 15 >= 3558\n\ntests/furnace_regression/test_prefix_stability_a4eaf424.py:34: AssertionError\n=========================== short test summary info ============================\nFAILED tests/furnace_regression/test_prefix_stability_a4eaf424.py::test_prompt_prefix_is_shared_across_requests\n1 failed in 1.29s"
+  },
+  "localization": [
+    {
+      "node_key": "prompt:app/prompts.py::build_messages#system",
+      "file": "app/prompts.py",
+      "hunk": {
+        "old_start": 1,
+        "old_lines": 0,
+        "new_start": 1,
+        "new_lines": 3
+      },
+      "score": 1.0,
+      "reasons": [
+        "hunk lies in the system-message construction whose dynamic_head changed False -> True",
+        "static prefix shrank from 3927 to 8 chars"
+      ]
+    },
+    {
+      "node_key": "prompt:app/prompts.py::build_messages#system",
+      "file": "app/prompts.py",
+      "hunk": {
+        "old_start": 60,
+        "old_lines": 1,
+        "new_start": 63,
+        "new_lines": 4
+      },
+      "score": 1.0,
+      "reasons": [
+        "hunk lies in the system-message construction whose dynamic_head changed False -> True",
+        "static prefix shrank from 3927 to 8 chars"
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "strategy": "rule:prefix_stability.move_dynamic_to_suffix",
+      "verdict": "fail",
+      "perf_summary": "p95 TTFT base 88.6 | PR 890.4 (+904.8%, block) | repair 133.2 (+50.3%, block)",
+      "explanation": "Moved the per-request value(s) f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\" from the start of the system message to the end of the last user message. They are still sent to the model, but every request now begins with the same static system prompt and nothing per-request precedes the retrieved context, so the prefix cache can reuse both.",
+      "regression_test": "pass",
+      "existing_tests": "pass"
+    },
+    {
+      "strategy": "rule:prefix_stability.move_dynamic_to_log",
+      "verdict": "pass",
+      "perf_summary": "p95 TTFT base 84.0 | PR 895.7 (+965.7%, block) | repair 88.7 (+5.5%, pass)",
+      "explanation": "Removed the per-request value(s) f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\" from the system message and log them with the standard logging module just before the messages are built. The debugging information is kept in the application log, and every request again starts with exactly the base revision's prompt, so the prefix cache reuses all of it. Trade-off: the model no longer sees these values; if it needs them, the suffix variant keeps them in the prompt at the measured latency cost.",
+      "regression_test": "pass",
+      "existing_tests": "pass"
+    }
+  ],
+  "perf": {
+    "head_vs_base": {
+      "metric": "ttft_p95_ms",
+      "baseline": 84.0,
+      "value": 895.7,
+      "change_pct": 965.7,
+      "verdict": "block",
+      "runs": 3,
+      "baseline_runs": [
+        85.2,
+        83.5,
+        84.0
+      ],
+      "value_runs": [
+        895.7,
+        887.4,
+        909.5
+      ],
+      "separated": true,
+      "prefix_hit_rate": [
+        0.9809040367416002,
+        0.0
+      ],
+      "goodput_rps": [
+        6.501286432426331,
+        1.3452109179774425
+      ]
+    },
+    "candidate_vs_base": {
+      "metric": "ttft_p95_ms",
+      "baseline": 84.0,
+      "value": 88.7,
+      "change_pct": 5.5,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        85.2,
+        83.5,
+        84.0
+      ],
+      "value_runs": [
+        88.7,
+        89.2,
+        84.6
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9809040367416002,
+        0.9794537104181774
+      ],
+      "goodput_rps": [
+        6.501286432426331,
+        6.457227382799423
+      ]
+    },
+    "within_budget": true,
+    "summary": "p95 TTFT base 84.0 | PR 895.7 (+965.7%, block) | repair 88.7 (+5.5%, pass)"
+  },
+  "logs": {
+    "repro_head": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_________________ test_prompt_prefix_is_shared_across_requests _________________\n\n    def test_prompt_prefix_is_shared_across_requests():\n        first = _text(QUESTIONS[0])\n        for q in QUESTIONS[1:]:\n            shared = _shared(first, _text(q))\n>           assert shared >= MIN_SHARED_CHARS, (\n                f\"requests diverge after {shared} characters (need {MIN_SHARED_CHARS}); \"\n                f\"first difference: {first[shared:shared + 60]!r}\"\n            )\nE           AssertionError: requests diverge after 15 characters (need 3558); first difference: '8a2e3c81 at 2026-10-09T04:01:08.834797+00:00\\nYou are Kilnwor'\nE           assert 15 >= 3558\n\ntests/furnace_regression/test_prefix_stability_a4eaf424.py:34: AssertionError\n=========================== short test summary info ============================\nFAILED tests/furnace_regression/test_prefix_stability_a4eaf424.py::test_prompt_prefix_is_shared_across_requests\n1 failed in 1.29s",
+    "repro_base": ".                                                                        [100%]\n1 passed in 1.24s"
+  },
+  "stages": [
+    {
+      "t": 0.5,
+      "stage": "harness",
+      "msg": "generated furnace_harness.py from the route handler"
+    },
+    {
+      "t": 3.8,
+      "stage": "regression_test",
+      "msg": "wrote tests/furnace_regression/test_prefix_stability_a4eaf424.py: base shares 3954 chars, PR head shares 15"
+    },
+    {
+      "t": 8.6,
+      "stage": "reproduce",
+      "msg": "regression test fails on the PR head and passes on the base revision"
+    },
+    {
+      "t": 8.6,
+      "stage": "localize",
+      "msg": "2 hunk(s) in app/prompts.py::build_messages"
+    },
+    {
+      "t": 8.6,
+      "stage": "generate",
+      "msg": "rule:prefix_stability.move_dynamic_to_suffix: Moved the per-request value(s) f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\" from the start of the system message to the end of the last user message. They are still sent to the model, but every request now begins with the same static system prompt and nothing per-request precedes the retrieved context, so the prefix cache can reuse both."
+    },
+    {
+      "t": 13.3,
+      "stage": "validate",
+      "msg": "regression test pass, existing tests pass"
+    },
+    {
+      "t": 104.7,
+      "stage": "benchmark",
+      "msg": "p95 TTFT base 88.6 | PR 890.4 (+904.8%, block) | repair 133.2 (+50.3%, block)"
+    },
+    {
+      "t": 104.7,
+      "stage": "reject",
+      "msg": "rule:prefix_stability.move_dynamic_to_suffix rejected; trying the next strategy"
+    },
+    {
+      "t": 104.8,
+      "stage": "generate",
+      "msg": "rule:prefix_stability.move_dynamic_to_log: Removed the per-request value(s) f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\" from the system message and log them with the standard logging module just before the messages are built. The debugging information is kept in the application log, and every request again starts with exactly the base revision's prompt, so the prefix cache reuses all of it. Trade-off: the model no longer sees these values; if it needs them, the suffix variant keeps them in the prompt at the measured latency cost."
+    },
+    {
+      "t": 109.5,
+      "stage": "validate",
+      "msg": "regression test pass, existing tests pass"
+    },
+    {
+      "t": 199.3,
+      "stage": "benchmark",
+      "msg": "p95 TTFT base 84.0 | PR 895.7 (+965.7%, block) | repair 88.7 (+5.5%, pass)"
+    }
+  ],
+  "repair_seconds": 199.3279999999795,
+  "patch": "--- a/app/prompts.py\n+++ b/app/prompts.py\n@@ -1,3 +1,4 @@\n+import logging\n import uuid\n from datetime import UTC, datetime\n \n@@ -59,10 +60,13 @@\n \n def build_messages(question: str, chunks: list[Chunk], max_chars: int) -> list[dict[str, str]]:\n     context = build_context(chunks, max_chars)\n+    logging.getLogger(__name__).info(\n+        \"per-request values (logged, not sent in the prompt): %s\", f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\"\n+    )\n     return [\n         {\n             \"role\": \"system\",\n-            \"content\": f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\" + SYSTEM_PROMPT,\n+            \"content\": SYSTEM_PROMPT,\n         },\n         {\"role\": \"user\", \"content\": f\"CONTEXT:\\n{context}\\n\\nQUESTION: {question}\"},\n     ]\n--- a/furnace_harness.py\n+++ b/furnace_harness.py\n@@ -0,0 +1,34 @@\n+\"\"\"Generated by Furnace Forge from app/main.py::chat.\n+\n+render(question): the exact chat messages the handler sends to the model, without\n+starting the server or calling the model.\n+answer(question): the handler's full answer path (model call and any output\n+post-processing), as text. Needs the app's model endpoint.\n+Regenerate this file if that handler changes.\"\"\"\n+\n+from types import SimpleNamespace\n+\n+from app.main import build_messages, rag_config, retrieve, stream_answer\n+\n+\n+def render(question: str) -> list[dict]:\n+    req = SimpleNamespace(question=question)\n+    cfg = rag_config()\n+    chunks = retrieve(req.question, top_k=cfg[\"retrieval\"][\"top_k\"])\n+    messages = build_messages(req.question, chunks, cfg[\"retrieval\"][\"max_context_chars\"])\n+    return messages\n+\n+\n+def answer(question: str) -> str:\n+    req = SimpleNamespace(question=question)\n+    cfg = rag_config()\n+    chunks = retrieve(req.question, top_k=cfg[\"retrieval\"][\"top_k\"])\n+    messages = build_messages(req.question, chunks, cfg[\"retrieval\"][\"max_context_chars\"])\n+    gen = cfg[\"generation\"]\n+    out = stream_answer(\n+            messages,\n+            max_tokens=gen[\"max_tokens\"],\n+            temperature=gen[\"temperature\"],\n+            route=\"/chat\",\n+        )\n+    return out if isinstance(out, str) else \"\".join(out)\n--- a/tests/furnace_regression/test_prefix_stability_a4eaf424.py\n+++ b/tests/furnace_regression/test_prefix_stability_a4eaf424.py\n@@ -0,0 +1,37 @@\n+\"\"\"Generated by Furnace Guard: regression test written before any fix was attempted.\n+\n+Failure mode: prefix instability (dynamic value at the head of the system prompt)\n+Change under test: r1_dynamic_head\n+\n+Every request must start with the same prompt text so the serving engine can reuse\n+the cached prefill of that shared prefix (prefix/KV caching). On the base revision,\n+two different requests shared 3954 leading characters; this test requires at\n+least 3558 (90% of that).\n+\"\"\"\n+\n+from furnace_harness import render\n+\n+MIN_SHARED_CHARS = 3558\n+QUESTIONS = ['How much does the Studio plan cost?', 'How many kilns does the Workshop plan support?', 'Is there a free trial?', 'When are invoices issued?', 'Which payment methods are accepted?', 'How do I get a refund?']\n+\n+\n+def _text(question: str) -> str:\n+    return \"\".join(f\"{m['role']}\\n{m['content']}\\n\" for m in render(question))\n+\n+\n+def _shared(a: str, b: str) -> int:\n+    n = min(len(a), len(b))\n+    i = 0\n+    while i < n and a[i] == b[i]:\n+        i += 1\n+    return i\n+\n+\n+def test_prompt_prefix_is_shared_across_requests():\n+    first = _text(QUESTIONS[0])\n+    for q in QUESTIONS[1:]:\n+        shared = _shared(first, _text(q))\n+        assert shared >= MIN_SHARED_CHARS, (\n+            f\"requests diverge after {shared} characters (need {MIN_SHARED_CHARS}); \"\n+            f\"first difference: {first[shared:shared + 60]!r}\"\n+        )\n",
+  "audit": {
+    "conclusion": "success",
+    "items": [
+      {
+        "key": "unit:tests/test_retriever.py",
+        "verdict": "pass",
+        "detail": "2 passed in 0.44s",
+        "seconds": 1.4
+      },
+      {
+        "key": "unit:tests/test_prompts.py",
+        "verdict": "pass",
+        "detail": "2 passed in 0.40s",
+        "seconds": 1.4
+      },
+      {
+        "key": "check:citation_required",
+        "verdict": "pass",
+        "detail": "citation contract met in 0/34 answers on the PR vs 0/34 on base (-0.0 pts; budget -5 pts; p=1.00); via full answer path (incl. post-processing)",
+        "seconds": 9.4
+      },
+      {
+        "key": "judge:ungrounded_answer",
+        "verdict": "skip",
+        "detail": "no judge model key configured (BYOK); judge not run",
+        "seconds": 0.0
+      },
+      {
+        "key": "check:prompt_prefix_stable",
+        "verdict": "pass",
+        "detail": "requests share 3954 leading characters (base 3954, need 3558)",
+        "seconds": 3.4
+      },
+      {
+        "key": "check:context_budget",
+        "verdict": "pass",
+        "detail": "largest prompt 980 tokens (base 980) against a budget of 3840; median 964 vs 964",
+        "seconds": 6.8
+      },
+      {
+        "key": "security:approval_gate",
+        "verdict": "pass",
+        "detail": "1 approval test(s) (generated from the base revision): 1 passed in 0.17s",
+        "seconds": 1.2
+      },
+      {
+        "key": "bench:chat_perf_gate",
+        "verdict": "pass",
+        "detail": "median p95 TTFT 90.9 -> 86.2 ms (-5.2%, pass; 3 runs each, runs overlap); prefix-cache hit 98% -> 98%",
+        "seconds": 50.4
+      }
+    ],
+    "new_failures": []
+  }
+}
