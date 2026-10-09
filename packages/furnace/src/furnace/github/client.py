@@ -46,6 +46,9 @@ class GitHubError(Exception):
     pass
 
 
+MAX_BODY_CHARS = 65_000  # GitHub rejects pull request bodies over 65,536 characters
+
+
 def _b64url(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
 
@@ -221,19 +224,35 @@ class Repo:
                 "/git/commits",
                 json={"message": commit_message, "tree": tree["sha"], "parents": [base_sha]},
             )
-            await self._req(
-                c,
-                "POST",
-                "/git/refs",
-                json={"ref": f"refs/heads/{new_branch}", "sha": commit["sha"]},
-            )
+            # Re-running on the same commit (a rehearsal, a retry) finds the branch taken:
+            # take the next free suffix instead of failing with 422.
+            branch = new_branch
+            for n in range(2, 12):
+                try:
+                    await self._req(
+                        c,
+                        "POST",
+                        "/git/refs",
+                        json={"ref": f"refs/heads/{branch}", "sha": commit["sha"]},
+                    )
+                    break
+                except GitHubError as exc:
+                    if ": 422 " not in str(exc) or "already exists" not in str(exc).lower():
+                        raise
+                    branch = f"{new_branch}-{n}"
+            else:
+                raise GitHubError(f"no free branch name after {new_branch}-11")
+            if len(body) > MAX_BODY_CHARS:
+                body = body[: MAX_BODY_CHARS - 200] + (
+                    "\n\n_(truncated: GitHub limits pull request bodies to 65,536 characters)_"
+                )
             pr = await self._req(
                 c,
                 "POST",
                 "/pulls",
                 json={
                     "title": title,
-                    "head": new_branch,
+                    "head": branch,
                     "base": base_branch,
                     "body": body,
                     "draft": True,
@@ -243,7 +262,7 @@ class Repo:
                 "number": pr["number"],
                 "url": pr["html_url"],
                 "commit": commit["sha"],
-                "branch": new_branch,
+                "branch": branch,
             }
 
     async def create_check(self, head_sha: str, name: str = "Furnace Guard") -> int:
