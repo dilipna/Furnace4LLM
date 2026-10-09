@@ -304,9 +304,21 @@ def _context_budget(item: SuiteItem, ctx: GuardContext) -> ItemResult:
     )
 
 
+def _endpoint_down(target: BenchTarget) -> str | None:
+    """Why the endpoint cannot serve a benchmark, or None if it answers /models."""
+    try:
+        httpx.get(f"{target.base_url.rstrip('/')}/models", timeout=3).raise_for_status()
+    except httpx.HTTPError as exc:
+        return f"{type(exc).__name__} at {target.base_url}"
+    return None
+
+
 def _bench(item: SuiteItem, ctx: GuardContext) -> ItemResult:
     if ctx.target is None:
         return ItemResult(item.key, "skip", "no inference endpoint configured")
+    down = _endpoint_down(ctx.target)
+    if down:  # measured nothing: an error, never a pass
+        return ItemResult(item.key, "error", f"inference endpoint unreachable ({down}); not run")
     res = run_gate(
         {"base": ctx.base, "pr_head": ctx.head},
         ctx.questions,
@@ -315,6 +327,8 @@ def _bench(item: SuiteItem, ctx: GuardContext) -> ItemResult:
         concurrency=8,
     )
     c = compare(res["base"], res["pr_head"], ctx.policy)
+    if c["verdict"] == "error":
+        return ItemResult(item.key, "error", f"perf gate measured nothing: {c['reason']}", c)
     verdict = {"pass": "pass", "warn": "warn", "block": "fail"}.get(c["verdict"], "error")
     hits = c.get("prefix_hit_rate") or (None, None)
     hit_txt = (
@@ -352,11 +366,17 @@ CHECKS: dict[str, Callable[[SuiteItem, GuardContext], ItemResult]] = {
 
 
 def run_items(
-    items: list[SuiteItem], ctx: GuardContext, progress: Callable[[str], None] | None = None
+    items: list[SuiteItem],
+    ctx: GuardContext,
+    progress: Callable[[str], None] | None = None,
+    on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> list[ItemResult]:
+    """Run each item in order. `on_event` receives check_start/check_done dicts (live views)."""
     out = []
     for item in items:
         fn = CHECKS.get(item.key) if item.kind == "check" else EXECUTORS.get(item.kind)
+        if on_event:
+            on_event({"type": "check_start", "key": item.key, "kind": item.kind})
         t0 = time.monotonic()
         if fn is None:
             r = ItemResult(item.key, "skip", f"no executor for {item.kind}")
@@ -368,6 +388,16 @@ def run_items(
         r.seconds = round(time.monotonic() - t0, 1)
         if progress:
             progress(f"{item.key}: {r.verdict} ({r.seconds}s) {r.detail}")
+        if on_event:
+            on_event(
+                {
+                    "type": "check_done",
+                    "key": r.key,
+                    "verdict": r.verdict,
+                    "seconds": r.seconds,
+                    "detail": r.detail[:500],
+                }
+            )
         out.append(r)
     return out
 

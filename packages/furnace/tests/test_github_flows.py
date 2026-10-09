@@ -75,7 +75,9 @@ async def test_guard_pr_reports_a_check_run(stub_work):
     stub_work.setattr(
         flows,
         "run_items",
-        lambda items, ctx, progress: [ItemResult("unit:tests/test_x.py", "fail", "1 failed")],
+        lambda items, ctx, progress, on_event=None: [
+            ItemResult("unit:tests/test_x.py", "fail", "1 failed")
+        ],
     )
     fake = FakeGitHub()
     out = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
@@ -95,8 +97,28 @@ async def test_guard_pr_reports_a_check_run(stub_work):
     }
 
 
+async def test_guard_pr_streams_impact_then_checks_then_verdict(stub_work):
+    def run(items, ctx, progress, on_event=None):
+        assert on_event is not None
+        on_event({"type": "check_start", "key": items[0].key, "kind": "unit"})
+        on_event({"type": "check_done", "key": items[0].key, "verdict": "pass", "seconds": 0.1})
+        return [ItemResult(items[0].key, "pass", "ok")]
+
+    stub_work.setattr(flows, "run_items", run)
+    events: list[dict] = []
+    out = await flows.guard_pr(
+        _app(FakeGitHub()), "o/r", 5, suite=SUITE, target=None, questions=["q"],
+        on_event=events.append,
+    )  # fmt: skip
+    assert [e["type"] for e in events] == ["impact", "check_start", "check_done", "verdict"]
+    impact = events[0]
+    assert impact["changed"] == ["app.py"] and impact["full_suite_size"] == 1
+    assert [s["key"] for s in impact["selected"]] == ["unit:tests/test_x.py"]
+    assert events[-1]["conclusion"] == out["conclusion"] == "success"
+
+
 async def test_guard_pr_crash_still_completes_the_check(stub_work):
-    def boom(items, ctx, progress):
+    def boom(items, ctx, progress, on_event=None):
         raise RuntimeError("sandbox unavailable")
 
     stub_work.setattr(flows, "run_items", boom)

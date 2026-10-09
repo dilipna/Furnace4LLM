@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DiffView } from "@/components/guard/diff-view";
+import { GuardLive } from "@/components/guard/guard-live";
 import { Verdict } from "@/components/guard/verdict";
 import { AppHeader } from "@/components/ui/app-header";
 import { apiGet } from "@/lib/api";
@@ -155,6 +156,12 @@ export default async function GuardScenario({ params }: PageProps<"/guard/[scena
             </div>
           )}
         </div>
+
+        {r && (
+          <div className="mt-6">
+            <GuardLive scenario={scenario} />
+          </div>
+        )}
 
         {r && (
           <section className="mt-8" aria-labelledby="items">

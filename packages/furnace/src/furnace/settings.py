@@ -49,6 +49,8 @@ class Settings(BaseSettings):
     guard_suite_path: Path | None = None
     guard_questions_path: Path | None = None
     guard_max_prompt_tokens: int | None = None
+    # F1 fixture app and PR scenarios for local (no-GitHub) Guard runs (default: <repo>/fixtures).
+    fixtures_dir: Path | None = None
 
     @model_validator(mode="after")
     def _no_dev_secrets_in_prod(self) -> Settings:

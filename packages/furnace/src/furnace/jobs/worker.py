@@ -142,7 +142,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Furnace worker / runner")
     parser.add_argument("--queues", default="cpu", help="comma-separated: cpu,runner")
     parser.add_argument("--id", default=None, help="worker id (default: <host>-<queues>)")
+    parser.add_argument("--list-handlers", action="store_true", help="print job kinds and exit")
     args = parser.parse_args()
+    if args.list_handlers:
+        import furnace.jobs.handlers  # noqa: F401
+
+        print(" ".join(sorted(HANDLERS)))
+        return
     queues = [q.strip() for q in args.queues.split(",") if q.strip()]
     worker_id = args.id or f"{platform.node()}-{'-'.join(queues)}"
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -150,4 +156,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # `python -m furnace.jobs.worker` runs this file as __main__, a second copy of the module.
+    # Handler modules register into furnace.jobs.worker.HANDLERS, so run that copy's main;
+    # running this one would see an empty registry and fail every job but system.ping.
+    from furnace.jobs import worker as _canonical
+
+    _canonical.main()
