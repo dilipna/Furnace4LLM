@@ -15,3 +15,19 @@
   server, the FastAPI dev server, the test suite (`poe check`, including short Docker sandbox tests)
   and Playwright screenshots. This adds CPU noise to client-side timing; repeats and revisions are
   interleaved so it spreads across configs rather than biasing one.
+
+## Addendum 2026-10-09: the clock was not a power cap
+
+Measured on the same laptop on AC, Windows power mode "Best performance", driver 592.82:
+- A saturating load (fp16 4096x4096 matmul loop for 20 s in the vLLM image) ran at
+  **1,830-1,852 MHz and 80 W** (24.7 TFLOPS); the only active clock-event reason was the normal
+  80 W software power limit.
+- The lab vLLM serving Qwen2.5-0.5B under 16-48 concurrent requests ran at **780 MHz, ~30 W**,
+  utilization ~80%, with **"Idle" as the only active clock-event reason**: no power, thermal or
+  power-brake throttling.
+
+So "capped" above is the wrong word: the driver chose ~780 MHz for this light, bursty serving
+load. The 2026-10-04 vLLM runs averaged 1,948 MHz; what made the driver boost then and not now is
+not identified. The consequence paragraph stands unchanged: comparisons inside each RQ share the
+clock; absolute latencies are at this clock. `scripts/preflight.py --load` reports the clock and
+the active reasons before a demo.
