@@ -32,6 +32,14 @@
   --viz-focus: #e2632c;
   --viz-base: #3b82d6;
   --viz-grid: #2a2724;
+  /* Live run (this request stream). Validated with focus + base, all pairs, on bg-1. */
+  --viz-live: #26a69a;
+  /* Heat: one-hue ember ramp for magnitude (validated ordinal on bg-1); idle = bg-3. */
+  --heat-1: #7d3e1c;
+  --heat-2: #a84f22;
+  --heat-3: #d4622b;
+  --heat-4: #f57d3a;
+  --heat-5: #ffa766;
 
   color-scheme: dark;
 }
@@ -55,6 +63,7 @@
   --color-bad: var(--bad);
   --color-viz-focus: var(--viz-focus);
   --color-viz-base: var(--viz-base);
+  --color-viz-live: var(--viz-live);
 
   --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
@@ -98,6 +107,44 @@ body {
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+}
+
+/* Motion: 150-300 ms, only where something real changed. */
+@keyframes dot-in {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.dot-in {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: dot-in 220ms ease-out both;
+}
+@keyframes line-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.line-in {
+  animation: line-in 180ms ease-out both;
+}
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+.caret {
+  animation: caret 1s steps(1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

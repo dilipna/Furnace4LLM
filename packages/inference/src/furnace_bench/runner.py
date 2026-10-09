@@ -8,6 +8,7 @@ a later level would hit prefix-cache entries created by an earlier level).
 from __future__ import annotations
 
 import asyncio
+import functools
 import hashlib
 import platform
 import subprocess
@@ -42,6 +43,9 @@ from furnace_bench.telemetry.nvml import NVMLSampler
 from furnace_bench.workload_spec import WorkloadSpec
 
 ProgressFn = Callable[[str], None]
+# Called as each measured request finishes (warmup excluded), for live views.
+RecordFn = Callable[[RequestRecord], None]
+DoneFn = Callable[[int, GeneratedRequest, RequestTiming], None]
 
 
 @dataclass
@@ -113,6 +117,20 @@ def _to_record(
     return rec
 
 
+def _emit_record(
+    cb: RecordFn,
+    base_idx: int,
+    level: float,
+    repeat: int,
+    t0: float,
+    plan: BenchPlan,
+    i: int,
+    req: GeneratedRequest,
+    t: RequestTiming,
+) -> None:
+    cb(_to_record(base_idx + i, level, repeat, req, t, t0, plan))
+
+
 class _Sender:
     def __init__(self, adapter: Adapter, session: aiohttp.ClientSession, plan: BenchPlan) -> None:
         self.adapter, self.session, self.plan = adapter, session, plan
@@ -139,14 +157,16 @@ class _Sender:
 
 
 async def _closed_loop(
-    reqs: list[GeneratedRequest], concurrency: int, send: _Sender
+    reqs: list[GeneratedRequest], concurrency: int, send: _Sender, on_done: DoneFn | None = None
 ) -> list[RequestTiming]:
     results: list[RequestTiming | None] = [None] * len(reqs)
     it = iter(enumerate(reqs))  # shared iterator: asyncio is single-threaded, so this is safe
 
     async def worker() -> None:
         for i, r in it:
-            results[i] = await send(r)
+            t = results[i] = await send(r)
+            if on_done is not None:
+                on_done(i, r, t)
 
     await asyncio.gather(*(worker() for _ in range(max(1, concurrency))))
     return [r for r in results if r is not None]
@@ -158,6 +178,7 @@ async def _open_loop(
     plan: BenchPlan,
     send: _Sender,
     rng: np.random.Generator,
+    on_done: DoneFn | None = None,
 ) -> list[RequestTiming]:
     n = len(reqs)
     if plan.arrival == ArrivalMode.gamma and plan.gamma_shape:
@@ -169,11 +190,18 @@ async def _open_loop(
     loop = asyncio.get_running_loop()
     start = loop.time()
     tasks: list[asyncio.Task[RequestTiming]] = []
-    for r, at in zip(reqs, arrivals, strict=True):
+
+    async def one(i: int, r: GeneratedRequest) -> RequestTiming:
+        t = await send(r)
+        if on_done is not None:
+            on_done(i, r, t)
+        return t
+
+    for i, (r, at) in enumerate(zip(reqs, arrivals, strict=True)):
         delay = start + float(at) - loop.time()
         if delay > 0:
             await asyncio.sleep(delay)
-        tasks.append(asyncio.create_task(send(r)))
+        tasks.append(asyncio.create_task(one(i, r)))
     return list(await asyncio.gather(*tasks))
 
 
@@ -184,6 +212,7 @@ async def run_benchmark(
     *,
     sample_gpu: bool = True,
     progress: ProgressFn | None = None,
+    on_record: RecordFn | None = None,
 ) -> BenchResult:
     say = progress or (lambda _m: None)
     started_at = datetime.now(timezone.utc).isoformat()
@@ -251,11 +280,16 @@ async def run_benchmark(
                     if warm:
                         await _closed_loop(warm, int(min(level, len(warm))) or 1, send)
                     say(f"{label}: measuring {len(measured)} requests")
-                    if plan.arrival == ArrivalMode.closed_loop:
-                        timings = await _closed_loop(measured, int(level), send)
-                    else:
-                        timings = await _open_loop(measured, float(level), plan, send, rng)
                     base_idx = len(records)
+                    done: DoneFn | None = None
+                    if on_record is not None:
+                        done = functools.partial(
+                            _emit_record, on_record, base_idx, level, repeat, t0, plan
+                        )
+                    if plan.arrival == ArrivalMode.closed_loop:
+                        timings = await _closed_loop(measured, int(level), send, done)
+                    else:
+                        timings = await _open_loop(measured, float(level), plan, send, rng, done)
                     recs = [
                         _to_record(base_idx + i, level, repeat, r, t, t0, plan)
                         for i, (r, t) in enumerate(zip(measured, timings, strict=True))

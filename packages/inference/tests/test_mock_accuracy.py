@@ -124,3 +124,20 @@ def test_ttft_timeouts_are_classified():
         res = _run(url, 1, n=2, warmup=0, ttft_timeout_s=0.1)
     assert all(r.error == "ttft_timeout" for r in res.records), [r.error for r in res.records]
     assert res.report.levels[0].timeout_rate == 1.0
+
+
+def test_on_record_streams_each_measured_request_once():
+    seen = []
+    with mock_server("--ttft-ms", "5", "--tpot-ms", "1") as url:
+        target = BenchTarget(base_url=url, model="mock")
+        plan = BenchPlan(
+            concurrency_levels=[1, 4], requests_per_level=6, warmup_requests=2, cooldown_s=0, seed=3
+        )
+        res = asyncio.run(
+            run_benchmark(target, SPEC, plan, sample_gpu=False, on_record=seen.append)
+        )
+    # warmup excluded; every measured request reported once, with the record the run keeps
+    assert len(seen) == len(res.records) == 12
+    assert sorted(r.idx for r in seen) == list(range(12))
+    by_idx = {r.idx: r for r in res.records}
+    assert all(r.ttft_ms == by_idx[r.idx].ttft_ms and r.level == by_idx[r.idx].level for r in seen)

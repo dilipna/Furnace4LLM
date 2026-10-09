@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     # Inference endpoint the runner benchmarks and evaluates against (OpenAI-compatible).
     lab_base_url: str = "http://localhost:8100/v1"
     lab_model: str = "lab"
+    # Live views: stream the lab endpoint's /metrics (+ NVML on this host) and allow small
+    # on-demand benchmark runs against it. Off on hosted deployments without a lab endpoint.
+    live_lab: bool = True
     # What webhook-triggered Guard runs use on the runner (see docs/github-app.md).
     guard_suite_path: Path | None = None
     guard_questions_path: Path | None = None
