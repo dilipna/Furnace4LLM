@@ -45,7 +45,9 @@ Migrations run automatically when the API container starts.
 3. Deploy. Check `https://furnace-api-XXXX.onrender.com/healthz` returns `{"ok": true, ...}`.
 
 With `FURNACE_ENV=prod` the API refuses to start with development secrets, and labeling is
-read-only (`FURNACE_LABELS_WRITABLE=false`, set in the image). The free service sleeps after
+read-only (`FURNACE_LABELS_WRITABLE=false`, set in the image). The hosted API has no lab
+endpoint, so live lab telemetry and "Run it now" are off (`FURNACE_LIVE_LAB=false`, set in the
+image): the panels show the recorded RQ4 run, labeled, and Guard runs need the laptop runner. The free service sleeps after
 15 minutes idle; the first request after that takes about a minute.
 
 ## 3. Vercel (web)
