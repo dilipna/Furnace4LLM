@@ -1,0 +1,391 @@
+{
+  "env": {
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "sm": "8.6",
+    "memory_mb": 4095,
+    "torch": "2.13.0+cu130",
+    "cuda": "13.0",
+    "triton": "3.7.1",
+    "python": "3.12.3",
+    "started_at": "2026-10-09T02:21:44+00:00",
+    "sm_clock_mhz_at_start": 1485.0,
+    "furnace_git_sha": "4406a18e15ebf666550745f10b4b3cc872936534"
+  },
+  "tolerances": {
+    "fp32": [
+      1.3e-06,
+      1e-05
+    ],
+    "fp16": [
+      0.001,
+      1e-05
+    ],
+    "bf16": [
+      0.016,
+      1e-05
+    ]
+  },
+  "rows": [
+    {
+      "dtype": "fp32",
+      "tokens": 1,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.0,
+      "triton_max_rel": 0.0,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 1,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.0,
+      "triton_max_rel": 0.0,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 1,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 4.76837158203125e-07,
+      "triton_max_rel": 2.1799037597247661e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 16,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 7.152557373046875e-07,
+      "triton_max_rel": 3.216206607703498e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 16,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 7.152557373046875e-07,
+      "triton_max_rel": 3.5270340958959423e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 16,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 7.152557373046875e-07,
+      "triton_max_rel": 3.275224287335732e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 512,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 9.5367431640625e-07,
+      "triton_max_rel": 3.982277405611967e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 512,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 9.5367431640625e-07,
+      "triton_max_rel": 3.422794918606087e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 512,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 9.5367431640625e-07,
+      "triton_max_rel": 3.4523083058957127e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 4096,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 9.5367431640625e-07,
+      "triton_max_rel": 4.2065752836606407e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 4096,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 9.5367431640625e-07,
+      "triton_max_rel": 4.276793106328114e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp32",
+      "tokens": 4096,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 1.430511474609375e-06,
+      "triton_max_rel": 4.3769230728685216e-07,
+      "eager_max_abs": 0.0,
+      "eager_max_rel": 0.0
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 1,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.0009734630584716797,
+      "triton_max_rel": 0.0004639452963601798,
+      "eager_max_abs": 0.0014510154724121094,
+      "eager_max_rel": 0.0009059527656063437
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 1,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.001285552978515625,
+      "triton_max_rel": 0.00048175131087191403,
+      "eager_max_abs": 0.001947641372680664,
+      "eager_max_rel": 0.0008661663741804659
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 1,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 0.0009756088256835938,
+      "triton_max_rel": 0.00048709113616496325,
+      "eager_max_abs": 0.0019419193267822266,
+      "eager_max_rel": 0.0009210872231051326
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 16,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.0009875297546386719,
+      "triton_max_rel": 0.00048495858209207654,
+      "eager_max_abs": 0.0019328594207763672,
+      "eager_max_rel": 0.0008819129434414208
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 16,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.0018062591552734375,
+      "triton_max_rel": 0.0004844785144086927,
+      "eager_max_abs": 0.0020999908447265625,
+      "eager_max_rel": 0.0009323378326371312
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 16,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 0.0018343925476074219,
+      "triton_max_rel": 0.00048756611067801714,
+      "eager_max_abs": 0.00305938720703125,
+      "eager_max_rel": 0.0009320371318608522
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 512,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.0019307136535644531,
+      "triton_max_rel": 0.00048732839059084654,
+      "eager_max_abs": 0.0032014846801757812,
+      "eager_max_rel": 0.000951739028096199
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 512,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.0019507408142089844,
+      "triton_max_rel": 0.00048804294783622026,
+      "eager_max_abs": 0.0034966468811035156,
+      "eager_max_rel": 0.0009651702712289989
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 512,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 0.0019502639770507812,
+      "triton_max_rel": 0.0004876856692135334,
+      "eager_max_abs": 0.0035924911499023438,
+      "eager_max_rel": 0.0009570388938300312
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 4096,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.00194549560546875,
+      "triton_max_rel": 0.00048804294783622026,
+      "eager_max_abs": 0.003783702850341797,
+      "eager_max_rel": 0.0009693162282928824
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 4096,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.0019516944885253906,
+      "triton_max_rel": 0.0004881620407104492,
+      "eager_max_abs": 0.003960132598876953,
+      "eager_max_rel": 0.0009559973259456456
+    },
+    {
+      "dtype": "fp16",
+      "tokens": 4096,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 0.0019507408142089844,
+      "triton_max_rel": 0.00048804294783622026,
+      "eager_max_abs": 0.004035472869873047,
+      "eager_max_rel": 0.0009664841345511377
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 1,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.007791042327880859,
+      "triton_max_rel": 0.00378575106151402,
+      "eager_max_abs": 0.012414693832397461,
+      "eager_max_rel": 0.006629813928157091
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 1,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.0073642730712890625,
+      "triton_max_rel": 0.003825398860499263,
+      "eager_max_abs": 0.014052152633666992,
+      "eager_max_rel": 0.007272491697221994
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 1,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 0.014584541320800781,
+      "triton_max_rel": 0.0037760876584798098,
+      "eager_max_abs": 0.015002250671386719,
+      "eager_max_rel": 0.007562656886875629
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 16,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.00874471664428711,
+      "triton_max_rel": 0.0038891432341188192,
+      "eager_max_abs": 0.02250528335571289,
+      "eager_max_rel": 0.007472544442862272
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 16,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.0078105926513671875,
+      "triton_max_rel": 0.0038900969084352255,
+      "eager_max_abs": 0.028749942779541016,
+      "eager_max_rel": 0.007417990826070309
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 16,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 0.011831283569335938,
+      "triton_max_rel": 0.003875200403854251,
+      "eager_max_abs": 0.015306234359741211,
+      "eager_max_rel": 0.007226292509585619
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 512,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.015195369720458984,
+      "triton_max_rel": 0.0038901043590158224,
+      "eager_max_abs": 0.023235321044921875,
+      "eager_max_rel": 0.007668599486351013
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 512,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.015438556671142578,
+      "triton_max_rel": 0.003890577470883727,
+      "eager_max_abs": 0.022068023681640625,
+      "eager_max_rel": 0.007602505851536989
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 512,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 0.015515327453613281,
+      "triton_max_rel": 0.0038908140268176794,
+      "eager_max_abs": 0.029171466827392578,
+      "eager_max_rel": 0.007697241380810738
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 4096,
+      "hidden": 896,
+      "pass": true,
+      "triton_max_abs": 0.015602588653564453,
+      "triton_max_rel": 0.0038910505827516317,
+      "eager_max_abs": 0.028496742248535156,
+      "eager_max_rel": 0.007704401388764381
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 4096,
+      "hidden": 1536,
+      "pass": true,
+      "triton_max_abs": 0.015607357025146484,
+      "triton_max_rel": 0.0038908140268176794,
+      "eager_max_abs": 0.030138015747070312,
+      "eager_max_rel": 0.007705810014158487
+    },
+    {
+      "dtype": "bf16",
+      "tokens": 4096,
+      "hidden": 4096,
+      "pass": true,
+      "triton_max_abs": 0.01561880111694336,
+      "triton_max_rel": 0.003891168860718608,
+      "eager_max_abs": 0.03311014175415039,
+      "eager_max_rel": 0.007699471432715654
+    }
+  ],
+  "failures": 0
+}
