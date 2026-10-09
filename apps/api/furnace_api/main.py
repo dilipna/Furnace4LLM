@@ -19,12 +19,14 @@ log = logging.getLogger("furnace.api")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
-    task: asyncio.Task[None] | None = None
+    tasks: list[asyncio.Task[None]] = []
     if settings.embedded_worker:
         # Free-tier hosting has no separate worker process: run the cpu queue in-process.
-        task = asyncio.create_task(run_forever(f"{settings.worker_id}-embedded", ["cpu"]))
+        tasks.append(asyncio.create_task(run_forever(f"{settings.worker_id}-embedded", ["cpu"])))
+    if settings.live_lab:
+        tasks.append(asyncio.create_task(live.SAMPLER.run_forever()))
     yield
-    if task:
+    for task in tasks:
         task.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await task

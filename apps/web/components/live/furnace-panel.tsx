@@ -115,7 +115,7 @@ export function FurnacePanel({ compact = false }: { compact?: boolean }) {
       : [];
 
   return (
-    <section aria-label="Lab endpoint telemetry" className="rounded-[6px] border border-line bg-bg-1">
+    <section aria-label="Lab endpoint telemetry" className="min-w-0 rounded-[6px] border border-line bg-bg-1">
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2.5">
         <div className="flex items-center gap-2 text-[13px]">
           <span className="font-medium text-fg-0">Lab endpoint</span>

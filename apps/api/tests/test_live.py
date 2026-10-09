@@ -66,6 +66,7 @@ def bench(tmp_path, monkeypatch):
     (tmp_path / W1).parent.mkdir(parents=True)
     shutil.copy(REPO_BENCH / W1, tmp_path / W1)
     monkeypatch.setenv("FURNACE_BENCH_DIR", str(tmp_path))
+    monkeypatch.setenv("FURNACE_LIVE_LAB", "true")
     get_settings.cache_clear()
     live._recorded.cache_clear()
     yield tmp_path
@@ -204,3 +205,21 @@ def test_rate_limit_per_address(monkeypatch):
         live._rate_limit("1.2.3.4")
     assert e.value.status_code == 429
     live._rate_limit("5.6.7.8")
+
+
+def test_stream_sends_recent_history_first(monkeypatch):
+    monkeypatch.setenv("FURNACE_LIVE_LAB", "true")
+    get_settings.cache_clear()
+    sampler = live.LabSampler()
+    sampler.history.extend({"ts": float(i), "online": True, "n": i} for i in range(3))
+
+    async def newest():
+        return {"ts": 3.0, "online": True, "n": 3}
+
+    monkeypatch.setattr(sampler, "sample", newest)
+    monkeypatch.setattr(live, "SAMPLER", sampler)
+    monkeypatch.setattr(live, "STREAM_SECONDS", 0.5)
+    body = TestClient(_app()).get("/api/live/telemetry").text
+    ns = [json.loads(x[6:])["n"] for x in body.splitlines() if x.startswith("data: ")]
+    assert ns[:3] == [0, 1, 3]  # history minus its newest entry, then live samples
+    get_settings.cache_clear()
