@@ -74,6 +74,8 @@ class LabSampler:
         self._prev: tuple[float, dict[str, float | None]] | None = None
         self._nvml: NVMLSampler | None = None
         self._nvml_tried = False
+        # the last ~90 s of real samples, so a new viewer sees history, not one point
+        self.history: deque[dict[str, Any]] = deque(maxlen=90)
 
     def _gpu(self) -> dict[str, Any] | None:
         if not self._nvml_tried:
@@ -136,7 +138,16 @@ class LabSampler:
                 out["lab"] = self._derive(parse_prometheus(r.text), now)
             out["gpu"] = await asyncio.to_thread(self._gpu)
             self._last, self._last_at = out, now
+            self.history.append(out)
             return out
+
+    async def run_forever(self) -> None:
+        """Background poller (started with the API when live_lab is on)."""
+        while True:
+            t0 = time.monotonic()
+            with contextlib.suppress(Exception):
+                await self.sample()
+            await asyncio.sleep(max(0.05, self.interval_s - (time.monotonic() - t0)))
 
 
 SAMPLER = LabSampler()
@@ -159,6 +170,8 @@ async def telemetry(request: Request) -> EventSourceResponse:
         if not enabled:
             yield {"event": "disabled", "data": json.dumps({"online": False, "disabled": True})}
             return
+        for past in list(SAMPLER.history)[:-1]:  # backlog first: real samples, oldest first
+            yield {"event": "sample", "data": json.dumps(past)}
         deadline = time.monotonic() + STREAM_SECONDS
         while time.monotonic() < deadline and not await request.is_disconnected():
             yield {"event": "sample", "data": json.dumps(await SAMPLER.sample())}

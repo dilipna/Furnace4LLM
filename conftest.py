@@ -14,6 +14,8 @@ _BASE, _, _DBNAME = _DEV.rpartition("/")
 TEST_DB = _DBNAME if _DBNAME.endswith("_test") else f"{_DBNAME}_test"
 os.environ["FURNACE_DATABASE_URL"] = f"{_BASE}/{TEST_DB}"
 os.environ.setdefault("FURNACE_ENV", "dev")
+# no background lab poller in tests; tests of the live views turn it on explicitly
+os.environ.setdefault("FURNACE_LIVE_LAB", "false")
 os.environ.setdefault("FURNACE_BLOB_DIR", str(Path(__file__).parent / ".data" / "test-blobs"))
 
 

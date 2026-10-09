@@ -1,12 +1,43 @@
-# Furnace: session handoff (updated 2026-10-07 UTC, covers Oct 5-7 work)
+# Furnace: session handoff (updated 2026-10-09 UTC, covers Oct 5-9 work)
 
 Paste this file's path into a new Claude Code session ("read CONTINUE.md and continue"). Approved plan:
 `C:\Users\Dilip\.claude\plans\pasted-content-id-65d9-you-are-streamed-falcon.md`. Memory:
 `C:\Users\Dilip\.claude\projects\c--Users-Dilip-OneDrive-Pictures-saas-reviewer\memory\` (read `laptop-gpu-power-cap.md`).
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
+## Oct 8-9 session (live demo work), newest first
+- **Live views, all on real data** (no tweened counters, no invented activity):
+  - `/api/live/telemetry` (SSE): vLLM /metrics (running, waiting, KV use, prefix-cache hit and
+    output tok/s from counter deltas) + NVML clock/power/temp, one shared 1 s poller started with
+    the API (`FURNACE_LIVE_LAB`, off on hosted deploys), last 90 s sent to each new viewer.
+    Lab offline -> `/api/live/recorded` = RQ4 pc-on_seqs-32 run telemetry, labeled with its file.
+    UI: `components/live/furnace-panel.tsx` (heat strip = GPU power in fixed W bands, sparklines)
+    on the landing page and /lab.
+  - `POST /api/live/bench` = "Run it now" on /lab: c=1,2,4,8 x 20 requests, F1 fingerprint, one at
+    a time, 15 s cool-down, 3/10 min per IP; per-request TTFT streamed via `run_benchmark(on_record=)`;
+    records saved to `bench/.cache/live-runs/` (gitignored). Measured 27-33 s, 80/80, hit 88-90%.
+  - Guard live: `guard.local` runner job (F1 fixture scenario, no GitHub) and `guard.pr` emit
+    structured job events (impact subgraph, check_start/done, verdict); `/api/guard/runs*`;
+    `components/guard/guard-live.tsx` on /guard/<scenario>. Measured 84-86 s with the endpoint up.
+  - Graph path trace (upstream then downstream, Esc clears), scan log as a terminal with stage
+    timings (finished scans replay at recorded offsets), landing hero = RQ5 R1 before/after.
+- **Bugs fixed:** `python -m furnace.jobs.worker` (= `poe runner`/`poe worker`) never registered
+  guard.pr/scan.run handlers (`__main__` double import); Next's rewrite proxy gzip-buffered every
+  SSE stream (now `Cache-Control: no-transform`); perf gate on a dead endpoint took 120 s then
+  KeyError; re-running gh-forge on the same commit hit 422 "Reference already exists" (now -2, -3);
+  PR bodies capped at 65,000 chars; Kernel Lab torch.compile silently fell back to eager after 8
+  shapes (Triton looked 9x faster than compile; it is at parity).
+- **Kernel Lab ran**: `kernel_lab/results/2026-10-09/`: 36/36 correct; 4096x4096 Triton 378 us vs
+  compile 391 us vs eager 3,701 us (fp16), 178 GB/s = 99% of measured copy bandwidth, 780-900 MHz.
+- **GPU clock**: 780 MHz at ~32 W under load on AC with Windows "Balanced" (Oct 9). Still capped.
+- **Rehearsed** `docs/demo.md` twice with `scripts/rehearse.py` (all steps pass; timings in demo.md).
+- **Flaky test (Oct 7)**: not reproduced in 4 full-suite runs + 12 runs of the inference/live tests
+  under 4 busy CPU burners. The only failures seen were with Postgres down. Not fixed, not found.
+- **Still blocked on the user:** GitHub App + public `furnace-demo-f1` (local copy prepared at
+  `C:\dev\furnace-demo-f1`, branches `main` and `r1-request-id`), deploy accounts, Groq key, labels.
+
 ## State
-- Repo `C:\dev\furnace` (`main`, no remote yet). Everything below is committed; `poe check` green (211 tests).
+- Repo `C:\dev\furnace` (`main`, pushed to github.com/dilipna/Furnace4LLM). Everything below is committed; `poe check` green (233 tests).
 - **Commit messages carry no Claude co-author or any AI attribution line (user preference). History was rewritten
   on Oct 7 to remove them; old→new hashes are in `bench/results/commit-map.txt` (result files cite old hashes).**
 - FurnaceBench campaign: `bench/results/2026-10-06/` (pinned `FURNACE_BENCH_DATE=2026-10-06`); `REPORT.md` there
@@ -32,14 +63,16 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
   per-request value to the end of the last user message. **v2 (rq5.md): 3/3 verified, 3/3 full-suite audits
   without a FAIL, prefix-cache hit 98% → 94%, repair p95 TTFT +15.7% to +54.1% vs base (PR: +336% to +414%).**
   The +54% repeat passed as WARN only because runs overlapped (reported as a gate weakness). v1 stays in the report.
-- **Kernel Lab**: code committed (0b2f3cb), **never executed**. Run `uv run poe kernel-correctness` then
-  `uv run poe kernel-bench` (GPU idle, AC), fix anything that fails, commit `kernel_lab/results/<date>/`.
+- **Kernel Lab**: executed Oct 9 (see above).
 
 ## Environment
 - Start Docker Desktop (`%LOCALAPPDATA%\Programs\DockerDesktop\Docker Desktop.exe`). Unrelated containers
   (`wc26-mlops-*`, `cal-api`) auto-start; they do not use the GPU.
 - `docker compose up -d postgres` (5433); `HF_HOME_HOST="C:/Users/Dilip/.cache/huggingface" docker compose --profile gpu up -d vllm` (8100, `lab`, Qwen2.5-0.5B).
-- API `uv run poe api` (8010); web `cd apps/web && pnpm dev --port 3100` (3000 had a stale server once).
+- API `uv run poe api` (8010); web `cd apps/web && pnpm dev --port 3100` (3000 had a stale server once);
+  `uv run poe worker` (scans) and `uv run poe runner` (Guard runs). The API's `--reload` waits for open
+  SSE streams; restart it by hand after API edits (on Windows also kill orphaned
+  `multiprocessing` children still holding :8010).
 - **GPU:** laptop on AC; check `nvidia-smi --query-gpu=pstate,clocks.sm,power.draw --format=csv` under load. On Oct 6 it was
   capped at ~780 MHz even on AC (OEM/Windows power mode or charger). GPU drivers refuse to run on battery.
 - Long GPU jobs: launch detached (a background shell died with an earlier session):
@@ -68,10 +101,8 @@ Priority is the demo path in `docs/demo.md` working end to end, live, with fallb
 Do not start new features before 1-3 work. Keep every claim on screen backed by a file in bench/results.
 
 ## Open issue
-- One `poe check` run on Oct 7 failed in pytest and the next two passed (211/211); the failing test name was
-  cut off. Most likely the timing-based `packages/inference/tests/test_mock_accuracy.py` under host load.
-  Reproduce with `uv run pytest -q packages/inference/tests/test_mock_accuracy.py --count`-style loops (or run
-  the suite 5x) and fix the flake before CI is relied on.
+- One `poe check` run on Oct 7 failed in pytest (name cut off). Not reproduced on Oct 9 (see above);
+  if it recurs, keep the full pytest output (`uv run pytest -q 2>&1 | tee /tmp/pytest.log`).
 
 ## Known gaps (say them if asked; do not hide)
 Not built: auth/orgs/RLS, BYOK storage, TypeScript extraction, LLM synthesis/VLM, URL inspection, LLM-patch repair,

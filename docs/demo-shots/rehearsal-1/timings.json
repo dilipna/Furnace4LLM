@@ -1,0 +1,47 @@
+{
+  "rows": [
+    {
+      "step": "Landing + live panel",
+      "ok": true,
+      "seconds": 1.8,
+      "note": "lab live",
+      "shot": "01-landing-live-panel.png"
+    },
+    {
+      "step": "Scan (GitHub) to Blueprint",
+      "ok": true,
+      "seconds": 5.8,
+      "note": "05b659c2",
+      "shot": "02-scan-github-to-blueprint.png"
+    },
+    {
+      "step": "Graph path trace",
+      "ok": true,
+      "seconds": 1.8,
+      "note": "5 nodes traced",
+      "shot": "03-graph-path-trace.png"
+    },
+    {
+      "step": "Lab: Run it now",
+      "ok": true,
+      "seconds": 27.6,
+      "note": "requests 80/80 (screenshot lost: the first version of this script used ':' in the file name)",
+      "shot": null
+    },
+    {
+      "step": "Guard run on R1",
+      "ok": true,
+      "seconds": 85.5,
+      "note": "unit:tests/test_prompts.py: pass (1.4s) 2 passed in 0.37s",
+      "shot": "05-guard-run-on-r1.png"
+    },
+    {
+      "step": "FurnaceBench report",
+      "ok": true,
+      "seconds": 0.4,
+      "note": "",
+      "shot": "06-furnacebench-report.png"
+    }
+  ],
+  "page_errors": []
+}

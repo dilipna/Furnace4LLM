@@ -179,7 +179,7 @@ export function RunNow({ reference, campaign }: { reference: Reference[]; campai
   const running = phase === "running" || phase === "starting";
 
   return (
-    <section aria-labelledby="runnow" className="rounded-[6px] border border-line bg-bg-1">
+    <section aria-labelledby="runnow" className="min-w-0 rounded-[6px] border border-line bg-bg-1">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
         <div>
           <h2 id="runnow" className="text-[14px] font-medium text-fg-0">
