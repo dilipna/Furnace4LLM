@@ -57,6 +57,9 @@ def apps() -> list[dict[str, Any]]:
 # ------------------------------------------------------------------------- matching
 
 
+SPLITS = ("dev", "held-out", "held-out-2", "held-out-3")
+
+
 def _split_key(key: str) -> tuple[str, str]:
     """'component:app/llm.py::stream_answer#llm0' -> ('app/llm.py', 'stream_answer')."""
     body = key.split(":", 1)[1] if ":" in key.split("::", 1)[0] else key
@@ -322,7 +325,7 @@ def render(res: dict[str, Any]) -> str:
         "## Micro-averaged P / R / F1",
         "",
     ]
-    cats = list(res["micro"]["dev"].keys() - {"_attributes"}) if res["micro"]["dev"] else []
+    cats = sorted({c for sp in res["micro"].values() for c in sp} - {"_attributes"})
     order = [
         "routes",
         "llm_call_sites",
@@ -343,21 +346,21 @@ def render(res: dict[str, Any]) -> str:
 
     lines.append(
         md_table(
-            ["category", "F1 (dev)", "held-out set 1", "held-out set 2"],
+            ["category", "F1 (dev)", "held-out set 1", "held-out set 2", "held-out set 3"],
             [
                 [
                     c,
                     *(
-                        cell(res["micro"][sp][c]) if c in res["micro"][sp] else "–"
-                        for sp in ("dev", "held-out", "held-out-2")
+                        cell(res["micro"][sp][c]) if c in res["micro"].get(sp, {}) else "–"
+                        for sp in SPLITS
                     ),
                 ]
                 for c in cats
             ],
-            "llll",
+            "lllll",
         )
     )
-    for split in ("dev", "held-out", "held-out-2"):
+    for split in SPLITS:
         if not res["micro"].get(split, {}).get("_attributes", {}).get("n"):
             continue
         a = res["micro"][split]["_attributes"]
@@ -422,7 +425,7 @@ def render(res: dict[str, Any]) -> str:
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--tag", help="output name suffix, e.g. first_scan -> rq1_first_scan.{json,md}")
-    p.add_argument("--splits", help="comma-separated subset of dev,held-out,held-out-2")
+    p.add_argument("--splits", help="comma-separated subset of " + ",".join(SPLITS))
     args = p.parse_args()
     results = []
     calib = []
@@ -451,7 +454,7 @@ def main() -> None:
     res = {
         "manifest": manifest(),
         "apps": results,
-        "micro": {sp: micro(results, sp) for sp in ("dev", "held-out", "held-out-2")},
+        "micro": {sp: micro(results, sp) for sp in SPLITS},
         "calibration": ece(calib),
     }
     name = f"rq1_{args.tag}" if args.tag else "rq1"
