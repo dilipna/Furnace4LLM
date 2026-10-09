@@ -6,6 +6,13 @@ unique per-run reference to each question, so the only cacheable sharing between
 requests is the prompt prefix the code produces (no request is ever repeated
 verbatim, within or across runs). Results are compared against a regression
 budget (warn/block thresholds as fractions of the baseline).
+
+Each measured run is preceded by one unmeasured warmup wave (as many distinct requests as
+the concurrency) rendered from the same revision. Without it, the first wave after the GPU
+sat idle (while the next revision's prompts were rendered) took ~200 ms instead of ~65 ms,
+and with 34 requests per run that wave alone set the p95: an A/A calibration on 2026-10-09
+found medians of identical revisions differing by up to 60% (bench/results/2026-10-09/
+gate_noise_no_warmup.md).
 """
 
 from __future__ import annotations
@@ -64,10 +71,37 @@ async def benchmark_variant(
     max_tokens: int = 64,
     slo_ttft_ms: float = 500.0,
     seed: int = 7,
+    warmup: int | None = None,
 ) -> VariantResult:
     run_ref = uuid.uuid4().hex[:6]
     unique = [f"{q} (ref {run_ref}-{i})" for i, q in enumerate(questions)]
-    rendered = render_in_sandbox(repo, unique)
+    n_warm = concurrency if warmup is None else warmup
+    warm_q = [f"{questions[i % len(questions)]} (warmup {run_ref}-{i})" for i in range(n_warm)]
+    rendered_all = render_in_sandbox(repo, unique + warm_q)
+    rendered, warm = rendered_all[: len(unique)], rendered_all[len(unique) :]
+    spec = WorkloadSpec(name=f"{name}-rendered", source=WorkloadSource.synthetic, synthetic=False)
+    if warm:  # distinct prompts, unmeasured: wakes the GPU and warms this revision's prefix
+        await _run_rendered(warm, target, spec, concurrency, max_tokens, slo_ttft_ms, seed, False)
+    result = await _run_rendered(
+        rendered, target, spec, concurrency, max_tokens, slo_ttft_ms, seed, True
+    )
+    result.report.notes.append(
+        f"Prompts rendered from the {name} revision's own code ({len(rendered)} requests, "
+        f"run ref {run_ref}; {len(warm)} distinct warmup requests before, not measured)."
+    )
+    return VariantResult(name, result.report)
+
+
+async def _run_rendered(
+    rendered: list[list[dict]],
+    target: BenchTarget,
+    spec: WorkloadSpec,
+    concurrency: int,
+    max_tokens: int,
+    slo_ttft_ms: float,
+    seed: int,
+    sample_gpu: bool,
+) -> Any:
     with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False, encoding="utf-8") as f:
         for msgs in rendered:
             f.write(json.dumps({"messages": msgs, "max_tokens": max_tokens}) + "\n")
@@ -83,13 +117,9 @@ async def benchmark_variant(
         seed=seed,
         slo=SLO(ttft_p95_ms=slo_ttft_ms),
     )
-    spec = WorkloadSpec(name=f"{name}-rendered", source=WorkloadSource.synthetic, synthetic=False)
-    result = await run_benchmark(target, spec, plan, sample_gpu=True)
+    result = await run_benchmark(target, spec, plan, sample_gpu=sample_gpu)
     await asyncio.to_thread(Path(path).unlink, missing_ok=True)
-    result.report.notes.append(
-        f"Prompts rendered from the {name} revision's own code ({len(rendered)} requests, run ref {run_ref})."
-    )
-    return VariantResult(name, result.report)
+    return result
 
 
 def _median(xs: list[float]) -> float:

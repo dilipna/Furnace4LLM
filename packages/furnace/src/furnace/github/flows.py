@@ -340,10 +340,9 @@ async def repair_pr(
             out["reason"] = "dry run (pass --open-pr to open a draft pull request)"
             out["files"] = sorted(outcome.files)
             return out
+        sel = outcome.attempt.selected
         explanation = (
-            outcome.attempt.candidates[0].results.get("explanation")
-            if outcome.attempt.candidates
-            else ""
+            outcome.attempt.candidates[sel].results.get("explanation") if sel is not None else ""
         ) or ""
         writer = await _token(app, full_name, PR_PERMISSIONS)
         out["pr"] = await writer.open_draft_pr(

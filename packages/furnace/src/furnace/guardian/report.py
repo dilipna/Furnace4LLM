@@ -85,6 +85,14 @@ def check_run(impact: ImpactResult, results: list[ItemResult], conclusion: str) 
 
 
 def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_path: str) -> str:
+    sel = getattr(attempt, "selected", None)
+    cands = list(getattr(attempt, "candidates", []) or [])
+    chosen = cands[sel] if sel is not None and sel < len(cands) else (cands[-1] if cands else None)
+    rejected = [
+        f"- tried first and rejected: `{c.strategy}` ({((c.results.get('perf') or {}).get('summary')) or 'failed validation'})"
+        for c in cands
+        if c is not chosen
+    ]
     rows = []
     for name, key in (("PR head", "head_vs_base"), ("This repair", "candidate_vs_base")):
         c = perf.get(key) or {}
@@ -123,13 +131,9 @@ def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_pa
             "",
             "### 3. Validation (sandboxed)",
             "- new regression test: "
-            + str(
-                attempt.candidates[0].results.get("regression_test") if attempt.candidates else "–"
-            ),
-            "- existing tests: "
-            + str(
-                attempt.candidates[0].results.get("existing_tests") if attempt.candidates else "–"
-            ),
+            + str(chosen.results.get("regression_test") if chosen else "–"),
+            "- existing tests: " + str(chosen.results.get("existing_tests") if chosen else "–"),
+            *rejected,
             "",
             "### 4. Performance (same workload, same endpoint)",
             perf_table,

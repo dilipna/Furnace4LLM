@@ -1,4 +1,4 @@
-"""Deterministic repair strategies.
+"""Deterministic repair strategies, tried in order (STRATEGIES).
 
 `move_dynamic_to_suffix` repairs a prefix-unstable system message: it keeps every
 runtime value the author added (so the PR's intent, e.g. "log the request id in the
@@ -7,6 +7,11 @@ messages are built as one list literal (so the system prompt and the retrieved c
 both stay cacheable), otherwise to the end of the system message. The edit replaces
 exactly the content expressions' character spans, leaving the rest of the file
 byte-identical.
+
+`move_dynamic_to_log` takes the per-request values out of the prompt and logs them with
+the standard `logging` module right before the messages are built: the debugging intent
+survives in the logs and the prompt prefix is exactly the base revision's again. The
+model no longer sees those values, which the repair PR states.
 """
 
 from __future__ import annotations
@@ -57,8 +62,16 @@ def _span(src: str, node: ast.expr) -> tuple[int, int]:
     )
 
 
-def move_dynamic_to_suffix(path: str, source: str, function: str) -> Edit:
-    """Rewrite the system-message content inside `function` so static text comes first."""
+@dataclass
+class _SystemMessage:
+    fn: ast.FunctionDef | ast.AsyncFunctionDef
+    content: ast.expr
+    last_content: ast.expr | None
+    statics: list[ast.expr]
+    dynamics: list[ast.expr]
+
+
+def _system_message(source: str, function: str) -> _SystemMessage:
     tree = ast.parse(source)
     static_names = {
         t.id
@@ -79,7 +92,7 @@ def move_dynamic_to_suffix(path: str, source: str, function: str) -> Edit:
         None,
     )
     if fn is None:
-        raise StrategyError(f"function {function} not found in {path}")
+        raise StrategyError(f"function {function} not found")
 
     def fields(d: ast.Dict) -> dict[object, ast.expr]:
         return {
@@ -120,7 +133,21 @@ def move_dynamic_to_suffix(path: str, source: str, function: str) -> Edit:
         raise StrategyError("system message has no static/dynamic split to reorder")
     if parts[: len(statics)] == statics:
         raise StrategyError("static text already comes first; prefix is stable")
+    return _SystemMessage(fn, content, last_content, statics, dynamics)
 
+
+def _apply(source: str, edits: list[tuple[tuple[int, int], str]]) -> str:
+    after = source
+    for (start, end), text in sorted(edits, key=lambda e: e[0][0], reverse=True):
+        after = after[:start] + text + after[end:]
+    ast.parse(after)  # the edit must still be valid Python
+    return after
+
+
+def move_dynamic_to_suffix(path: str, source: str, function: str) -> Edit:
+    """Rewrite the system-message content inside `function` so static text comes first."""
+    m = _system_message(source, function)
+    content, last_content, statics, dynamics = m.content, m.last_content, m.statics, m.dynamics
     seg = lambda n: ast.get_source_segment(source, n) or ""  # noqa: E731
     moved = ", ".join(seg(p) for p in dynamics)
     if last_content is not None:
@@ -147,16 +174,80 @@ def move_dynamic_to_suffix(path: str, source: str, function: str) -> Edit:
         ]
         where = "to the end of the system message"
         why = "every request now begins with the same static text, so the prefix cache can reuse it"
-    after = source
-    for (start, end), text in sorted(edits, key=lambda e: e[0][0], reverse=True):
-        after = after[:start] + text + after[end:]
-    ast.parse(after)  # the edit must still be valid Python
     return Edit(
         path=path,
         before=source,
-        after=after,
+        after=_apply(source, edits),
         explanation=(
             f"Moved the per-request value(s) {moved} from the start of the system message {where}. "
             f"They are still sent to the model, but {why}."
         ),
     )
+
+
+def _line_start(source: str, lineno: int) -> int:
+    return sum(len(line) for line in source.splitlines(keepends=True)[: lineno - 1])
+
+
+def move_dynamic_to_log(path: str, source: str, function: str) -> Edit:
+    """Drop the per-request values from the system message and log them instead."""
+    m = _system_message(source, function)
+    seg = lambda n: ast.get_source_segment(source, n) or ""  # noqa: E731
+    stmt = next(
+        st for st in m.fn.body if st.lineno <= m.content.lineno <= (st.end_lineno or st.lineno)
+    )
+    indent = " " * stmt.col_offset
+    fmt = " ".join(["%s"] * len(m.dynamics))
+    args = ", ".join(seg(p) for p in m.dynamics)
+    log_line = (
+        f"{indent}logging.getLogger(__name__).info(\n"
+        f'{indent}    "per-request values (logged, not sent in the prompt): {fmt}", {args}\n'
+        f"{indent})\n"
+    )
+    edits = [
+        (_span(source, m.content), " + ".join(seg(p) for p in m.statics)),
+        ((_line_start(source, stmt.lineno),) * 2, log_line),
+    ]
+    tree = ast.parse(source)
+    has_logging = any(
+        isinstance(n, ast.Import) and any(a.name == "logging" for a in n.names) for n in tree.body
+    )
+    if not has_logging:
+        imports = [
+            n
+            for n in tree.body
+            if isinstance(n, (ast.Import, ast.ImportFrom))
+            and not (isinstance(n, ast.ImportFrom) and n.module == "__future__")
+        ]
+        if imports:
+            at = _line_start(source, imports[0].lineno)
+        else:  # after a module docstring / __future__ imports, else at the top
+            lead = [
+                n
+                for n in tree.body
+                if (isinstance(n, ast.Expr) and isinstance(n.value, ast.Constant))
+                or (isinstance(n, ast.ImportFrom) and n.module == "__future__")
+            ]
+            at = _line_start(source, (lead[-1].end_lineno or lead[-1].lineno) + 1) if lead else 0
+        edits.append(((at, at), "import logging\n"))
+    moved = ", ".join(seg(p) for p in m.dynamics)
+    return Edit(
+        path=path,
+        before=source,
+        after=_apply(source, edits),
+        explanation=(
+            f"Removed the per-request value(s) {moved} from the system message and log them with "
+            "the standard logging module just before the messages are built. The debugging "
+            "information is kept in the application log, and every request again starts with "
+            "exactly the base revision's prompt, so the prefix cache reuses all of it. Trade-off: "
+            "the model no longer sees these values; if it needs them, the suffix variant keeps "
+            "them in the prompt at the measured latency cost."
+        ),
+    )
+
+
+# Tried in order; the first candidate that passes the tests and the perf budget is proposed.
+STRATEGIES = {
+    "rule:prefix_stability.move_dynamic_to_suffix": move_dynamic_to_suffix,
+    "rule:prefix_stability.move_dynamic_to_log": move_dynamic_to_log,
+}
