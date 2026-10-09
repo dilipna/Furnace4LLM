@@ -138,6 +138,43 @@ body {
 .line-in {
   animation: line-in 180ms ease-out both;
 }
+/* Path trace: an edge draws itself from the node already reached toward the next hop. */
+@keyframes trace-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes trace-draw-rev {
+  from {
+    stroke-dashoffset: -1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.trace-draw,
+.trace-draw-rev {
+  stroke-dasharray: 1;
+  animation: trace-draw 200ms ease-out both;
+}
+.trace-draw-rev {
+  animation-name: trace-draw-rev;
+}
+/* Terminal lines type in left to right (clip, not per-character state). */
+@keyframes type-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+.type-in {
+  animation: type-in 260ms steps(26, end) both;
+}
 @keyframes caret {
   50% {
     opacity: 0;
