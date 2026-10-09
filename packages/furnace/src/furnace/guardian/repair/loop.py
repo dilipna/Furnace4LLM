@@ -31,7 +31,7 @@ from furnace.guardian.repair.regression import (
     prefix_stability_test,
     render_in_sandbox,
 )
-from furnace.guardian.repair.strategies import StrategyError, move_dynamic_to_suffix
+from furnace.guardian.repair.strategies import STRATEGIES, StrategyError
 from furnace.reconstruction.build import reconstruct
 from furnace.sandbox.docker_sandbox import SandboxResult, pytest_in_sandbox
 
@@ -179,55 +179,62 @@ def repair_prefix_instability(
     attempt.localization.sort(key=lambda c: -c.score)
     say("localize", f"{len(attempt.localization)} hunk(s) in {sys_path}::{function}")
 
-    # 5. candidate repair (deterministic rule strategy)
-    attempt.status = RepairStatus.generating
-    cand = _copy(head, work / "candidate")
-    try:
-        edit = move_dynamic_to_suffix(
-            sys_path, (head / sys_path).read_text(encoding="utf-8"), function
+    # 5-6. candidates, one per rule strategy in order: generate, validate in the sandbox
+    # (new regression test + existing tests), then the perf gate. The first candidate that
+    # passes all three is proposed; every candidate and its measurements are recorded.
+    head_src = (head / sys_path).read_text(encoding="utf-8")
+    passed, cand, diff = False, head, ""
+    for i, (name, strategy) in enumerate(STRATEGIES.items()):
+        attempt.status = RepairStatus.generating
+        try:
+            edit = strategy(sys_path, head_src, function)
+        except StrategyError as exc:
+            outcome.logs[f"strategy {name}"] = str(exc)
+            say("generate", f"{name} not applicable: {exc}")
+            continue
+        cand = _copy(head, work / f"candidate-{i}")
+        (cand / sys_path).write_text(edit.after, encoding="utf-8")
+        # Diff against the *original* PR head: the repair PR adds the regression test (and
+        # the harness it imports, if the repository does not have one yet) with the fix.
+        diff = _unified(head_root, cand, [sys_path, test_path, HARNESS_FILE])
+        candidate = RepairCandidate(
+            strategy=name, diff=diff, results={"explanation": edit.explanation}
         )
-    except StrategyError as exc:
-        attempt.status = RepairStatus.rejected
-        outcome.logs["strategy"] = str(exc)
-        say("generate", f"rule strategy not applicable: {exc}")
-        return outcome
-    (cand / sys_path).write_text(edit.after, encoding="utf-8")
-    # Diff against the *original* PR head: the repair PR adds the regression test (and the
-    # harness it imports, if the repository does not have one yet) together with the fix.
-    diff = _unified(head_root, cand, [sys_path, test_path, HARNESS_FILE])
-    candidate = RepairCandidate(
-        strategy="rule:prefix_stability.move_dynamic_to_suffix",
-        diff=diff,
-        results={"explanation": edit.explanation},
-    )
-    attempt.candidates.append(candidate)
-    say("generate", edit.explanation)
+        attempt.candidates.append(candidate)
+        say("generate", f"{name}: {edit.explanation}")
 
-    # 6. validate in the sandbox: new regression test + existing tests
-    attempt.status = RepairStatus.validating
-    new_test = pytest_in_sandbox(cand, test_path)
-    all_tests = pytest_in_sandbox(cand, "tests")
-    candidate.results.update(
-        regression_test="pass" if new_test.ok else "fail",
-        existing_tests="pass" if all_tests.ok else "fail",
-        regression_test_log=_tail(new_test),
-        existing_tests_log=_tail(all_tests),
-    )
-    say(
-        "validate",
-        f"regression test {candidate.results['regression_test']}, existing tests {candidate.results['existing_tests']}",
-    )
-    if perf_check is not None and new_test.ok and all_tests.ok:
-        outcome.perf = perf_check(base, head, cand)
-        candidate.results["perf"] = outcome.perf
-        say("benchmark", str(outcome.perf.get("summary", "")))
-    passed = (
-        new_test.ok
-        and all_tests.ok
-        and (perf_check is None or bool(outcome.perf.get("within_budget")))
-    )
-    candidate.verdict = "pass" if passed else "fail"
-    attempt.selected = 0 if passed else None
+        attempt.status = RepairStatus.validating
+        new_test = pytest_in_sandbox(cand, test_path)
+        all_tests = pytest_in_sandbox(cand, "tests")
+        candidate.results.update(
+            regression_test="pass" if new_test.ok else "fail",
+            existing_tests="pass" if all_tests.ok else "fail",
+            regression_test_log=_tail(new_test),
+            existing_tests_log=_tail(all_tests),
+        )
+        say(
+            "validate",
+            f"regression test {candidate.results['regression_test']}, existing tests {candidate.results['existing_tests']}",
+        )
+        perf: dict[str, Any] = {}
+        if perf_check is not None and new_test.ok and all_tests.ok:
+            perf = perf_check(base, head, cand)
+            candidate.results["perf"] = perf
+            outcome.perf = perf  # the last measured candidate, or the selected one
+            say("benchmark", str(perf.get("summary", "")))
+        passed = (
+            new_test.ok and all_tests.ok and (perf_check is None or bool(perf.get("within_budget")))
+        )
+        candidate.verdict = "pass" if passed else "fail"
+        if passed:
+            attempt.selected = len(attempt.candidates) - 1
+            break
+        say("reject", f"{name} rejected; trying the next strategy")
+    if not attempt.candidates:
+        attempt.status = RepairStatus.rejected
+        outcome.logs["strategy"] = "no rule strategy applies"
+        shutil.rmtree(work, ignore_errors=True)
+        return outcome
     attempt.status = RepairStatus.verified if passed else RepairStatus.rejected
     outcome.patch = diff if passed else ""
     if passed:

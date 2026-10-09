@@ -59,7 +59,9 @@ def attempt(
         print(f"   [{time.monotonic() - t0:6.1f}s] {stage:16s} {msg}", flush=True)
 
     def perf_check(base: Path, head: Path, cand: Path) -> dict[str, Any]:
-        shutil.copytree(cand, keep)  # the loop deletes its work tree; keep the repair for the audit
+        # the loop deletes its work tree; keep the latest candidate for the audit
+        shutil.rmtree(keep, ignore_errors=True)
+        shutil.copytree(cand, keep)
         res = run_gate(
             {"base": base, "pr_head": head, "candidate": cand}, questions, TARGET, concurrency=8
         )
@@ -99,6 +101,7 @@ def attempt(
                 {
                     "strategy": c.strategy,
                     "verdict": c.verdict,
+                    "perf_summary": (c.results.get("perf") or {}).get("summary"),
                     **{
                         k: v
                         for k, v in c.results.items()

@@ -1,0 +1,464 @@
+{
+  "manifest": {
+    "date": "2026-10-09",
+    "started_at": "2026-10-09T03:33:38+00:00",
+    "git": {
+      "sha": "81d9ee9bb223b229a54f9980eae8ec4a0d1c3222",
+      "dirty": true
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 100,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/gate_noise.py",
+      "--trials",
+      "12"
+    ]
+  },
+  "policy": {
+    "warn_pct": 10.0,
+    "block_pct": 25.0,
+    "metric": "ttft_p95_ms"
+  },
+  "trials": [
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 88.4,
+      "value": 84.6,
+      "change_pct": -4.3,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        88.3,
+        88.4,
+        88.6
+      ],
+      "value_runs": [
+        84.6,
+        78.1,
+        94.4
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9804609521505051,
+        0.979937152525985
+      ],
+      "goodput_rps": [
+        6.438247858153456,
+        6.4808300097866836
+      ],
+      "seconds": 50.0,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 90.5,
+      "value": 88.7,
+      "change_pct": -2.1,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        92.1,
+        90.5,
+        83.4
+      ],
+      "value_runs": [
+        84.9,
+        90.3,
+        88.7
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9809040367416002,
+        0.9804609521505051
+      ],
+      "goodput_rps": [
+        6.405411894772581,
+        6.357631903263905
+      ],
+      "seconds": 50.0,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 86.2,
+      "value": 94.5,
+      "change_pct": 9.7,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        85.0,
+        94.3,
+        86.2
+      ],
+      "value_runs": [
+        94.5,
+        85.5,
+        100.4
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9798973739812858,
+        0.9809040367416002
+      ],
+      "goodput_rps": [
+        6.507821712643114,
+        6.534947119302043
+      ],
+      "seconds": 49.5,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 84.3,
+      "value": 90.5,
+      "change_pct": 7.3,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        82.5,
+        85.6,
+        84.3
+      ],
+      "value_runs": [
+        90.5,
+        90.9,
+        85.6
+      ],
+      "separated": true,
+      "prefix_hit_rate": [
+        0.979937152525985,
+        0.9798973739812858
+      ],
+      "goodput_rps": [
+        6.5605683829449175,
+        6.553774179776238
+      ],
+      "seconds": 49.2,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 85.0,
+      "value": 85.0,
+      "change_pct": -0.1,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        82.3,
+        85.0,
+        86.6
+      ],
+      "value_runs": [
+        85.0,
+        83.5,
+        87.8
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9804609521505051,
+        0.979937152525985
+      ],
+      "goodput_rps": [
+        6.483632822138216,
+        6.464114525248155
+      ],
+      "seconds": 49.6,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 85.0,
+      "value": 88.6,
+      "change_pct": 4.1,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        87.9,
+        85.0,
+        80.0
+      ],
+      "value_runs": [
+        85.1,
+        88.6,
+        89.7
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9809448914161273,
+        0.9798973739812858
+      ],
+      "goodput_rps": [
+        6.504202403490964,
+        6.454617178427156
+      ],
+      "seconds": 50.0,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 85.2,
+      "value": 89.2,
+      "change_pct": 4.7,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        85.2,
+        83.6,
+        86.4
+      ],
+      "value_runs": [
+        94.0,
+        86.0,
+        89.2
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9798973739812858,
+        0.9809448914161273
+      ],
+      "goodput_rps": [
+        6.433882733924356,
+        6.427546437419495
+      ],
+      "seconds": 49.9,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 88.7,
+      "value": 84.7,
+      "change_pct": -4.6,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        87.9,
+        94.0,
+        88.7
+      ],
+      "value_runs": [
+        78.5,
+        84.7,
+        87.1
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9809040367416002,
+        0.9809448914161273
+      ],
+      "goodput_rps": [
+        6.45481875571925,
+        6.593787856742832
+      ],
+      "seconds": 49.9,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 84.1,
+      "value": 86.5,
+      "change_pct": 2.8,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        77.2,
+        84.1,
+        108.3
+      ],
+      "value_runs": [
+        86.2,
+        86.5,
+        91.1
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9798973739812858,
+        0.9804609521505051
+      ],
+      "goodput_rps": [
+        6.527745491044062,
+        6.587784406989635
+      ],
+      "seconds": 49.2,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 88.3,
+      "value": 84.5,
+      "change_pct": -4.3,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        88.1,
+        88.6,
+        88.3
+      ],
+      "value_runs": [
+        84.5,
+        83.9,
+        88.9
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9809040367416002,
+        0.979937152525985
+      ],
+      "goodput_rps": [
+        6.469644920780606,
+        6.477914465144053
+      ],
+      "seconds": 49.4,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 87.8,
+      "value": 88.0,
+      "change_pct": 0.3,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        79.1,
+        87.8,
+        89.5
+      ],
+      "value_runs": [
+        85.7,
+        91.5,
+        88.0
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9809448914161273,
+        0.9798973739812858
+      ],
+      "goodput_rps": [
+        6.416207006796538,
+        6.430339582825912
+      ],
+      "seconds": 50.1,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    },
+    {
+      "metric": "ttft_p95_ms",
+      "baseline": 84.8,
+      "value": 86.5,
+      "change_pct": 2.0,
+      "verdict": "pass",
+      "runs": 3,
+      "baseline_runs": [
+        79.6,
+        85.6,
+        84.8
+      ],
+      "value_runs": [
+        85.4,
+        100.0,
+        86.5
+      ],
+      "separated": false,
+      "prefix_hit_rate": [
+        0.9809448914161273,
+        0.9798973739812858
+      ],
+      "goodput_rps": [
+        6.466177507981619,
+        6.442480351175274
+      ],
+      "seconds": 49.5,
+      "sm_clock_mhz": [
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0,
+        780.0
+      ]
+    }
+  ]
+}

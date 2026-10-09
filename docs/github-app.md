@@ -25,14 +25,20 @@ Click **Create GitHub App**. On the next page:
 
 ## 2. Create the demo repository and install the App
 
+The local repository is already prepared at `C:\dev\furnace-demo-f1` (made with
+`scripts/demo_repo.py`): branch `main` = F1, branch `r1-request-id` = the exact R1 change
+FurnaceBench measured (one file, `app/prompts.py`). On GitHub create a new **public**
+repository `furnace-demo-f1` (empty: no README, no license; F1 contains no secrets, and the
+landing-page scan without login reads only public repositories). Then:
+
 ```bash
-# a new PUBLIC repository on GitHub named furnace-demo-f1 (empty, no README); F1 contains no
-# secrets, and the landing-page scan (no login) only reads public repositories. Then:
-git clone https://github.com/<you>/furnace-demo-f1 C:/dev/furnace-demo-f1
-cd C:/dev/furnace
-uv run python scripts/demo_repo.py init C:/dev/furnace-demo-f1
-cd C:/dev/furnace-demo-f1 && git add -A && git commit -m "Kilnworks support assistant" && git push -u origin main
+cd C:/dev/furnace-demo-f1
+git remote add origin https://github.com/<you>/furnace-demo-f1.git
+git push -u origin main r1-request-id
 ```
+
+(To rebuild it from scratch instead: `uv run python scripts/demo_repo.py init DIR`, commit, then
+on a new branch `uv run python scripts/demo_repo.py apply DIR r1_dynamic_head`.)
 
 App settings page → **Install App** → your account → **Only select repositories** →
 `furnace-demo-f1` → Install.
@@ -65,11 +71,8 @@ Q=fixtures/apps/support-rag-py/docs/facts.json
 uv run furnace gh-forge <you>/furnace-demo-f1 --questions $Q \
     --workload bench/results/2026-10-04-f1-quality/workload-f1-traces-qwen05b.yaml --open-pr
 
-# A regression PR: the exact R1 change FurnaceBench measured
-cd C:/dev/furnace-demo-f1 && git checkout -b add-request-tracing
-uv run --project C:/dev/furnace python C:/dev/furnace/scripts/demo_repo.py apply . r1_dynamic_head
-git commit -am "Add request id and timestamp to the system prompt for debugging" && git push -u origin add-request-tracing
-# open the PR on GitHub (base: main), note its number N
+# The regression PR: open a PR from r1-request-id into main on GitHub (pushed in step 2),
+# title "Add request id and timestamp to the system prompt for debugging"; note its number N
 
 # Guard: targeted checks -> a check run on the PR (expect a failure with the perf table)
 cd C:/dev/furnace
