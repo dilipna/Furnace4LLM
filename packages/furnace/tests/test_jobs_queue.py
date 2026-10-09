@@ -65,3 +65,15 @@ async def test_abandoned_job_is_reclaimed_after_lease(clean_jobs):
     async with session_scope() as s:
         again = await queue.claim(s, worker="alive", queues=["cpu"], lease_s=60)
         assert again is not None and again.id == job.id and again.locked_by == "alive"
+
+
+def test_worker_entrypoint_sees_every_registered_handler():
+    """Regression: run as `python -m`, the worker once had a registry with only system.ping."""
+    import subprocess
+    import sys
+
+    out = subprocess.run(
+        [sys.executable, "-m", "furnace.jobs.worker", "--list-handlers"],
+        capture_output=True, text=True, check=True, timeout=60,
+    ).stdout.split()  # fmt: skip
+    assert {"guard.local", "guard.pr", "scan.run", "system.ping"} <= set(out)

@@ -63,6 +63,35 @@ def test_items_without_an_endpoint_or_key_are_skipped(tmp_path, key, kind):
     assert r.verdict == "skip"
 
 
+def test_perf_gate_with_unreachable_endpoint_errors_fast(tmp_path, monkeypatch):
+    def never(*a, **k):
+        raise AssertionError("must not benchmark an unreachable endpoint")
+
+    monkeypatch.setattr(execute, "run_gate", never)
+    (r,) = run_items([item("bench:chat_perf_gate", "benchmark")], ctx(tmp_path, TARGET))
+    assert r.verdict == "error" and "unreachable" in r.detail and r.seconds < 10
+
+
+def test_perf_gate_that_measured_nothing_is_an_error_not_a_crash(tmp_path, monkeypatch):
+    monkeypatch.setattr(execute, "_endpoint_down", lambda t: None)
+    monkeypatch.setattr(execute, "run_gate", lambda *a, **k: {"base": [], "pr_head": []})
+    (r,) = run_items([item("bench:chat_perf_gate", "benchmark")], ctx(tmp_path, TARGET))
+    assert r.verdict == "error" and "measured nothing" in r.detail
+
+
+def test_run_items_reports_start_and_done_events(tmp_path, monkeypatch):
+    monkeypatch.setitem(execute.EXECUTORS, "unit", lambda i, c: ItemResult(i.key, "pass", "ok"))
+    events: list[dict] = []
+    run_items(
+        [item("unit:a", "unit"), item("unit:b", "unit")], ctx(tmp_path), on_event=events.append
+    )
+    assert [(e["type"], e["key"]) for e in events] == [
+        ("check_start", "unit:a"), ("check_done", "unit:a"),
+        ("check_start", "unit:b"), ("check_done", "unit:b"),
+    ]  # fmt: skip
+    assert events[1]["verdict"] == "pass" and events[1]["seconds"] >= 0
+
+
 def test_context_budget_needs_a_budget_even_with_an_endpoint(tmp_path):
     (r,) = run_items([item("check:context_budget", "check")], ctx(tmp_path, TARGET))
     assert r.verdict == "skip"

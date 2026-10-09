@@ -35,6 +35,7 @@ from furnace.github.client import (
 )
 from furnace.guardian.execute import GuardContext, prepare, run_items, selected_items, verdict
 from furnace.guardian.impact import SuiteItem, analyze_impact, analyze_tree
+from furnace.guardian.live import impact_event
 from furnace.guardian.perf_gate import GatePolicy, compare, run_gate
 from furnace.guardian.repair.loop import repair_prefix_instability
 from furnace.guardian.repair.regression import min_shared_prefix, render_in_sandbox
@@ -95,8 +96,12 @@ async def guard_pr(
     questions: list[str],
     max_prompt_tokens: int | None = None,
     progress: Progress | None = None,
+    on_event: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
-    """Run the graph-targeted checks for PR `number` and report them as a check run."""
+    """Run the graph-targeted checks for PR `number` and report them as a check run.
+
+    `on_event` (called from a worker thread) receives the structured impact/check events
+    the live Guard view draws; see furnace.guardian.live."""
     repo = await _token(app, full_name, GUARD_PERMISSIONS)
     pr = await _pull(repo, number)
     check_id = await repo.create_check(pr["head_sha"])
@@ -105,16 +110,19 @@ async def guard_pr(
     try:
         base_root = await fetch_revision(full_name, pr["base_sha"], repo.token, tmp / "base")
         head_root = await fetch_revision(full_name, pr["head_sha"], repo.token, tmp / "head")
+        head_state = await asyncio.to_thread(analyze_tree, head_root)
         impact = await asyncio.to_thread(
             lambda: analyze_impact(
                 analyze_tree(base_root),
-                analyze_tree(head_root),
+                head_state,
                 suite,
                 pr_number=number,
                 base_sha=pr["base_sha"],
                 head_sha=pr["head_sha"],
             )
         )
+        if on_event:  # the emitter blocks until stored: keep it off the event loop
+            await asyncio.to_thread(on_event, impact_event(impact, head_state))
         items = selected_items(impact, suite)
         _say(
             progress,
@@ -129,7 +137,9 @@ async def guard_pr(
                 target=target,
                 max_prompt_tokens=max_prompt_tokens,
             )
-            results = await asyncio.to_thread(run_items, items, ctx, lambda m: _say(progress, m))
+            results = await asyncio.to_thread(
+                run_items, items, ctx, lambda m: _say(progress, m), on_event
+            )
         finally:
             shutil.rmtree(work, ignore_errors=True)
         cr = check_run(impact, results, verdict(results))
@@ -142,6 +152,9 @@ async def guard_pr(
             annotations=cr["annotations"],
         )
         _say(progress, f"check run completed: {cr['conclusion']} ({cr['title']})")
+        if on_event:
+            verdict_ev = {"type": "verdict", "conclusion": cr["conclusion"], "title": cr["title"]}
+            await asyncio.to_thread(on_event, verdict_ev)
         return {
             "check_id": check_id,
             "conclusion": cr["conclusion"],

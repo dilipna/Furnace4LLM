@@ -12,10 +12,29 @@ const STYLE: Record<string, string> = {
   skip: "text-fg-2 border-line-strong",
 };
 
-/** Status tag: the word is always shown, so state never depends on color alone. */
+const ICON: Record<string, string> = {
+  pass: "✓",
+  success: "✓",
+  verified: "✓",
+  warn: "!",
+  neutral: "!",
+  fail: "✕",
+  failure: "✕",
+  block: "✕",
+  rejected: "✕",
+  error: "✕",
+  skip: "–",
+};
+
+/** Status tag: icon and word are always shown, so state never depends on color alone. */
 export function Verdict({ v }: { v: string }) {
   return (
     <span className={`num inline-block rounded-[3px] border px-1.5 py-px text-[11px] uppercase ${STYLE[v] ?? "text-fg-2 border-line"}`}>
+      {ICON[v] && (
+        <span aria-hidden="true" className="mr-1">
+          {ICON[v]}
+        </span>
+      )}
       {v}
     </span>
   );
