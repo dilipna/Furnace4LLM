@@ -1,0 +1,47 @@
+{
+  "rows": [
+    {
+      "step": "Landing + live panel",
+      "ok": true,
+      "seconds": 8.8,
+      "note": "lab live",
+      "shot": "01-landing-live-panel.png"
+    },
+    {
+      "step": "Scan (GitHub) to Blueprint",
+      "ok": true,
+      "seconds": 7.2,
+      "note": "76d42a93",
+      "shot": "02-scan-github-to-blueprint.png"
+    },
+    {
+      "step": "Graph path trace",
+      "ok": true,
+      "seconds": 1.7,
+      "note": "5 nodes traced",
+      "shot": "03-graph-path-trace.png"
+    },
+    {
+      "step": "Lab: Run it now",
+      "ok": true,
+      "seconds": 31.3,
+      "note": "requests 80/80",
+      "shot": "04-lab-run-it-now.png"
+    },
+    {
+      "step": "Guard run on R1",
+      "ok": true,
+      "seconds": 129.2,
+      "note": "\u2715FAILURE 2 regressions found: prompt_prefix_stable, chat_perf_gate \u00b7 127 s total",
+      "shot": "05-guard-run-on-r1.png"
+    },
+    {
+      "step": "FurnaceBench report",
+      "ok": true,
+      "seconds": 0.2,
+      "note": "",
+      "shot": "06-furnacebench-report.png"
+    }
+  ],
+  "page_errors": []
+}

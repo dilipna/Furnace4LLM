@@ -6,21 +6,27 @@ RTX 3050 Ti" when showing latency. Under the lab's serving load the driver holds
 2026-10-09 addendum in `bench/results/2026-10-06/NOTES.md`). If asked: "a 0.5B model on a laptop
 GPU, which the driver does not even boost for"; the comparisons share that clock.
 
-Timings below are from two full rehearsals on 2026-10-09 (`scripts/rehearse.py`, results and
-screenshots in `docs/demo-shots/rehearsal-1/` and `rehearsal-2/`): every step passed both times.
+Timings below are from four full rehearsals on 2026-10-09 (`scripts/rehearse.py`, results and
+screenshots in `docs/demo-shots/rehearsal-1/` … `rehearsal-4/`): every step passed in all four.
+Rehearsals 3 and 4 recorded a video (the browser recording adds host load; 4 is the latest code).
 
-| step (rehearsed in a browser) | rehearsal 1 | rehearsal 2 |
-|---|---:|---:|
-| landing loads, live lab panel connects | 1.8 s | 0.4 s |
-| GitHub scan (Azure-Samples/openai-chat-app-quickstart) to Blueprint | 5.8 s | 3.7 s |
-| graph: select the workflow, path trace finishes | 1.8 s | 1.7 s |
-| /lab "Run it now": 80 requests, c = 1, 2, 4, 8 | 27.6 s | 32.5 s |
-| /guard/r1_dynamic_head "Run Guard on this PR" to verdict | 85.5 s | 83.9 s |
-| /bench | 0.4 s | 0.4 s |
+| step (rehearsed in a browser) | 1 | 2 | 3 | 4 |
+|---|---:|---:|---:|---:|
+| landing loads, live lab panel connects | 1.8 s | 0.4 s | 8.9 s* | 8.8 s* |
+| GitHub scan (Azure-Samples/openai-chat-app-quickstart) to Blueprint | 5.8 s | 3.7 s | 4.5 s | 7.2 s |
+| graph: select the workflow, path trace finishes | 1.8 s | 1.7 s | 2.5 s | 1.7 s |
+| /lab "Run it now": 80 requests, c = 1, 2, 4, 8 | 27.6 s | 32.5 s | 31.5 s | 31.3 s |
+| /guard/r1_dynamic_head "Run Guard on this PR" to verdict | 85.5 s | 83.9 s | 92.5 s | 129.2 s† |
+| /bench | 0.4 s | 0.4 s | 0.3 s | 0.2 s |
 
-Both Guard runs ended `FAILURE: 2 regressions found: prompt_prefix_stable, chat_perf_gate`
-(p95 TTFT 205 → 1,030 ms, prefix-cache hit 98% → 0% in rehearsal 1). Not rehearsed yet: the
-GitHub App steps (Forge PR, R1 PR check run, repair PR) — they need the App (docs/github-app.md).
+\* includes the deliberate pauses for the recording (hero replay, live panel).
+† rehearsal 4 runs the fixed perf gate, which adds an unmeasured warmup wave before each measured
+run: plan on **~2 minutes** for a live Guard run, so start it at step 5 and come back at step 7.
+
+Every Guard run ended `FAILURE: 2 regressions found: prompt_prefix_stable, chat_perf_gate`
+(rehearsal 4: p95 TTFT 139.8 → 981.6 ms, +602%, prefix-cache hit 98% → 0%; absolute values move
+with host load, the comparison shares it). Not rehearsed yet: the GitHub App steps (Forge PR, R1
+PR check run, repair PR): they need the App (docs/github-app.md).
 
 ## Pre-flight (30 minutes before)
 
@@ -35,11 +41,10 @@ the pre-flight below. `uv run poe demo-down` stops them. The steps it automates:
 - [ ] Docker Desktop running; `docker compose up -d postgres`; lab vLLM up
       (`HF_HOME_HOST=C:/Users/Dilip/.cache/huggingface docker compose --profile gpu up -d vllm`,
       ready after ~60 s: `curl localhost:8100/v1/models`).
-- [ ] Four processes, each in its own terminal:
-      `uv run poe api` (:8010), `uv run poe worker` (scans), `uv run poe runner` (Guard runs),
-      `cd apps/web && pnpm dev --port 3100`. After editing API code, restart the API by hand:
-      `--reload` waits for open live streams before it restarts.
-- [ ] `uv run python scripts/rehearse.py` passes (about 2.5 minutes; it runs one real benchmark
+- [ ] Four processes (`demo-up` starts them): API (:8010), scan worker, Guard runner, web (:3100).
+      Restarting the runner mid-run is safe now: on start it fails the job it was running, with
+      that reason, instead of leaving it "running".
+- [ ] `uv run python scripts/rehearse.py` passes (about 3.5 minutes; it runs one real benchmark
       and one real Guard run, so the pages then show fresh results).
 - [ ] `uv run furnace gh-check` prints the App and the `furnace-demo-f1` installation (needs the App).
 - [ ] Demo repo has the R1 PR open and Guard has already run once on it (the local copy is ready at
@@ -49,8 +54,10 @@ the pre-flight below. `uv run poe demo-down` stops them. The steps it automates:
       /bench, the demo repo's PR and the repair draft PR.
 - [ ] Fallback: `docs/demo-shots/` (desktop), `docs/demo-shots/mobile/` (390 px), the rehearsal
       folders, and a screen recording of the whole local path
-      (`uv run python scripts/rehearse.py --video docs/demo-video`, about 2:40, saved as .webm;
+      (`uv run python scripts/rehearse.py --video docs/demo-video`, about 3:30, saved as .webm;
       not committed). Copy the video to a USB stick as well.
+- [ ] If someone hands you their own repo: renamed repos now resolve; a TypeScript-only repo gets
+      a "what this scan could read" notice (Furnace analyzes Python today), not an empty page.
 
 ## Script
 
