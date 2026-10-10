@@ -67,12 +67,20 @@ def _split_key(key: str) -> tuple[str, str]:
     return file, re.split(r"[#.]", rest, maxsplit=1)[0] if rest else ""
 
 
+def _qualname(key: str) -> str:
+    """'component:pkg/m.py::Bot.reply#llm0' -> 'Bot.reply' (the full qualified name)."""
+    body = key.split(":", 1)[1] if ":" in key.split("::", 1)[0] else key
+    return body.partition("::")[2].split("#", 1)[0]
+
+
 def _site_match(truth: dict[str, Any], key: str) -> bool:
     file, func = _split_key(key)
     if file != truth["file"]:
         return False
     names = {truth["function"], *truth.get("also_accept", [])}
-    return truth["function"] == "<module>" or func in names
+    # Labels name a method by its qualified name (`Bot.reply`); _split_key keeps only the
+    # first segment, so compare both. (Fixed 2026-10-09: class methods never matched before.)
+    return truth["function"] == "<module>" or func in names or _qualname(key) in names
 
 
 def match(

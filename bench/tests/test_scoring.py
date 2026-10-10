@@ -132,3 +132,15 @@ def test_gpu_drivers_refuse_battery(monkeypatch):
         lambda: {"on_ac": True, "battery_pct": 80, "gpu_enforced_power_limit_w": 75.0},
     )
     assert common.require_ac_power()["on_ac"] is True
+
+
+def test_class_method_call_sites_match_their_qualified_label():
+    from rq1 import _site_match
+
+    truth = {"file": "pkg/bot.py", "function": "Bot.reply"}
+    assert _site_match(truth, "component:pkg/bot.py::Bot.reply#llm0")
+    assert not _site_match(truth, "component:pkg/bot.py::Bot.other#llm0")
+    # labels that name only the outer function still match its nested call sites
+    assert _site_match(
+        {"file": "a.py", "function": "handler"}, "component:a.py::handler.inner#llm0"
+    )

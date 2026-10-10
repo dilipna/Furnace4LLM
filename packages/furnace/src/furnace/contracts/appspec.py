@@ -29,6 +29,13 @@ class ServingEngine(StrEnum):
     anthropic = "anthropic"
     groq = "groq"
     openrouter = "openrouter"
+    bedrock = "bedrock"
+    cohere = "cohere"
+    google = "google"
+    huggingface = "huggingface"
+    llama_cpp = "llama_cpp"
+    mistral = "mistral"
+    replicate = "replicate"
     other_api = "other_api"
     unknown = "unknown"
 

@@ -42,6 +42,23 @@ from furnace.reconstruction.reconcile import Candidate, ClaimRec, reconcile
 LOCAL_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1", "host.docker.internal"}  # noqa: S104 - compared, never bound
 
 
+# SDKs whose client, without a base_url, talks to that provider's own service (or, for
+# llama.cpp, runs the model in-process).
+SDK_ENGINES = {
+    "openai",
+    "anthropic",
+    "groq",
+    "ollama",
+    "bedrock",
+    "cohere",
+    "google",
+    "huggingface",
+    "llama_cpp",
+    "mistral",
+    "replicate",
+}
+
+
 @dataclass
 class Reconstruction:
     inventory: Inventory
@@ -182,7 +199,7 @@ class Builder:
                         engine, src, [cf.id] + ([sf.id] if sf else []), why, direct=sf is None
                     )
                 )
-            elif base is None and cf.data.get("sdk") in ("openai", "anthropic", "groq", "ollama"):
+            elif base is None and cf.data.get("sdk") in SDK_ENGINES:
                 sdk = cf.data["sdk"]
                 cands.append(
                     Candidate(
@@ -987,6 +1004,70 @@ class Builder:
                     route_keys=[r.key],
                     capability_keys=caps,
                     confidence=0.9,
+                )
+            )
+        # Scripts (Streamlit pages, CLIs): from the functions their top-level code calls, plus
+        # LLM calls made at module level.
+        for e in self.k["entrypoint"]:
+            seen = {e.data["handler_key"], *e.data["callees"]}
+            q = deque(e.data["callees"])
+            reach = list(e.data["callees"])
+            while q:
+                n = q.popleft()
+                for m in adj.get(n, []):
+                    if m not in seen:
+                        seen.add(m)
+                        reach.append(m)
+                        q.append(m)
+            llm = [c.key for c in self.k["llm_call"] if c.data["function_key"] in seen]
+            retr = [rt.key for rt in self.k["retriever"] if rt.data["function_key"] in seen]
+            if not (llm or retr):  # a script without LLM or retrieval is not an LLM workflow
+                continue
+            tools = [
+                t.key
+                for t in self.k["side_effect_function"]
+                if t.data["function_key"] in seen
+                and not t.data["observability_only"]
+                and t.key in self.nodes
+            ]
+            caps = []
+            if llm and retr:
+                caps.append(
+                    self._capability(e, "rag_answer", "Answer from retrieved documents", llm + retr)
+                )
+            elif llm:
+                caps.append(self._capability(e, "llm_generation", "Generate with an LLM", llm))
+            for t in tools:
+                name = self.nodes[t].label
+                caps.append(
+                    self._capability(e, f"action_{name}", f"Perform side effect: {name}", [t])
+                )
+            kind, path = e.data["kind"], e.data["path"]
+            label = f"{'Streamlit app' if kind == 'streamlit' else 'CLI'} {path}"
+            wkey = node_key(NodeKind.workflow, path, f"{kind}:{path}")
+            self.node(
+                NodeKind.workflow,
+                wkey,
+                label,
+                {"entrypoint": kind, "deterministic": True},
+                0.8,
+                [e],
+            )
+            for c in caps:
+                self.edge(EdgeKind.implements, c, wkey, 0.8)
+            steps = [
+                self.nodes[n].label
+                for n in reach
+                if n in self.nodes and self.nodes[n].kind in (NodeKind.component,)
+            ]
+            out.append(
+                Workflow(
+                    key=wkey,
+                    name=label,
+                    description=f"Runs of {path}",
+                    steps=steps,
+                    capability_keys=caps,
+                    confidence=0.8,
                 )
             )
         return out
