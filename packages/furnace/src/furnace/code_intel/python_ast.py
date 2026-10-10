@@ -64,7 +64,78 @@ LLM_FUNCS = {
     ("litellm", "acompletion"): "litellm.acompletion",
     ("ollama", "chat"): "ollama.chat",
     ("ollama", "generate"): "ollama.generate",
+    ("replicate", "run"): "replicate.run",
+    ("replicate", "stream"): "replicate.stream",
+    ("replicate", "async_run"): "replicate.async_run",
 }
+# Module-function APIs that imply a serving provider (an implicit endpoint per module).
+MODULE_FUNC_SDKS = {"replicate": "replicate", "ollama": "ollama"}
+# APIs whose first positional argument is the model (`replicate.run("owner/model", input=...)`).
+MODEL_ARG0_APIS = {"replicate.run", "replicate.stream", "replicate.async_run"}
+# For language models replicate.run returns an iterator of output chunks (SDK behavior).
+STREAMING_APIS = {"replicate.run", "replicate.stream", "replicate.async_run"}
+
+# SDK client classes recognized by the module they are imported from: prefix -> (sdk, classes).
+# Generic names such as `Client` or `Llama` only count when imported from that SDK.
+SDK_CLASSES: dict[str, tuple[str, set[str]]] = {
+    "cohere": ("cohere", {"Client", "ClientV2", "AsyncClient", "AsyncClientV2"}),
+    "mistralai": ("mistral", {"Mistral", "MistralClient", "MistralAsyncClient"}),
+    "google.generativeai": ("google", {"GenerativeModel"}),
+    "google.genai": ("google", {"Client"}),
+    "vertexai": ("google", {"GenerativeModel"}),
+    "huggingface_hub": ("huggingface", {"InferenceClient", "AsyncInferenceClient"}),
+    "llama_cpp": ("llama_cpp", {"Llama"}),
+    "replicate": ("replicate", {"Client"}),
+}
+# Inference methods per SDK client: method path after the client object -> API name.
+CLIENT_METHODS: dict[str, dict[str, str]] = {
+    "cohere": {
+        "generate": "cohere.generate",
+        "chat": "cohere.chat",
+        "chat_stream": "cohere.chat_stream",
+    },
+    "mistral": {
+        "chat": "mistralai.chat",
+        "chat_stream": "mistralai.chat_stream",
+        "chat.complete": "mistralai.chat.complete",
+        "chat.complete_async": "mistralai.chat.complete",
+        "chat.stream": "mistralai.chat.stream",
+        "chat.stream_async": "mistralai.chat.stream",
+    },
+    "google": {
+        "generate_content": "google.generate_content",
+        "generate_content_async": "google.generate_content",
+        "models.generate_content": "google.genai.models.generate_content",
+        "models.generate_content_stream": "google.genai.models.generate_content_stream",
+    },
+    "huggingface": {
+        "chat_completion": "huggingface.chat_completion",
+        "text_generation": "huggingface.text_generation",
+    },
+    "llama_cpp": {
+        "__call__": "llama_cpp.Llama.__call__",
+        "create_chat_completion": "llama_cpp.create_chat_completion",
+        "create_completion": "llama_cpp.create_completion",
+    },
+    "replicate": {"run": "replicate.run", "stream": "replicate.stream"},
+    "bedrock": {
+        "invoke_model": "bedrock.invoke_model",
+        "invoke_model_with_response_stream": "bedrock.invoke_model_with_response_stream",
+        "converse": "bedrock.converse",
+        "converse_stream": "bedrock.converse_stream",
+    },
+}
+STREAMING_METHOD_SUFFIXES = (
+    "stream",
+    "chat_stream",
+    "converse_stream",
+    "invoke_model_with_response_stream",
+    "generate_content_stream",
+)
+BEDROCK_SERVICES = {"bedrock-runtime"}
+# Constructor keywords / positional slot that carry the model for SDK clients.
+SDK_CTOR_MODEL_KWARGS = ("model", "model_name", "model_id", "model_path")
+SDK_CTOR_MODEL_ARG0 = {"google", "llama_cpp"}
 # Model wrappers of LLM frameworks: count only when imported from a `langchain*` module, so
 # `from openai import OpenAI` (an SDK client) and `from langchain.llms import OpenAI` differ.
 FRAMEWORK_MODELS = {
@@ -78,10 +149,24 @@ FRAMEWORK_MODELS = {
     "Ollama": "ollama",
     "OllamaLLM": "ollama",
     "ChatGroq": "groq",
-    "ChatMistralAI": "other_api",
-    "ChatGoogleGenerativeAI": "other_api",
-    "HuggingFaceHub": "other_api",
-    "HuggingFaceEndpoint": "other_api",
+    "ChatMistralAI": "mistral",
+    "ChatGoogleGenerativeAI": "google",
+    "GoogleGenerativeAI": "google",
+    "ChatVertexAI": "google",
+    "VertexAI": "google",
+    "HuggingFaceHub": "huggingface",
+    "HuggingFaceEndpoint": "huggingface",
+    "ChatHuggingFace": "huggingface",
+    "ChatBedrock": "bedrock",
+    "ChatBedrockConverse": "bedrock",
+    "BedrockChat": "bedrock",
+    "Bedrock": "bedrock",
+    "BedrockLLM": "bedrock",
+    "ChatCohere": "cohere",
+    "Cohere": "cohere",
+    "Replicate": "replicate",
+    "LlamaCpp": "llama_cpp",
+    "ChatLlamaCpp": "llama_cpp",
 }
 # Methods that run a framework model (a bare `llm(prompt)` call counts too).
 FRAMEWORK_INVOKE = {
@@ -96,7 +181,14 @@ FRAMEWORK_INVOKE = {
     "generate",
     "agenerate",
 }
-FRAMEWORK_MODEL_KWARGS = ("model", "model_name", "repo_id", "model_id", "deployment_name")
+FRAMEWORK_MODEL_KWARGS = (
+    "model",
+    "model_name",
+    "repo_id",
+    "model_id",
+    "deployment_name",
+    "model_path",
+)
 _COMPOUND = (ast.If, ast.With, ast.AsyncWith, ast.For, ast.AsyncFor, ast.While, ast.Try)
 
 ROUTE_METHODS = {"get", "post", "put", "patch", "delete", "route", "api_route", "websocket"}
@@ -257,6 +349,7 @@ class PythonExtractor:
         self.inv = inventory
         self.mods: dict[str, ModInfo] = {}
         self.facts: list[Fact] = []
+        self._implicit: set[str] = set()  # implicit endpoints already emitted (module APIs)
 
     # ------------------------------------------------------------------ parsing
 
@@ -367,6 +460,10 @@ class PythonExtractor:
         origin_mod = origin[0] if origin else ""
         if origin_mod.startswith("langchain") and short in FRAMEWORK_MODELS:
             return FRAMEWORK_MODELS[short], "langchain"
+        if sdk := self._sdk_class(mod, cls):
+            return sdk, None
+        if short == "client" and self._bedrock_client(mod, call):
+            return "bedrock", None
         if short == "Client":  # generic name: only the SDKs that really export it
             for sdk in ("ollama", "anthropic"):
                 if origin_mod.startswith(sdk) or root == sdk:
@@ -375,6 +472,206 @@ class PythonExtractor:
         if short in LLM_CLIENT_CLASSES:
             return LLM_CLIENT_CLASSES[short], None
         return None
+
+    def _sdk_class(self, mod: ModInfo, cls: str) -> str | None:
+        """SDK name if dotted class name `cls` is an SDK client class, judged by its import."""
+        short, root = cls.split(".")[-1], cls.split(".")[0]
+        origin = mod.imports.get(root)
+        if origin is None:
+            return None
+        module, name = origin
+        # `from google import genai; genai.Client()` -> google.genai
+        full = f"{module}.{name}" if name and root != short else module
+        if root == short and name:  # `from cohere import Client` -> module is the origin
+            full = module
+        for prefix, (sdk, classes) in SDK_CLASSES.items():
+            if (full == prefix or full.startswith(prefix + ".")) and short in classes:
+                return sdk
+        return None
+
+    @staticmethod
+    def _bedrock_client(mod: ModInfo, call: ast.Call) -> bool:
+        """`boto3.client("bedrock-runtime")` (or a session's .client) in a module that uses boto3."""
+        if not any(m.split(".")[0] in ("boto3", "aioboto3") for m, _ in mod.imports.values()):
+            return False
+        svc = (
+            call.args[0]
+            if call.args
+            else next((k.value for k in call.keywords if k.arg == "service_name"), None)
+        )
+        return isinstance(svc, ast.Constant) and svc.value in BEDROCK_SERVICES
+
+    def _annotation_sdk(self, mod: ModInfo, ann: ast.expr | None) -> str | None:
+        """SDK of a parameter annotation such as `cohere.Client` or `Optional[Client]`."""
+        if ann is None:
+            return None
+        if isinstance(ann, ast.Constant) and isinstance(ann.value, str):
+            return self._sdk_class(mod, ann.value)
+        if isinstance(ann, ast.BinOp):
+            return self._annotation_sdk(mod, ann.left) or self._annotation_sdk(mod, ann.right)
+        if isinstance(ann, ast.Subscript):
+            return self._annotation_sdk(mod, ann.slice)
+        if isinstance(ann, ast.Tuple):
+            return next((s for e in ann.elts if (s := self._annotation_sdk(mod, e))), None)
+        name = dotted(ann)
+        return self._sdk_class(mod, name) if name else None
+
+    def _class_attr_sdk(self, mod: ModInfo, cls_name: str, attr: str, depth: int = 0) -> str | None:
+        """SDK of `self.<attr>` in class `cls_name`: assigned a client constructor, or a constructor
+        parameter annotated with an SDK client class; base classes are followed (3 levels)."""
+        cls = next(
+            (n for n in mod.tree.body if isinstance(n, ast.ClassDef) and n.name == cls_name), None
+        )
+        if cls is None or depth > 3:
+            return None
+        for fn in cls.body:
+            if not isinstance(fn, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            params = {a.arg: a.annotation for a in [*fn.args.args, *fn.args.kwonlyargs]}
+            for node in ast.walk(fn):
+                if not isinstance(node, ast.Assign):
+                    continue
+                for t in node.targets:
+                    if not (
+                        isinstance(t, ast.Attribute)
+                        and isinstance(t.value, ast.Name)
+                        and t.value.id == "self"
+                        and t.attr == attr
+                    ):
+                        continue
+                    v = node.value
+                    if isinstance(v, ast.Call):
+                        k = self._client_kind(mod, v)
+                        if k and not k[1]:
+                            return k[0]
+                    if (
+                        isinstance(v, ast.Name)
+                        and v.id in params
+                        and (sdk := self._annotation_sdk(mod, params[v.id]))
+                    ):
+                        return sdk
+        for b in cls.bases:
+            name = dotted(b) or ""
+            root = name.split(".")[0]
+            if root in mod.imports:
+                target = self._find_module(mod.imports[root][0])
+                bname = mod.imports[root][1] or name.split(".")[-1]
+            else:
+                target, bname = mod, name.split(".")[-1]
+            if target and (sdk := self._class_attr_sdk(target, bname, attr, depth + 1)):
+                return sdk
+        return None
+
+    def _client_method(
+        self,
+        mod: ModInfo,
+        info: FuncInfo,
+        func: ast.expr,
+        local: dict[str, tuple[str, ast.Call]],
+    ) -> tuple[str, tuple[ModInfo, str] | None, ast.Call | None, str] | None:
+        """(api, client, client constructor, sdk) if `func` is an inference method of a known
+        SDK client: `client.chat(...)`, `self.co.generate(...)`, `llm(prompt)` (llama.cpp),
+        `genai.GenerativeModel("m").generate_content(...)`."""
+        parts: list[str] = []
+        base = func
+        while isinstance(base, ast.Attribute):
+            parts.insert(0, base.attr)
+            base = base.value
+        if isinstance(func, ast.Name):
+            base, parts = func, ["__call__"]
+        if not parts:
+            return None
+        client: tuple[ModInfo, str] | None = None
+        ctor: ast.Call | None = None
+        sdk: str | None = None
+        method = ".".join(parts)
+        if isinstance(base, ast.Name) and base.id == "self" and len(parts) >= 2:
+            cls_name = info.qualname.split(".")[0] if "." in info.qualname else None
+            sdk = self._class_attr_sdk(mod, cls_name, parts[0]) if cls_name else None
+            method = ".".join(parts[1:])
+        elif isinstance(base, ast.Name):
+            client = self._client_for(mod, base.id, local)
+            ctor = self._ctor(mod, client, local) if client else None
+            k = self._client_kind(client[0], ctor) if client and ctor is not None else None
+            sdk = k[0] if k and not k[1] else None
+        elif isinstance(base, ast.Call):
+            k = self._client_kind(mod, base)
+            sdk, ctor = (k[0], base) if k and not k[1] else (None, None)
+        api = CLIENT_METHODS.get(sdk or "", {}).get(method)
+        return (api, client, ctor, sdk or "") if api else None
+
+    @staticmethod
+    def _is_main_guard(test: ast.expr) -> bool:
+        return (
+            isinstance(test, ast.Compare)
+            and isinstance(test.left, ast.Name)
+            and test.left.id == "__name__"
+            and any(isinstance(c, ast.Constant) and c.value == "__main__" for c in test.comparators)
+        )
+
+    def _entrypoint(self, mod: ModInfo) -> None:
+        """A script someone runs: a Streamlit page (imports streamlit and calls it at module level
+        or under a __main__ guard) or a CLI (a __main__ guard). Its workflow is built from the
+        functions its top-level code calls, like a route's from its handler."""
+        path = mod.file.path
+        if path.startswith(("tests/", "test/")) or "/tests/" in path or path.endswith("setup.py"):
+            return
+        st_alias = {n for n, (m, _) in mod.imports.items() if m.split(".")[0] == "streamlit"}
+        main_guard = any(
+            isinstance(n, ast.If) and self._is_main_guard(n.test) for n in mod.tree.body
+        )
+        top = mod.module_func.node if mod.module_func else None
+        st_calls = top is not None and any(
+            isinstance(n, ast.Call) and (dotted(n.func) or "").split(".")[0] in st_alias
+            for n in ast.walk(top)
+        )
+        if st_alias and (st_calls or main_guard):
+            kind = "streamlit"
+        elif main_guard:
+            kind = "cli"
+        else:
+            return
+        callees: set[str] = set()
+        for n in ast.walk(top) if top is not None else []:
+            if isinstance(n, ast.Call) and (d := dotted(n.func)):
+                target = self._resolve_callee(mod, d, None)
+                if target:
+                    callees.add(target)
+        module_key = node_key(NodeKind.component, path)
+        self._emit(
+            "entrypoint",
+            node_key(NodeKind.component, path, f"{kind}:entry"),
+            {"kind": kind, "path": path, "callees": sorted(callees), "handler_key": module_key},
+            mod,
+            top.body[0] if top is not None else mod.tree.body[0],
+            symbol="<module>",
+        )
+
+    def _implicit_client(self, mod: ModInfo, sdk: str, node: ast.Call) -> tuple[ModInfo, str]:
+        """An endpoint for module-function APIs (`replicate.run(...)`): one per module and SDK."""
+        name = f"{sdk}@module"
+        key = node_key(NodeKind.endpoint, mod.file.path, name)
+        if key not in self._implicit:
+            self._implicit.add(key)
+            self._emit(
+                "llm_client",
+                key,
+                {
+                    "var": name,
+                    "class": f"{sdk} (module functions)",
+                    "sdk": sdk,
+                    "framework": None,
+                    "base_url": None,
+                    "base_url_effective": None,
+                    "base_url_env": None,
+                    "has_timeout": False,
+                    "max_retries": None,
+                },
+                mod,
+                node,
+                symbol=name,
+            )
+        return mod, name
 
     @staticmethod
     def _module_level(stmts: list[ast.stmt]):
@@ -521,6 +818,7 @@ class PythonExtractor:
             # graph stay function-scoped.
             self._llm_calls(mod, mod.module_func, node_key(NodeKind.component, mod.file.path))
         self._prompt_constants(mod)
+        self._entrypoint(mod)
         imported_modules = {origin for origin, _ in mod.imports.values()}
         for info in mod.funcs.values():
             fkey = self._func_key(mod, info.qualname)
@@ -970,11 +1268,34 @@ class PythonExtractor:
         local = self._local_clients(mod, info)
         # (call node, api, resolved client, constructor or None for SDK calls)
         found: list[tuple[ast.Call, str, tuple[ModInfo, str] | None, ast.Call | None]] = []
+        sdk_ctors: dict[
+            int, ast.Call
+        ] = {}  # id(call node) -> SDK client constructor (model fallback)
         for node in walk_own(info.node):
             if isinstance(node, ast.Call):
                 api, client_var = self._llm_api(mod, dotted(node.func) or "")
                 if api:
-                    found.append((node, api, self._client_for(mod, client_var, local), None))
+                    client = self._client_for(mod, client_var, local)
+                    root = api.split(".")[0]
+                    if client is None and root in MODULE_FUNC_SDKS:
+                        client = self._implicit_client(mod, MODULE_FUNC_SDKS[root], node)
+                    found.append((node, api, client, None))
+                    continue
+                cm = self._client_method(mod, info, node.func, local)
+                if cm:
+                    api, client, sctor, _sdk = cm
+                    if sctor is not None:
+                        sdk_ctors[id(node)] = sctor
+                    found.append((node, api, client, None))
+                    continue
+                # an inference method handed to an executor: `pool.submit(self.co.generate, ...)`
+                for a in node.args:
+                    if isinstance(a, ast.Attribute) and (
+                        cm := self._client_method(mod, info, a, local)
+                    ):
+                        callee = (dotted(node.func) or "call").split(".")[-1]
+                        found.append((node, f"{cm[0]} (via {callee})", cm[1], None))
+                        break
         for node, method, client, ctor, _ in self._framework_calls(mod, info, local):
             cls = (dotted(ctor.func) or "model").split(".")[-1]
             api = (
@@ -988,18 +1309,35 @@ class PythonExtractor:
         for ordinal, (node, api, client, ctor) in enumerate(found):
             kw = {k.arg: k.value for k in node.keywords if k.arg}
             ctor_kw = {k.arg: k.value for k in ctor.keywords if k.arg} if ctor is not None else {}
-            model_expr = kw.get("model")
+            model_expr = kw.get("model") or kw.get("modelId") or kw.get("model_id")
+            if model_expr is None and api in MODEL_ARG0_APIS and node.args:
+                model_expr = node.args[0]
             if ctor is not None:
                 model_expr = next(
                     (ctor_kw[k] for k in FRAMEWORK_MODEL_KWARGS if k in ctor_kw), None
                 )
+            elif model_expr is None:  # SDK clients that carry the model in their constructor
+                sctor = sdk_ctors.get(id(node))
+                if sctor is None and client is not None:
+                    sctor = self._ctor(mod, client, local)
+                if sctor is not None:
+                    skw = {k.arg: k.value for k in sctor.keywords if k.arg}
+                    model_expr = next((skw[k] for k in SDK_CTOR_MODEL_KWARGS if k in skw), None)
+                    sk = self._client_kind(client[0] if client else mod, sctor)
+                    if model_expr is None and sctor.args and sk and sk[0] in SDK_CTOR_MODEL_ARG0:
+                        model_expr = sctor.args[0]
             model = self.resolve(mod, model_expr, func=info)
             if "stream" in kw:
                 stream = self.resolve(mod, kw.get("stream"), func=info)
             elif ctor is not None and "streaming" in ctor_kw:
                 stream = self.resolve(mod, ctor_kw["streaming"], func=info)
             else:
-                stream = Resolved("literal", api.endswith((".stream", ".astream")))
+                base_api = api.split(" ", 1)[0]
+                stream = Resolved(
+                    "literal",
+                    base_api.endswith((".stream", ".astream", *STREAMING_METHOD_SUFFIXES))
+                    or base_api in STREAMING_APIS,
+                )
             if client and ctor is None:
                 cctor = self._ctor(mod, client, local)
                 sdk = (self._client_kind(client[0], cctor) or (None, None))[0] if cctor else None

@@ -22,9 +22,11 @@ export async function BenchStrip() {
   ]);
 
   const tiles: { label: string; value: string; note: string }[] = [];
-  const ho = rq1?.micro["held-out-2"]?.llm_call_sites;
+  // the newest held-out set: labeled before the scanner change it measures
+  const hoSplit = rq1?.micro["held-out-3"]?.llm_call_sites?.n_truth ? "held-out-3" : "held-out-2";
+  const ho = rq1?.micro[hoSplit]?.llm_call_sites;
   if (ho && ho.n_truth) {
-    tiles.push({ label: "LLM call sites found on held-out apps", value: `${ho.tp}/${ho.n_truth}`, note: "RQ1, apps never used in development; unseen SDKs are missed" });
+    tiles.push({ label: "LLM call sites found on held-out apps", value: `${ho.tp}/${ho.n_truth}`, note: `RQ1 ${hoSplit === "held-out-3" ? "set 3" : "set 2"}: apps labeled before the scanner saw them; misses are listed on /bench` });
   }
   if (rq3) {
     const r = rq3.summary.regression_recall;

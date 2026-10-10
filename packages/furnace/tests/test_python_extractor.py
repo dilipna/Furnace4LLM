@@ -228,3 +228,185 @@ def test_several_models_in_code_are_not_a_contradiction(tmp_path):
     spec = reconstruct(tmp_path).appspec
     assert sorted(c.model.value for c in spec.llm_calls if c.model) == ["m", "m2"]
     assert spec.contradictions == []
+
+
+# ---- SDK coverage (synthetic programs written from each SDK's documented API) ----
+
+SDK_PROGRAMS = {
+    "rep.py": """
+import replicate
+
+def ask(q):
+    return replicate.run("meta/llama-3-8b-instruct", input={"prompt": q})
+""",
+    "cohere_app.py": """
+import cohere
+co = cohere.ClientV2()
+
+def ask(q):
+    return co.chat(model="command-r", messages=[{"role": "user", "content": q}])
+""",
+    "mistral_app.py": """
+from mistralai import Mistral
+client = Mistral(api_key="k")
+
+def ask(q):
+    return client.chat.complete(model="mistral-small-latest", messages=[{"role": "user", "content": q}])
+""",
+    "gemini_app.py": """
+import google.generativeai as genai
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+def ask(q):
+    return model.generate_content(q)
+""",
+    "genai_app.py": """
+from google import genai
+client = genai.Client()
+
+def ask(q):
+    return client.models.generate_content(model="gemini-2.0-flash", contents=q)
+""",
+    "hf_app.py": """
+from huggingface_hub import InferenceClient
+hf = InferenceClient()
+
+def ask(q):
+    return hf.chat_completion(messages=[{"role": "user", "content": q}], model="HuggingFaceH4/zephyr-7b-beta")
+""",
+    "local.py": """
+from llama_cpp import Llama
+llm = Llama(model_path="models/7b.Q4_K_M.gguf")
+out = llm("Q: hello A:", max_tokens=32)
+""",
+    "bedrock_app.py": """
+import boto3
+rt = boto3.client("bedrock-runtime", region_name="us-east-1")
+
+def ask(q):
+    return rt.converse(modelId="anthropic.claude-3-haiku-20240307-v1:0", messages=[])
+""",
+}
+
+
+def test_sdk_coverage_call_sites_models_and_streaming(tmp_path):
+    facts = _facts(tmp_path, SDK_PROGRAMS)
+    calls = {(f.locator.path, f.data["api"]): f.data for f in facts if f.kind == "llm_call"}
+    assert set(calls) == {
+        ("rep.py", "replicate.run"),
+        ("cohere_app.py", "cohere.chat"),
+        ("mistral_app.py", "mistralai.chat.complete"),
+        ("gemini_app.py", "google.generate_content"),
+        ("genai_app.py", "google.genai.models.generate_content"),
+        ("hf_app.py", "huggingface.chat_completion"),
+        ("local.py", "llama_cpp.Llama.__call__"),
+        ("bedrock_app.py", "bedrock.converse"),
+    }
+    model = {path: d["model_effective"] for (path, _), d in calls.items()}
+    assert model["rep.py"] == "meta/llama-3-8b-instruct"  # first positional argument
+    assert model["gemini_app.py"] == "gemini-1.5-flash"  # from the constructor
+    assert model["local.py"] == "models/7b.Q4_K_M.gguf"  # model_path
+    assert model["bedrock_app.py"] == "anthropic.claude-3-haiku-20240307-v1:0"  # modelId
+    assert calls[("rep.py", "replicate.run")]["stream"] is True  # iterator of output chunks
+    sdks = {f.data["sdk"] for f in facts if f.kind == "llm_client"}
+    assert {
+        "replicate",
+        "cohere",
+        "mistral",
+        "google",
+        "huggingface",
+        "llama_cpp",
+        "bedrock",
+    } <= sdks
+
+
+def test_generic_method_names_need_a_typed_client(tmp_path):
+    src = """
+import requests
+session = requests.Session()
+
+class Store:
+    def generate(self, x):
+        return x
+
+def f(q):
+    session.chat(q)          # not an SDK client
+    Store().generate(q)      # a method that happens to be called generate
+    return requests.post("https://example.com/run", json={})
+"""
+    assert not [f for f in _facts(tmp_path, {"m.py": src}) if f.kind == "llm_call"]
+
+
+def test_injected_client_through_an_annotated_constructor_and_base_class(tmp_path):
+    base = """
+import cohere
+
+class Bot:
+    def __init__(self, client: cohere.Client):
+        self.co = client
+"""
+    child = """
+from concurrent.futures import ThreadPoolExecutor
+from pkg.base import Bot
+
+class Persona(Bot):
+    def reply(self, q):
+        return self.co.generate(model="command", prompt=q)
+
+    def later(self, **kw):
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            return ex.submit(self.co.generate, **kw)
+"""
+    facts = _facts(tmp_path, {"pkg/__init__.py": "", "pkg/base.py": base, "pkg/persona.py": child})
+    calls = sorted(
+        (f.data["function_key"].split("::")[-1], f.data["api"])
+        for f in facts
+        if f.kind == "llm_call"
+    )
+    assert calls == [
+        ("Persona.later", "cohere.generate (via submit)"),
+        ("Persona.reply", "cohere.generate"),
+    ]
+
+
+def test_streamlit_and_cli_scripts_become_workflows(tmp_path):
+    from furnace.reconstruction.build import reconstruct
+
+    files = {
+        "app.py": """
+import streamlit as st
+from openai import OpenAI
+client = OpenAI()
+
+def answer(q):
+    return client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "user", "content": q}])
+
+st.title("Ask")
+if q := st.chat_input():
+    st.write(answer(q))
+""",
+        "batch.py": """
+from openai import OpenAI
+
+def main():
+    OpenAI().chat.completions.create(model="gpt-4o-mini", messages=[])
+
+if __name__ == "__main__":
+    main()
+""",
+        "ui_helpers.py": """
+import streamlit as st
+
+def header():
+    st.title("x")
+""",
+        "tool.py": """
+if __name__ == "__main__":
+    print("no LLM here")
+""",
+    }
+    for name, src in files.items():
+        (tmp_path / name).write_text(src, encoding="utf-8")
+    wf = {w.key.split("::")[-1]: w for w in reconstruct(tmp_path).appspec.workflows}
+    assert set(wf) == {"streamlit:app.py", "cli:batch.py"}  # helpers and LLM-free scripts are not
+    assert wf["streamlit:app.py"].name == "Streamlit app app.py"
