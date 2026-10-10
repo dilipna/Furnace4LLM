@@ -27,3 +27,8 @@ Still missed on set 3: a LangChain model stored on `self.llm` and piped into a r
 (Bedrock main app); `cli:` index-building scripts (no query-time LLM or retrieval, by design);
 model ids from config files; prompts in JSON persona files; README entrypoint contradictions.
 Labels by the developer agent, not independently reviewed.
+
+Post-hoc fix, disclosed: reading the llamav2-chat (set 3) Blueprint showed "retries: tenacity"
+claimed from a pinned transitive dependency the code never imports. A retry library now counts
+only when the code imports it. Effect: set-3 attribute accuracy 61/63 -> 62/63; nothing else
+changed. Because the fix was found on set 3, that one attribute is not a held-out result.

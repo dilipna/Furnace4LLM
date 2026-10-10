@@ -1,9 +1,9 @@
 {
   "manifest": {
     "date": "2026-10-09",
-    "started_at": "2026-10-10T00:18:07+00:00",
+    "started_at": "2026-10-10T00:28:02+00:00",
     "git": {
-      "sha": "7fe8c79bcdc89ba52b401aaf433bd4f3f7762158",
+      "sha": "80cb7607e095bf8a0b9510c22612d3d4d6da0a59",
       "dirty": true
     },
     "python": "3.12.13",
@@ -12,9 +12,9 @@
     "driver": "592.82",
     "memory_mb": 4096,
     "power": {
-      "on_ac": false,
-      "battery_pct": 66,
-      "gpu_enforced_power_limit_w": 30.0
+      "on_ac": true,
+      "battery_pct": 67,
+      "gpu_enforced_power_limit_w": 80.0
     },
     "argv": [
       "bench/rq1.py"
@@ -25,7 +25,7 @@
       "app": "support-rag-py (F1)",
       "split": "dev",
       "commit": null,
-      "seconds": 0.7190000000409782,
+      "seconds": 0.32800000003771856,
       "score": {
         "categories": {
           "routes": {
@@ -698,7 +698,7 @@
       "app": "ask-multiple-pdfs",
       "split": "held-out",
       "commit": "dc0155b3f909bc8a56b70d91d8ec550ace0fa921",
-      "seconds": 0.030999999959021807,
+      "seconds": 0.01600000000325963,
       "score": {
         "categories": {
           "routes": {
@@ -1085,7 +1085,7 @@
       "app": "Bedrock-ChatBot-with-LangChain-and-Streamlit",
       "split": "held-out-3",
       "commit": "222fe4f78f5389747b8f5ee38c33118dc7da9c37",
-      "seconds": 0.1720000000204891,
+      "seconds": 0.07900000002700835,
       "score": {
         "categories": {
           "routes": {
@@ -1943,7 +1943,7 @@
       "app": "gemini_multipdf_chat",
       "split": "held-out-3",
       "commit": "fe5a97c4cc32fbfd0b37ba0900c6feabf052e449",
-      "seconds": 0.031000000017229468,
+      "seconds": 0.015000000013969839,
       "score": {
         "categories": {
           "routes": {
@@ -2474,7 +2474,7 @@
       "app": "llama2",
       "split": "held-out-2",
       "commit": "cb787d293fbd58e7d7ff2a1b1dc422d9a0609a34",
-      "seconds": 0.030999999959021807,
+      "seconds": 0.01600000000325963,
       "score": {
         "categories": {
           "routes": {
@@ -3465,8 +3465,8 @@
           {
             "attr": "existing.retries",
             "truth": false,
-            "pred": true,
-            "correct": false
+            "pred": false,
+            "correct": true
           },
           {
             "attr": "existing.evals",
@@ -3686,18 +3686,7 @@
           "evals": [],
           "tests": [],
           "tracing": [],
-          "retries": [
-            {
-              "value": "tenacity",
-              "confidence": 0.6,
-              "observation": "inference",
-              "method": "deterministic",
-              "evidence_ids": [],
-              "contradicted_by": [],
-              "status": "supported",
-              "alternatives": []
-            }
-          ],
+          "retries": [],
           "timeouts": [],
           "fallbacks": [],
           "rate_limits": [],
@@ -3710,7 +3699,7 @@
       "app": "llm-examples",
       "split": "held-out",
       "commit": "7cf260745675e41f92e7436d3777aafdab9dad9f",
-      "seconds": 0.031000000017229468,
+      "seconds": 0.01600000000325963,
       "score": {
         "categories": {
           "routes": {
@@ -5157,7 +5146,7 @@
       "app": "openai-chat-app-quickstart",
       "split": "held-out-2",
       "commit": "0339489e477e91151ebe986394b08a5cf80bbff1",
-      "seconds": 0.10899999999674037,
+      "seconds": 0.0470000000204891,
       "score": {
         "categories": {
           "routes": {
@@ -5617,7 +5606,7 @@
       "app": "rag-tutorial-v2",
       "split": "held-out",
       "commit": "5e71164a3ab0f78e734e0d79b8c82d4954197fc7",
-      "seconds": 0.0470000000204891,
+      "seconds": 0.015000000013969839,
       "score": {
         "categories": {
           "routes": {
@@ -6112,7 +6101,7 @@
       "app": "sandbox-conversant-lib",
       "split": "held-out-3",
       "commit": "eeb7c808c2ab59f553f3500b90681019f79365be",
-      "seconds": 0.35899999999674037,
+      "seconds": 0.1559999999590218,
       "score": {
         "categories": {
           "routes": {
@@ -6808,7 +6797,7 @@
         "f1": 0.0
       },
       "_attributes": {
-        "correct": 61,
+        "correct": 62,
         "n": 63,
         "empty_scan_correct": 32,
         "empty_scan_n": 35
