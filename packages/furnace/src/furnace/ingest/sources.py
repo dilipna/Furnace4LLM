@@ -67,21 +67,41 @@ def _gh_headers(token: str | None) -> dict[str, str]:
     return h
 
 
-async def resolve_commit(ref: GitHubRef, token: str | None = None) -> tuple[str, str]:
-    """Return (default_or_requested_branch, commit_sha)."""
-    async with httpx.AsyncClient(base_url=GITHUB_API, headers=_gh_headers(token), timeout=20) as gh:
+async def _stay_on_api(response: httpx.Response) -> None:
+    """Follow GitHub's redirects (renamed or transferred repositories), but only within the API."""
+    if response.is_redirect:
+        target = response.url.join(response.headers.get("location", "")).host
+        if target != "api.github.com":
+            raise SourceError(f"unexpected redirect to {target}")
+
+
+async def resolve_commit(ref: GitHubRef, token: str | None = None) -> tuple[str, str, GitHubRef]:
+    """Return (default_or_requested_branch, commit_sha, canonical_ref).
+
+    A renamed or transferred repository answers 301 with its new location; the canonical
+    owner/name from the API is returned so later requests use it."""
+    async with httpx.AsyncClient(
+        base_url=GITHUB_API,
+        headers=_gh_headers(token),
+        timeout=20,
+        follow_redirects=True,
+        event_hooks={"response": [_stay_on_api]},
+    ) as gh:
         r = await gh.get(f"/repos/{ref.full_name}")
         if r.status_code == 404:
             raise SourceError(f"repository {ref.full_name} not found or not public")
         if r.status_code == 403:
             raise SourceError("GitHub API rate limit reached; try again later or connect GitHub")
         r.raise_for_status()
-        branch = ref.ref or r.json()["default_branch"]
-        c = await gh.get(f"/repos/{ref.full_name}/commits/{branch}")
+        info = r.json()
+        owner, _, name = str(info.get("full_name") or ref.full_name).partition("/")
+        canonical = GitHubRef(owner, name, ref.ref)
+        branch = ref.ref or info["default_branch"]
+        c = await gh.get(f"/repos/{canonical.full_name}/commits/{branch}")
         if c.status_code in (404, 422):
-            raise SourceError(f"ref {branch!r} not found in {ref.full_name}")
+            raise SourceError(f"ref {branch!r} not found in {canonical.full_name}")
         c.raise_for_status()
-        return branch, c.json()["sha"]
+        return branch, c.json()["sha"], canonical
 
 
 async def download_github_tarball(
@@ -115,7 +135,7 @@ async def download_github_tarball(
 async def materialize_github(
     ref: GitHubRef, workdir: Path, token: str | None = None
 ) -> tuple[Path, str, str, ExtractStats]:
-    branch, sha = await resolve_commit(ref, token)
+    branch, sha, ref = await resolve_commit(ref, token)
     tarball = workdir / "repo.tar.gz"
     await download_github_tarball(ref, sha, tarball, token)
     root = workdir / "src"

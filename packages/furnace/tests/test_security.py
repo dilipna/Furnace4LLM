@@ -260,3 +260,50 @@ async def test_pinned_transport_refuses_a_different_host():
     async with httpx.AsyncClient(transport=PinnedTransport(v)) as c:
         with pytest.raises(UnsafeURL, match="does not match"):
             await c.get("http://b.example/")
+
+
+def _gh(monkeypatch, handler):
+    import functools
+
+    import httpx
+    from furnace.ingest import sources
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(
+        sources.httpx,
+        "AsyncClient",
+        functools.partial(real, transport=httpx.MockTransport(handler)),
+    )
+
+
+async def test_renamed_repository_redirect_is_followed_to_its_canonical_name(monkeypatch):
+    import httpx
+    from furnace.ingest.sources import parse_github, resolve_commit
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        p = req.url.path
+        if p == "/repos/old/name":
+            return httpx.Response(
+                301, headers={"location": "https://api.github.com/repositories/42"}
+            )
+        if p == "/repositories/42":
+            return httpx.Response(200, json={"full_name": "new/name", "default_branch": "main"})
+        if p == "/repos/new/name/commits/main":
+            return httpx.Response(200, json={"sha": "a" * 40})
+        return httpx.Response(404)
+
+    _gh(monkeypatch, handler)
+    branch, sha, ref = await resolve_commit(parse_github("github.com/old/name"))
+    assert (branch, sha, ref.full_name) == ("main", "a" * 40, "new/name")
+
+
+async def test_redirect_away_from_the_github_api_is_refused(monkeypatch):
+    import httpx
+    from furnace.ingest.sources import SourceError, parse_github, resolve_commit
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return httpx.Response(302, headers={"location": "http://169.254.169.254/latest/meta-data"})
+
+    _gh(monkeypatch, handler)
+    with pytest.raises(SourceError, match="unexpected redirect"):
+        await resolve_commit(parse_github("github.com/o/r"))
