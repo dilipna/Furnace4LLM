@@ -890,7 +890,11 @@ class Builder:
                         f"depends on {d.data['name']}",
                     )
                 )
-            if d.data["category"] == "retry":
+            # A retry library in the dependencies counts only if the code imports it:
+            # frozen requirements list transitive packages (tenacity comes with many SDKs).
+            if d.data["category"] == "retry" and any(
+                r.data["library"] == d.data["name"] for r in self.k["retry_import"]
+            ):
                 rel.retries.append(
                     one(
                         "app",

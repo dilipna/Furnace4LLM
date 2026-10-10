@@ -160,7 +160,13 @@ def llm_call_without_timeout(ctx: Ctx) -> list[Recommendation]:
         sdk = next(iter(sdks))
         wait = f"the {sdk} SDK default ({SDK_DEFAULT_TIMEOUT[sdk or '']}) applies"
     else:
-        wait = "only library defaults (up to 10 minutes for the OpenAI and Anthropic SDKs) apply"
+        known = sorted(s for s in sdks if s and s in SDK_DEFAULT_TIMEOUT)
+        wait = "only library defaults apply" + (
+            f" (up to {SDK_DEFAULT_TIMEOUT[known[0]]} for the {', '.join(known)} SDK"
+            f"{'s' if len(known) > 1 else ''})"
+            if known
+            else ", if the SDK has any"
+        )
     streaming = any(c.streaming is not None and c.streaming.value is True for c in missing)
     if len(missing) == 1:
         where = f"`{missing[0].api}` at {missing[0].locator.short()} sets"

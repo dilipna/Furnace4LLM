@@ -410,3 +410,17 @@ if __name__ == "__main__":
     wf = {w.key.split("::")[-1]: w for w in reconstruct(tmp_path).appspec.workflows}
     assert set(wf) == {"streamlit:app.py", "cli:batch.py"}  # helpers and LLM-free scripts are not
     assert wf["streamlit:app.py"].name == "Streamlit app app.py"
+
+
+def test_retry_library_counts_only_when_the_code_uses_it(tmp_path):
+    from furnace.reconstruction.build import reconstruct
+
+    app = 'import replicate\n\ndef ask(q):\n    return replicate.run("m/x", input={"prompt": q})\n'
+    (tmp_path / "app.py").write_text(app, encoding="utf-8")
+    (tmp_path / "requirements.txt").write_text(
+        "replicate==0.9.0\ntenacity==8.2.2\n", encoding="utf-8"
+    )
+    rec = reconstruct(tmp_path)
+    assert not rec.appspec.reliability_existing.retries  # transitive pin, never imported
+    (tmp_path / "app.py").write_text("import tenacity\n" + app, encoding="utf-8")
+    assert reconstruct(tmp_path).appspec.reliability_existing.retries

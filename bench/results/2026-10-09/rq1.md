@@ -22,11 +22,11 @@ Attribute accuracy (held-out): 46/46 (a scan that finds nothing scores 15/20 on 
 
 Attribute accuracy (held-out-2): 27/28 (a scan that finds nothing scores 13/14 on the same truth)
 
-Attribute accuracy (held-out-3): 61/63 (a scan that finds nothing scores 32/35 on the same truth)
+Attribute accuracy (held-out-3): 62/63 (a scan that finds nothing scores 32/35 on the same truth)
 
 ## Per app
 
-### support-rag-py (F1) (dev, scan 0.7s)
+### support-rag-py (F1) (dev, scan 0.3s)
 
 | category | P / R / F1 (tp/pred/truth) | missed | false positives |
 | --- | --- | --- | --- |
@@ -60,7 +60,7 @@ Prompt slot duplicates (not scored): app/prompts.py::build_messages#system
 
 Attributes correct: 10/10
 
-### Bedrock-ChatBot-with-LangChain-and-Streamlit (held-out-3, scan 0.2s)
+### Bedrock-ChatBot-with-LangChain-and-Streamlit (held-out-3, scan 0.1s)
 
 | category | P / R / F1 (tp/pred/truth) | missed | false positives |
 | --- | --- | --- | --- |
@@ -122,7 +122,7 @@ Attributes correct: 19/19
 | workflows | 1.00 / 1.00 / 1.00 (1/1p/1t) | – | – |
 | contradictions | n/a | – | – |
 
-Attributes correct: 9/10; wrong: `existing.retries` truth=False pred=True
+Attributes correct: 10/10
 
 ### llm-examples (held-out, scan 0.0s)
 
@@ -156,7 +156,7 @@ Attributes correct: 25/25
 
 Attributes correct: 10/10
 
-### openai-chat-app-quickstart (held-out-2, scan 0.1s)
+### openai-chat-app-quickstart (held-out-2, scan 0.0s)
 
 | category | P / R / F1 (tp/pred/truth) | missed | false positives |
 | --- | --- | --- | --- |
@@ -188,7 +188,7 @@ Attributes correct: 8/9; wrong: `rag.present` truth=False pred=True
 
 Attributes correct: 11/11
 
-### sandbox-conversant-lib (held-out-3, scan 0.4s)
+### sandbox-conversant-lib (held-out-3, scan 0.2s)
 
 | category | P / R / F1 (tp/pred/truth) | missed | false positives |
 | --- | --- | --- | --- |
