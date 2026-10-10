@@ -91,3 +91,24 @@ def test_events_only_for_guard_jobs(client):
     jid = _run(other())
     assert client.get(f"/api/guard/runs/{jid}/events").status_code == 404
     assert client.get("/api/guard/runs/not-a-uuid/events").status_code == 404
+
+
+def test_a_running_job_without_heartbeat_does_not_block_new_runs(client):
+    """Regression: a runner killed mid-run left the scenario 'running' for 20 minutes."""
+    from datetime import timedelta
+
+    _run(_reset(True))
+
+    async def dead_run():
+        async with session_scope() as s:
+            j = await queue.enqueue(s, queue="runner", kind="guard.local", max_attempts=1)
+            await s.flush()
+            await s.execute(
+                update(Job)
+                .where(Job.id == j.id)
+                .values(status="running", heartbeat_at=datetime.now(UTC) - timedelta(minutes=10))
+            )
+
+    _run(dead_run())
+    r = client.post("/api/guard/runs", json={"scenario": "r1_dynamic_head"})
+    assert r.status_code == 201, r.text

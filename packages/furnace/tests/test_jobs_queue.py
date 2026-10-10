@@ -77,3 +77,39 @@ def test_worker_entrypoint_sees_every_registered_handler():
         capture_output=True, text=True, check=True, timeout=60,
     ).stdout.split()  # fmt: skip
     assert {"guard.local", "guard.pr", "scan.run", "system.ping"} <= set(out)
+
+
+async def test_orphaned_and_abandoned_jobs_are_failed_not_left_running(clean_jobs):
+    """Regression: a runner restarted mid-run left a guard job 'running' forever (max_attempts=1
+    means the lease never re-claims it) and the UI showed it as active."""
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import update
+
+    async with session_scope() as s:
+        mine = await queue.enqueue(s, queue="runner", kind="guard.local", max_attempts=1)
+        stale = await queue.enqueue(s, queue="runner", kind="guard.local", max_attempts=1)
+        retryable = await queue.enqueue(s, queue="runner", kind="system.ping", max_attempts=3)
+        fresh = await queue.enqueue(s, queue="runner", kind="guard.local", max_attempts=1)
+    old = datetime.now(UTC) - timedelta(seconds=600)
+    async with session_scope() as s:
+        for job, worker, hb in (
+            (mine, "laptop-runner", old),
+            (stale, "other", old),
+            (retryable, "other", old),
+            (fresh, "other", datetime.now(UTC)),
+        ):
+            await s.execute(
+                update(Job).where(Job.id == job.id).values(
+                    status="running", locked_by=worker, heartbeat_at=hb, attempts=1
+                )
+            )  # fmt: skip
+    async with session_scope() as s:
+        assert await queue.fail_orphans(s, "laptop-runner") == 1
+        assert await queue.reap_abandoned(s, lease_s=120) == 1  # `stale` only
+    async with session_scope() as s:
+        status = {j.id: (j.status, j.error or "") for j in (await s.execute(select(Job))).scalars()}
+    assert status[mine.id][0] == "failed" and "restarted" in status[mine.id][1]
+    assert status[stale.id][0] == "failed" and "no heartbeat" in status[stale.id][1]
+    assert status[retryable.id][0] == "running"  # left for claim() to re-take
+    assert status[fresh.id][0] == "running"

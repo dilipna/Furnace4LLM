@@ -126,6 +126,10 @@ async def run_forever(worker_id: str, queues: list[str], idle_sleep_s: float = 1
     import furnace.jobs.handlers  # noqa: F401  (registers job handlers)
 
     await _register(worker_id, queues)
+    lease = get_settings().job_lease_seconds
+    async with session_scope() as s:
+        if n := await queue.fail_orphans(s, worker_id):
+            log.warning("failed %d job(s) orphaned by this worker's previous process", n)
     log.info("worker %s polling queues %s", worker_id, queues)
     last_seen = asyncio.get_running_loop().time()
     while True:
@@ -133,6 +137,9 @@ async def run_forever(worker_id: str, queues: list[str], idle_sleep_s: float = 1
         now = asyncio.get_running_loop().time()
         if now - last_seen > 30:
             await _register(worker_id, queues)
+            async with session_scope() as s:
+                if n := await queue.reap_abandoned(s, lease):
+                    log.warning("failed %d abandoned job(s) (no heartbeat)", n)
             last_seen = now
         if not processed:
             await asyncio.sleep(idle_sleep_s)

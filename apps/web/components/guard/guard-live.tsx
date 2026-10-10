@@ -386,7 +386,7 @@ export function GuardLive({ scenario }: { scenario: string }) {
               </details>
             )}
             {verdict && (
-              <div className="line-in mt-3 flex flex-wrap items-center gap-2 rounded-[4px] border border-line-strong bg-bg-2 px-3 py-2 text-[12px]">
+              <div data-guard-verdict role="status" className="line-in mt-3 flex flex-wrap items-center gap-2 rounded-[4px] border border-line-strong bg-bg-2 px-3 py-2 text-[12px]">
                 <Verdict v={verdict.conclusion} />
                 <span className="text-fg-0">{verdict.title}</span>
                 {verdict.seconds != null && <span className="num text-fg-3">· {verdict.seconds.toFixed(0)} s total</span>}

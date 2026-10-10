@@ -109,11 +109,12 @@ def main() -> int:
             page.goto(a.base + "/guard/r1_dynamic_head", wait_until="load")
             page.locator("#guard-live").scroll_into_view_if_needed()
             page.get_by_role("button", name="Run Guard on this PR").click()
-            page.get_by_text("waiting for the runner").or_(
-                page.get_by_text("Impact ·")
-            ).first.wait_for(timeout=30_000)
-            page.locator("text=/s total/").first.wait_for(timeout=600_000)
-            verdict = page.locator("section[aria-labelledby='guard-live'] .line-in").last
+            # the page may still show the previous run's verdict: wait for this run to start,
+            # then for it to finish (the button is disabled while a run is queued or running)
+            page.get_by_role("button", name="Running…").wait_for(timeout=30_000)
+            page.get_by_role("button", name="Run Guard on this PR").wait_for(timeout=600_000)
+            verdict = page.locator("[data-guard-verdict]").first
+            verdict.wait_for(timeout=30_000)
             return " ".join(verdict.inner_text().split())
 
         def bench() -> str:

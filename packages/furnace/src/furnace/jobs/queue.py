@@ -118,6 +118,40 @@ async def fail(session: AsyncSession, job: Job, error: str) -> None:
     await session.execute(update(Job).where(Job.id == job.id).values(**values))
 
 
+async def fail_orphans(session: AsyncSession, worker: str) -> int:
+    """Jobs still marked running under this worker id belonged to its previous process
+    (killed or restarted mid-job): fail them so they do not look active forever."""
+    r = await session.execute(
+        update(Job)
+        .where(Job.status == "running", Job.locked_by == worker)
+        .values(
+            status="failed",
+            error="the worker restarted while this job was running",
+            finished_at=datetime.now(UTC),
+        )
+    )
+    return r.rowcount or 0  # type: ignore[attr-defined]
+
+
+async def reap_abandoned(session: AsyncSession, lease_s: int) -> int:
+    """Running jobs whose heartbeat stopped longer than the lease ago and that have no attempt
+    left cannot be re-claimed: fail them with the reason (others are re-claimed by claim())."""
+    r = await session.execute(
+        update(Job)
+        .where(
+            Job.status == "running",
+            Job.heartbeat_at < datetime.now(UTC) - timedelta(seconds=lease_s),
+            Job.attempts >= Job.max_attempts,
+        )
+        .values(
+            status="failed",
+            error=f"abandoned: no heartbeat for more than {lease_s} s (worker gone)",
+            finished_at=datetime.now(UTC),
+        )
+    )
+    return r.rowcount or 0  # type: ignore[attr-defined]
+
+
 async def emit(
     session: AsyncSession,
     job_id: uuid.UUID,
