@@ -16,8 +16,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from furnace.db.models import Job, JobEvent, Runner
 from furnace.db.session import session_scope
 from furnace.jobs import queue
+from furnace.settings import get_settings
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from furnace_api.deps import db_session
@@ -29,6 +30,12 @@ DB = Annotated[AsyncSession, Depends(db_session)]
 GUARD_KINDS = ("guard.local", "guard.pr")
 ACTIVE_WINDOW = timedelta(minutes=20)  # a queued/running job older than this is stale
 RUNNER_ONLINE = timedelta(seconds=90)
+
+
+def lease_s() -> int:
+    return get_settings().job_lease_seconds
+
+
 PER_IP_LIMIT, PER_IP_WINDOW_S = 3, 600
 _RATE: dict[str, deque[float]] = defaultdict(deque)
 
@@ -64,8 +71,15 @@ async def _active(db: AsyncSession) -> Job | None:
         select(Job)
         .where(
             Job.kind.in_(GUARD_KINDS),
-            Job.status.in_(("queued", "running")),
             Job.created_at > datetime.now(UTC) - ACTIVE_WINDOW,
+            # a running job whose runner stopped heartbeating is not active (the runner died)
+            or_(
+                Job.status == "queued",
+                and_(
+                    Job.status == "running",
+                    Job.heartbeat_at > datetime.now(UTC) - timedelta(seconds=lease_s()),
+                ),
+            ),
         )
         .order_by(Job.created_at.desc())
     )
