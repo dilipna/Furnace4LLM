@@ -6,6 +6,15 @@ Paste this file's path into a new Claude Code session ("read CONTINUE.md and con
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
 ## Oct 8-9 session (live demo work), newest first
+- **Oct 9 (evening): scanner coverage, robustness.** Held-out set 3 (Gemini, Mistral, Replicate,
+  Bedrock, Cohere apps) labeled and committed before any scan; SDK coverage (typed clients, injected
+  `self.x` clients, replicate.run, LangChain wrappers, new ServingEngine values) + Streamlit/CLI script
+  workflows. RQ1 set 3 LLM call sites 1/9 -> 8/9 (P 1.00), workflows 0/9 -> 6/9; scorer bug (class
+  methods never matched) fixed, both scanners re-scored (`bench/results/2026-10-09/RQ1_NOTES.md`).
+  Fixed: renamed GitHub repos (301) crashed scans; TS-only repos showed an empty Blueprint (now a
+  coverage notice); retries claimed from transitive pins; a worker restarted mid-job left the job
+  'running' forever (now failed on restart / reaped). Rehearsal 4 (latest code, video) passed;
+  a live Guard run now takes ~2 min (gate warmup).
 - **Oct 9 (late): perf gate fixed, RQ5 re-measured.** A/A calibration (`bench/gate_noise.py`) found the
   gate biased (identical revisions up to 60% apart; cold first wave after idle set the p95, base
   measured first). Fix: one unmeasured warmup wave per run -> A/A within 9.7%. Re-measured RQ5:
