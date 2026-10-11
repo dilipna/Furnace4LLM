@@ -242,6 +242,13 @@ class ImpactResult:
     affected_paths: dict[str, list[str]]
 
 
+def lost_stable_prefix(t: TouchedNode) -> bool:
+    """A system message that was prefix-stable on the base starts with a per-request value on
+    the head (the prefix-instability signature; see guardian.repair.signatures)."""
+    change = t.attr_changes.get("dynamic_head")
+    return t.node_key.endswith("#system") and change is not None and tuple(change) == (False, True)
+
+
 def analyze_impact(
     base: TreeState,
     head: TreeState,
@@ -368,6 +375,9 @@ def analyze_impact(
     selected: list[Selection] = []
     skipped: list[Selection] = []
     fell_back = bool(fallback_reasons)
+    # A known serving-regression signature selects the benchmarks even when the graph has no
+    # workflow reaching the prompt (an unresolved call path must not hide a 10x regression).
+    unstable = sorted(k for k, t in touched.items() if lost_stable_prefix(t))
     for item in suite:
         if fell_back:
             selected.append(
@@ -415,6 +425,15 @@ def analyze_impact(
                     kind=item.kind,
                     reason=f"{', '.join(cats)} change reaches {hit}",
                     path=paths[hit],
+                )
+            )
+        elif item.kind == "benchmark" and unstable and "prompt" in item.triggers:
+            selected.append(
+                Selection(
+                    key=item.key,
+                    kind=item.kind,
+                    reason=f"{unstable[0]} lost its stable prefix (prefix-instability signature); "
+                    "benchmarked even though no traced workflow reaches it",
                 )
             )
         elif hit:

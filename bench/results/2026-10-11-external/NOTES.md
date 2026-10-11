@@ -73,3 +73,13 @@ background tasks): 2/9. It fails safe: no false positives on call sites or route
 wrong selections on unrelated PRs, Forge refusing with reasons, and no PR without a green
 sandbox run. The next scanner work, measured on a new held-out set afterwards: Agents SDK
 calls and instructions, subscripted clients, `create_task` edges, env/settings defaults.
+
+## After fixes (set 4 is no longer held-out for these)
+
+1. Sandbox dependency install (above): `external_validation_after_deps_fix.*`.
+2. Guard selection: a detected prefix-instability signature now selects the benchmarks
+   whose triggers include prompt changes even when no traced workflow reaches the prompt
+   (`guardian/impact.py`, `lost_stable_prefix`). `external_validation.md`: the prompt
+   scenario is correct in 2/3 apps (was 0/3), all scenarios 8/9; the remaining miss is
+   rag-postgres, whose Agents SDK `instructions` are not recognized as a system prompt (a
+   scanner gap, not a selection gap). F1's impact tests are unchanged.

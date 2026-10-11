@@ -1,9 +1,9 @@
 {
   "manifest": {
     "date": "2026-10-11-external",
-    "started_at": "2026-10-11T23:39:46+00:00",
+    "started_at": "2026-10-11T23:55:55+00:00",
     "git": {
-      "sha": "6b953593128286b06593d751207e259832952bf7",
+      "sha": "5cb8cd96f111e21556ac68d032ae9601379cd7dd",
       "dirty": true
     },
     "python": "3.12.13",
@@ -13,7 +13,7 @@
     "memory_mb": 4096,
     "power": {
       "on_ac": false,
-      "battery_pct": 67,
+      "battery_pct": 52,
       "gpu_enforced_power_limit_w": 30.0
     },
     "argv": [
@@ -57,7 +57,7 @@
       "root": "C:\\dev\\furnace\\bench\\.cache\\external\\openai-chat-backend-fastapi",
       "commit": "79174c34228951080cde7be2a7990057e40457fa",
       "scan": {
-        "seconds": 0.16,
+        "seconds": 0.11,
         "python_files": 7,
         "llm_call_facts": 0,
         "routes": 2,
@@ -98,6 +98,7 @@
             "prompt"
           ],
           "selected": [
+            "bench:perf_gate",
             "check:prompt_prefix_stable",
             "unit:existing_tests"
           ],
@@ -105,12 +106,10 @@
           "signatures": [
             "prefix_instability"
           ],
-          "missing": [
-            "bench:perf_gate"
-          ],
+          "missing": [],
           "unexpected": [],
           "signature_ok": true,
-          "correct": false,
+          "correct": true,
           "repair": {
             "signature_detected": true,
             "node": "prompt:src/api/chat.py::chat_handler#system",
@@ -171,7 +170,7 @@
       "root": "C:\\dev\\furnace\\bench\\.cache\\external\\rag-postgres-openai-python",
       "commit": "2c23c488bb8698159739b0a01c22396b788f7de6",
       "scan": {
-        "seconds": 0.91,
+        "seconds": 1.03,
         "python_files": 34,
         "llm_call_facts": 2,
         "routes": 5,
@@ -280,7 +279,7 @@
       "root": "C:\\dev\\furnace\\bench\\.cache\\external\\tech-trends-chatbot",
       "commit": "d416f3cb711fa7c4d846111c890e7a37c70337c8",
       "scan": {
-        "seconds": 0.3,
+        "seconds": 0.2,
         "python_files": 16,
         "llm_call_facts": 1,
         "routes": 3,
@@ -343,6 +342,7 @@
             "prompt"
           ],
           "selected": [
+            "bench:perf_gate",
             "check:prompt_prefix_stable",
             "unit:existing_tests"
           ],
@@ -350,12 +350,10 @@
           "signatures": [
             "prefix_instability"
           ],
-          "missing": [
-            "bench:perf_gate"
-          ],
+          "missing": [],
           "unexpected": [],
           "signature_ok": true,
-          "correct": false,
+          "correct": true,
           "repair": {
             "signature_detected": true,
             "node": "prompt:backend/app/assistants/assistant.py::RAGAssistant.__init__#system",

@@ -7,23 +7,20 @@ carries one, and the repair loop re-derives the same fact before it changes anyt
 prefix_instability: a system message that was prefix-stable on the base revision starts
 with a per-request value on the PR head (`dynamic_head` False -> True), so no two requests
 share a cacheable prompt prefix. Its measured effect on this hardware is in
-bench/results/2026-10-09-gate-warmup-v2/rq5.md.
+bench/results/2026-10-09-gate-warmup-v2/rq5.md. Impact analysis uses the same predicate
+(guardian.impact.lost_stable_prefix) to select the perf benchmarks.
 """
 
 from __future__ import annotations
 
 from furnace.contracts.guard import TouchedNode
-from furnace.guardian.impact import ImpactResult
+from furnace.guardian.impact import ImpactResult, lost_stable_prefix
 
 PREFIX_INSTABILITY = "prefix_instability"
 
 
 def prefix_instability_node(impact: ImpactResult) -> TouchedNode | None:
-    for t in impact.impact.touched:
-        change = t.attr_changes.get("dynamic_head")
-        if t.node_key.endswith("#system") and change is not None and tuple(change) == (False, True):
-            return t
-    return None
+    return next((t for t in impact.impact.touched if lost_stable_prefix(t)), None)
 
 
 def supported_signatures(impact: ImpactResult) -> list[str]:

@@ -6,9 +6,9 @@ Apps labeled and committed before this script first ran; Guard scenarios are syn
 
 | app | py files | scan s | findings | evidence checked | broken links |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| openai-chat-backend-fastapi | 7 | 0.16 | 0 | 0 | 0 |
-| rag-postgres-openai-python | 34 | 0.91 | 4 | 5 | 0 |
-| tech-trends-chatbot | 16 | 0.3 | 7 | 5 | 0 |
+| openai-chat-backend-fastapi | 7 | 0.11 | 0 | 0 | 0 |
+| rag-postgres-openai-python | 34 | 1.03 | 4 | 5 | 0 |
+| tech-trends-chatbot | 16 | 0.2 | 7 | 5 | 0 |
 
 ## Forge
 
@@ -25,13 +25,13 @@ Apps labeled and committed before this script first ran; Guard scenarios are syn
 
 | app | scenario | categories | selected | signature | correct | why not |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| openai-chat-backend-fastapi | prompt_dynamic_head | code, imports, prompt | check:prompt_prefix_stable, unit:existing_tests | prefix_instability | NO | missing bench:perf_gate |
+| openai-chat-backend-fastapi | prompt_dynamic_head | code, imports, prompt | bench:perf_gate, check:prompt_prefix_stable, unit:existing_tests | prefix_instability | yes |  |
 | openai-chat-backend-fastapi | docs_only | docs | none | – | yes |  |
 | openai-chat-backend-fastapi | code_unrelated | code_off_llm_path | none | – | yes |  |
 | rag-postgres-openai-python | prompt_dynamic_head | code_off_llm_path, imports | none | – | NO | missing bench:perf_gate, check:prompt_prefix_stable; signature |
 | rag-postgres-openai-python | docs_only | docs | none | – | yes |  |
 | rag-postgres-openai-python | code_unrelated | code_off_llm_path | none | – | yes |  |
-| tech-trends-chatbot | prompt_dynamic_head | code, prompt | check:prompt_prefix_stable, unit:existing_tests | prefix_instability | NO | missing bench:perf_gate |
+| tech-trends-chatbot | prompt_dynamic_head | code, prompt | bench:perf_gate, check:prompt_prefix_stable, unit:existing_tests | prefix_instability | yes |  |
 | tech-trends-chatbot | docs_only | docs | none | – | yes |  |
 | tech-trends-chatbot | code_unrelated | code_off_llm_path | none | – | yes |  |
 
