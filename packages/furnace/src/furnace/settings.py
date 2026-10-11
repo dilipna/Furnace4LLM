@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     web_origin: str = "http://localhost:3000"
     worker_id: str = Field(default="worker-local")
     job_lease_seconds: int = 120
+    # Hard wall-clock limit per job unless the job row sets its own (jobs.timeout_s).
+    job_timeout_seconds: int = 3600
     embedded_worker: bool = False  # run the cpu queue inside the API process
     # FurnaceBench results and labels served read-only by the API (default: <repo>/bench).
     bench_dir: Path | None = None
@@ -39,6 +41,13 @@ class Settings(BaseSettings):
     github_app_id: str | None = None
     github_private_key_path: Path | None = None
     github_webhook_secret: SecretStr | None = None
+    # Comma-separated owner/name list. When set, webhook events from any other repository
+    # are recorded and ignored (defense in depth on top of where the App is installed).
+    github_allowed_repos: str | None = None
+    # After a Guard FAILURE with a supported regression signature, enqueue a repair job that
+    # may open a DRAFT pull request into the PR's branch (never merged). Off by default:
+    # turning it on is the explicit write consent.
+    guard_auto_repair: bool = False
     # Inference endpoint the runner benchmarks and evaluates against (OpenAI-compatible).
     lab_base_url: str = "http://localhost:8100/v1"
     lab_model: str = "lab"

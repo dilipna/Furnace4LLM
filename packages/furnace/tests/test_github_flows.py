@@ -22,9 +22,10 @@ KEY = (
 
 
 class FakeGitHub:
-    def __init__(self, head_repo="o/r"):
+    def __init__(self, head_repo="o/r", check_runs=None):
         self.calls: list[tuple[str, str, dict]] = []
         self.head_repo = head_repo
+        self.check_runs = check_runs or []  # existing "Furnace Guard" runs on the head
 
     def __call__(self, req: httpx.Request) -> httpx.Response:
         body = json.loads(req.content) if req.content else {}
@@ -32,6 +33,9 @@ class FakeGitHub:
         p = req.url.path
         if p == "/repos/o/r/installation":
             return httpx.Response(200, json={"id": 77})
+        if p == f"/repos/o/r/commits/{'h' * 40}/check-runs" and req.method == "GET":
+            assert req.url.params["check_name"] == "Furnace Guard"
+            return httpx.Response(200, json={"check_runs": self.check_runs})
         if p == "/app/installations/77/access_tokens":
             return httpx.Response(201, json={"token": "t-scoped"})
         if p == "/repos/o/r/pulls/5":
@@ -127,6 +131,88 @@ async def test_guard_pr_crash_still_completes_the_check(stub_work):
         await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
     done = next(b for m, p, b in fake.calls if m == "PATCH")
     assert done["conclusion"] == "neutral" and "sandbox unavailable" in done["output"]["summary"]
+
+
+def _writes(fake):
+    return [(m, p) for m, p, _ in fake.calls if m in ("POST", "PATCH", "PUT", "DELETE")]
+
+
+def _passing(items, ctx, progress, on_event=None):
+    return [ItemResult(items[0].key, "pass", "ok")]
+
+
+async def test_guard_pr_returns_a_completed_check_instead_of_running_again(stub_work):
+    """A retried job or a second event for the same head commit must not post a second
+    check run (or spend two minutes of GPU on the same answer)."""
+    stub_work.setattr(flows, "run_items", lambda *a, **k: pytest.fail("checks must not run"))
+    done = {
+        "id": 55,
+        "status": "completed",
+        "conclusion": "failure",
+        "output": {"title": "p95 +900%"},
+    }
+    fake = FakeGitHub(check_runs=[done])
+    out = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+    assert out["reused"] and out["check_id"] == 55 and out["conclusion"] == "failure"
+    assert _writes(fake) == [("POST", "/app/installations/77/access_tokens")]
+
+
+async def test_guard_pr_takes_over_an_abandoned_check_and_reruns_on_request(stub_work):
+    stub_work.setattr(flows, "run_items", _passing)
+    # an attempt that died left its check run in progress: the retry finishes *that* run
+    fake = FakeGitHub(check_runs=[{"id": 991, "status": "in_progress", "conclusion": None}])
+    out = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+    assert out["check_id"] == 991 and out["conclusion"] == "success"
+    assert ("POST", "/repos/o/r/check-runs") not in _writes(fake)
+    # an explicit re-run creates a new one even though a completed run exists
+    fake = FakeGitHub(check_runs=[{"id": 55, "status": "completed", "conclusion": "failure"}])
+    out = await flows.guard_pr(
+        _app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"], rerun=True
+    )
+    assert out["check_id"] == 991 and ("POST", "/repos/o/r/check-runs") in _writes(fake)
+
+
+async def test_guard_pr_skips_a_superseded_head(stub_work):
+    fake = FakeGitHub()
+    out = await flows.guard_pr(
+        _app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"],
+        expected_head_sha="a" * 40,
+    )  # fmt: skip
+    assert out["superseded"] and out["conclusion"] == "skipped"
+    assert not any("/check-runs" in p for _, p in _writes(fake))
+
+
+async def test_guard_pr_refuses_to_act_under_another_installation(stub_work):
+    fake = FakeGitHub()
+    with pytest.raises(GitHubError, match="across installations"):
+        await flows.guard_pr(
+            _app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"],
+            expected_installation=78,
+        )  # fmt: skip
+    assert not any(p.endswith("/access_tokens") for _, p, _ in fake.calls)  # no token minted
+
+
+async def test_guard_pr_cancelled_mid_run_still_completes_the_check(stub_work):
+    """A job timeout or a lost lease cancels the coroutine; the check must not keep spinning."""
+    import asyncio
+
+    started = asyncio.Event()
+
+    async def hanging_to_thread(fn, *args, **kw):  # analyze_tree "takes forever"
+        started.set()
+        await asyncio.sleep(30)
+
+    stub_work.setattr(flows.asyncio, "to_thread", hanging_to_thread)
+    fake = FakeGitHub()
+    task = asyncio.create_task(
+        flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+    )
+    await asyncio.wait_for(started.wait(), 10)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    done = next(b for m, p, b in fake.calls if m == "PATCH")
+    assert done["conclusion"] == "neutral" and "cancelled" in done["output"]["summary"]
 
 
 async def test_fork_pull_requests_are_refused(stub_work):

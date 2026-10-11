@@ -10,7 +10,6 @@ import logging
 import platform
 import shutil
 import traceback
-import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from typing import Any
@@ -32,6 +31,7 @@ class JobContext:
 
     def __init__(self, job: Job) -> None:
         self.job = job
+        self.lease_lost = False  # set by the heartbeat when another claim took the job
 
     @property
     def payload(self) -> dict[str, Any]:
@@ -81,11 +81,30 @@ async def _register(worker_id: str, queues: list[str]) -> None:
         await s.execute(stmt)
 
 
-async def _heartbeat_loop(job_id: uuid.UUID, worker_id: str, every_s: float) -> None:
+async def _heartbeat_loop(
+    ctx: JobContext, worker_id: str, every_s: float, lease_s: float, work: asyncio.Task[Any]
+) -> None:
+    """Extend the lease every `every_s`. If the claim no longer holds the job, or the
+    database has been unreachable for longer than the lease (so another worker may have
+    re-claimed it), cancel the handler: two runs must not both write to GitHub."""
+    loop = asyncio.get_running_loop()
+    last_ok = loop.time()
     while True:
         await asyncio.sleep(every_s)
-        async with session_scope() as s:
-            await queue.heartbeat(s, job_id, worker_id)
+        try:
+            async with session_scope() as s:
+                held = await queue.heartbeat(s, ctx.job.id, worker_id, ctx.job.attempts)
+        except Exception:
+            log.warning("heartbeat for job %s failed", ctx.job.id, exc_info=True)
+            if loop.time() - last_ok < lease_s:
+                continue
+            held = False
+        if not held:
+            log.error("job %s: lease lost; cancelling this run", ctx.job.id)
+            ctx.lease_lost = True
+            work.cancel()
+            return
+        last_ok = loop.time()
 
 
 async def run_one(worker_id: str, queues: list[str]) -> bool:
@@ -100,25 +119,52 @@ async def run_one(worker_id: str, queues: list[str]) -> bool:
 
     ctx = JobContext(job)
     fn = HANDLERS.get(job.kind)
-    hb = asyncio.create_task(
-        _heartbeat_loop(job.id, worker_id, max(5.0, settings.job_lease_seconds / 4))
-    )
-    try:
+    timeout = job.timeout_s or settings.job_timeout_seconds
+
+    async def execute() -> dict[str, Any] | None:
         if fn is None:
             raise LookupError(f"no handler registered for job kind {job.kind!r}")
-        result = await fn(ctx)
+        return await fn(ctx)
+
+    work = asyncio.create_task(execute())
+    hb = asyncio.create_task(
+        _heartbeat_loop(
+            ctx,
+            worker_id,
+            max(1.0, settings.job_lease_seconds / 4),
+            settings.job_lease_seconds,
+            work,
+        )
+    )
+    error: str | None = None
+    try:
+        result = await asyncio.wait_for(work, timeout)
         async with session_scope() as s:
-            await queue.complete(s, job.id, result)
-        log.info("job %s %s succeeded", job.kind, job.id)
+            held = await queue.complete(s, job.id, result, worker=worker_id, attempt=job.attempts)
+        if held:
+            log.info("job %s %s succeeded", job.kind, job.id)
+        else:
+            log.error(
+                "job %s %s finished after losing its lease; result discarded", job.kind, job.id
+            )
+    except TimeoutError:
+        error = f"timed out after {timeout} s (job timeout); handler cancelled"
+    except asyncio.CancelledError:
+        if not ctx.lease_lost:
+            raise  # the worker itself is shutting down
+        log.error("job %s %s cancelled: lease lost to another claim", job.kind, job.id)
     except Exception as exc:
         log.exception("job %s %s failed", job.kind, job.id)
-        async with session_scope() as s:
-            await queue.emit(s, job.id, "error", str(exc), level="error")
-            await queue.fail(s, job, f"{exc}\n{traceback.format_exc()}")
+        error = f"{exc}\n{traceback.format_exc()}"
     finally:
         hb.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await hb
+    if error is not None:
+        async with session_scope() as s:
+            await queue.emit(s, job.id, "error", error.splitlines()[0], level="error")
+            if not await queue.fail(s, job, error, fenced=True):
+                log.error("job %s: failure not recorded, lease already lost", job.id)
     return True
 
 
