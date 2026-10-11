@@ -154,7 +154,9 @@ def main() -> None:
         after = power_state()
         r["power_after"] = after
         if after.get("on_ac") is False:
-            stopped = f"stopped after trial {i + 1}: AC power lost during it; that trial is discarded"
+            stopped = (
+                f"stopped after trial {i + 1}: AC power lost during it; that trial is discarded"
+            )
             print(stopped, flush=True)
             break
         rows.append(r)
