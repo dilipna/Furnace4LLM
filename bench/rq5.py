@@ -36,7 +36,7 @@ from f1_scenarios import by_name, materialize
 from f1_suite import F1_SUITE
 from furnace.guardian.execute import GuardContext, prepare, run_items, verdict
 from furnace.guardian.impact import analyze_impact, analyze_tree
-from furnace.guardian.perf_gate import GatePolicy, compare, run_gate
+from furnace.guardian.perf_gate import GatePolicy, repair_perf_check, run_gate
 from furnace.guardian.repair.loop import repair_prefix_instability
 from furnace_bench.schema import AdapterName, BenchTarget
 
@@ -65,15 +65,10 @@ def attempt(
         res = run_gate(
             {"base": base, "pr_head": head, "candidate": cand}, questions, TARGET, concurrency=8
         )
-        hv, cv = (
-            compare(res["base"], res["pr_head"], policy),
-            compare(res["base"], res["candidate"], policy),
-        )
+        # Since 2026-10-11 the acceptance rule is perf_gate.accept_repair (interval-based);
+        # results before that date used the point rule (verdict pass or warn).
         return {
-            "head_vs_base": hv,
-            "candidate_vs_base": cv,
-            "within_budget": cv["verdict"] in ("pass", "warn"),
-            "summary": f"p95 TTFT base {hv['baseline']} | PR {hv['value']} ({hv['change_pct']:+}%, {hv['verdict']}) | repair {cv['value']} ({cv['change_pct']:+}%, {cv['verdict']})",
+            **repair_perf_check(res, policy),
             "reports": {k: [v.report.model_dump(mode="json") for v in vs] for k, vs in res.items()},
         }
 

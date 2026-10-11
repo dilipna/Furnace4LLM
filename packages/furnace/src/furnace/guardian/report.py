@@ -84,60 +84,135 @@ def check_run(impact: ImpactResult, results: list[ItemResult], conclusion: str) 
     }
 
 
+WHY = {
+    "fm:prefix_instability": (
+        "A per-request value now sits at the head of the system prompt, so no two requests "
+        "share a prompt prefix. vLLM's automatic prefix caching reuses KV-cache blocks only "
+        "for an identical token prefix, so every request prefills its whole prompt again: "
+        "time to first token rises and the prefix-cache hit rate collapses."
+    ),
+}
+
+
+def _hit(c: dict[str, Any], i: int) -> str:
+    hit = (c.get("prefix_hit_rate") or (None, None))[i]
+    return f"{hit * 100:.0f}%" if hit is not None else "–"
+
+
+def _ci(c: dict[str, Any]) -> str:
+    ci = c.get("ci_pct")
+    return f"{ci[0]:+.1f}% to {ci[1]:+.1f}%" if ci else "–"
+
+
 def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_path: str) -> str:
+    """The nine things a reviewer needs: what changed, why it regressed, the evidence, the
+    repair, why earlier candidates failed, which tests passed, what the benchmark shows,
+    what remains uncertain, and what exactly needs a human decision."""
     sel = getattr(attempt, "selected", None)
     cands = list(getattr(attempt, "candidates", []) or [])
     chosen = cands[sel] if sel is not None and sel < len(cands) else (cands[-1] if cands else None)
-    rejected = [
-        f"- tried first and rejected: `{c.strategy}` ({((c.results.get('perf') or {}).get('summary')) or 'failed validation'})"
-        for c in cands
-        if c is not chosen
-    ]
-    rows = []
-    for name, key in (("PR head", "head_vs_base"), ("This repair", "candidate_vs_base")):
-        c = perf.get(key) or {}
-        if c:
-            hits = c.get("prefix_hit_rate") or (None, None)
-            rows.append(
-                f"| {name} | {c.get('baseline')} ms | {c.get('value')} ms | {c.get('change_pct'):+} % | "
-                + (f"{hits[1] * 100:.0f}%" if hits[1] is not None else "–")
-                + f" | {c.get('verdict')} |"
+    rejected = []
+    for c in cands:
+        if c is chosen:
+            continue
+        cp = c.results.get("perf") or {}
+        why = (
+            "; ".join(cp.get("reasons") or [])
+            or cp.get("summary")
+            or (
+                f"regression test {c.results.get('regression_test')}, "
+                f"existing tests {c.results.get('existing_tests')}"
             )
+        )
+        rejected.append(f"- `{c.strategy}` rejected: {why}")
+    loc = list(getattr(attempt, "localization", []) or [])
+    changed = [
+        f"- `{lc.file}`"
+        + (
+            f" lines {lc.hunk.new_start}-{lc.hunk.new_start + max(lc.hunk.new_lines, 1) - 1}"
+            if lc.hunk
+            else ""
+        )
+        + ": "
+        + "; ".join(lc.reasons)
+        for lc in loc[:3]
+    ] or ["- (no hunk localized)"]
+    hv, cv = perf.get("head_vs_base") or {}, perf.get("candidate_vs_base") or {}
+    rows = [
+        f"| {name} | {c.get('baseline')} ms | {c.get('value')} ms | {c.get('change_pct'):+} % | "
+        f"{_ci(c)} | {_hit(c, 1)} | {str(c.get('verdict', '')).upper()} |"
+        for name, c in (("PR head", hv), ("This repair", cv))
+        if c
+    ]
     perf_table = (
         "\n".join(
             [
-                "| revision | base p95 TTFT | p95 TTFT | change | prefix-cache hit | gate |",
-                "|---|---:|---:|---:|---:|---|",
+                "| revision vs base | base p95 TTFT | p95 TTFT | change | 95% CI | prefix-cache hit | gate |",
+                "|---|---:|---:|---:|---|---:|---|",
                 *rows,
             ]
         )
         if rows
         else "_No performance run attached._"
     )
+    reasons = [f"- {r}" for r in perf.get("reasons") or []]
+    runs = hv.get("runs")
+    n_req = (
+        len((hv.get("samples_ms") or {}).get("value", [[]])[0]) if hv.get("samples_ms") else None
+    )
     repro = attempt.repro
     return "\n".join(
         [
             "## Furnace Guard repair (draft, human review required)",
             "",
-            f"**Failure mode:** {attempt.failure_mode_key}",
+            f"**Failure mode:** `{attempt.failure_mode_key}` (a supported regression signature)",
             "",
-            "### 1. Failing test first",
-            f"`{test_path}` was written before any fix and calibrated on the base revision.",
-            f"- fails on the PR head: **{repro.head_fails if repro else '?'}**",
-            f"- passes on the base revision: **{repro.base_passes if repro else '?'}**",
+            "### 1. What changed in the pull request",
+            *changed,
             "",
-            "### 2. Fix",
+            "### 2. Why it is slower",
+            WHY.get(attempt.failure_mode_key, "See the failure mode above."),
+            "",
+            "### 3. Evidence",
+            f"- `{test_path}` was written before any fix and calibrated on the base revision; "
+            f"fails on the PR head: **{repro.head_fails if repro else '?'}**, passes on the base: "
+            f"**{repro.base_passes if repro else '?'}**",
+            f"- prefix-cache hit rate: base {_hit(hv, 0)}, PR head {_hit(hv, 1)}"
+            if hv
+            else "- no benchmark run attached",
+            f"- p95 TTFT of the PR head vs base: {hv.get('change_pct'):+}% (95% CI {_ci(hv)})"
+            if hv
+            else "",
+            "",
+            "### 4. The repair",
             explanation,
             "",
-            "### 3. Validation (sandboxed)",
+            "### 5. Candidates rejected before this one",
+            *(rejected or ["- none: the first candidate passed"]),
+            "",
+            "### 6. Tests (sandboxed, no network)",
             "- new regression test: "
             + str(chosen.results.get("regression_test") if chosen else "–"),
             "- existing tests: " + str(chosen.results.get("existing_tests") if chosen else "–"),
-            *rejected,
             "",
-            "### 4. Performance (same workload, same endpoint)",
+            "### 7. Benchmark (same workload and endpoint, base / PR / repair interleaved)",
             perf_table,
             "",
-            "Furnace never merges. Review the diff, then merge or close.",
+            "Perf gate decision for this repair:",
+            *(reasons or ["- (no perf gate run)"]),
+            "",
+            "### 8. What remains uncertain",
+            f"- {runs or '?'} runs per revision"
+            + (f" of {n_req} measured requests each" if n_req else "")
+            + "; the interval is a hierarchical bootstrap and is coarse at this size.",
+            "- One model and one endpoint (the lab vLLM); the effect on other hardware, models "
+            "or traffic mixes was not measured here.",
+            "- Functional equivalence is only as strong as the existing tests plus the new "
+            "regression test.",
+            "",
+            "### 9. What needs your decision",
+            "- Whether the behavior change described in section 4 is acceptable for this "
+            "product (it is the only intended behavior change).",
+            "- Merge or close. Furnace never merges and never pushes to your branches.",
         ]
     )
