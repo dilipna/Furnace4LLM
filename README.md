@@ -96,7 +96,7 @@ uv run poe kernel-correctness && uv run poe kernel-bench # Kernel Lab
 uv run python scripts/rehearse.py [--video DIR]          # rehearse the demo path in a browser
 ```
 
-GPU numbers depend on the laptop's power state: run on AC power. Under this light serving load
-the driver holds the GPU near 780 MHz (not throttling; it reaches 1,850 MHz under a saturating
-load); comparisons inside each result share the clock. FurnaceBench GPU drivers refuse to run on
-battery.
+GPU numbers depend on the laptop's power state and on the clock the driver picks for this light
+serving load (780 MHz on Oct 6-9, ~1,960 MHz on Oct 11 after a reboot; never throttled), so every
+result records its clock and comparisons are made only inside a set that shares one
+(`bench/results/2026-10-11-live-clock/`). FurnaceBench GPU drivers refuse to run on battery.

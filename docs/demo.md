@@ -1,10 +1,11 @@
 # Demo script (about 5 minutes) and pre-flight checklist
 
 Every number shown comes from the running system or `bench/results/`; say "measured on a laptop
-RTX 3050 Ti" when showing latency. Under the lab's serving load the driver holds the GPU at about
-780 MHz (it reaches 1,850 MHz under a saturating load, so this is not throttling; see the
-2026-10-09 addendum in `bench/results/2026-10-06/NOTES.md`). If asked: "a 0.5B model on a laptop
-GPU, which the driver does not even boost for"; the comparisons share that clock.
+RTX 3050 Ti" when showing latency. The driver picks the GPU clock for this light load: 780 MHz
+on Oct 6-9, ~1,960 MHz on Oct 11 after a reboot (never throttled; `bench/results/2026-10-06/NOTES.md`).
+The FurnaceBench numbers were measured at ~780 MHz; a live run at ~1,960 MHz is 32-48% faster
+at p95 (`bench/results/2026-10-11-live-clock/`). Pre-flight prints today's clock: say it when the
+live dots land below the RQ4 reference ticks, which were recorded at 780-830 MHz.
 
 Timings below are from four full rehearsals on 2026-10-09 (`scripts/rehearse.py`, results and
 screenshots in `docs/demo-shots/rehearsal-1/` … `rehearsal-4/`): every step passed in all four.

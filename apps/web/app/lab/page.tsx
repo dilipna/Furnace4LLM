@@ -59,7 +59,11 @@ export default async function LabPage() {
 
         <div className="mt-6 grid gap-6 xl:grid-cols-2">
           <FurnacePanel compact />
-          <RunNow reference={reference} campaign={campaign} />
+          <RunNow
+            reference={reference}
+            campaign={campaign}
+            refClockMhz={sm.length ? [Math.min(...sm), Math.max(...sm)] : null}
+          />
         </div>
 
         {!rq4 && (
