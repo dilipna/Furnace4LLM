@@ -14,7 +14,7 @@ node_modules/
 out/
 *.tsbuildinfo
 next-env.d.ts
-# env / secrets
+# env / secrets (GitHub App keys live outside the repo; *.pem below is a backstop)
 .env
 .env.*
 !.env.example
@@ -35,3 +35,4 @@ fixtures/apps/*/traces/
 # FurnaceBench: cloned external repos (pinned SHAs in bench/ground_truth)
 bench/.cache/
 docs/demo-video/
+*.pem
