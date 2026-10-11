@@ -12,6 +12,7 @@ to the lab endpoint, which is a decision for a human, not a default.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import shutil
 import tempfile
 from collections.abc import Callable
@@ -39,6 +40,7 @@ from furnace.guardian.live import impact_event
 from furnace.guardian.perf_gate import GatePolicy, compare, run_gate
 from furnace.guardian.repair.loop import repair_prefix_instability
 from furnace.guardian.repair.regression import min_shared_prefix, render_in_sandbox
+from furnace.guardian.repair.signatures import supported_signatures
 from furnace.guardian.report import check_run, repair_pr_body
 from furnace.ingest.sources import GitHubRef, download_github_tarball
 from furnace.reconstruction.build import reconstruct
@@ -52,8 +54,21 @@ def _say(progress: Progress | None, msg: str) -> None:
         progress(msg)
 
 
-async def _token(app: GitHubApp, full_name: str, permissions: dict[str, str]) -> Repo:
+async def _token(
+    app: GitHubApp,
+    full_name: str,
+    permissions: dict[str, str],
+    expected_installation: int | None = None,
+) -> Repo:
+    """Installation token for one repository and only `permissions`. A job created from a
+    webhook carries the event's installation id: if the repository now belongs to another
+    installation (reinstalled, transferred), refuse rather than act under the wrong one."""
     inst = await app.installation_for(full_name)
+    if expected_installation is not None and inst != expected_installation:
+        raise GitHubError(
+            f"{full_name} is installed as installation {inst}, but the event came from "
+            f"installation {expected_installation}; refusing to act across installations"
+        )
     token = await app.installation_token(
         inst, repository=full_name.split("/", 1)[1], permissions=permissions
     )
@@ -97,15 +112,46 @@ async def guard_pr(
     max_prompt_tokens: int | None = None,
     progress: Progress | None = None,
     on_event: Callable[[dict[str, Any]], None] | None = None,
+    expected_head_sha: str | None = None,
+    expected_installation: int | None = None,
+    rerun: bool = False,
 ) -> dict[str, Any]:
     """Run the graph-targeted checks for PR `number` and report them as a check run.
 
+    Idempotent per head commit: if a completed Furnace Guard check run already exists on
+    the PR head, its result is returned unless `rerun`; an in-progress one (left by an
+    attempt that died) is taken over instead of creating a second. A job for a head that
+    the PR has since moved past (`expected_head_sha`) is skipped as superseded.
+
     `on_event` (called from a worker thread) receives the structured impact/check events
     the live Guard view draws; see furnace.guardian.live."""
-    repo = await _token(app, full_name, GUARD_PERMISSIONS)
+    repo = await _token(app, full_name, GUARD_PERMISSIONS, expected_installation)
     pr = await _pull(repo, number)
-    check_id = await repo.create_check(pr["head_sha"])
-    _say(progress, f"check run {check_id} started on {pr['head_sha'][:7]}")
+    if expected_head_sha and pr["head_sha"] != expected_head_sha:
+        _say(progress, f"superseded: PR head is now {pr['head_sha'][:7]}")
+        return {
+            "check_id": None,
+            "conclusion": "skipped",
+            "title": f"superseded by {pr['head_sha'][:7]}",
+            "superseded": True,
+            "signatures": [],
+        }
+    existing = await repo.find_check(pr["head_sha"])
+    if existing and existing["status"] == "completed" and not rerun:
+        _say(progress, f"check run {existing['id']} already completed: {existing['conclusion']}")
+        return {
+            "check_id": existing["id"],
+            "conclusion": existing["conclusion"],
+            "title": existing["title"] or "",
+            "reused": True,
+            "signatures": [],
+        }
+    if existing and existing["status"] != "completed":
+        check_id = existing["id"]
+        _say(progress, f"taking over check run {check_id} left in progress on {pr['head_sha'][:7]}")
+    else:
+        check_id = await repo.create_check(pr["head_sha"])
+        _say(progress, f"check run {check_id} started on {pr['head_sha'][:7]}")
     tmp = Path(tempfile.mkdtemp(prefix="furnace-guard-pr-"))
     try:
         base_root = await fetch_revision(full_name, pr["base_sha"], repo.token, tmp / "base")
@@ -160,15 +206,25 @@ async def guard_pr(
             "conclusion": cr["conclusion"],
             "title": cr["title"],
             "results": [r.__dict__ for r in results],
+            "signatures": supported_signatures(impact),
         }
-    except Exception as exc:
-        # Never leave a check spinning: report the failure honestly as neutral.
-        await repo.complete_check(
-            check_id,
-            conclusion="neutral",
-            title="Furnace Guard could not complete",
-            summary=f"{type(exc).__name__}: {str(exc)[:500]}",
+    except (Exception, asyncio.CancelledError) as exc:
+        # Never leave a check spinning (also on a job timeout or a lost lease, which cancel
+        # this coroutine): report that it did not complete, honestly, as neutral.
+        why = (
+            "cancelled (job timeout or lost lease)"
+            if isinstance(exc, asyncio.CancelledError)
+            else f"{type(exc).__name__}: {str(exc)[:500]}"
         )
+        with contextlib.suppress(Exception):
+            await asyncio.shield(
+                repo.complete_check(
+                    check_id,
+                    conclusion="neutral",
+                    title="Furnace Guard could not complete",
+                    summary=why,
+                )
+            )
         raise
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -279,11 +335,20 @@ async def repair_pr(
     questions: list[str],
     open_pr: bool = False,
     progress: Progress | None = None,
+    expected_head_sha: str | None = None,
+    expected_installation: int | None = None,
 ) -> dict[str, Any]:
     """Failing-test-first repair of a prefix-instability regression in PR `number`. Opens a
-    draft PR into the PR's branch only when the repair is verified and `open_pr` is set."""
-    repo = await _token(app, full_name, GUARD_PERMISSIONS)
+    draft PR into the PR's branch only when the repair is verified and `open_pr` is set.
+    Re-running on the same PR head returns the draft PR the first run opened."""
+    repo = await _token(app, full_name, GUARD_PERMISSIONS, expected_installation)
     pr = await _pull(repo, number)
+    if expected_head_sha and pr["head_sha"] != expected_head_sha:
+        return {
+            "status": "superseded",
+            "reason": f"PR head moved to {pr['head_sha'][:7]}; not repairing an old revision",
+            "pr": None,
+        }
     tmp = Path(tempfile.mkdtemp(prefix="furnace-repair-pr-"))
     try:
         base_root = await fetch_revision(full_name, pr["base_sha"], repo.token, tmp / "base")

@@ -31,6 +31,7 @@ from furnace.guardian.repair.regression import (
     prefix_stability_test,
     render_in_sandbox,
 )
+from furnace.guardian.repair.signatures import prefix_instability_node
 from furnace.guardian.repair.strategies import STRATEGIES, StrategyError
 from furnace.reconstruction.build import reconstruct
 from furnace.sandbox.docker_sandbox import SandboxResult, pytest_in_sandbox
@@ -94,15 +95,7 @@ def repair_prefix_instability(
     attempt = RepairAttempt(trigger={"pr": change_label}, failure_mode_key="fm:prefix_instability")
     outcome = RepairOutcome(attempt=attempt)
 
-    touched = {t.node_key: t for t in impact.impact.touched}
-    sysmsg = next(
-        (
-            t
-            for k, t in touched.items()
-            if k.endswith("#system") and t.attr_changes.get("dynamic_head") == (False, True)
-        ),
-        None,
-    )
+    sysmsg = prefix_instability_node(impact)
     if sysmsg is None:
         attempt.status = RepairStatus.rejected
         outcome.logs["diagnosis"] = "no system message changed from prefix-stable to dynamic-head"

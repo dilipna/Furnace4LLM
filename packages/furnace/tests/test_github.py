@@ -102,8 +102,10 @@ async def test_open_draft_pr_uses_git_data_api_in_order():
     assert out == {
         "number": 5,
         "url": "https://github.com/acme/app/pull/5",
+        "state": "open",
         "commit": "commit1",
         "branch": "furnace/forge-1",
+        "reused": False,
     }
     seq = [(m, p.removeprefix(r)) for m, p, _, _ in rec.calls]
     assert seq == [
@@ -112,6 +114,7 @@ async def test_open_draft_pr_uses_git_data_api_in_order():
         ("POST", "/git/blobs"),
         ("POST", "/git/blobs"),
         ("POST", "/git/trees"),
+        ("GET", "/git/ref/heads/furnace/forge-1"),  # 404: the branch is free
         ("POST", "/git/commits"),
         ("POST", "/git/refs"),
         ("POST", "/pulls"),
@@ -161,37 +164,111 @@ async def test_check_run_lifecycle_and_conclusion_validation():
         await repo.complete_check(cid, conclusion="maybe", title="", summary="")
 
 
-async def test_draft_pr_takes_next_free_branch_and_caps_the_body():
-    r = "/repos/acme/app"
-    calls = []
+class FakeGitData:
+    """A tiny in-memory GitHub for the Git Data + pulls endpoints open_draft_pr uses.
+    Trees are content-addressed like Git's (same entries on the same base -> same sha)."""
 
-    def handler(req: httpx.Request) -> httpx.Response:
-        body = json.loads(req.content) if req.content else {}
-        calls.append((req.method, req.url.path.removeprefix(r), body))
+    def __init__(self):
+        self.refs: dict[str, str] = {}  # branch -> commit sha
+        self.commits: dict[str, str] = {"base0": "tree-base"}  # commit -> tree
+        self.pulls: list[dict] = []
+        self.calls: list[tuple[str, str]] = []
+
+    def __call__(self, req: httpx.Request) -> httpx.Response:
+        r = "/repos/acme/app"
         p = req.url.path.removeprefix(r)
-        if p == "/git/refs":
-            if body["ref"] in ("refs/heads/furnace/forge-1", "refs/heads/furnace/forge-1-2"):
+        body = json.loads(req.content) if req.content else {}
+        self.calls.append((req.method, p))
+        if req.method == "POST" and p == "/git/blobs":
+            return httpx.Response(201, json={"sha": "blob-" + body["content"]})
+        if req.method == "POST" and p == "/git/trees":
+            key = body["base_tree"] + "|" + ",".join(e["sha"] for e in body["tree"])
+            return httpx.Response(201, json={"sha": "tree:" + key})
+        if req.method == "POST" and p == "/git/commits":
+            sha = f"c{len(self.commits)}"
+            self.commits[sha] = body["tree"]
+            return httpx.Response(201, json={"sha": sha})
+        if req.method == "GET" and p.startswith("/git/commits/"):
+            return httpx.Response(200, json={"tree": {"sha": self.commits[p.rsplit("/", 1)[1]]}})
+        if req.method == "GET" and p.startswith("/git/ref/heads/"):
+            branch = p.removeprefix("/git/ref/heads/")
+            if branch not in self.refs:
+                return httpx.Response(404, json={"message": "Not Found"})
+            return httpx.Response(200, json={"object": {"sha": self.refs[branch]}})
+        if req.method == "POST" and p == "/git/refs":
+            branch = body["ref"].removeprefix("refs/heads/")
+            if branch in self.refs:
                 return httpx.Response(422, json={"message": "Reference already exists"})
+            self.refs[branch] = body["sha"]
             return httpx.Response(201, json={})
-        if p == "/pulls":
-            return httpx.Response(201, json={"number": 9, "html_url": "u"})
-        if p.startswith("/git/commits/"):
-            return httpx.Response(200, json={"tree": {"sha": "t0"}})
-        return httpx.Response(201, json={"sha": "s"})
+        if req.method == "GET" and p == "/pulls":
+            head = req.url.params["head"].split(":", 1)[1]
+            return httpx.Response(200, json=[x for x in self.pulls if x["head"] == head])
+        if req.method == "POST" and p == "/pulls":
+            n = len(self.pulls) + 1
+            self.pulls.append(
+                {"number": n, "html_url": f"u/{n}", "head": body["head"], "state": "open",
+                 "body": body["body"]}
+            )  # fmt: skip
+            return httpx.Response(201, json=self.pulls[-1])
+        return httpx.Response(404, json={"message": f"unexpected {req.method} {p}"})
 
-    repo = Repo("acme/app", "t", transport=httpx.MockTransport(handler))
-    out = await repo.open_draft_pr(
-        base_branch="main", new_branch="furnace/forge-1", files={"a": "x"}, title="t",
-        body="x" * 70_000, commit_message="m", base_sha="b",
+
+async def _open(gh, files=None, body="b"):
+    repo = Repo("acme/app", "t", transport=httpx.MockTransport(gh))
+    return await repo.open_draft_pr(
+        base_branch="main", new_branch="furnace/forge-1", files=files or {"a.py": "x"},
+        title="t", body=body, commit_message="m", base_sha="base0",
     )  # fmt: skip
-    assert out["branch"] == "furnace/forge-1-3"
-    pr = calls[-1][2]
-    assert pr["head"] == "furnace/forge-1-3" and len(pr["body"]) < 65_536
-    assert pr["body"].endswith("65,536 characters)_")
+
+
+async def test_retrying_the_same_change_never_opens_a_second_pull_request():
+    gh = FakeGitData()
+    first = await _open(gh)
+    again = await _open(gh)
+    assert first["reused"] is False and again["reused"] is True
+    assert again["number"] == first["number"] and again["branch"] == "furnace/forge-1"
+    assert len(gh.pulls) == 1 and list(gh.refs) == ["furnace/forge-1"]
+
+
+async def test_a_pull_request_closed_by_a_human_is_not_reopened_or_duplicated():
+    gh = FakeGitData()
+    first = await _open(gh)
+    gh.pulls[0]["state"] = "closed"
+    again = await _open(gh)
+    assert again["number"] == first["number"] and again["state"] == "closed"
+    assert len(gh.pulls) == 1
+
+
+async def test_crash_between_branch_and_pull_request_resumes_on_the_same_branch():
+    gh = FakeGitData()
+    await _open(gh)
+    gh.pulls.clear()  # as if the process died after creating the ref
+    out = await _open(gh)
+    assert out["branch"] == "furnace/forge-1" and len(gh.pulls) == 1
+    assert sum(1 for m, p in gh.calls if (m, p) == ("POST", "/git/refs")) == 1
+
+
+async def test_different_content_takes_the_next_branch_and_never_overwrites():
+    gh = FakeGitData()
+    first = await _open(gh, {"a.py": "x"})
+    second = await _open(gh, {"a.py": "y"})
+    assert second["branch"] == "furnace/forge-1-2" and second["number"] != first["number"]
+    assert gh.refs["furnace/forge-1"] != gh.refs["furnace/forge-1-2"]
+    assert not any(m in ("PATCH", "PUT", "DELETE") for m, _ in gh.calls)  # no ref rewrites
+
+
+async def test_draft_pr_body_is_capped():
+    gh = FakeGitData()
+    await _open(gh, body="x" * 70_000)
+    assert len(gh.pulls[0]["body"]) < 65_536
+    assert gh.pulls[0]["body"].endswith("65,536 characters)_")
 
 
 async def test_draft_pr_other_ref_errors_still_raise():
     def handler(req: httpx.Request) -> httpx.Response:
+        if "/git/ref/heads/" in req.url.path:
+            return httpx.Response(404, json={"message": "Not Found"})
         if req.url.path.endswith("/git/refs"):
             return httpx.Response(403, json={"message": "Resource not accessible by integration"})
         if "/git/commits/" in req.url.path:

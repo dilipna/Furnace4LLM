@@ -100,6 +100,12 @@ def main(argv: list[str] | None = None) -> int:
         )
         if name == "gh-guard":
             g.add_argument("--max-prompt-tokens", type=int)
+            g.add_argument(
+                "--reuse",
+                action="store_true",
+                help="return the completed Furnace Guard check on the PR head instead of "
+                "running again (webhook jobs always do; a CLI call is a deliberate re-run)",
+            )
         else:
             g.add_argument(
                 "--open-pr", action="store_true", help="explicit write consent: open a draft PR"
@@ -140,6 +146,7 @@ def main(argv: list[str] | None = None) -> int:
                         questions=_questions(a.questions),
                         max_prompt_tokens=a.max_prompt_tokens,
                         progress=say,
+                        rerun=not a.reuse,
                     )
                 )
             )

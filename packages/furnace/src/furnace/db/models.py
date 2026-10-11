@@ -455,10 +455,20 @@ class RepairAttemptRow(Base):
 
 
 class WebhookDelivery(Base):
+    """One row per GitHub delivery GUID: the primary key makes a replayed or redelivered
+    event a no-op, and the row is the audit record of what Furnace did with it."""
+
     __tablename__ = "webhook_deliveries"
     delivery_id: Mapped[str] = mapped_column(String(64), primary_key=True)
     event: Mapped[str] = mapped_column(String(50))
     received_at: Mapped[datetime] = _created()
+    action: Mapped[str | None] = mapped_column(String(50))
+    repo: Mapped[str | None] = mapped_column(String(300), index=True)
+    installation_id: Mapped[int | None] = mapped_column(BigInteger)
+    source: Mapped[str] = mapped_column(String(20), server_default="push")  # push | poll
+    outcome: Mapped[str | None] = mapped_column(String(40))  # queued | ignored | duplicate_job
+    detail: Mapped[str | None] = mapped_column(Text)
+    job_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
 
 
 # ---------------------------------------------------------------- jobs
@@ -466,8 +476,20 @@ class WebhookDelivery(Base):
 
 class Job(Base):
     __tablename__ = "jobs"
-    __table_args__ = (Index("ix_jobs_claim", "queue", "status", "run_after"),)
+    __table_args__ = (
+        Index("ix_jobs_claim", "queue", "status", "run_after"),
+        # At most one *active* job per dedupe key (e.g. one Guard run per PR head commit);
+        # finished jobs leave the index, so a human can still re-run after a failure.
+        Index(
+            "uq_jobs_active_dedupe",
+            "dedupe_key",
+            unique=True,
+            postgresql_where=text("dedupe_key IS NOT NULL AND status IN ('queued', 'running')"),
+        ),
+    )
     id: Mapped[uuid.UUID] = _pk()
+    dedupe_key: Mapped[str | None] = mapped_column(String(300))
+    timeout_s: Mapped[int | None] = mapped_column(Integer)
     org_id: Mapped[uuid.UUID | None] = _fk("orgs.id", nullable=True)
     project_id: Mapped[uuid.UUID | None] = _fk("projects.id", nullable=True)
     queue: Mapped[str] = mapped_column(String(30))

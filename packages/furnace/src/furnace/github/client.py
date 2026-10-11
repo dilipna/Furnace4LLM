@@ -198,9 +198,20 @@ class Repo:
         base_sha: str | None = None,
     ) -> dict[str, Any]:
         """Create one commit with `files` on a new branch and open a DRAFT pull request.
-        Atomic: the branch ref is created only after the commit exists."""
+
+        Idempotent: Git trees are content-addressed, so the same files on the same base
+        give the same tree sha. A retry, a redelivered event or a re-run that finds the
+        branch already holding that tree returns the existing pull request (open or
+        closed; a human closing it is a decision, not something to reopen) instead of
+        opening a second one; if a crash left the branch without a PR, the PR is created
+        on it. A branch of the same name holding different content is never overwritten:
+        the next free suffix is used. The branch ref is created only after the commit."""
         if new_branch == base_branch or new_branch in ("main", "master"):
             raise GitHubError("refusing to write to a base/default branch")
+        if len(body) > MAX_BODY_CHARS:
+            body = body[: MAX_BODY_CHARS - 200] + (
+                "\n\n_(truncated: GitHub limits pull request bodies to 65,536 characters)_"
+            )
         async with self._client() as c:
             if base_sha is None:
                 ref = await self._req(c, "GET", f"/git/ref/heads/{base_branch}")
@@ -218,34 +229,74 @@ class Repo:
                 "/git/trees",
                 json={"base_tree": base_commit["tree"]["sha"], "tree": entries},
             )
-            commit = await self._req(
-                c,
-                "POST",
-                "/git/commits",
-                json={"message": commit_message, "tree": tree["sha"], "parents": [base_sha]},
-            )
-            # Re-running on the same commit (a rehearsal, a retry) finds the branch taken:
-            # take the next free suffix instead of failing with 422.
-            branch = new_branch
-            for n in range(2, 12):
+            commit_sha: str | None = None
+            for branch in [new_branch, *(f"{new_branch}-{n}" for n in range(2, 12))]:
+                tip = await self._branch_tip(c, branch)
+                if tip is not None:
+                    tip_commit = await self._req(c, "GET", f"/git/commits/{tip}")
+                    if tip_commit["tree"]["sha"] != tree["sha"]:
+                        continue  # same name, different content: never overwrite it
+                    existing = await self._find_pull(c, branch)
+                    if existing is not None:
+                        return {**existing, "commit": tip, "branch": branch, "reused": True}
+                    pr = await self._create_pull(c, branch, base_branch, title, body)
+                    return {**pr, "commit": tip, "branch": branch, "reused": True}
+                if commit_sha is None:
+                    commit = await self._req(
+                        c,
+                        "POST",
+                        "/git/commits",
+                        json={
+                            "message": commit_message,
+                            "tree": tree["sha"],
+                            "parents": [base_sha],
+                        },
+                    )
+                    commit_sha = commit["sha"]
                 try:
                     await self._req(
                         c,
                         "POST",
                         "/git/refs",
-                        json={"ref": f"refs/heads/{branch}", "sha": commit["sha"]},
+                        json={"ref": f"refs/heads/{branch}", "sha": commit_sha},
                     )
-                    break
-                except GitHubError as exc:
+                except GitHubError as exc:  # created concurrently: re-check it next round
                     if ": 422 " not in str(exc) or "already exists" not in str(exc).lower():
                         raise
-                    branch = f"{new_branch}-{n}"
-            else:
-                raise GitHubError(f"no free branch name after {new_branch}-11")
-            if len(body) > MAX_BODY_CHARS:
-                body = body[: MAX_BODY_CHARS - 200] + (
-                    "\n\n_(truncated: GitHub limits pull request bodies to 65,536 characters)_"
-                )
+                    continue
+                pr = await self._create_pull(c, branch, base_branch, title, body)
+                return {**pr, "commit": commit_sha, "branch": branch, "reused": False}
+            raise GitHubError(f"no usable branch name after {new_branch}-11")
+
+    async def _branch_tip(self, c: httpx.AsyncClient, branch: str) -> str | None:
+        r = await c.get(f"/repos/{self.full_name}/git/ref/heads/{branch}")
+        if r.status_code == 404:
+            return None
+        if r.status_code >= 400:
+            raise GitHubError(f"GET /git/ref/heads/{branch}: {r.status_code} {r.text[:300]}")
+        data = r.json()
+        if isinstance(data, list):  # GitHub returns prefix matches for a partial ref name
+            return None
+        return data["object"]["sha"]
+
+    async def _find_pull(self, c: httpx.AsyncClient, branch: str) -> dict[str, Any] | None:
+        owner = self.full_name.split("/", 1)[0]
+        r = await c.get(
+            f"/repos/{self.full_name}/pulls",
+            params={"head": f"{owner}:{branch}", "state": "all"},
+        )
+        if r.status_code >= 400:
+            raise GitHubError(f"GET /pulls?head={branch}: {r.status_code} {r.text[:300]}")
+        pulls = r.json() or []
+        if not pulls:
+            return None
+        p = pulls[0]
+        return {"number": p["number"], "url": p["html_url"], "state": p.get("state", "open")}
+
+    async def _create_pull(
+        self, c: httpx.AsyncClient, branch: str, base_branch: str, title: str, body: str
+    ) -> dict[str, Any]:
+        try:
             pr = await self._req(
                 c,
                 "POST",
@@ -258,12 +309,34 @@ class Repo:
                     "draft": True,
                 },
             )
-            return {
-                "number": pr["number"],
-                "url": pr["html_url"],
-                "commit": commit["sha"],
-                "branch": branch,
-            }
+        except GitHubError as exc:  # a concurrent run opened it first
+            if "already exists" not in str(exc).lower():
+                raise
+            found = await self._find_pull(c, branch)
+            if found is None:
+                raise
+            return found
+        return {"number": pr["number"], "url": pr["html_url"], "state": "open"}
+
+    async def find_check(self, head_sha: str, name: str = "Furnace Guard") -> dict[str, Any] | None:
+        """The latest check run `name` on `head_sha` ({id, status, conclusion, title}) or None."""
+        async with self._client() as c:
+            data = await self._req(
+                c,
+                "GET",
+                f"/commits/{head_sha}/check-runs",
+                params={"check_name": name, "filter": "latest"},
+            )
+        runs = data.get("check_runs") or []
+        if not runs:
+            return None
+        cr = runs[0]
+        return {
+            "id": int(cr["id"]),
+            "status": cr.get("status"),
+            "conclusion": cr.get("conclusion"),
+            "title": (cr.get("output") or {}).get("title"),
+        }
 
     async def create_check(self, head_sha: str, name: str = "Furnace Guard") -> int:
         async with self._client() as c:

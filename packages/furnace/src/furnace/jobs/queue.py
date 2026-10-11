@@ -4,6 +4,15 @@ Claiming uses ``SELECT ... FOR UPDATE SKIP LOCKED`` so any number of workers
 (the API's embedded cpu worker, the laptop runner) can poll the same table
 without double-claiming. Workers heartbeat; a job whose heartbeat is older
 than the lease is considered abandoned and becomes claimable again.
+
+Fencing: a claim is identified by (worker id, attempt number). Heartbeats, completion
+and failure only touch the row while that claim still holds it, so a worker that lost
+its lease (stalled, partitioned) cannot overwrite the outcome of the attempt that
+re-claimed the job; it learns it lost the lease and stops.
+
+Idempotent enqueue: `enqueue_once` takes a dedupe key; a partial unique index allows at
+most one *queued or running* job per key, so retried or redelivered triggers attach to
+the active job instead of starting a second one.
 """
 
 from __future__ import annotations
@@ -13,6 +22,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select, text, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from furnace.db.models import Job, JobEvent
@@ -71,6 +81,61 @@ async def enqueue(
     return job
 
 
+async def enqueue_once(
+    session: AsyncSession,
+    *,
+    queue: str,
+    kind: str,
+    dedupe_key: str,
+    payload: dict[str, Any] | None = None,
+    max_attempts: int = 3,
+    timeout_s: int | None = None,
+) -> tuple[Job, bool]:
+    """Enqueue unless a queued/running job with `dedupe_key` exists. Returns (job, created);
+    when not created, `job` is the active job the trigger attached to."""
+    if queue not in QUEUES:
+        raise ValueError(f"unknown queue {queue!r}")
+    stmt = (
+        insert(Job)
+        .values(
+            queue=queue,
+            kind=kind,
+            payload=payload or {},
+            max_attempts=max_attempts,
+            dedupe_key=dedupe_key,
+            timeout_s=timeout_s,
+            status="queued",
+            attempts=0,
+        )
+        .on_conflict_do_nothing(
+            index_elements=[Job.dedupe_key],
+            index_where=text("dedupe_key IS NOT NULL AND status IN ('queued', 'running')"),
+        )
+        .returning(Job.id)
+    )
+    new_id = (await session.execute(stmt)).scalar_one_or_none()
+    if new_id is not None:
+        job = await session.get(Job, new_id)
+        assert job is not None
+        return job, True
+    existing = (
+        await session.execute(
+            select(Job).where(Job.dedupe_key == dedupe_key, Job.status.in_(("queued", "running")))
+        )
+    ).scalar_one_or_none()
+    if existing is None:  # the active job finished between the insert and this read: retry
+        return await enqueue_once(
+            session,
+            queue=queue,
+            kind=kind,
+            dedupe_key=dedupe_key,
+            payload=payload,
+            max_attempts=max_attempts,
+            timeout_s=timeout_s,
+        )
+    return existing, False
+
+
 async def claim(
     session: AsyncSession, *, worker: str, queues: list[str], lease_s: int
 ) -> Job | None:
@@ -83,24 +148,48 @@ async def claim(
     return await session.get(Job, row[0], populate_existing=True)
 
 
-async def heartbeat(session: AsyncSession, job_id: uuid.UUID, worker: str) -> None:
-    await session.execute(
-        update(Job)
-        .where(Job.id == job_id, Job.locked_by == worker)
-        .values(heartbeat_at=datetime.now(UTC))
+def _held_by(job_id: uuid.UUID, worker: str | None, attempt: int | None) -> list[Any]:
+    """Row predicate: the job, and (when fencing) still running under this exact claim."""
+    conds: list[Any] = [Job.id == job_id]
+    if worker is not None:
+        conds += [Job.status == "running", Job.locked_by == worker]
+    if attempt is not None:
+        conds.append(Job.attempts == attempt)
+    return conds
+
+
+async def heartbeat(
+    session: AsyncSession, job_id: uuid.UUID, worker: str, attempt: int | None = None
+) -> bool:
+    """Extend the lease. False means this claim no longer holds the job (lease lost)."""
+    r = await session.execute(
+        update(Job).where(*_held_by(job_id, worker, attempt)).values(heartbeat_at=datetime.now(UTC))
     )
+    return bool(r.rowcount)  # type: ignore[attr-defined]
 
 
-async def complete(session: AsyncSession, job_id: uuid.UUID, result: dict[str, Any] | None) -> None:
-    await session.execute(
+async def complete(
+    session: AsyncSession,
+    job_id: uuid.UUID,
+    result: dict[str, Any] | None,
+    *,
+    worker: str | None = None,
+    attempt: int | None = None,
+) -> bool:
+    """Mark succeeded. With `worker`/`attempt`, only if that claim still holds the job;
+    returns False when the write was fenced off (the result is then discarded)."""
+    r = await session.execute(
         update(Job)
-        .where(Job.id == job_id)
+        .where(*_held_by(job_id, worker, attempt))
         .values(status="succeeded", result=result or {}, finished_at=datetime.now(UTC))
     )
+    return bool(r.rowcount)  # type: ignore[attr-defined]
 
 
-async def fail(session: AsyncSession, job: Job, error: str) -> None:
-    """Record failure; retry with exponential backoff unless attempts are exhausted."""
+async def fail(session: AsyncSession, job: Job, error: str, *, fenced: bool = False) -> bool:
+    """Record failure; retry with exponential backoff unless attempts are exhausted.
+    `fenced`: only if this claim (job.locked_by, job.attempts) still holds the job."""
+    where = _held_by(job.id, job.locked_by, job.attempts) if fenced else [Job.id == job.id]
     if job.attempts >= job.max_attempts:
         values: dict[str, Any] = {
             "status": "failed",
@@ -115,7 +204,8 @@ async def fail(session: AsyncSession, job: Job, error: str) -> None:
             "locked_by": None,
             "run_after": datetime.now(UTC) + timedelta(seconds=backoff),
         }
-    await session.execute(update(Job).where(Job.id == job.id).values(**values))
+    r = await session.execute(update(Job).where(*where).values(**values))
+    return bool(r.rowcount)  # type: ignore[attr-defined]
 
 
 async def fail_orphans(session: AsyncSession, worker: str) -> int:
