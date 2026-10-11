@@ -301,4 +301,6 @@ def test_github_errors_never_carry_credentials():
     ):
         msg = str(GitHubError(f"401 bad credentials for {secret} in request"))
         assert secret not in msg and "[redacted]" in msg
-    assert scrub("PATCH /check-runs/1: 422 Unprocessable") == "PATCH /check-runs/1: 422 Unprocessable"
+    assert (
+        scrub("PATCH /check-runs/1: 422 Unprocessable") == "PATCH /check-runs/1: 422 Unprocessable"
+    )

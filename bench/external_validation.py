@@ -45,8 +45,26 @@ from furnace.guardian.repair.signatures import prefix_instability_node, supporte
 from furnace.guardian.repair.strategies import STRATEGIES, StrategyError
 from furnace.reconstruction.build import Builder, Reconstruction, collect_facts
 
-QUALITY = {"prompt", "retrieval_config", "retrieval", "model", "llm_call", "generation_config", "endpoint", "llm_sdk"}  # fmt: skip
-PERF = {"prompt", "retrieval_config", "retrieval", "serving_config", "model", "llm_call", "endpoint", "generation_config"}  # fmt: skip
+QUALITY = {
+    "prompt",
+    "retrieval_config",
+    "retrieval",
+    "model",
+    "llm_call",
+    "generation_config",
+    "endpoint",
+    "llm_sdk",
+}
+PERF = {
+    "prompt",
+    "retrieval_config",
+    "retrieval",
+    "serving_config",
+    "model",
+    "llm_call",
+    "endpoint",
+    "generation_config",
+}
 GENERIC_SUITE = [
     SuiteItem("unit:existing_tests", "unit", ["component:*"], {"code", "dependency"}),
     SuiteItem("check:prompt_prefix_stable", "check", ["prompt:*"], {"prompt"}),
@@ -65,8 +83,18 @@ EDITS: dict[str, dict[str, tuple[str, str, str, str]]] = {
             '[{"role": "system", "content": f"Request {uuid.uuid4()} at {time.time()}\\n" + SYSTEM_PROMPT}]',
             "import time\nimport uuid\n",
         ),
-        "docs_only": ("README.md", "\n", "\nThis line was added by a synthetic docs-only change.\n", ""),
-        "code_unrelated": ("src/api/__init__.py", '"http://localhost:8080"', '"http://localhost:8081"', ""),
+        "docs_only": (
+            "README.md",
+            "\n",
+            "\nThis line was added by a synthetic docs-only change.\n",
+            "",
+        ),
+        "code_unrelated": (
+            "src/api/__init__.py",
+            '"http://localhost:8080"',
+            '"http://localhost:8081"',
+            "",
+        ),
     },
     "tech-trends-chatbot": {
         "prompt_dynamic_head": (
@@ -75,7 +103,12 @@ EDITS: dict[str, dict[str, tuple[str, str, str, str]]] = {
             "{'role': 'system', 'content': f'Chat {chat_id} at {time()}\\n' + MAIN_SYSTEM_PROMPT}",
             "",
         ),
-        "docs_only": ("README.md", "\n", "\nThis line was added by a synthetic docs-only change.\n", ""),
+        "docs_only": (
+            "README.md",
+            "\n",
+            "\nThis line was added by a synthetic docs-only change.\n",
+            "",
+        ),
         "code_unrelated": ("backend/app/main.py", "return 'ok'", "return 'healthy'", ""),
     },
     "rag-postgres-openai-python": {
@@ -85,7 +118,12 @@ EDITS: dict[str, dict[str, tuple[str, str, str, str]]] = {
             'instructions=f"Request {uuid.uuid4()}\\n" + self.answer_prompt_template,',
             "import uuid\n",
         ),
-        "docs_only": ("README.md", "\n", "\nThis line was added by a synthetic docs-only change.\n", ""),
+        "docs_only": (
+            "README.md",
+            "\n",
+            "\nThis line was added by a synthetic docs-only change.\n",
+            "",
+        ),
         "code_unrelated": (
             "src/backend/fastapi_app/routes/frontend_routes.py",
             '"static/favicon.ico"',
@@ -100,8 +138,25 @@ EXPECTED: dict[str, dict[str, Any]] = {
         "must_select": {"check:prompt_prefix_stable", "bench:perf_gate"},
         "signature": ["prefix_instability"],
     },
-    "docs_only": {"must_select": set(), "must_not_select": {"check:prompt_prefix_stable", "check:answer_quality", "bench:perf_gate", "unit:existing_tests"}, "signature": []},  # fmt: skip
-    "code_unrelated": {"must_select": set(), "must_not_select": {"check:prompt_prefix_stable", "check:answer_quality", "bench:perf_gate"}, "signature": []},  # fmt: skip
+    "docs_only": {
+        "must_select": set(),
+        "must_not_select": {
+            "check:prompt_prefix_stable",
+            "check:answer_quality",
+            "bench:perf_gate",
+            "unit:existing_tests",
+        },
+        "signature": [],
+    },
+    "code_unrelated": {
+        "must_select": set(),
+        "must_not_select": {
+            "check:prompt_prefix_stable",
+            "check:answer_quality",
+            "bench:perf_gate",
+        },
+        "signature": [],
+    },
 }
 
 
@@ -110,7 +165,9 @@ def held_out_4() -> list[dict[str, Any]]:
     for gt in sorted(GROUND_TRUTH.glob("*.yaml")):
         spec = yaml.safe_load(gt.read_text(encoding="utf-8"))
         if spec.get("split") == "held-out-4":
-            out.append({"app": spec["app"], "root": EXTERNAL / spec["app"], "commit": spec["commit"]})
+            out.append(
+                {"app": spec["app"], "root": EXTERNAL / spec["app"], "commit": spec["commit"]}
+            )
     return out
 
 
@@ -144,7 +201,9 @@ def scan(root: Path) -> tuple[Reconstruction, list[Any], dict[str, Any]]:
             lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
             lo, hi = (loc.line_start or 1), (loc.line_end or loc.line_start or len(lines))
             if lo < 1 or hi > len(lines) or lo > hi:
-                broken.append(f"{r.rule_id}: {loc.path}:{lo}-{hi} outside the file ({len(lines)} lines)")
+                broken.append(
+                    f"{r.rule_id}: {loc.path}:{lo}-{hi} outside the file ({len(lines)} lines)"
+                )
                 continue
             window = " ".join("\n".join(lines[max(0, lo - 2) : hi + 1]).split())
             needle = " ".join((f.excerpt or "").split())[:60]
@@ -173,11 +232,17 @@ def forge(rec: Reconstruction, recs: list[Any], root: Path, sandbox: bool) -> di
     try:
         result = Planner(rec, recs, questions=QUESTIONS).run(shared_prefix=None)
     except Exception as exc:  # a planner crash is a finding
-        return {"planned": False, "error": f"{type(exc).__name__}: {exc}", "trace": traceback.format_exc()[-1500:]}  # fmt: skip
+        return {
+            "planned": False,
+            "error": f"{type(exc).__name__}: {exc}",
+            "trace": traceback.format_exc()[-1500:],
+        }
     out: dict[str, Any] = {
         "planned": True,
         "files": sorted(result.files),
-        "skipped": [{"rule_id": s.get("rule_id"), "reason": s.get("reason")} for s in result.skipped],
+        "skipped": [
+            {"rule_id": s.get("rule_id"), "reason": s.get("reason")} for s in result.skipped
+        ],
     }
     if sandbox:
         from furnace.forge.validate import validate
@@ -213,7 +278,11 @@ def guard(app: str, root: Path, base_state: Any) -> list[dict[str, Any]]:
     for scenario, edit in EDITS[app].items():
         tmp = Path(tempfile.mkdtemp(prefix="extval-"))
         try:
-            head = Path(shutil.copytree(root, tmp / "head", ignore=shutil.ignore_patterns(".git", "node_modules")))
+            head = Path(
+                shutil.copytree(
+                    root, tmp / "head", ignore=shutil.ignore_patterns(".git", "node_modules")
+                )
+            )
             apply_edit(head, edit)
             head_state = analyze_tree(head)
             imp = analyze_impact(base_state, head_state, GENERIC_SUITE)
@@ -240,7 +309,14 @@ def guard(app: str, root: Path, base_state: Any) -> list[dict[str, Any]]:
                 row["repair"] = repair_applicability(head, imp)
             out.append(row)
         except Exception as exc:
-            out.append({"scenario": scenario, "synthetic": True, "error": f"{type(exc).__name__}: {exc}", "correct": False})  # fmt: skip
+            out.append(
+                {
+                    "scenario": scenario,
+                    "synthetic": True,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "correct": False,
+                }
+            )
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
     return out
@@ -295,10 +371,16 @@ def render(res: dict[str, Any]) -> str:
         md_table(
             ["app", "py files", "scan s", "findings", "evidence checked", "broken links"],
             [
-                [a["app"], a["scan"]["python_files"], a["scan"]["seconds"], a["scan"]["findings"],
-                 a["scan"]["evidence_checked"], len(a["scan"]["evidence_broken"])]
+                [
+                    a["app"],
+                    a["scan"]["python_files"],
+                    a["scan"]["seconds"],
+                    a["scan"]["findings"],
+                    a["scan"]["evidence_checked"],
+                    len(a["scan"]["evidence_broken"]),
+                ]
                 for a in res["apps"]
-            ],  # fmt: skip
+            ],
         ),
         "",
         "## Forge",
@@ -323,18 +405,23 @@ def render(res: dict[str, Any]) -> str:
             ["app", "scenario", "categories", "selected", "signature", "correct", "why not"],
             [
                 [
-                    a["app"], g["scenario"], ", ".join(g.get("categories", [])) or "–",
-                    ", ".join(g.get("selected", [])) or "none", ", ".join(g.get("signatures", [])) or "–",
+                    a["app"],
+                    g["scenario"],
+                    ", ".join(g.get("categories", [])) or "–",
+                    ", ".join(g.get("selected", [])) or "none",
+                    ", ".join(g.get("signatures", [])) or "–",
                     "yes" if g["correct"] else "NO",
-                    g.get("error") or "; ".join(
+                    g.get("error")
+                    or "; ".join(
                         [f"missing {', '.join(g['missing'])}"] * bool(g.get("missing"))
                         + [f"unexpected {', '.join(g['unexpected'])}"] * bool(g.get("unexpected"))
                         + ["signature"] * (not g.get("signature_ok", True))
-                    ) or "",
+                    )
+                    or "",
                 ]
                 for a in res["apps"]
                 for g in a["guard"]
-            ],  # fmt: skip
+            ],
         ),
         "",
         "## Repair applicability (prompt scenario)",
@@ -348,9 +435,13 @@ def render(res: dict[str, Any]) -> str:
             continue
         parts = [
             f"{k.split('.')[-1]}: "
-            + ("prefix-stable after edit" if v.get("prefix_stable_after") else f"not applicable ({v.get('reason', 'still dynamic')})")
+            + (
+                "prefix-stable after edit"
+                if v.get("prefix_stable_after")
+                else f"not applicable ({v.get('reason', 'still dynamic')})"
+            )
             for k, v in r["strategies"].items()
-        ]  # fmt: skip
+        ]
         lines.append(f"- {a['app']} ({r['node']}): " + "; ".join(parts))
     broken = [(a["app"], b) for a in res["apps"] for b in a["scan"]["evidence_broken"]]
     if broken:
@@ -371,21 +462,37 @@ def _val(v: dict[str, Any] | None) -> str:
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--sandbox", action="store_true", help="also validate Forge in the Docker sandbox")
+    p.add_argument(
+        "--sandbox", action="store_true", help="also validate Forge in the Docker sandbox"
+    )
     a = p.parse_args()
     apps = []
     for app in held_out_4():
         root = app["root"]
         print(f"== {app['app']}", flush=True)
         rec, recs, stats = scan(root)
-        print(f"   scan: {stats['findings']} findings, {len(stats['evidence_broken'])} broken links", flush=True)
+        print(
+            f"   scan: {stats['findings']} findings, {len(stats['evidence_broken'])} broken links",
+            flush=True,
+        )
         fg = forge(rec, recs, root, a.sandbox)
         print(f"   forge: planned={fg.get('planned')} files={len(fg.get('files', []))}", flush=True)
         base_state = analyze_tree(root)
         gd = guard(app["app"], root, base_state)
-        print("   guard: " + ", ".join(f"{g['scenario']}={'ok' if g['correct'] else 'NO'}" for g in gd), flush=True)
+        print(
+            "   guard: "
+            + ", ".join(f"{g['scenario']}={'ok' if g['correct'] else 'NO'}" for g in gd),
+            flush=True,
+        )
         apps.append({**app, "root": str(root), "scan": stats, "forge": fg, "guard": gd})
-    res = {"manifest": manifest(), "expected": {k: {kk: sorted(vv) if isinstance(vv, set) else vv for kk, vv in v.items()} for k, v in EXPECTED.items()}, "apps": apps}  # fmt: skip
+    res = {
+        "manifest": manifest(),
+        "expected": {
+            k: {kk: sorted(vv) if isinstance(vv, set) else vv for kk, vv in v.items()}
+            for k, v in EXPECTED.items()
+        },
+        "apps": apps,
+    }
     out = results_dir()
     write_json(out / "external_validation.json", res)
     (out / "external_validation.md").write_text(render(res), encoding="utf-8")
