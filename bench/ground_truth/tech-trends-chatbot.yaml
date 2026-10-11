@@ -1,0 +1,67 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 4.
+# Labeled from source at the pinned commit on 2026-10-11 BEFORE Furnace was run on this
+# repository and before any scanner change in this session. Author: the developer agent
+# (Claude), not independently reviewed yet. Labeling rule: see rag-postgres-openai-python.yaml.
+app: tech-trends-chatbot
+split: held-out-4
+repo: https://github.com/ruizguille/tech-trends-chatbot
+commit: d416f3cb711fa7c4d846111c890e7a37c70337c8
+purpose: FastAPI + SSE RAG chatbot; Redis (RediSearch KNN) vector store and chat history; OpenAI tool calling decides when to query the knowledge base
+
+routes:
+  - POST /chats
+  - POST /chats/{chat_id}
+  - GET /health
+  - HEAD /health
+
+llm_calls:
+  - file: backend/app/openai.py
+    function: chat_stream            # thin wrapper: client.beta.chat.completions.stream(...)
+    also_accept: [RAGAssistant._generate_chat_response, LocalRAGAssistant._generate_chat_response]
+    api: openai.AsyncOpenAI.beta.chat.completions.stream
+    model: gpt-4.1-mini              # settings.MODEL default
+    streaming: true
+    has_timeout: false
+
+model: gpt-4.1-mini
+models: [gpt-4.1-mini]
+serving_engine: openai
+serving_flags: {}
+
+uses_rag: true
+retrievers:
+  - file: backend/app/db.py
+    function: search_vector_db
+    also_accept: [QueryKnowledgeBaseTool.__call__]
+    store: redis
+    top_k: 10                        # settings.VECTOR_SEARCH_TOP_K
+
+tools:
+  - name: QueryKnowledgeBaseTool
+    side_effect: none                # read-only vector search
+    approval_gate: false
+
+prompts:
+  - backend/app/assistants/prompts.py::MAIN_SYSTEM_PROMPT
+  - backend/app/assistants/prompts.py::RAG_SYSTEM_PROMPT
+dynamic_head: false
+
+workflows:
+  - POST /chats/{chat_id}
+  - script:backend/app/assistants/local_assistant.py   # terminal chat (`__main__`)
+  - script:backend/app/loader.py                       # builds the knowledge base (embeddings only)
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions:
+  - predicate: model
+    values: [GPT-4o, gpt-4.1-mini]   # README "OpenAI's GPT-4o" vs config default MODEL
+
+notes:
+  - The only generation call site is the wrapper chat_stream; both assistants call it twice per turn (tool decision, then the RAG answer), so call-site counts and call counts differ.
+  - Background task errors are printed and swallowed (_handle_conversation_task): failures are invisible to the client except a closed stream.
