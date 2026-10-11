@@ -1,0 +1,87 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 5.
+# Labeled from source at the pinned commit on 2026-10-11 BEFORE Furnace was run on this
+# repository and BEFORE the Agents SDK / subscripted-client scanner change it is meant to
+# test (chosen because it is built on the OpenAI Agents SDK, the construct set 4 exposed).
+# Author: the developer agent (Claude), not independently reviewed yet.
+# Labeling rule: every direct LLM generation call in the repository's Python code
+# (tests excluded); with the Agents SDK the call site is Runner.run / run_streamed /
+# run_sync, not the Agent(...) definition; embedding calls are not LLM calls.
+app: openai-cs-agents-demo
+split: held-out-5
+repo: https://github.com/openai/openai-cs-agents-demo
+commit: bd7bfca0f5abf50529370814c3e7c88542011925
+purpose: Airline customer-service agents (triage + 5 specialists with handoffs, two LLM guardrails) behind a FastAPI ChatKit server; Python backend + Next.js UI
+
+routes:
+  - POST /chatkit
+  - GET /chatkit/state
+  - GET /chatkit/bootstrap
+  - GET /chatkit/state/stream
+  - GET /health
+
+llm_calls:
+  - file: python-backend/server.py
+    function: AirlineServer.respond
+    api: agents.Runner.run_streamed (triage agent with handoffs)
+    model: gpt-5.2            # airline/agents.py MODEL
+    streaming: true
+    has_timeout: false
+  - file: python-backend/airline/guardrails.py
+    function: relevance_guardrail
+    api: agents.Runner.run (guardrail agent, structured output)
+    model: gpt-4.1-mini       # GUARDRAIL_MODEL
+    streaming: false
+    has_timeout: false
+  - file: python-backend/airline/guardrails.py
+    function: jailbreak_guardrail
+    api: agents.Runner.run
+    model: gpt-4.1-mini
+    streaming: false
+    has_timeout: false
+
+model: gpt-5.2
+models: [gpt-5.2, gpt-4.1-mini]
+serving_engine: openai
+serving_flags: {}
+
+uses_rag: false
+retrievers: []
+tools:   # @function_tool in airline/tools.py; the "write" tools only mutate an in-memory demo context
+  - {name: faq_lookup_tool, side_effect: none, approval_gate: false}
+  - {name: get_trip_details, side_effect: none, approval_gate: false}
+  - {name: update_seat, side_effect: none, approval_gate: false}
+  - {name: flight_status_tool, side_effect: none, approval_gate: false}
+  - {name: baggage_tool, side_effect: none, approval_gate: false}
+  - {name: get_matching_flights, side_effect: none, approval_gate: false}
+  - {name: book_new_flight, side_effect: none, approval_gate: false}
+  - {name: assign_special_service_seat, side_effect: none, approval_gate: false}
+  - {name: issue_compensation, side_effect: none, approval_gate: false}
+  - {name: display_seat_map, side_effect: none, approval_gate: false}
+  - {name: cancel_flight, side_effect: none, approval_gate: false}
+
+prompts:   # Agent(instructions=...): instruction functions, or the agent variable for inline text
+  - python-backend/airline/agents.py::seat_services_instructions
+  - python-backend/airline/agents.py::flight_information_instructions
+  - python-backend/airline/agents.py::booking_cancellation_instructions
+  - python-backend/airline/agents.py::refunds_compensation_instructions
+  - python-backend/airline/agents.py::faq_agent
+  - python-backend/airline/agents.py::triage_agent
+  - python-backend/airline/guardrails.py::guardrail_agent
+  - python-backend/airline/guardrails.py::jailbreak_guardrail_agent
+dynamic_head: false   # the instruction functions put per-request context after the static RECOMMENDED_PROMPT_PREFIX
+
+workflows:
+  - POST /chatkit
+
+existing_reliability:
+  tests: false
+  tracing: none          # Agents SDK default tracing is not configured explicitly
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions: []
+
+notes:
+  - In a real deployment cancel_flight, book_new_flight and issue_compensation would be consequential actions with no approval gate; here they are simulated.
+  - The two guardrails are LLM calls of their own (input guardrails on the triage agent), run per user turn.

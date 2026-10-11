@@ -57,7 +57,7 @@ def apps() -> list[dict[str, Any]]:
 # ------------------------------------------------------------------------- matching
 
 
-SPLITS = ("dev", "held-out", "held-out-2", "held-out-3", "held-out-4")
+SPLITS = ("dev", "held-out", "held-out-2", "held-out-3", "held-out-4", "held-out-5")
 
 
 def _split_key(key: str) -> tuple[str, str]:
@@ -372,7 +372,7 @@ def render(res: dict[str, Any]) -> str:
                 ]
                 for c in cats
             ],
-            "llllll",
+            "lllllll",
         )
     )
     for split in SPLITS:
