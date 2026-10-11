@@ -76,6 +76,19 @@ export function RunNow({ reference, campaign }: { reference: Reference[]; campai
     });
   }, []);
 
+  // Hosted deployments have no lab GPU: say so up front instead of refusing on click.
+  const [labEnabled, setLabEnabled] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/live/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => alive && setLabEnabled(d ? Boolean(d.live_lab) : null))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   // Pick up a run already in progress (or the last one) so a refresh never loses it.
   useEffect(() => {
     let alive = true;
@@ -192,12 +205,19 @@ export function RunNow({ reference, campaign }: { reference: Reference[]; campai
         </div>
         <button
           onClick={run}
-          disabled={running}
+          disabled={running || labEnabled === false}
+          title={labEnabled === false ? "Live runs need the lab GPU, which this deployment does not have" : undefined}
           className="rounded-[3px] bg-ember px-3 py-1.5 text-[13px] font-medium text-bg-0 transition-colors duration-150 hover:bg-ember-hi disabled:cursor-not-allowed disabled:bg-bg-3 disabled:text-fg-2"
         >
-          {phase === "starting" ? "Starting…" : phase === "running" ? "Running…" : "Run it now"}
+          {phase === "starting" ? "Starting…" : phase === "running" ? "Running…" : labEnabled === false ? "Lab GPU offline" : "Run it now"}
         </button>
       </header>
+      {labEnabled === false && (
+        <p className="border-b border-line px-4 py-2 text-[12px] text-fg-2">
+          Live runs need the lab GPU, which this deployment does not have; the reference ticks are the recorded RQ4
+          results. The live demo runs on the laptop.
+        </p>
+      )}
 
       <div className="px-4 pt-3">
         <div className="num flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-fg-2" aria-live="polite">

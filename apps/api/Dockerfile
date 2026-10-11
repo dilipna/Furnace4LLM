@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Dependency layer first (cached unless the lockfile or project metadata change).
 COPY pyproject.toml uv.lock ./
-COPY packages/inference/pyproject.toml packages/inference/pyproject.toml
+COPY packages/inference/pyproject.toml packages/inference/README.md packages/inference/
 COPY packages/furnace/pyproject.toml packages/furnace/pyproject.toml
 COPY apps/api/pyproject.toml apps/api/pyproject.toml
 COPY packages/inference/src packages/inference/src
