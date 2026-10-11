@@ -18,15 +18,23 @@ Furnace is an inference-reliability retrofit for LLM applications that already e
 Every number in this repository comes from a documented command; negative results and
 corrections are reported. See **[FurnaceBench](docs/furnacebench.md)**, the reports in
 `bench/results/<date>/`, and the dated `CORRECTIONS.md` shown on the `/bench` page.
+Two-page overview: **[case study](docs/case-study.md)** · 90-second walkthrough:
+**[demo-90s](docs/demo-90s.md)**.
+
+**Deterministic vs model-powered.** Scan, Forge, Guard's impact analysis, the perf gate and
+repair are deterministic (AST and config analysis, graph diffs, load generation, bootstrap
+statistics, rule-based AST edits). The only model in the loop is the one being served and
+measured; an LLM judge is built but not calibrated (no labels or key yet).
 
 ## Measured so far (laptop RTX 3050 Ti, vLLM, Qwen2.5-0.5B)
 
 | question | result | source |
 |---|---|---|
-| Does Scan find LLM call sites in apps it has never seen? | held-out set 3 (Gemini, Mistral, Replicate, Bedrock, Cohere apps, labeled before any scan): **8/9** at precision 1.00; held-out set 1: 8/8 | `bench/results/2026-10-09/RQ1_NOTES.md` |
+| Does Scan find LLM call sites in apps it has never seen? | held-out set 3 (Gemini, Mistral, Replicate, Bedrock, Cohere apps, labeled before any scan): **8/9** at precision 1.00. Held-out set 4 (an OpenAI Agents SDK app, a dict-held client, a tool-calling Redis RAG app): **2/9** at precision 1.00; indirection is the open gap | `bench/results/2026-10-09/RQ1_NOTES.md`, `bench/results/2026-10-11-external/NOTES.md` |
+| Does it stay safe on code it does not understand? | set 4: findings' evidence 10/10 links resolve; docs-only and unrelated-code PRs select no checks (6/6); Forge refuses with a reason where it cannot slice a harness, and opens no PR without a green sandbox run | `bench/results/2026-10-11-external/` |
 | How large is a prompt-cache regression? | R1 (request id at the top of the system prompt): p95 TTFT **+905% to +1,004%**, prefix-cache hit 98% -> 0% | `bench/results/2026-10-09-gate-warmup-v2/rq5.md` |
-| Can Furnace repair it without making things worse? | **3/3 verified**, -2.0% to +8.5% vs main (inside the 9.7% measured noise), full-suite audits clean; its first candidate was **blocked by its own gate** (+44% to +50%) | same |
-| Is the perf gate trustworthy? | A/A (main vs itself): within 9.7% after a warmup fix; before it, up to 60% and biased, so an earlier RQ5 claim was withdrawn | `bench/results/2026-10-09/gate_noise.md`, `bench/results/2026-10-06/CORRECTIONS.md` |
+| Can Furnace repair it without making things worse? | **3/3 verified**, -2.0% to +8.5% vs main, full-suite audits clean; its first candidate was **blocked by its own gate** (+44% to +50%). Judged with the point rule; not yet re-measured under the interval rule (the laptop lost AC power) | same |
+| Is the perf gate trustworthy? | A/A (main vs itself), 12 trials, 95% interval rule: **0 false WARN or BLOCK**, 5 INCONCLUSIVE (reported, never passed), interval covers the true difference 12/12. The largest A/A change was +13.4%: the earlier "within 9.7%" was a sample, not a bound (dated correction); before a warmup fix the gate was biased up to 60% | `bench/results/2026-10-11-gate-ci/`, `bench/results/2026-10-06/CORRECTIONS.md` |
 | Does Guard save time? | 13 PRs: ran 46% of checks, caught 3/3 full-suite failures, same conclusion 13/13 | `bench/results/2026-10-06/rq3.md` |
 | What does prefix caching buy on the real workload? | caching off raised p95 TTFT in all 15 cells, same sign in every paired repeat: +193% to +433% at max-num-seqs 32 (median per cell), +96% to +433% across all configs | `bench/results/2026-10-06/rq4/rq4.md` |
 | Triton RMSNorm kernel | correct 36/36; at parity with `torch.compile` (both ~9.8x eager, 99% of copy bandwidth) | `kernel_lab/results/2026-10-09/` |
@@ -39,10 +47,10 @@ corrections are reported. See **[FurnaceBench](docs/furnacebench.md)**, the repo
 | Live views: lab telemetry (vLLM /metrics + NVML), "Run it now" benchmark, Guard run streamed check by check, graph path trace, scan terminal | working locally; hosted deploys show the recorded runs, labeled |
 | `furnace-bench` load generator (TTFT/TPOT/goodput, CIs, telemetry, mock-validated) | working |
 | Inference Lab: prefix-cache and scheduler sweep on the real F1 workload | working (RQ4) |
-| Guard: graph-targeted checks, warmed-up perf gate, local runs and GitHub check runs | working locally; the GitHub path is tested against a mock API, first live run needs the [App](docs/github-app.md) |
-| Repair of prompt-prefix regressions: two rule strategies tried in order | working (RQ5); LLM-patch strategy not built |
-| Forge change set (evals, prompt extraction, benchmarks, CI gate), sandbox-validated | working on F1; draft-PR path awaits the App |
-| Webhook: verified `pull_request` events enqueue Guard runner jobs | built and tested; not run against a live App yet |
+| Guard: graph-targeted checks, perf gate with 95% intervals (PASS / WARN / BLOCK / INCONCLUSIVE), local runs and GitHub check runs | working locally; the GitHub path is tested against a mock API, **not yet run against live GitHub** (needs the [App](docs/github-app.md)) |
+| Repair of prompt-prefix regressions: two rule strategies tried in order, interval-based acceptance, decision record in the PR | working (RQ5, point rule); LLM-patch strategy not built |
+| Forge change set (evals, prompt extraction, benchmarks, CI gate), sandbox-validated | working on F1 and planned on 1 of 3 external apps (set 4); draft-PR path not yet run live |
+| GitHub integration: App from a manifest (`furnace gh-setup`), idempotent draft PRs and check runs, webhooks once per delivery (push or `gh-poll` from the App's delivery log), installation isolation, fenced job leases and timeouts, consent-gated auto-repair | built and tested against a mock GitHub (`poe adversarial` for the attack paths); **live run pending** |
 | Deterministic evals; human labeling queue | working; LLM-judge calibration needs a BYOK key and labels |
 | Hosted control plane (Vercel + Render + Supabase) | deploy files ready ([guide](docs/deploy.md)) |
 | Not built: auth/orgs, BYOK storage, TypeScript/JS extraction, LLM synthesis, Stripe | see [security](docs/security.md) and FurnaceBench "Not run" |
@@ -86,12 +94,16 @@ Docker). Web: `pnpm lint && pnpm exec tsc --noEmit` in `apps/web`. CI runs both 
 ## Runner commands
 
 ```bash
+uv run furnace gh-setup --name furnace-dev-<you>         # create the GitHub App from its manifest (2 clicks)
+uv run poe gh-poll                                       # webhook events from the App's delivery log
 uv run furnace gh-check                                  # verify the GitHub App
 uv run furnace gh-forge OWNER/REPO [--open-pr]           # Forge
 uv run furnace gh-guard OWNER/REPO PR --suite FILE.py    # Guard check run
 uv run furnace gh-repair OWNER/REPO PR --suite FILE.py [--open-pr]
 uv run poe bench-gpu                                     # FurnaceBench GPU campaign (RQ4, RQ3, RQ5, report)
 uv run python bench/gate_noise.py                        # perf-gate A/A noise calibration
+uv run python bench/external_validation.py --sandbox     # Scan/Forge/Guard on held-out set 4
+uv run poe adversarial                                   # attack-path regression tests only
 uv run poe kernel-correctness && uv run poe kernel-bench # Kernel Lab
 uv run python scripts/rehearse.py [--video DIR]          # rehearse the demo path in a browser
 ```

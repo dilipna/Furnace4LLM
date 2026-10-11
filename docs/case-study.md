@@ -42,12 +42,15 @@ Measuring that is easy; measuring that a *fix* is fine is not. Three findings sh
    hierarchical-bootstrap interval (runs, then requests within runs), rotates run order,
    keeps raw per-request data, and has an honest fourth verdict, INCONCLUSIVE. On the same
    12 A/A trials: 0 false WARN or BLOCK, 7 PASS, 5 INCONCLUSIVE, and the interval contained
-   the true difference (0) in 12/12. PENDING_X4
+   the true difference (0) in 12/12. A run with 4x the requests per run was invalidated when
+   the laptop lost AC power partway through; it is kept, labeled invalid, and the A/A driver
+   now checks power after every trial and stops.
 
 Alternatives considered: fixed thresholds on the point estimate (what failed above); more
 repeats only (helps, costs GPU minutes per PR); a Mann-Whitney test on per-request TTFT
-(ignores between-run variance, which dominates here). The interval is coarse at this sample
-size and says so instead of passing.
+(ignores between-run variance, which is large here: the three runs of the same revision
+differed by a median of 9.8%). The interval is coarse at this sample size and says so
+instead of passing.
 
 ## Hard problem 2: repairs that do not create a new regression
 
@@ -59,7 +62,10 @@ correct but was still +40% to +50% slower than main, and the perf gate rejected 
 second strategy (log the value instead of sending it) was accepted
 (`2026-10-09-gate-warmup-v2/`). The acceptance rule is now interval-based: the candidate must
 be faster than the PR head with 95% confidence and its worst case against main must stay
-below the block threshold. PENDING_RQ5
+below the block threshold. That rule is strictly stronger than the one RQ5 was measured
+with (point estimate PASS or WARN), and RQ5 has not been re-run under it yet: the run was
+blocked when the laptop went on battery, and the benchmark drivers refuse to measure on
+battery rather than record numbers at a different power limit.
 
 ## Hard problem 3: side effects exactly once
 
@@ -79,7 +85,17 @@ held-out set 3 (Gemini, Mistral, Replicate, Bedrock, Cohere apps) LLM call-site 
 from 1/9 to 8/9 at precision 1.00 (`2026-10-09/rq1.md`). Set 4 (three apps chosen on
 2026-10-11, labels committed in `f0fce9d` before any scan) tests what a demo hides: an app
 whose calls all go through the OpenAI Agents SDK, a Redis-backed tool-calling chatbot, and a
-minimal Responses-API backend. PENDING_SET4
+minimal Responses-API backend. First scan: **2/9 LLM call sites at precision 1.00**; the
+Agents SDK calls, a client held in a dict and env/settings model defaults are not resolved.
+What held up is failing safe: all 10 evidence links of the findings resolve to the cited
+lines; docs-only and unrelated-code PRs selected no checks (6/6); an injected prompt
+regression was caught by the prefix check in 2 of 3 apps, but the perf gate was not reached
+in any (0/3 fully correct); Forge planned on 1 of 3 and refused with a stated reason on the
+others. Validating Forge there exposed a real infrastructure gap: the sandbox installed only
+a root `requirements.txt`. It now installs the project's `requirements-dev.txt` with
+in-repository includes (escapes refused), and one app's own suite runs in the sandbox (5
+passed, 1 pre-existing failure, so Forge still correctly opens no PR). Set 4 is no longer
+held-out for anything changed after that first scan (`2026-10-11-external/NOTES.md`).
 
 ## A measurement mistake caught
 
@@ -93,7 +109,10 @@ shape fresh put the two at parity (both ~9.8x eager, 99% of measured copy bandwi
 - One GPU, one small model, one workload family; latency depends on the clock the driver
   picks (780 MHz vs ~1,960 MHz across reboots), so comparisons are made only at equal clocks.
 - Only one regression signature is repairable (prefix instability).
-- The GitHub App path is tested against a mock GitHub; the live run needs the App
-  (`docs/github-app.md`). PENDING_LIVE
+- The GitHub App path (Forge PR, check run, repair PR, webhooks) is tested against a mock
+  GitHub only; the live run needs the App (`furnace gh-setup`, two clicks) and has not been
+  done. Until it is, "works on real GitHub" is not claimed.
+- Scanner recall drops on indirection (agent frameworks, clients in containers, background
+  tasks): set 4, 2/9.
 - Labels were written by the developer agent and not independently reviewed.
 - Python only; LLM-judge calibration needs human labels and a key.
