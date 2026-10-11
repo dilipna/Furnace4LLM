@@ -354,7 +354,14 @@ def render(res: dict[str, Any]) -> str:
 
     lines.append(
         md_table(
-            ["category", "F1 (dev)", "held-out set 1", "held-out set 2", "held-out set 3"],
+            [
+                "category",
+                "F1 (dev)",
+                "held-out set 1",
+                "held-out set 2",
+                "held-out set 3",
+                "held-out set 4",
+            ],
             [
                 [
                     c,
@@ -365,7 +372,7 @@ def render(res: dict[str, Any]) -> str:
                 ]
                 for c in cats
             ],
-            "lllll",
+            "llllll",
         )
     )
     for split in SPLITS:

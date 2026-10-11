@@ -214,7 +214,7 @@ def scan(root: Path) -> tuple[Reconstruction, list[Any], dict[str, Any]]:
         kinds[f.kind] = kinds.get(f.kind, 0) + 1
     stats = {
         "seconds": round(time.monotonic() - t0, 2),
-        "python_files": sum(1 for x in inv.files if str(x).endswith(".py")),
+        "python_files": sum(1 for x in inv.files if x.path.endswith(".py")),
         "llm_call_facts": kinds.get("llm_call", 0),
         "routes": kinds.get("route", 0),
         "findings": len(recs),
