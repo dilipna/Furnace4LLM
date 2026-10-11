@@ -81,7 +81,8 @@ def check_web(web: str) -> Result:
 
 
 def check_stream(web: str) -> Result:
-    """A live sample must reach a gzip-accepting client through the web proxy within 6 s."""
+    """A live sample must reach a gzip-accepting client through the web proxy within 6 s.
+    The stream starts with up to 90 s of history: judge the lab by a sample from now."""
     t0 = time.monotonic()
     with httpx.stream(
         "GET", f"{web}/api/live/telemetry", headers={"Accept-Encoding": "gzip"}, timeout=8
@@ -89,13 +90,15 @@ def check_stream(web: str) -> Result:
         for line in r.iter_lines():
             if line.startswith("data: "):
                 d = json.loads(line[6:])
+                if time.time() - float(d.get("ts", 0)) > 5:
+                    continue  # history from before this check
                 state = "lab live" if d.get("online") else "lab offline (recorded run shown)"
                 return (
                     "OK" if d.get("online") else "WARN"
-                ), f"{state}, first sample in {time.monotonic() - t0:.1f} s"
+                ), f"{state}, current sample in {time.monotonic() - t0:.1f} s"
             if time.monotonic() - t0 > 6:
                 break
-    return "FAIL", "no live sample through the web proxy within 6 s (proxy buffering?)"
+    return "FAIL", "no current sample through the web proxy within 6 s (proxy buffering?)"
 
 
 def check_runners(api: str) -> Result:

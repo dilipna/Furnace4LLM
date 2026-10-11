@@ -38,7 +38,15 @@ function p95(xs: number[]): number | null {
  * request's measured TTFT, drawn when that request finishes. Reference ticks are the RQ4
  * medians for the same workload with prefix caching on and off (bench/results).
  */
-export function RunNow({ reference, campaign }: { reference: Reference[]; campaign: string | null }) {
+export function RunNow({
+  reference,
+  campaign,
+  refClockMhz,
+}: {
+  reference: Reference[];
+  campaign: string | null;
+  refClockMhz?: [number, number] | null;
+}) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [msg, setMsg] = useState<string | null>(null);
   const [start, setStart] = useState<Start | null>(null);
@@ -342,8 +350,11 @@ export function RunNow({ reference, campaign }: { reference: Reference[]; campai
           </li>
         </ul>
         <p className="pb-3 text-[10px] text-fg-3">
-          Reference ticks: median over 3 paired repeats, max-num-seqs 32, bench/results/{campaign ?? "…"}/rq4. The live run
-          uses the endpoint as it is configured now (vLLM default: prefix caching on); its measured hit rate is in the table.
+          Reference ticks: median over 3 paired repeats, max-num-seqs 32, bench/results/{campaign ?? "…"}/rq4
+          {refClockMhz ? `, GPU SM clock ${Math.round(refClockMhz[0])}–${Math.round(refClockMhz[1])} MHz` : ""}. The live run
+          uses the endpoint as it is configured now (vLLM default: prefix caching on); its measured hit rate and GPU clock
+          are in the table. Latency follows the clock the driver picks, so compare the ticks with the dots only at
+          similar clocks.
         </p>
       </div>
 

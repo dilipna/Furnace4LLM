@@ -31,3 +31,8 @@ load. The 2026-10-04 vLLM runs averaged 1,948 MHz; what made the driver boost th
 not identified. The consequence paragraph stands unchanged: comparisons inside each RQ share the
 clock; absolute latencies are at this clock. `scripts/preflight.py --load` reports the clock and
 the active reasons before a demo.
+
+2026-10-11 (UTC), after a reboot: under the same vLLM load the driver chose **1,957-1,972 MHz at
+up to 60 W** (only the "Idle" reason active). The clock this load gets is a driver state that
+changed across reboots. A live run at that clock was 32-48% faster at p95 TTFT than the same run
+at 780 MHz (`../2026-10-11-live-clock/NOTES.md`).
