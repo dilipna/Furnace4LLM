@@ -361,6 +361,7 @@ def render(res: dict[str, Any]) -> str:
                 "held-out set 2",
                 "held-out set 3",
                 "held-out set 4",
+                "held-out set 5",
             ],
             [
                 [
