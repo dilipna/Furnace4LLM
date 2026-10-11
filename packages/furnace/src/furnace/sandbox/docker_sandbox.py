@@ -1,10 +1,12 @@
 """Docker sandbox for running untrusted repository code.
 
 Two phases:
-  1. install: `pip install --target /deps -r requirements.txt` with network access
-     (documented residual risk: dependency install scripts run here, isolated from
-     the host and from secrets). Results are cached per requirements hash in a
-     named volume.
+  1. install: `pip install --target /deps -r <file>` with network access, where <file> is
+     the root requirements-dev.txt (the project's own test install, usually including the
+     app's requirements with -r) or else requirements.txt, with every -r/-c include that
+     stays inside the repository (documented residual risk: dependency install scripts
+     run here, isolated from the host and from secrets). Results are cached per hash of
+     those files in a named volume.
   2. run: the command executes with no network (or only the internal lab network),
      read-only root filesystem, all capabilities dropped, no-new-privileges,
      pid/memory/cpu limits, a non-root user, and a hard timeout.
@@ -16,6 +18,7 @@ than that copy and the dependency volume are mounted.
 from __future__ import annotations
 
 import hashlib
+import re
 import shutil
 import subprocess
 import tempfile
@@ -70,15 +73,63 @@ def ensure_image() -> None:
     _docker("build", "-t", IMAGE, "-f", str(DOCKERFILE), str(DOCKERFILE.parent), timeout=900)
 
 
-def _deps_volume(repo: Path) -> str | None:
-    req = repo / "requirements.txt"
-    if not req.exists():
+# What the sandbox installs, in order of preference: the project's own "install to run the
+# tests" file first (it usually includes the app's requirements with -r), then the app's.
+REQUIREMENTS_CANDIDATES = ("requirements-dev.txt", "requirements.txt")
+MAX_REQUIREMENT_FILES = 20
+_INCLUDE_RE = re.compile(r"^\s*(?:-r|--requirement|-c|--constraint)(?:\s+|=)(\S+)")
+
+
+def requirements_set(repo: Path) -> tuple[str, dict[str, bytes]] | None:
+    """(entry file, {repo-relative path: content}) for the dependency install, following
+    -r/-c includes. Repository content is untrusted: an include that resolves outside the
+    repository (../, an absolute path, a symlink out) is refused, not followed."""
+    root = repo.resolve()
+    entry = next((n for n in REQUIREMENTS_CANDIDATES if (root / n).is_file()), None)
+    if entry is None:
         return None
-    digest = hashlib.sha256(req.read_bytes()).hexdigest()[:16]
-    vol = f"furnace-deps-{digest}"
+    files: dict[str, bytes] = {}
+    todo = [root / entry]
+    while todo:
+        p = todo.pop().resolve()
+        if not p.is_relative_to(root):
+            raise SandboxError("requirements include resolves outside the repository; refused")
+        rel = p.relative_to(root).as_posix()
+        if rel in files:
+            continue
+        if not p.is_file():
+            raise SandboxError(f"requirements include not found: {rel}")
+        if len(files) >= MAX_REQUIREMENT_FILES:
+            raise SandboxError(f"more than {MAX_REQUIREMENT_FILES} requirements files included")
+        files[rel] = p.read_bytes()
+        for line in files[rel].decode("utf-8", errors="replace").splitlines():
+            if m := _INCLUDE_RE.match(line):
+                todo.append(p.parent / m.group(1))
+    return entry, files
+
+
+def _requirements_digest(files: dict[str, bytes]) -> str:
+    if list(files) == ["requirements.txt"]:  # same key as before includes were followed
+        return hashlib.sha256(files["requirements.txt"]).hexdigest()[:16]
+    h = hashlib.sha256()
+    for rel in sorted(files):
+        h.update(rel.encode() + b"\0" + files[rel] + b"\0")
+    return h.hexdigest()[:16]
+
+
+def _deps_volume(repo: Path) -> str | None:
+    found = requirements_set(repo)
+    if found is None:
+        return None
+    entry, files = found
+    vol = f"furnace-deps-{_requirements_digest(files)}"
     if _docker("volume", "inspect", vol, check=False).returncode == 0:
         return vol
     _docker("volume", "create", vol)
+    req_dir = Path(tempfile.mkdtemp(prefix="furnace-req-"))
+    for rel, data in files.items():  # only the files pip will read, in their layout
+        (req_dir / rel).parent.mkdir(parents=True, exist_ok=True)
+        (req_dir / rel).write_bytes(data)
     # Install phase: network allowed, still unprivileged and resource-limited.
     proc = _docker(
         "run",
@@ -94,7 +145,7 @@ def _deps_volume(repo: Path) -> str | None:
         "--pids-limit",
         "512",
         "-v",
-        f"{req.resolve()}:/req/requirements.txt:ro",
+        f"{req_dir.resolve()}:/req:ro",
         "-v",
         f"{vol}:/deps",
         IMAGE,
@@ -104,10 +155,11 @@ def _deps_volume(repo: Path) -> str | None:
         "--target",
         "/deps",
         "-r",
-        "/req/requirements.txt",
+        f"/req/{entry}",
         timeout=900,
         check=False,
     )
+    shutil.rmtree(req_dir, ignore_errors=True)
     if proc.returncode != 0:
         _docker("volume", "rm", "-f", vol, check=False)
         raise SandboxError(f"dependency install failed: {proc.stderr.strip()[-800:]}")

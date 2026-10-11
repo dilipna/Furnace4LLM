@@ -309,3 +309,55 @@ async def test_redirect_away_from_the_github_api_is_refused(monkeypatch):
     _gh(monkeypatch, handler)
     with pytest.raises(SourceError, match="unexpected redirect"):
         await resolve_commit(parse_github("github.com/o/r"))
+
+
+# ------------------------------------------------------------------ dependency install inputs
+
+
+def test_requirements_prefer_the_projects_test_install_and_follow_includes(tmp_path):
+    from furnace.sandbox.docker_sandbox import requirements_set
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "requirements.txt").write_text("fastapi==0.111.0\n-c ../constraints.txt\n")
+    (tmp_path / "constraints.txt").write_text("starlette<1\n")
+    (tmp_path / "requirements-dev.txt").write_text("-r src/requirements.txt\npytest\n")
+    (tmp_path / "requirements.txt").write_text("ignored-when-a-dev-file-exists\n")
+    entry, files = requirements_set(tmp_path) or ("", {})
+    assert entry == "requirements-dev.txt"
+    assert set(files) == {"requirements-dev.txt", "src/requirements.txt", "constraints.txt"}
+
+
+def test_requirements_cache_key_is_unchanged_for_a_single_root_file(tmp_path):
+    import hashlib
+
+    from furnace.sandbox.docker_sandbox import _requirements_digest, requirements_set
+
+    (tmp_path / "requirements.txt").write_text("httpx==0.27.0\n")
+    _, files = requirements_set(tmp_path) or ("", {})
+    want = hashlib.sha256((tmp_path / "requirements.txt").read_bytes()).hexdigest()[:16]
+    assert _requirements_digest(files) == want  # existing cached volumes stay valid
+
+
+@pytest.mark.parametrize(
+    "include", ["-r ../outside.txt", "--requirement=/etc/passwd", "-c ../../x.txt"]
+)
+def test_requirements_includes_cannot_leave_the_repository(tmp_path, include):
+    from furnace.sandbox.docker_sandbox import SandboxError, requirements_set
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (tmp_path / "outside.txt").write_text("evil\n")
+    (repo / "requirements.txt").write_text(f"ok==1\n{include}\n")
+    with pytest.raises(SandboxError, match="outside the repository"):
+        requirements_set(repo)
+
+
+def test_requirements_include_cycles_and_missing_files(tmp_path):
+    from furnace.sandbox.docker_sandbox import SandboxError, requirements_set
+
+    (tmp_path / "requirements.txt").write_text("-r a.txt\n")
+    (tmp_path / "a.txt").write_text("-r requirements.txt\nx==1\n")
+    assert set((requirements_set(tmp_path) or ("", {}))[1]) == {"requirements.txt", "a.txt"}
+    (tmp_path / "a.txt").write_text("-r missing.txt\n")
+    with pytest.raises(SandboxError, match="not found"):
+        requirements_set(tmp_path)

@@ -1,0 +1,384 @@
+{
+  "manifest": {
+    "date": "2026-10-11-external",
+    "started_at": "2026-10-11T23:33:18+00:00",
+    "git": {
+      "sha": "6b953593128286b06593d751207e259832952bf7",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": false,
+      "battery_pct": 72,
+      "gpu_enforced_power_limit_w": 30.0
+    },
+    "argv": [
+      "bench/external_validation.py"
+    ]
+  },
+  "expected": {
+    "prompt_dynamic_head": {
+      "must_select": [
+        "bench:perf_gate",
+        "check:prompt_prefix_stable"
+      ],
+      "signature": [
+        "prefix_instability"
+      ]
+    },
+    "docs_only": {
+      "must_select": [],
+      "must_not_select": [
+        "bench:perf_gate",
+        "check:answer_quality",
+        "check:prompt_prefix_stable",
+        "unit:existing_tests"
+      ],
+      "signature": []
+    },
+    "code_unrelated": {
+      "must_select": [],
+      "must_not_select": [
+        "bench:perf_gate",
+        "check:answer_quality",
+        "check:prompt_prefix_stable"
+      ],
+      "signature": []
+    }
+  },
+  "apps": [
+    {
+      "app": "openai-chat-backend-fastapi",
+      "root": "C:\\dev\\furnace\\bench\\.cache\\external\\openai-chat-backend-fastapi",
+      "commit": "79174c34228951080cde7be2a7990057e40457fa",
+      "scan": {
+        "seconds": 0.53,
+        "python_files": 0,
+        "llm_call_facts": 0,
+        "routes": 2,
+        "findings": 0,
+        "findings_by_rule": [],
+        "evidence_checked": 0,
+        "evidence_broken": []
+      },
+      "forge": {
+        "planned": true,
+        "files": [],
+        "skipped": [
+          {
+            "rule_id": "forge.harness",
+            "reason": "cannot generate an eval harness: src/api/chat.py::chat_handler: control flow before the messages are built; cannot slice safely"
+          }
+        ]
+      },
+      "guard": [
+        {
+          "scenario": "prompt_dynamic_head",
+          "synthetic": true,
+          "file": "src/api/chat.py",
+          "changed": [
+            "src/api/chat.py"
+          ],
+          "categories": [
+            "code",
+            "imports",
+            "prompt"
+          ],
+          "selected": [
+            "check:prompt_prefix_stable",
+            "unit:existing_tests"
+          ],
+          "fell_back_to_full": false,
+          "signatures": [
+            "prefix_instability"
+          ],
+          "missing": [
+            "bench:perf_gate"
+          ],
+          "unexpected": [],
+          "signature_ok": true,
+          "correct": false,
+          "repair": {
+            "signature_detected": true,
+            "node": "prompt:src/api/chat.py::chat_handler#system",
+            "strategies": {
+              "rule:prefix_stability.move_dynamic_to_suffix": {
+                "applicable": true,
+                "parses": true,
+                "prefix_stable_after": true
+              },
+              "rule:prefix_stability.move_dynamic_to_log": {
+                "applicable": true,
+                "parses": true,
+                "prefix_stable_after": true
+              }
+            }
+          }
+        },
+        {
+          "scenario": "docs_only",
+          "synthetic": true,
+          "file": "README.md",
+          "changed": [
+            "README.md"
+          ],
+          "categories": [
+            "docs"
+          ],
+          "selected": [],
+          "fell_back_to_full": false,
+          "signatures": [],
+          "missing": [],
+          "unexpected": [],
+          "signature_ok": true,
+          "correct": true
+        },
+        {
+          "scenario": "code_unrelated",
+          "synthetic": true,
+          "file": "src/api/__init__.py",
+          "changed": [
+            "src/api/__init__.py"
+          ],
+          "categories": [
+            "code_off_llm_path"
+          ],
+          "selected": [],
+          "fell_back_to_full": false,
+          "signatures": [],
+          "missing": [],
+          "unexpected": [],
+          "signature_ok": true,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "app": "rag-postgres-openai-python",
+      "root": "C:\\dev\\furnace\\bench\\.cache\\external\\rag-postgres-openai-python",
+      "commit": "2c23c488bb8698159739b0a01c22396b788f7de6",
+      "scan": {
+        "seconds": 3.45,
+        "python_files": 0,
+        "llm_call_facts": 2,
+        "routes": 5,
+        "findings": 4,
+        "findings_by_rule": [
+          "eval.citation_contract",
+          "eval.grounding_judge",
+          "rel.fallback_gateway",
+          "rel.llm_timeout"
+        ],
+        "evidence_checked": 5,
+        "evidence_broken": []
+      },
+      "forge": {
+        "planned": true,
+        "files": [],
+        "skipped": [
+          {
+            "rule_id": "forge.harness",
+            "reason": "cannot generate an eval harness: no route handler reaches the system-message builder"
+          },
+          {
+            "rule_id": "rel.llm_timeout",
+            "reason": "client get_openai_client.openai_client not found at module level in evals/generate_ground_truth.py"
+          },
+          {
+            "rule_id": "rel.llm_timeout",
+            "reason": "client create_openai_chat_client.openai_chat_client not found at module level in src/backend/fastapi_app/openai_clients.py"
+          },
+          {
+            "rule_id": "rel.llm_timeout",
+            "reason": "client create_openai_embed_client.openai_embed_client not found at module level in src/backend/fastapi_app/openai_clients.py"
+          }
+        ]
+      },
+      "guard": [
+        {
+          "scenario": "prompt_dynamic_head",
+          "synthetic": true,
+          "file": "src/backend/fastapi_app/rag_simple.py",
+          "changed": [
+            "src/backend/fastapi_app/rag_simple.py"
+          ],
+          "categories": [
+            "code_off_llm_path",
+            "imports"
+          ],
+          "selected": [],
+          "fell_back_to_full": false,
+          "signatures": [],
+          "missing": [
+            "bench:perf_gate",
+            "check:prompt_prefix_stable"
+          ],
+          "unexpected": [],
+          "signature_ok": false,
+          "correct": false,
+          "repair": {
+            "signature_detected": false
+          }
+        },
+        {
+          "scenario": "docs_only",
+          "synthetic": true,
+          "file": "README.md",
+          "changed": [
+            "README.md"
+          ],
+          "categories": [
+            "docs"
+          ],
+          "selected": [],
+          "fell_back_to_full": false,
+          "signatures": [],
+          "missing": [],
+          "unexpected": [],
+          "signature_ok": true,
+          "correct": true
+        },
+        {
+          "scenario": "code_unrelated",
+          "synthetic": true,
+          "file": "src/backend/fastapi_app/routes/frontend_routes.py",
+          "changed": [
+            "src/backend/fastapi_app/routes/frontend_routes.py"
+          ],
+          "categories": [
+            "code_off_llm_path"
+          ],
+          "selected": [],
+          "fell_back_to_full": false,
+          "signatures": [],
+          "missing": [],
+          "unexpected": [],
+          "signature_ok": true,
+          "correct": true
+        }
+      ]
+    },
+    {
+      "app": "tech-trends-chatbot",
+      "root": "C:\\dev\\furnace\\bench\\.cache\\external\\tech-trends-chatbot",
+      "commit": "d416f3cb711fa7c4d846111c890e7a37c70337c8",
+      "scan": {
+        "seconds": 1.0,
+        "python_files": 0,
+        "llm_call_facts": 1,
+        "routes": 3,
+        "findings": 7,
+        "findings_by_rule": [
+          "eval.grounding_judge",
+          "eval.regression_suite",
+          "obs.genai_tracing",
+          "obs.prompt_versioning",
+          "rel.fallback_gateway",
+          "rel.llm_timeout"
+        ],
+        "evidence_checked": 5,
+        "evidence_broken": []
+      },
+      "forge": {
+        "planned": true,
+        "files": [
+          ".github/workflows/furnace.yml",
+          "backend/app/assistants/prompts.py",
+          "backend/app/openai.py",
+          "prompts/main_system_prompt.md",
+          "prompts/rag_system_prompt.md",
+          "tests/furnace/__init__.py",
+          "tests/furnace/test_llm_timeout.py"
+        ],
+        "skipped": [
+          {
+            "rule_id": "forge.harness",
+            "reason": "cannot generate an eval harness: no route handler reaches the system-message builder"
+          }
+        ]
+      },
+      "guard": [
+        {
+          "scenario": "prompt_dynamic_head",
+          "synthetic": true,
+          "file": "backend/app/assistants/assistant.py",
+          "changed": [
+            "backend/app/assistants/assistant.py"
+          ],
+          "categories": [
+            "code",
+            "prompt"
+          ],
+          "selected": [
+            "check:prompt_prefix_stable",
+            "unit:existing_tests"
+          ],
+          "fell_back_to_full": false,
+          "signatures": [
+            "prefix_instability"
+          ],
+          "missing": [
+            "bench:perf_gate"
+          ],
+          "unexpected": [],
+          "signature_ok": true,
+          "correct": false,
+          "repair": {
+            "signature_detected": true,
+            "node": "prompt:backend/app/assistants/assistant.py::RAGAssistant.__init__#system",
+            "strategies": {
+              "rule:prefix_stability.move_dynamic_to_suffix": {
+                "applicable": false,
+                "reason": "no system message in RAGAssistant.__init__"
+              },
+              "rule:prefix_stability.move_dynamic_to_log": {
+                "applicable": false,
+                "reason": "no system message in RAGAssistant.__init__"
+              }
+            }
+          }
+        },
+        {
+          "scenario": "docs_only",
+          "synthetic": true,
+          "file": "README.md",
+          "changed": [
+            "README.md"
+          ],
+          "categories": [
+            "docs"
+          ],
+          "selected": [],
+          "fell_back_to_full": false,
+          "signatures": [],
+          "missing": [],
+          "unexpected": [],
+          "signature_ok": true,
+          "correct": true
+        },
+        {
+          "scenario": "code_unrelated",
+          "synthetic": true,
+          "file": "backend/app/main.py",
+          "changed": [
+            "backend/app/main.py"
+          ],
+          "categories": [
+            "code_off_llm_path"
+          ],
+          "selected": [],
+          "fell_back_to_full": false,
+          "signatures": [],
+          "missing": [],
+          "unexpected": [],
+          "signature_ok": true,
+          "correct": true
+        }
+      ]
+    }
+  ]
+}
