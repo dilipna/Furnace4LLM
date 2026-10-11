@@ -16,6 +16,8 @@ uv run poe bench-rq3       # impact-aware selection vs full suite (GPU) -> rq3.{
 uv run poe bench-rq4       # vLLM sweep, 3 repeats (GPU, ~1 h)          -> rq4/rq4.{json,md}, rq4/runs/
 uv run poe bench-rq5       # failing-test-first repair x3 (GPU)         -> rq5.{json,md}, rq5/
 uv run poe bench-report    # -> REPORT.md
+uv run python bench/gate_noise.py          # perf-gate A/A calibration (GPU) -> gate_noise.{json,md}
+uv run python bench/rq1.py --splits held-out-3 --tag set3_baseline   # one split, own output name
 uv run python bench/label.py   # label the RQ2 human queue (60 items, resumable)
 ```
 
@@ -46,6 +48,11 @@ would contaminate each other's latency.
 - **Negative results are results.** Every driver writes its failures (launch failures,
   missed regressions, rejected repairs, SKIP items) into its Markdown, and `REPORT.md`
   collects them in one section.
+- **Measure the instrument.** The perf gate is calibrated with an A/A run (a revision against
+  itself); its WARN threshold must sit above the measured noise (`2026-10-09/gate_noise.md`).
+- **Corrections are dated, never edits.** A generated report is not rewritten after the fact;
+  a `CORRECTIONS.md` next to it says what no longer holds and where the new result is, and the
+  `/bench` page shows it above the report.
 - **Labels are named.** Every number states its ground-truth source; seeded results are
   never presented as agreement with human judgment.
 

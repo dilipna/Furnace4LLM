@@ -78,8 +78,8 @@ the pre-flight below. `uv run poe demo-down` stops them. The steps it automates:
 5. **(1:50) Inference Lab** (`/lab`). Press **Run it now** first (about 30 s): each dot is one
    real request's TTFT landing on the chart, against the RQ4 ticks for prefix caching on (blue)
    and off (ember). While it runs: F1's fingerprint from 89 real traces, prefix-cache hit
-   predicted 89.0% vs measured ~89%, caching off multiplies p95 TTFT several-fold at every
-   concurrency. The finished run's table shows its own measured hit rate and GPU clock.
+   predicted 89.0% vs measured ~89%, caching off raises p95 TTFT by +193% to +433% at
+   every concurrency (max-num-seqs 32, the default view; same sign in every paired repeat). The finished run's table shows its own measured hit rate and GPU clock.
 6. **(2:50) Forge.** The Forge draft PR on the demo repo: manifest table (file, reason, target,
    risk), extracted prompt (byte-identical), installed tests. *(Needs the GitHub App.)*
 7. **(3:15) Guard.** Open the R1 PR: the Furnace Guard check fails, ran a subset with reasons

@@ -242,6 +242,22 @@ export function GuardLive({ scenario }: { scenario: string }) {
     });
   }, []);
 
+  // Live runs need the laptop runner (Docker sandbox + lab GPU); hosted deployments have none.
+  const [runnerOnline, setRunnerOnline] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/runners")
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (rs: { online: boolean; queues: string[] }[] | null) =>
+          alive && rs && setRunnerOnline(rs.some((x) => x.online && x.queues.includes("runner"))),
+      )
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   useEffect(() => {
     let alive = true;
     fetch(`/api/guard/runs/latest?scenario=${scenario}`)
@@ -296,6 +312,8 @@ export function GuardLive({ scenario }: { scenario: string }) {
                 {job.created_at ? new Date(job.created_at).toLocaleString() : ""} · job {job.job_id.slice(0, 8)}
                 {job.status === "failed" && job.error ? <span className="text-bad"> · failed: {job.error.slice(0, 120)}</span> : null}
               </>
+            ) : runnerOnline === false ? (
+              "The Guard runner (the laptop: Docker sandbox plus the lab GPU) is offline, so live runs are unavailable here. The recorded results are below."
             ) : (
               "No run recorded for this PR yet. Runs on the laptop runner: sandboxed tests plus the lab endpoint."
             )}
@@ -303,10 +321,10 @@ export function GuardLive({ scenario }: { scenario: string }) {
         </div>
         <button
           onClick={start}
-          disabled={busy || running}
+          disabled={busy || running || (runnerOnline === false && !running)}
           className="rounded-[3px] border border-line-strong px-3 py-1.5 text-[13px] text-fg-0 transition-colors duration-150 hover:bg-bg-3 disabled:cursor-not-allowed disabled:text-fg-3"
         >
-          {running ? "Running…" : busy ? "Starting…" : "Run Guard on this PR"}
+          {running ? "Running…" : busy ? "Starting…" : runnerOnline === false ? "Runner offline" : "Run Guard on this PR"}
         </button>
       </header>
       {msg && <p className="border-b border-line px-4 py-2 text-[12px] text-warn">{msg}</p>}

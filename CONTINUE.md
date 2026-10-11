@@ -75,7 +75,7 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
   (`rq2.py --judge groq:<model>`), not run (no key).
 - **RQ3** 13 PRs: targeted ran 46% of checks, wall 964→502 s, caught 3/3 full-suite FAILs, 13/13 same conclusion.
   Blind spots R2/R3/R3b/R5; citation floor (0/34 on base with Qwen 0.5B); perf-gate noise −17.6%…+10.7%.
-- **RQ4** 18 runs, AC, 780–830 MHz (capped): prefix cache off → TTFT p95 +181…+433% in all 15 cells, same sign in
+- **RQ4** 18 runs, AC, 780–830 MHz (driver-chosen, not throttled): prefix cache off → TTFT p95 +96…+433% (median per cell; +193…+433% at seqs 32) in all 15 cells, same sign in
   every paired repeat; hit 88.1–89.3% measured vs 89.0% predicted; max-num-seqs 8 collapses at c=16.
 - **RQ5 (superseded on Oct 9, see CORRECTIONS.md in 2026-10-06)** first rule (rq5_rule_v1): repair +73…+86% vs base, 2/3 rejected, audits FAIL. Rule changed to append the
   per-request value to the end of the last user message. **v2 (rq5.md): 3/3 verified, 3/3 full-suite audits

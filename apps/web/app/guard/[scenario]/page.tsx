@@ -144,6 +144,9 @@ export default async function GuardScenario({ params }: PageProps<"/guard/[scena
   if (!r && attempts.length === 0) notFound();
   const check = r && c3 ? await apiGet<{ markdown: string }>(`/api/bench/campaigns/${c3}/rq3/${scenario}/check`).catch(() => null) : null;
   const firstVerified = attempts.findIndex((a) => a.status === "verified");
+  const c3Info = c3
+    ? await apiGet<{ corrections_md?: string | null }>(`/api/bench/campaigns/${c3}`).catch(() => null)
+    : null;
 
   return (
     <div className="flex min-h-full flex-col">
@@ -184,6 +187,19 @@ export default async function GuardScenario({ params }: PageProps<"/guard/[scena
             <h2 id="items" className="text-[15px] font-medium">
               Checks: targeted selection vs full suite
             </h2>
+            <p className="mt-1 text-[12px] text-fg-3">
+              Recorded in RQ3 (<span className="num">{c3}</span>).
+              {c3Info?.corrections_md && (
+                <>
+                  {" "}
+                  Its perf-gate figures predate the gate&apos;s warmup fix; see the{" "}
+                  <Link href={`/bench?c=${c3}`} className="text-fg-1 underline decoration-line-strong underline-offset-2">
+                    corrections
+                  </Link>
+                  ; the re-measured numbers are in the repair timeline below.
+                </>
+              )}
+            </p>
             <div className="mt-3 overflow-x-auto">
               <table className="w-full min-w-[900px] border-collapse text-[12px]">
                 <thead>
