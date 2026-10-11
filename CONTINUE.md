@@ -1,9 +1,40 @@
-# Furnace: session handoff (updated 2026-10-09 UTC, covers Oct 5-9 work)
+# Furnace: session handoff (updated 2026-10-11 UTC, covers Oct 5-11 work)
 
 Paste this file's path into a new Claude Code session ("read CONTINUE.md and continue"). Approved plan:
 `C:\Users\user\.claude\plans\pasted-content-id-65d9-you-are-streamed-falcon.md`. Memory:
 `C:\Users\user\.claude\projects\c--Users-user-OneDrive-Pictures-saas-reviewer\memory\` (read `laptop-gpu-power-cap.md`).
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
+
+## Oct 11 session (production hardening, statistics, generalization), newest first
+- **Not pushed.** Commits `23304a6`..HEAD are local on `main` (branch `oct11-hardening` merged
+  fast-forward; worktree `C:\dev\furnace-wt` can be removed: `git worktree remove ../furnace-wt`).
+- **GitHub path** (all mock-tested, live run still pending the App): idempotent draft PRs (same
+  tree -> existing PR, closed PRs not reopened, never overwrite a branch; the old code opened a
+  new PR on every retry); webhook delivery GUID dedupe + audit rows (`webhook_deliveries`),
+  payload validation, 5 MB cap, `FURNACE_GITHUB_ALLOWED_REPOS`; one active `guard.pr` per head
+  (`jobs.dedupe_key`, migration `b3f1c2d4e5a6`); check run reused per head and scoped to this App;
+  installation check; superseded heads skipped; check closed on cancellation; queue fencing by
+  (worker, attempt), lost lease cancels handler, per-job timeouts; `repair.pr` job after a Guard
+  failure with a signature, only with `FURNACE_GUARD_AUTO_REPAIR=true`; credentials scrubbed from
+  `GitHubError`. **`furnace gh-setup`** creates the App from a manifest (2 clicks);
+  **`furnace gh-poll`** reads the App's delivery log (no public URL). docs/github-app.md rewritten.
+- **Perf gate**: 95% hierarchical-bootstrap interval, verdicts PASS/WARN/BLOCK/INCONCLUSIVE,
+  rotated run order, raw per-request TTFTs kept, interval-based repair acceptance
+  (`perf_gate.accept_repair`), nine-section repair PR body. A/A 2026-10-11 (12 trials, 780 MHz, AC):
+  0 false WARN/BLOCK, 5 INCONCLUSIVE, CI covers 0 in 12/12, max A/A change +13.4% (dated
+  correction item 5 in `2026-10-06/CORRECTIONS.md`). The 4x run lost AC power mid-run: labeled
+  invalid (`2026-10-11-gate-ci/NOTES.md`); `gate_noise.py` now stops on power loss.
+- **RQ5 under the interval rule NOT RUN** (laptop went on battery; drivers refuse). Next GPU step,
+  on AC: `FURNACE_BENCH_DATE=2026-10-12-gate-ci bash bench/run_gate_ci.sh` (consider
+  `--repeats 5` instead of the request multiplier), then update README/case study.
+- **Held-out set 4** (labels `f0fce9d` before any scan): call sites 2/9 at P 1.00 (Agents SDK,
+  dict-held client missed); external validation (`bench/external_validation.py`): evidence links
+  10/10, unrelated PRs 6/6. After fixes (no longer held-out): sandbox installs
+  `requirements-dev.txt` + in-repo `-r` includes; a lost stable prefix selects the perf gate
+  without a workflow path (prompt scenario 0/3 -> 2/3). `2026-10-11-external/NOTES.md`.
+- **Adversarial suite**: `uv run poe adversarial` (marker `adversarial`).
+- Docs: case study, 90-second demo, security controls, event path + job lifecycle, perf gate rule.
+- `poe check`: 301 passed, 1 skipped.
 
 ## Oct 8-9 session (live demo work), newest first
 - **Oct 9 (evening): scanner coverage, robustness.** Held-out set 3 (Gemini, Mistral, Replicate,
