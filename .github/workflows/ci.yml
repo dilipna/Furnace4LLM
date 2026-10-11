@@ -50,3 +50,12 @@ jobs:
       - run: pnpm lint
       - run: pnpm exec next typegen && pnpm exec tsc --noEmit
       - run: pnpm build
+
+  image:
+    # The Render deploy builds this image; build it on every push so a broken Dockerfile is
+    # caught here (a missing package README once broke it unnoticed).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f apps/api/Dockerfile -t furnace-api:ci .
+      - run: docker run --rm --entrypoint uv furnace-api:ci run --no-sync python -c "import furnace_api.main"
