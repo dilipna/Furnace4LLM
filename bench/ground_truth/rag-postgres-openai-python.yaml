@@ -1,0 +1,95 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 4.
+# Labeled from source at the pinned commit on 2026-10-11 BEFORE Furnace was run on this
+# repository and before any scanner change in this session. Selection: independent public
+# MIT apps with an architecture different from F1 (chosen 2026-10-11 from GitHub search).
+# Author: the developer agent (Claude), not independently reviewed yet.
+# Labeling rule (fixed before scanning): every direct LLM generation call in the
+# repository's Python code, including eval/utility scripts; embedding calls are not LLM
+# calls; tests are excluded.
+app: rag-postgres-openai-python
+split: held-out-4
+repo: https://github.com/Azure-Samples/rag-postgres-openai-python
+commit: 2c23c488bb8698159739b0a01c22396b788f7de6
+purpose: FastAPI RAG over a PostgreSQL/pgvector product table; OpenAI Agents SDK for answering, an agent with a search tool for query rewriting (advanced flow); Azure OpenAI, OpenAI.com or Ollama
+
+routes:
+  - GET /items/{id}
+  - GET /similar
+  - GET /search
+  - POST /chat
+  - POST /chat/stream
+  - GET /                # starlette Route mounted at "/" (frontend_routes.py), not a FastAPI decorator
+  - GET /favicon.ico
+
+llm_calls:
+  - file: src/backend/fastapi_app/rag_simple.py
+    function: SimpleRAGChat.answer
+    api: agents.Runner.run (OpenAI Agents SDK, OpenAIResponsesModel over AsyncOpenAI)
+    streaming: false
+    has_timeout: false
+  - file: src/backend/fastapi_app/rag_simple.py
+    function: SimpleRAGChat.answer_stream
+    api: agents.Runner.run_streamed
+    streaming: true
+    has_timeout: false
+  - file: src/backend/fastapi_app/rag_advanced.py
+    function: AdvancedRAGChat.prepare_context
+    api: agents.Runner.run (search agent with a function tool)
+    streaming: false
+    has_timeout: false
+  - file: src/backend/fastapi_app/rag_advanced.py
+    function: AdvancedRAGChat.answer
+    api: agents.Runner.run
+    streaming: false
+    has_timeout: false
+  - file: src/backend/fastapi_app/rag_advanced.py
+    function: AdvancedRAGChat.answer_stream
+    api: agents.Runner.run_streamed
+    streaming: true
+    has_timeout: false
+  - file: evals/generate_ground_truth.py
+    function: generate_ground_truth_data
+    api: openai.OpenAI.responses.create (with a function tool)
+    streaming: false
+    has_timeout: false
+
+model: null       # chosen by OPENAI_CHAT_HOST: Azure deployment, OpenAI.com model or Ollama model, all from env with defaults
+models: [gpt-5.4, gpt-3.5-turbo, phi3:3.8b, llama3.1]   # code defaults (gpt-5.4, gpt-3.5-turbo, phi3:3.8b) and .env.sample (llama3.1 for Ollama)
+serving_engine: openai   # OpenAI-compatible clients throughout (Azure v1 endpoint, OpenAI.com, or Ollama's OpenAI API)
+serving_flags: {}
+
+uses_rag: true
+retrievers:
+  - file: src/backend/fastapi_app/postgres_searcher.py
+    function: PostgresSearcher.search
+    also_accept: [PostgresSearcher.search_and_embed]
+    store: pgvector      # hybrid: pgvector cosine + PostgreSQL full-text, RRF fusion
+    top_k: null          # request override `top` (default 3 in ChatRequestOverrides)
+
+tools:
+  - name: search_database
+    side_effect: none    # read-only database query
+    approval_gate: false
+
+prompts:
+  - src/backend/fastapi_app/rag_base.py::RAGChatBase.answer_prompt_template        # loaded from prompts/answer.txt
+  - src/backend/fastapi_app/rag_advanced.py::AdvancedRAGChat.query_prompt_template # loaded from prompts/query.txt
+dynamic_head: false    # instructions are static files; per-request text (query + sources) is in the last user message
+
+workflows:
+  - POST /chat
+  - POST /chat/stream
+
+existing_reliability:
+  tests: true          # pytest suite with mocked OpenAI and a test Postgres (tests/)
+  tracing: opentelemetry   # Azure Monitor + OpenAIInstrumentor + SQLAlchemyInstrumentor when configured
+  timeouts: false      # no timeout passed to any client or call (SDK default only)
+  retries: false       # no retry library or explicit retry policy (SDK default retries only)
+  evals: true          # evals/evaluate.py (azure-ai-evaluation) + safety red-teaming
+
+contradictions: []
+
+notes:
+  - Every generation call goes through the OpenAI Agents SDK (Runner.run / Runner.run_streamed), not a direct chat.completions call; a scanner keyed on SDK method names will miss them.
+  - The request can replace the answer system prompt (overrides.prompt_template); a reliability and prompt-injection concern, not scored here.
+  - The Ollama default in code (phi3:3.8b) differs from .env.sample (llama3.1); env overrides code by design, so it is not labeled as a contradiction.

@@ -1,0 +1,58 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 4.
+# Labeled from source at the pinned commit on 2026-10-11 BEFORE Furnace was run on this
+# repository and before any scanner change in this session. Author: the developer agent
+# (Claude), not independently reviewed yet. Labeling rule: see rag-postgres-openai-python.yaml.
+app: openai-chat-backend-fastapi
+split: held-out-4
+repo: https://github.com/Azure-Samples/openai-chat-backend-fastapi
+commit: 79174c34228951080cde7be2a7990057e40457fa
+purpose: Minimal FastAPI chat backend over the Responses API (Azure OpenAI v1 endpoint or a local OpenAI-compatible server); client held in a module-level dict
+
+routes:
+  - POST /chat
+  - POST /chat/stream
+
+llm_calls:
+  - file: src/api/chat.py
+    function: chat_handler
+    api: openai.AsyncOpenAI.responses.create (client from globals.clients["openai"])
+    model: null            # env AZURE_OPENAI_CHATGPT_DEPLOYMENT, default deployment name "chatgpt"
+    streaming: false
+    has_timeout: false
+  - file: src/api/chat.py
+    function: response_stream          # nested async generator inside chat_stream_handler
+    also_accept: [chat_stream_handler]
+    api: openai.AsyncOpenAI.responses.create(stream=True)
+    model: null
+    streaming: true
+    has_timeout: false
+
+model: null           # an Azure deployment name ("chatgpt"), not a model id; infra deploys gpt-5.2 under it
+models: [gpt-5.2]
+serving_engine: openai
+serving_flags: {}
+
+uses_rag: false
+retrievers: []
+tools: []
+
+prompts:
+  - src/api/chat.py::SYSTEM_PROMPT
+dynamic_head: false
+
+workflows:
+  - POST /chat
+  - POST /chat/stream
+
+existing_reliability:
+  tests: true           # tests/test_app.py with a mocked client and snapshots
+  tracing: none
+  timeouts: false       # gunicorn's worker timeout (120 s) is not a timeout on the LLM call
+  retries: false
+  evals: false
+
+contradictions: []
+
+notes:
+  - The deployment name "chatgpt" is not a model id; a scanner that reports "chatgpt" as the model is wrong, one that reports unknown/runtime is right; gpt-5.2 is only in infra/main.bicep.
+  - FastAPI(docs_url="/") serves the OpenAPI UI at "/"; it is not an application route.
