@@ -95,9 +95,11 @@ the pre-flight below. `uv run poe demo-down` stops them. The steps it automates:
    clean, draft repair PR. "Furnace rejected its own first fix. A human merges; Furnace never
    touches production."
 9. **(4:30) Evidence** (`/bench`). The yellow "Corrections" box first: we found our own perf gate
-   was biased (A/A test, up to 60% between identical revisions), fixed it (now within 9.7%), and
-   re-measured. Then RQ1 held-out recall including the misses (unseen SDKs), RQ3 recall at the
-   share of the suite executed, the negative results. Close.
+   was biased (A/A test, up to 60% between identical revisions), fixed it, and re-measured;
+   a second A/A (Oct 11) found the "within 9.7%" bound optimistic (+13.4%), so the gate now
+   decides on a 95% interval and says INCONCLUSIVE instead of passing noise. Then RQ1 held-out
+   recall including the misses (set 4: 2/9, agent frameworks and indirect clients), RQ3
+   recall at the share of the suite executed, the negative results. Close.
 
 ## If something fails live
 
