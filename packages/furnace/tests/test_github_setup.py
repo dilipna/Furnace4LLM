@@ -21,6 +21,7 @@ KEY = (
 )
 
 
+@pytest.mark.adversarial
 def test_manifest_requests_exactly_the_least_privilege_set():
     m = setup.manifest(
         name="furnace-dev", homepage="https://x", webhook_url="https://h", redirect_url="http://r"
@@ -48,6 +49,7 @@ def _free_port() -> int:
         return s.getsockname()[1]
 
 
+@pytest.mark.adversarial
 def test_callback_requires_the_state_it_issued():
     port = _free_port()
     got: dict = {}
@@ -73,6 +75,7 @@ def test_callback_requires_the_state_it_issued():
     assert got == {"code": "c2"}
 
 
+@pytest.mark.adversarial
 async def test_conversion_writes_key_and_env_without_printing_secrets(
     tmp_path, monkeypatch, capsys
 ):

@@ -34,6 +34,7 @@ def test_app_jwt_is_valid_rs256():
     )  # raises if invalid
 
 
+@pytest.mark.adversarial
 def test_webhook_signature():
     import hashlib
     import hmac
@@ -62,6 +63,7 @@ class Recorder:
         return httpx.Response(404, json={"message": "unexpected"})
 
 
+@pytest.mark.adversarial
 async def test_installation_token_is_scoped_to_one_repo_and_permissions():
     rec = Recorder({("POST", "/app/installations/77/access_tokens"): (201, {"token": "ghs_x"})})
     app = GitHubApp("1", PEM, transport=httpx.MockTransport(rec))
@@ -125,6 +127,7 @@ async def test_open_draft_pr_uses_git_data_api_in_order():
     assert commit["parents"] == ["base1"]
 
 
+@pytest.mark.adversarial
 async def test_never_writes_to_default_branch():
     repo = Repo("acme/app", "t", transport=httpx.MockTransport(lambda r: httpx.Response(500)))
     with pytest.raises(GitHubError, match="refusing"):
@@ -249,6 +252,7 @@ async def test_crash_between_branch_and_pull_request_resumes_on_the_same_branch(
     assert sum(1 for m, p in gh.calls if (m, p) == ("POST", "/git/refs")) == 1
 
 
+@pytest.mark.adversarial
 async def test_different_content_takes_the_next_branch_and_never_overwrites():
     gh = FakeGitData()
     first = await _open(gh, {"a.py": "x"})
@@ -281,3 +285,20 @@ async def test_draft_pr_other_ref_errors_still_raise():
             base_branch="main", new_branch="furnace/x", files={"a": "x"}, title="t",
             body="b", commit_message="m", base_sha="b",
         )  # fmt: skip
+
+
+@pytest.mark.adversarial
+def test_github_errors_never_carry_credentials():
+    from furnace.github.client import scrub
+
+    jwt = "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiIxMjMifQ.c2lnbmF0dXJlLXZhbHVlLWhlcmU"
+    for secret in (
+        "ghs_" + "a1B2c3D4e5" * 3,
+        "ghp_" + "Z9y8X7w6V5" * 3,
+        "github_pat_" + "11ABCDEFG0" * 3,
+        jwt,
+        "Bearer abcdefghijklmnopqrstuvwxyz012345",
+    ):
+        msg = str(GitHubError(f"401 bad credentials for {secret} in request"))
+        assert secret not in msg and "[redacted]" in msg
+    assert scrub("PATCH /check-runs/1: 422 Unprocessable") == "PATCH /check-runs/1: 422 Unprocessable"

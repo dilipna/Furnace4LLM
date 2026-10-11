@@ -14,6 +14,8 @@ from furnace.security.safe_extract import (
 )
 from furnace.security.ssrf import UnsafeURL, is_public_ip, validate_url
 
+pytestmark = pytest.mark.adversarial
+
 # ------------------------------------------------------------------ archives
 
 

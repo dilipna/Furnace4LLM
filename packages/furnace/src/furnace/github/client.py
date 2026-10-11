@@ -15,6 +15,7 @@ import base64
 import hashlib
 import hmac
 import json
+import re
 import time
 from dataclasses import dataclass
 from typing import Any
@@ -42,8 +43,24 @@ GUARD_PERMISSIONS = {
 }
 
 
+_SECRET_RE = re.compile(
+    r"(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}"
+    r"|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"
+    r"|(?i:bearer)\s+[A-Za-z0-9._-]{16,})"
+)
+
+
+def scrub(text: str) -> str:
+    """Remove GitHub tokens, JWTs and bearer credentials from text that leaves the process."""
+    return _SECRET_RE.sub("[redacted]", text)
+
+
 class GitHubError(Exception):
-    pass
+    """Messages become job errors, job events and neutral check-run summaries; GitHub error
+    bodies are included for diagnosis, so credentials are scrubbed from every message."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(scrub(message))
 
 
 MAX_BODY_CHARS = 65_000  # GitHub rejects pull request bodies over 65,536 characters
@@ -318,15 +335,17 @@ class Repo:
             return found
         return {"number": pr["number"], "url": pr["html_url"], "state": "open"}
 
-    async def find_check(self, head_sha: str, name: str = "Furnace Guard") -> dict[str, Any] | None:
-        """The latest check run `name` on `head_sha` ({id, status, conclusion, title}) or None."""
+    async def find_check(
+        self, head_sha: str, name: str = "Furnace Guard", app_id: str | None = None
+    ) -> dict[str, Any] | None:
+        """The latest check run `name` on `head_sha` ({id, status, conclusion, title}) or None.
+        With `app_id`, only this App's runs: another App's check of the same name is not ours
+        to reuse or take over."""
+        params: dict[str, Any] = {"check_name": name, "filter": "latest"}
+        if app_id:
+            params["app_id"] = app_id
         async with self._client() as c:
-            data = await self._req(
-                c,
-                "GET",
-                f"/commits/{head_sha}/check-runs",
-                params={"check_name": name, "filter": "latest"},
-            )
+            data = await self._req(c, "GET", f"/commits/{head_sha}/check-runs", params=params)
         runs = data.get("check_runs") or []
         if not runs:
             return None

@@ -62,6 +62,8 @@ def trial(questions: list[str], policy: GatePolicy, mult: int = 1) -> dict[str, 
 
 def render(res: dict[str, Any]) -> str:
     rows = res["trials"]
+    if not rows:
+        return f"# Perf-gate noise calibration (A/A)\n\nNo valid trial: {res.get('stopped')}\n"
     ch = [r["change_pct"] for r in rows]
     abs_sorted = sorted(abs(x) for x in ch)
     lines = [
@@ -109,6 +111,8 @@ def render(res: dict[str, Any]) -> str:
         f"false WARN {_n(rows, 'warn')}, false BLOCK {_n(rows, 'block')}; "
         f"separated by chance: {sum(r['separated'] for r in rows)}/{len(rows)}.",
     ]
+    if res.get("stopped"):
+        lines.append(f"Run {res['stopped']}.")
     cis = [r["ci_pct"] for r in rows if r.get("ci_pct")]
     if cis:
         covers = sum(lo <= 0 <= hi for lo, hi in cis)
@@ -142,8 +146,17 @@ def main() -> None:
     policy = GatePolicy()
     questions = f1_questions()
     rows = []
+    stopped = None
     for i in range(a.trials):
         r = trial(questions, policy, a.request_multiplier)
+        # Power is checked after every trial, not only at start: on 2026-10-11 the laptop
+        # lost AC partway through a run (gate_noise_x4, kept and labeled invalid).
+        after = power_state()
+        r["power_after"] = after
+        if after.get("on_ac") is False:
+            stopped = f"stopped after trial {i + 1}: AC power lost during it; that trial is discarded"
+            print(stopped, flush=True)
+            break
         rows.append(r)
         print(
             f"trial {i + 1}/{a.trials}: {r['baseline']} -> {r['value']} ms "
@@ -163,6 +176,7 @@ def main() -> None:
         "request_multiplier": a.request_multiplier,
         "requests_per_run": len(questions) * a.request_multiplier,
         "trials": rows,
+        "stopped": stopped,
     }
     write_json(out / f"{a.out_name}.json", res)
     (out / f"{a.out_name}.md").write_text(render(res), encoding="utf-8")

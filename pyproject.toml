@@ -46,7 +46,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 testpaths = ["packages/furnace/tests", "packages/inference/tests", "apps/api/tests", "bench/tests"]
-markers = ["db: requires postgres (FURNACE_DATABASE_URL)", "gpu: requires an NVIDIA GPU"]
+markers = ["db: requires postgres (FURNACE_DATABASE_URL)", "gpu: requires an NVIDIA GPU", "adversarial: attack-path regression (poe adversarial)"]
 
 [tool.pyright]
 include = ["packages", "apps/api", "bench"]
@@ -80,6 +80,7 @@ worker = "python -m furnace.jobs.worker --queues cpu"
 runner = "python -m furnace.jobs.worker --queues runner"
 gh-poll = "furnace gh-poll"  # webhook events from the App delivery log (no public URL needed)
 test = "pytest -q"
+adversarial = "pytest -q -m adversarial"  # attack-path regressions only (docs/security.md)
 lint = ["_ruff-check", "_ruff-format", "_imports"]
 _ruff-check = "ruff check ."
 _ruff-format = "ruff format --check ."
