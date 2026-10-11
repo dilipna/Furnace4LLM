@@ -117,3 +117,43 @@ def test_unmapped_app_code_falls_back_to_full_suite(base, tmp_path):
 def test_targeted_suite_is_smaller_than_full(impacts):
     total = sum(len(i.impact.selected) for i in impacts.values())
     assert total < len(F1_SUITE) * len(SCENARIOS) * 0.6
+
+
+def test_lost_stable_prefix_is_exactly_the_false_to_true_head_change():
+    from furnace.contracts.guard import TouchedNode, TouchVia
+    from furnace.guardian.impact import lost_stable_prefix
+
+    t = TouchedNode(
+        node_key="prompt:src/api/chat.py::chat_handler#system",
+        via=TouchVia.symbol,
+        attr_changes={"dynamic_head": (False, True)},
+    )
+    assert lost_stable_prefix(t)
+    assert not lost_stable_prefix(
+        t.model_copy(update={"attr_changes": {"dynamic_head": (True, False)}})
+    )
+    assert not lost_stable_prefix(t.model_copy(update={"node_key": "prompt:x.py::SYSTEM_PROMPT"}))
+
+
+def test_signature_selection_on_a_real_tree_without_workflows(tmp_path):
+    """External apps where no traced workflow reaches the prompt (2026-10-11 set 4): the
+    prefix-instability signature must still pull in the perf benchmark."""
+    from furnace.guardian.impact import SuiteItem
+
+    app = 'SYSTEM = "You are helpful."\n\n\ndef build(q):\n    return [{"role": "system", "content": SYSTEM}, {"role": "user", "content": q}]\n'
+    (tmp_path / "base").mkdir()
+    (tmp_path / "head").mkdir()
+    (tmp_path / "base" / "prompts.py").write_text(app)
+    (tmp_path / "head" / "prompts.py").write_text(
+        "import uuid\n"
+        + app.replace('"content": SYSTEM}', '"content": f"req {uuid.uuid4()} " + SYSTEM}')
+    )
+    suite = [
+        SuiteItem("check:prompt_prefix_stable", "check", ["prompt:*"], {"prompt"}),
+        SuiteItem("bench:perf_gate", "benchmark", ["workflow:*"], {"prompt", "model"}),
+        SuiteItem("bench:unrelated", "benchmark", ["workflow:*"], {"serving_config"}),
+    ]
+    imp = analyze_impact(analyze_tree(tmp_path / "base"), analyze_tree(tmp_path / "head"), suite)
+    sel = {s.key: s.reason for s in imp.impact.selected}
+    assert "bench:perf_gate" in sel and "prefix-instability signature" in sel["bench:perf_gate"]
+    assert "bench:unrelated" not in sel  # only benchmarks that detect prompt changes
