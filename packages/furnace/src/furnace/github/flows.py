@@ -37,7 +37,7 @@ from furnace.github.client import (
 from furnace.guardian.execute import GuardContext, prepare, run_items, selected_items, verdict
 from furnace.guardian.impact import SuiteItem, analyze_impact, analyze_tree
 from furnace.guardian.live import impact_event
-from furnace.guardian.perf_gate import GatePolicy, compare, run_gate
+from furnace.guardian.perf_gate import GatePolicy, repair_perf_check, run_gate
 from furnace.guardian.repair.loop import repair_prefix_instability
 from furnace.guardian.repair.regression import min_shared_prefix, render_in_sandbox
 from furnace.guardian.repair.signatures import supported_signatures
@@ -360,16 +360,7 @@ async def repair_pr(
             res = run_gate(
                 {"base": base, "pr_head": head, "candidate": cand}, questions, target, concurrency=8
             )
-            hv, cv = (
-                compare(res["base"], res["pr_head"], policy),
-                compare(res["base"], res["candidate"], policy),
-            )
-            return {
-                "head_vs_base": hv,
-                "candidate_vs_base": cv,
-                "within_budget": cv["verdict"] in ("pass", "warn"),
-                "summary": f"p95 TTFT base {hv['baseline']} | PR {hv['value']} ({hv['change_pct']:+}%) | repair {cv['value']} ({cv['change_pct']:+}%)",
-            }
+            return repair_perf_check(res, policy)
 
         def run() -> Any:
             impact = analyze_impact(

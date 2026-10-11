@@ -6,6 +6,7 @@ The executors that need a sandbox or an endpoint were verified live
 
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 from furnace.contracts.guard import ChangedFile, Hunk, PRImpact, Selection, TouchedNode, TouchVia
@@ -233,7 +234,7 @@ def test_repair_pr_body_reports_both_revisions():
             SimpleNamespace(results={"regression_test": "1 passed", "existing_tests": "6 passed"})
         ],
     )
-    perf = {
+    perf: dict[str, Any] = {
         "head_vs_base": {
             "baseline": 579,
             "value": 1473,
@@ -250,8 +251,15 @@ def test_repair_pr_body_reports_both_revisions():
         },
     }
     body = repair_pr_body(attempt, perf, "Moved the request id after the system prompt.", "t.py")
-    assert "| PR head | 579 ms | 1473 ms | +154.4 % | 0% | block |" in body
-    assert "| This repair | 579 ms | 648 ms | +11.8 % | 81% | warn |" in body
+    assert "| PR head | 579 ms | 1473 ms | +154.4 % | – | 0% | BLOCK |" in body
+    assert "| This repair | 579 ms | 648 ms | +11.8 % | – | 81% | WARN |" in body
     assert "fails on the PR head: **True**" in body
     assert "Furnace never merges" in body
+    for section in ("What changed", "Why it is slower", "Evidence", "Candidates rejected",
+                    "What remains uncertain", "What needs your decision"):  # fmt: skip
+        assert section in body
+    perf["head_vs_base"]["ci_pct"] = [120.0, 190.5]
+    perf["reasons"] = ["faster than the PR head: change -56.0% (95% CI -60.0% to -50.0%)"]
+    body = repair_pr_body(attempt, perf, "x", "t.py")
+    assert "| +120.0% to +190.5% |" in body and "- faster than the PR head" in body
     assert "_No performance run attached._" in repair_pr_body(attempt, {}, "x", "t.py")

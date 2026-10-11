@@ -29,7 +29,7 @@ TARGET = BenchTarget(
 )
 
 
-def trial(questions: list[str], policy: GatePolicy) -> dict[str, Any]:
+def trial(questions: list[str], policy: GatePolicy, mult: int = 1) -> dict[str, Any]:
     tmp = Path(tempfile.mkdtemp(prefix="gate-aa-"))
     try:
         a = materialize(None, tmp / "a")
@@ -37,7 +37,13 @@ def trial(questions: list[str], policy: GatePolicy) -> dict[str, Any]:
         work, base, same = prepare(a, b)
         try:
             t0 = time.monotonic()
-            res = run_gate({"a": base, "b": same}, questions, TARGET, concurrency=8)
+            res = run_gate(
+                {"a": base, "b": same},
+                questions,
+                TARGET,
+                concurrency=8,
+                request_multiplier=mult,
+            )
             secs = time.monotonic() - t0
         finally:
             shutil.rmtree(work, ignore_errors=True)
@@ -62,7 +68,8 @@ def render(res: dict[str, Any]) -> str:
         "# Perf-gate noise calibration (A/A)",
         "",
         f"F1 main vs an identical copy of F1 main, {len(rows)} gate runs, each 3 interleaved "
-        "repeats per side at concurrency 8 (the real gate path). Any change below is noise.",
+        f"repeats per side at concurrency 8 (the real gate path), "
+        f"{res.get('requests_per_run', 34)} measured requests per run. Any change below is noise.",
         "",
         md_table(
             [
@@ -70,6 +77,7 @@ def render(res: dict[str, Any]) -> str:
                 "p95 TTFT a (ms)",
                 "p95 TTFT b (ms)",
                 "change",
+                "95% CI",
                 "runs separated",
                 "verdict (policy)",
                 "SM MHz",
@@ -80,6 +88,7 @@ def render(res: dict[str, Any]) -> str:
                     r["baseline"],
                     r["value"],
                     f"{r['change_pct']:+.1f}%",
+                    _ci(r),
                     "yes" if r["separated"] else "no",
                     r["verdict"],
                     f"{min(r['sm_clock_mhz']):.0f}-{max(r['sm_clock_mhz']):.0f}"
@@ -92,18 +101,40 @@ def render(res: dict[str, Any]) -> str:
         "",
         f"Change: median {statistics.median(ch):+.1f}%, min {min(ch):+.1f}%, max {max(ch):+.1f}%; "
         f"|change| median {statistics.median(abs_sorted):.1f}%, max {abs_sorted[-1]:.1f}%.",
-        f"Policy at the time: warn > {res['policy']['warn_pct']}%, block > {res['policy']['block_pct']}% "
-        "and runs separated.",
-        f"False WARN: {sum(r['verdict'] == 'warn' for r in rows)}/{len(rows)}; "
-        f"false BLOCK: {sum(r['verdict'] == 'block' for r in rows)}/{len(rows)}; "
+        f"Policy at the time: tolerance {res['policy']['warn_pct']}%, block > "
+        f"{res['policy']['block_pct']}% and runs separated. Decision method: "
+        f"{rows[0].get('method') or 'point estimate (before 2026-10-11)'}.",
+        f"Verdicts: pass {_n(rows, 'pass')}, inconclusive {_n(rows, 'inconclusive')} "
+        "(noise too large to decide), "
+        f"false WARN {_n(rows, 'warn')}, false BLOCK {_n(rows, 'block')}; "
         f"separated by chance: {sum(r['separated'] for r in rows)}/{len(rows)}.",
     ]
+    cis = [r["ci_pct"] for r in rows if r.get("ci_pct")]
+    if cis:
+        covers = sum(lo <= 0 <= hi for lo, hi in cis)
+        widths = sorted(hi - lo for lo, hi in cis)
+        lines.append(
+            f"Interval check: the 95% interval contains 0 (the true A/A difference) in "
+            f"{covers}/{len(cis)} trials; width median {statistics.median(widths):.1f} "
+            f"percentage points, max {widths[-1]:.1f}."
+        )
     return "\n".join(lines) + "\n"
+
+
+def _ci(r: dict[str, Any]) -> str:
+    ci = r.get("ci_pct")
+    return f"{ci[0]:+.1f}% to {ci[1]:+.1f}%" if ci else "–"
+
+
+def _n(rows: list[dict[str, Any]], verdict: str) -> str:
+    return f"{sum(r['verdict'] == verdict for r in rows)}/{len(rows)}"
 
 
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--trials", type=int, default=12)
+    p.add_argument("--request-multiplier", type=int, default=1, help="questions per run x N")
+    p.add_argument("--out-name", default="gate_noise", help="output file stem")
     a = p.parse_args()
     power = power_state()
     if power.get("on_ac") is False:
@@ -112,7 +143,7 @@ def main() -> None:
     questions = f1_questions()
     rows = []
     for i in range(a.trials):
-        r = trial(questions, policy)
+        r = trial(questions, policy, a.request_multiplier)
         rows.append(r)
         print(
             f"trial {i + 1}/{a.trials}: {r['baseline']} -> {r['value']} ms "
@@ -126,11 +157,15 @@ def main() -> None:
             "warn_pct": policy.warn_pct,
             "block_pct": policy.block_pct,
             "metric": policy.metric,
+            "confidence": policy.confidence,
+            "n_boot": policy.n_boot,
         },
+        "request_multiplier": a.request_multiplier,
+        "requests_per_run": len(questions) * a.request_multiplier,
         "trials": rows,
     }
-    write_json(out / "gate_noise.json", res)
-    (out / "gate_noise.md").write_text(render(res), encoding="utf-8")
+    write_json(out / f"{a.out_name}.json", res)
+    (out / f"{a.out_name}.md").write_text(render(res), encoding="utf-8")
     print(render(res))
 
 

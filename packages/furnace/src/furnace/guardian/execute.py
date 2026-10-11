@@ -24,7 +24,7 @@ from furnace_bench.schema import BenchTarget
 from furnace.forge.harness import HARNESS_FILE, write_harness
 from furnace.forge.planner import approval_test_source
 from furnace.guardian.impact import ImpactResult, SuiteItem
-from furnace.guardian.perf_gate import GatePolicy, compare, run_gate
+from furnace.guardian.perf_gate import GatePolicy, compare, describe, run_gate
 from furnace.guardian.repair.regression import (
     min_shared_prefix,
     render_in_sandbox,
@@ -329,7 +329,10 @@ def _bench(item: SuiteItem, ctx: GuardContext) -> ItemResult:
     c = compare(res["base"], res["pr_head"], ctx.policy)
     if c["verdict"] == "error":
         return ItemResult(item.key, "error", f"perf gate measured nothing: {c['reason']}", c)
-    verdict = {"pass": "pass", "warn": "warn", "block": "fail"}.get(c["verdict"], "error")
+    # INCONCLUSIVE (the interval straddles the tolerance) is a neutral check, never a pass.
+    verdict = {"pass": "pass", "warn": "warn", "block": "fail", "inconclusive": "warn"}.get(
+        c["verdict"], "error"
+    )
     hits = c.get("prefix_hit_rate") or (None, None)
     hit_txt = (
         f"; prefix-cache hit {hits[0] * 100:.0f}% -> {hits[1] * 100:.0f}%"
@@ -340,7 +343,7 @@ def _bench(item: SuiteItem, ctx: GuardContext) -> ItemResult:
     return ItemResult(
         item.key,
         verdict,
-        f"median p95 TTFT {c['baseline']} -> {c['value']} ms ({c['change_pct']:+.1f}%, {c['verdict']}; {c['runs']} runs each, {sep}){hit_txt}",
+        f"median p95 TTFT {describe(c)}; {c['runs']} runs each, {sep}{hit_txt}",
         {
             **c,
             "reports": {k: [v.report.model_dump(mode="json") for v in vs] for k, vs in res.items()},
