@@ -1,5 +1,7 @@
 """`furnace` command line for the laptop runner.
 
+  furnace gh-setup [--webhook-url URL]               # create the GitHub App from its manifest
+  furnace gh-poll [--once]                           # webhook events from the App's delivery log
   furnace gh-check                                   # verify the GitHub App id, key and installations
   furnace gh-forge OWNER/REPO [--open-pr]            # Forge: plan + sandbox-validate, then a draft PR
   furnace gh-guard OWNER/REPO PR --suite FILE.py     # Guard: targeted checks -> GitHub check run
@@ -84,6 +86,21 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="furnace")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("gh-check", help="verify the GitHub App configuration")
+    st = sub.add_parser("gh-setup", help="create the GitHub App from Furnace's manifest")
+    st.add_argument("--name", default="furnace-dev", help="App name (globally unique on GitHub)")
+    st.add_argument(
+        "--webhook-url",
+        help="where GitHub delivers events (your deployed API's /api/github/webhook); "
+        "default: a fresh smee.io channel, read back with gh-poll",
+    )
+    st.add_argument("--org", help="create the App under this organization instead of your user")
+    st.add_argument("--port", type=int, default=8765)
+    st.add_argument("--key-dir", default=str(Path.home() / ".furnace"))
+    st.add_argument("--env-file", default=".env")
+    pl = sub.add_parser("gh-poll", help="enqueue Guard jobs from the App's webhook delivery log")
+    pl.add_argument("--interval", type=float, default=10.0)
+    pl.add_argument("--lookback-minutes", type=float, default=10.0)
+    pl.add_argument("--once", action="store_true")
     f = sub.add_parser("gh-forge", help="Forge a repository's default branch")
     f.add_argument("repo")
     f.add_argument("--questions")
@@ -118,6 +135,34 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if a.cmd == "gh-check":
             _print(asyncio.run(_app().app_info()))
+        elif a.cmd == "gh-setup":
+            from furnace.github.setup import run_setup
+
+            _print(
+                run_setup(
+                    name=a.name,
+                    webhook_url=a.webhook_url,
+                    org=a.org,
+                    port=a.port,
+                    key_dir=Path(a.key_dir),
+                    env_file=Path(a.env_file),
+                )
+            )
+        elif a.cmd == "gh-poll":
+            from datetime import timedelta
+
+            from furnace.github import deliveries
+
+            print("polling the App's webhook delivery log (Ctrl+C to stop)", file=sys.stderr)
+            asyncio.run(
+                deliveries.run(
+                    _app(),
+                    interval_s=a.interval,
+                    lookback=timedelta(minutes=a.lookback_minutes),
+                    once=a.once,
+                    on_result=lambda r: say(json.dumps(r, default=str)),
+                )
+            )
         elif a.cmd == "gh-forge":
             wl = (
                 yaml.safe_load(Path(a.workload).read_text(encoding="utf-8")) if a.workload else None

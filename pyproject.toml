@@ -78,6 +78,7 @@ makemigration = "alembic -c packages/furnace/src/furnace/db/alembic.ini revision
 api = "uvicorn furnace_api.main:app --reload --port 8010 --timeout-graceful-shutdown 3"  # live SSE streams would otherwise block reloads
 worker = "python -m furnace.jobs.worker --queues cpu"
 runner = "python -m furnace.jobs.worker --queues runner"
+gh-poll = "furnace gh-poll"  # webhook events from the App delivery log (no public URL needed)
 test = "pytest -q"
 lint = ["_ruff-check", "_ruff-format", "_imports"]
 _ruff-check = "ruff check ."
