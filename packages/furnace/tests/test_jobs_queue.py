@@ -140,6 +140,7 @@ async def test_concurrent_enqueue_once_creates_exactly_one(clean_jobs):
     assert len({job.id for job, _ in results}) == 1
 
 
+@pytest.mark.adversarial
 async def test_a_stale_claim_cannot_overwrite_the_claim_that_replaced_it(clean_jobs):
     """Fencing: worker A stalls past its lease, B re-claims; A's late completion, failure
     and heartbeat must all be refused, and B's outcome stands."""
@@ -200,6 +201,7 @@ async def test_job_timeout_fails_the_job_with_the_reason(clean_jobs, short_lease
         del worker.HANDLERS["test.hang"]
 
 
+@pytest.mark.adversarial
 async def test_lost_lease_cancels_the_running_handler(clean_jobs, short_lease):
     """If another claim takes the job (this worker stalled), the heartbeat notices and the
     handler is cancelled before it can write anything else; the other claim's state stands."""

@@ -49,12 +49,47 @@ would contaminate each other's latency.
   missed regressions, rejected repairs, SKIP items) into its Markdown, and `REPORT.md`
   collects them in one section.
 - **Measure the instrument.** The perf gate is calibrated with an A/A run (a revision against
-  itself); its WARN threshold must sit above the measured noise (`2026-10-09/gate_noise.md`).
+  itself); its tolerance must sit above the measured noise (`2026-10-09/gate_noise.md`,
+  `2026-10-11-gate-ci/gate_noise*.md`).
 - **Corrections are dated, never edits.** A generated report is not rewritten after the fact;
   a `CORRECTIONS.md` next to it says what no longer holds and where the new result is, and the
   `/bench` page shows it above the report.
 - **Labels are named.** Every number states its ground-truth source; seeded results are
   never presented as agreement with human judgment.
+
+## The perf gate's decision rule (since 2026-10-11)
+
+What is measured: for each revision, prompts rendered by that revision's own code in the
+sandbox, each request carrying a unique reference (never a verbatim repeat), replayed by
+`furnace-bench` at concurrency 8 against the lab vLLM after one unmeasured warmup wave.
+Revisions share the GPU, so they run one after another; repeats are interleaved and their
+order rotates every repeat (A,B / B,A / A,B; with three revisions a Latin square), because
+the A/A study found the side measured first biased.
+
+Statistic: the change in the median across runs of each run's p95 TTFT (numpy linear
+percentile, as `furnace-bench`). Uncertainty: a hierarchical bootstrap, 2,000 replicates,
+resampling runs with replacement and then requests within each chosen run, so both
+between-run noise (clock, scheduler, cache state) and within-run noise are in the interval.
+The raw per-request TTFTs are kept in the result (`samples_ms`).
+
+| verdict | rule (95% interval [lo, hi] of the change, tolerance T = 10%, block B = 25%) | check run |
+|---|---|---|
+| PASS | hi ≤ T: no regression beyond the tolerance, at 95% | success |
+| BLOCK | lo > T, change > B, and every PR run slower than every base run (1-in-20 under no difference with 3 runs a side) | failure |
+| WARN | lo > T otherwise: a real regression, but small or with overlapping runs | neutral |
+| INCONCLUSIVE | lo ≤ T < hi: the noise does not support an answer | neutral, never success |
+
+Repair candidates are gated separately from their functional tests: a candidate is accepted
+only if it is faster than the PR head with 95% confidence and its worst case against the
+base (interval upper bound) is below B. Whether it is within T of the base is reported, not
+assumed: staying inside a tolerance band is not evidence of an improvement.
+
+Why intervals: with 34 requests a run, p95 sits on the second-largest sample, so single
+runs swing by more than 10% between identical revisions (`2026-10-11-gate-ci/gate_noise.md`).
+In simulation (lognormal TTFT, between-run jitter up to 6%) the interval covered the true
+difference in 96-100% of trials and caught a +40% regression 100/100 times, but a
+no-change PR could be shown within 10% only 28-53% of the time at 3 runs × 34 requests,
+which is why INCONCLUSIVE exists and why `--request-multiplier` was measured.
 
 ## Not yet covered (see REPORT.md "Not run")
 

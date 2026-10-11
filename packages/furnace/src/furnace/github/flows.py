@@ -136,7 +136,7 @@ async def guard_pr(
             "superseded": True,
             "signatures": [],
         }
-    existing = await repo.find_check(pr["head_sha"])
+    existing = await repo.find_check(pr["head_sha"], app_id=app.app_id)
     if existing and existing["status"] == "completed" and not rerun:
         _say(progress, f"check run {existing['id']} already completed: {existing['conclusion']}")
         return {

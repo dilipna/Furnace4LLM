@@ -35,6 +35,7 @@ class FakeGitHub:
             return httpx.Response(200, json={"id": 77})
         if p == f"/repos/o/r/commits/{'h' * 40}/check-runs" and req.method == "GET":
             assert req.url.params["check_name"] == "Furnace Guard"
+            assert req.url.params["app_id"] == "123"  # only this App's check runs
             return httpx.Response(200, json={"check_runs": self.check_runs})
         if p == "/app/installations/77/access_tokens":
             return httpx.Response(201, json={"token": "t-scoped"})
@@ -182,6 +183,7 @@ async def test_guard_pr_skips_a_superseded_head(stub_work):
     assert not any("/check-runs" in p for _, p in _writes(fake))
 
 
+@pytest.mark.adversarial
 async def test_guard_pr_refuses_to_act_under_another_installation(stub_work):
     fake = FakeGitHub()
     with pytest.raises(GitHubError, match="across installations"):
@@ -192,6 +194,7 @@ async def test_guard_pr_refuses_to_act_under_another_installation(stub_work):
     assert not any(p.endswith("/access_tokens") for _, p, _ in fake.calls)  # no token minted
 
 
+@pytest.mark.adversarial
 async def test_guard_pr_cancelled_mid_run_still_completes_the_check(stub_work):
     """A job timeout or a lost lease cancels the coroutine; the check must not keep spinning."""
     import asyncio
@@ -215,6 +218,7 @@ async def test_guard_pr_cancelled_mid_run_still_completes_the_check(stub_work):
     assert done["conclusion"] == "neutral" and "cancelled" in done["output"]["summary"]
 
 
+@pytest.mark.adversarial
 async def test_fork_pull_requests_are_refused(stub_work):
     fake = FakeGitHub(head_repo="stranger/r")
     with pytest.raises(GitHubError, match="fork"):

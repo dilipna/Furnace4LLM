@@ -40,13 +40,50 @@
 6. **Evals** (`evals/`): deterministic checks, judge specs, calibration (TPR/TNR, Rogan-Gladen).
 7. **Guard** (`guardian/`): diff → touched graph nodes → selected checks with reasons; executors
    (unit, security, prefix stability, citation contract with Fisher test, context budget, perf
-   gate with interleaved repeats); check-run rendering.
+   gate with rotated interleaved repeats and a 95% interval: PASS, WARN, BLOCK or INCONCLUSIVE);
+   check-run rendering.
 8. **Repair** (`guardian/repair/`): failing test first (must fail on head, pass on base),
    localization to hunks, rule strategy, sandbox validation, perf gate, draft PR.
-9. **GitHub** (`github/`): App JWT, per-job scoped tokens, atomic draft PRs, check runs, webhook
-   HMAC; `github/flows.py` runs Forge / Guard / repair end to end for the CLI.
-10. **Jobs** (`jobs/`): Postgres queue with `SKIP LOCKED`, leases and heartbeats; `cpu` queue in
-    the API process, `runner` queue on the laptop.
+9. **GitHub** (`github/`): App from a manifest (`setup.py`), JWT, per-job scoped tokens,
+   idempotent draft PRs and check runs, webhook ingestion exactly once (`events.py`, by push
+   or by reading the App's delivery log in `deliveries.py`); `flows.py` runs Forge / Guard /
+   repair end to end for the CLI and the runner jobs (`jobs.py`).
+10. **Jobs** (`jobs/`): Postgres queue with `SKIP LOCKED`, fenced leases, heartbeats, timeouts
+    and dedupe keys; `cpu` queue in the API process, `runner` queue on the laptop.
+
+## The event path, end to end
+
+```
+PR opened/pushed ─► GitHub ──push──► API /api/github/webhook (HMAC, size, shape) ─┐
+                           └─log───► runner `gh-poll` (App JWT, delivery log) ─────┤
+                                                                                   ▼
+          events.ingest: webhook_deliveries row per GUID (replays are no-ops, audit outcome)
+                         enqueue_once guard.pr  dedupe key guard.pr:<repo>#<n>@<head sha>
+                                                                                   ▼
+ runner claims (SKIP LOCKED, fenced by worker+attempt, heartbeat, timeout 30 min)
+   guard_pr: installation check ─► PR head still the event's? (else superseded)
+             ─► existing check run on this head? (reuse / take over) ─► tarballs (safe extract)
+             ─► impact on both graphs ─► selected checks in the sandbox ─► perf gate (95% CI)
+             ─► check run (success / neutral / failure) + supported regression signatures
+                                                                                   ▼
+   failure + signature + FURNACE_GUARD_AUTO_REPAIR ─► enqueue_once repair.pr (one per head)
+   repair_pr: failing test first ─► strategies in order ─► sandbox tests ─► perf gate
+              (faster than the PR with 95% confidence, worst case vs base < block threshold)
+              ─► draft PR into the PR branch (idempotent) with the decision record
+```
+
+## Job lifecycle
+
+`queued` → `running` (claimed: `attempts+1`, `locked_by`, `heartbeat_at`) → `succeeded` |
+`failed`, or back to `queued` with exponential backoff while attempts remain. Every write after
+the claim is conditioned on `(locked_by, attempts)` still holding: if a worker stalls past the
+lease and another claims the job, the first worker's heartbeat finds the row gone and cancels
+its handler, and its late completion or failure is refused. A job whose heartbeat stopped
+with no attempts left is failed by the reaper; a worker restarted mid-job fails its own
+orphans on start. Each kind has a timeout (`jobs.timeout_s`, default 1 h); handlers emit
+`job_events` (stage, message, structured data) that the UI streams. Side effects are
+idempotent at the GitHub layer as well, so a retried attempt cannot open a second PR or
+post a second check run.
 
 ## Why these choices
 

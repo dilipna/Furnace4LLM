@@ -11,6 +11,8 @@ import sys
 import pytest
 from furnace.sandbox.docker_sandbox import LAB_NETWORK, SandboxError, run_in_sandbox
 
+pytestmark = pytest.mark.adversarial
+
 PROBE = r"""
 import json, os, socket
 

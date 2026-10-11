@@ -78,10 +78,12 @@ def test_unconfigured_deployment_rejects_webhooks(monkeypatch):
     get_settings.cache_clear()
 
 
+@pytest.mark.adversarial
 def test_bad_signature_is_rejected(client):
     assert _post(client, "pull_request", _pr(), secret="wrong").status_code == 401
 
 
+@pytest.mark.adversarial
 @pytest.mark.parametrize(
     ("event", "payload", "reason"),
     [
@@ -116,6 +118,7 @@ def test_pull_request_change_enqueues_a_runner_job(client):
     assert job.dedupe_key == f"guard.pr:o/r#7@{'a' * 40}" and job.timeout_s == 1800
 
 
+@pytest.mark.adversarial
 def test_a_replayed_delivery_is_a_no_op(client):
     """Same GUID (a GitHub redelivery, or a captured signed request replayed): one job."""
     first = _post(client, "pull_request", _pr(), delivery="d-1")
@@ -167,6 +170,7 @@ def test_malformed_signed_events_are_rejected_without_side_effects(
     assert _rows("SELECT count(*) FROM webhook_deliveries") == [(0,)]
 
 
+@pytest.mark.adversarial
 def test_repositories_outside_the_allowlist_are_ignored(client, monkeypatch):
     monkeypatch.setenv("FURNACE_GITHUB_ALLOWED_REPOS", "o/other, o/third")
     get_settings.cache_clear()
@@ -177,6 +181,7 @@ def test_repositories_outside_the_allowlist_are_ignored(client, monkeypatch):
     assert _post(client, "pull_request", _pr()).json()["queued"] is True
 
 
+@pytest.mark.adversarial
 def test_oversized_bodies_are_refused_before_parsing(client):
     r = _post(client, "pull_request", None, raw=b"{" + b" " * (5 * 1024 * 1024 + 1) + b"}")
     assert r.status_code == 413
