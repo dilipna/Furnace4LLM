@@ -21,6 +21,10 @@ def client(tmp_path, monkeypatch):
     (camp / "rq3").mkdir()
     (camp / "rq3" / "r1_dynamic_head.targeted.check.md").write_text("# 1 regression found")
     (tmp_path / "results" / "not-a-campaign").mkdir()
+    later = tmp_path / "results" / "2026-10-11-gate-ci"
+    later.mkdir()
+    (later / "NOTES.md").write_text("# A/A with intervals")
+    (tmp_path / "results" / "2026-10-12-empty").mkdir()  # neither results nor notes: hidden
     (tmp_path / "labels").mkdir()
     (tmp_path / "labels" / "f1_queue.jsonl").write_text(
         json.dumps({"id": "f1-001", "answer": "x"})
@@ -42,8 +46,11 @@ def client(tmp_path, monkeypatch):
 def test_campaigns_and_results(client):
     c, _ = client
     camps = c.get("/api/bench/campaigns").json()
-    assert [x["name"] for x in camps] == ["2026-10-06"]
-    assert set(camps[0]["available"]) == {"rq1", "rq4"} and camps[0]["has_report"]
+    assert [x["name"] for x in camps] == ["2026-10-11-gate-ci", "2026-10-06"]
+    later, main = camps
+    assert later == {"name": "2026-10-11-gate-ci", "available": [], "has_report": False, "has_notes": True}
+    assert set(main["available"]) == {"rq1", "rq4"} and main["has_report"] and not main["has_notes"]
+    assert c.get("/api/bench/campaigns/2026-10-11-gate-ci").json()["notes_md"] == "# A/A with intervals"
     assert c.get("/api/bench/campaigns/2026-10-06").json()["report_md"] == "# report"
     assert c.get("/api/bench/campaigns/2026-10-06").json()["corrections_md"] == "# correction"
     assert c.get("/api/bench/campaigns/2026-10-06/rq4").json() == {"rows": [1]}

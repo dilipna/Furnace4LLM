@@ -65,9 +65,15 @@ def list_campaigns() -> list[dict[str, Any]]:
     for d in sorted(root.iterdir() if root.is_dir() else [], reverse=True):
         if d.is_dir() and CAMPAIGN.match(d.name):
             avail = _available(d)
-            if avail or (d / "REPORT.md").is_file():
+            has_report, has_notes = (d / "REPORT.md").is_file(), (d / "NOTES.md").is_file()
+            if avail or has_report or has_notes:  # notes-only: later studies shown on /bench
                 out.append(
-                    {"name": d.name, "available": avail, "has_report": (d / "REPORT.md").is_file()}
+                    {
+                        "name": d.name,
+                        "available": avail,
+                        "has_report": has_report,
+                        "has_notes": has_notes,
+                    }
                 )
     return out
 
