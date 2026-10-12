@@ -140,18 +140,56 @@ def one_trial(name: str, questions: list[str], policy: GatePolicy) -> dict[str, 
     return {**c, "seconds": round(secs, 1), "sm_clock_mhz": clocks}
 
 
-def run(name: str, trials: int, smoke: bool) -> None:
+def run(name: str, trials: int, smoke: bool, resume_note: str | None = None) -> None:
+    """Runs `trials` trials of set `name`. If the set's JSONL already holds trials (a run that
+    was killed: the machine slept, Docker stopped), they are kept as they are, numbering
+    continues after them, and the restart is recorded in `resumed` with `resume_note`."""
     pw = power_state()
     if pw.get("on_ac") is False:
         raise SystemExit("on battery: plug in AC power (protocol requires AC)")
     out = results_dir("validation_smoke" if smoke else "validation")
     jsonl = out / f"{name}.jsonl"
+    final = out / f"{name}.json"
     policy, questions = GatePolicy(), f1_questions()
     rows: list[dict[str, Any]] = []
-    discarded: list[dict[str, Any]] = []
+    if jsonl.exists():
+        rows = [json.loads(x) for x in jsonl.read_text(encoding="utf-8").splitlines() if x.strip()]
+    prior = json.loads(final.read_text(encoding="utf-8")) if final.exists() else {}
+    discarded: list[dict[str, Any]] = list(prior.get("discarded", []))
+    resumed: list[dict[str, Any]] = list(prior.get("resumed", []))
+    if rows:
+        if not resume_note:
+            raise SystemExit(
+                f"{jsonl} already holds {len(rows)} trials: pass --resume-note '<why the run "
+                "stopped>' to continue it (the note is recorded), or move the file away"
+            )
+        resumed.append(
+            {
+                "after_trial": len(rows),
+                "at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "note": resume_note,
+            }
+        )
     consecutive_errors = 0
     stopped = None
-    for i in range(trials):
+
+    def flush() -> None:
+        write_json(
+            final,
+            {
+                "set": name,
+                "smoke": smoke,
+                "requested_trials": trials,
+                "manifest": manifest(vllm_image=vllm_image()),
+                "policy": policy.__dict__,
+                "trials": rows,
+                "discarded": discarded,
+                "resumed": resumed,
+                "stopped": stopped,
+            },
+        )
+
+    for i in range(len(rows), trials):
         started = time.strftime("%H:%M:%S", time.gmtime())
         r: dict[str, Any]
         try:
@@ -170,6 +208,7 @@ def run(name: str, trials: int, smoke: bool) -> None:
         rows.append(r)
         with jsonl.open("a", encoding="utf-8") as f:
             f.write(json.dumps(r, default=str) + "\n")
+        flush()
         ci = r.get("ci_pct")
         print(
             f"{name} {i + 1}/{trials}: {r.get('baseline')} -> {r.get('value')} ms "
@@ -180,19 +219,7 @@ def run(name: str, trials: int, smoke: bool) -> None:
             stopped = f"stopped after trial {i + 1}: three consecutive errors"
             print(stopped, flush=True)
             break
-    write_json(
-        out / f"{name}.json",
-        {
-            "set": name,
-            "smoke": smoke,
-            "requested_trials": trials,
-            "manifest": manifest(vllm_image=vllm_image()),
-            "policy": policy.__dict__,
-            "trials": rows,
-            "discarded": discarded,
-            "stopped": stopped,
-        },
-    )
+    flush()
 
 
 # --------------------------------------------------------------------------- calibration
@@ -266,15 +293,18 @@ def clopper_pearson(k: int, n: int, alpha: float = 0.05) -> tuple[float, float]:
     def cdf(x: int, p: float) -> float:
         return sum(math.comb(n, i) * p**i * (1 - p) ** (n - i) for i in range(x + 1))
 
-    def solve(f: Callable[[float], float], target: float) -> float:
+    def solve(f: Callable[[float], float], target: float, increasing: bool) -> float:
+        """The p in (0, 1) with f(p) = target, for f monotone in p."""
         lo, hi = 0.0, 1.0
         for _ in range(100):
             mid = (lo + hi) / 2
-            lo, hi = (mid, hi) if f(mid) > target else (lo, mid)
+            below = f(mid) < target
+            lo, hi = (mid, hi) if below == increasing else (lo, mid)
         return (lo + hi) / 2
 
-    lower = 0.0 if k == 0 else solve(lambda p: 1 - cdf(k - 1, p), alpha / 2)
-    upper = 1.0 if k == n else solve(lambda p: cdf(k, p), alpha / 2)
+    # lower: P(X >= k | p) = alpha/2 (increasing in p); upper: P(X <= k | p) = alpha/2 (decreasing)
+    lower = 0.0 if k == 0 else solve(lambda p: 1 - cdf(k - 1, p), alpha / 2, increasing=True)
+    upper = 1.0 if k == n else solve(lambda p: cdf(k, p), alpha / 2, increasing=False)
     return lower, upper
 
 
@@ -305,6 +335,11 @@ def summarize() -> None:
                 f"{min(ch):+.1f}% to {max(ch):+.1f}%" if ch else "–",
             ]
         )
+        for rs in j.get("resumed", []):
+            lines.append(
+                f"- {j['set']}: run interrupted after trial {rs['after_trial']}, resumed at "
+                f"{rs['at_utc']} ({rs['note']}); earlier trials kept"
+            )
         for dd in j.get("discarded", []):
             lines.append(f"- {j['set']} trial {dd['trial']} discarded: {dd['discard_reason']}")
         if j.get("stopped"):
@@ -346,6 +381,7 @@ def main() -> None:
     r.add_argument("--set", required=True)
     r.add_argument("--trials", type=int)
     r.add_argument("--smoke", action="store_true")
+    r.add_argument("--resume-note", help="continue a killed run of this set; why it stopped")
     c = sub.add_parser("calibrate-topk")
     c.add_argument("--ks", default="4,6,8,12")
     c.add_argument("--runs", type=int, default=3)
@@ -353,7 +389,7 @@ def main() -> None:
     a = p.parse_args()
     if a.cmd == "run":
         n = a.trials or DEFAULT_TRIALS.get(a.set) or GRADED_TRIALS
-        run(a.set, n, a.smoke)
+        run(a.set, n, a.smoke, a.resume_note)
     elif a.cmd == "calibrate-topk":
         calibrate_topk([int(x) for x in a.ks.split(",")], a.runs)
     else:
