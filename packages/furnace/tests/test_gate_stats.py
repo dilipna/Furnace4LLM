@@ -51,10 +51,10 @@ def test_conclusion_mapping():
 
 import numpy as np  # noqa: E402
 from furnace.guardian.perf_gate import (  # noqa: E402
-    METHOD_BOOTSTRAP,
     METHOD_POINT,
     accept_repair,
     run_order,
+    welch_change_ci,
 )
 
 
@@ -65,7 +65,7 @@ class _S:
         self.xs = list(xs)
 
     def samples(self, name):
-        return self.xs
+        return self.xs if name == "ttft_ms" else []
 
     def metric(self, name):
         if name == "ttft_p95_ms":
@@ -83,7 +83,7 @@ def sruns(scale=1.0, n=34, k=3, spread=0.12, seed=0, jitter=0.0):
 
 def test_identical_tight_runs_pass_with_an_interval():
     c = compare(sruns(seed=1, n=200, spread=0.03), sruns(seed=2, n=200, spread=0.03), GatePolicy())
-    assert c["method"] == METHOD_BOOTSTRAP and c["verdict"] == "pass"
+    assert "Welch" in c["method"] and c["verdict"] == "pass"
     lo, hi = c["ci_pct"]
     assert lo <= 0 <= hi and hi <= 10
     assert len(c["samples_ms"]["baseline"]) == 3 and len(c["samples_ms"]["value"][0]) == 200
@@ -92,6 +92,7 @@ def test_identical_tight_runs_pass_with_an_interval():
 def test_large_separated_regression_blocks():
     c = compare(sruns(seed=1), sruns(scale=10, seed=2), GatePolicy())
     assert c["verdict"] == "block" and c["ci_pct"][0] > 10 and c["separated"]
+    assert c["metric"] == "ttft_gmean_ms" and c["confidence"] == 0.90
 
 
 def test_confident_but_small_regression_warns():
@@ -112,9 +113,62 @@ def test_summaries_without_samples_use_the_labeled_point_rule():
     assert c["method"] == METHOD_POINT and c["ci_pct"] is None
 
 
-def test_interval_is_reproducible_for_a_fixed_seed():
+def test_welch_interval_matches_a_hand_computed_case():
+    # d = 0.1; se = sqrt(0.01/3 + 0.01/3); Satterthwaite df = 4; t(0.95, 4) = 2.1318
+    change, lo, hi = welch_change_ci([0.0, 0.1, -0.1], [0.1, 0.2, 0.0], 0.90)
+    half = 2.1318 * (0.02 / 3) ** 0.5
+    assert change == pytest.approx((np.exp(0.1) - 1) * 100, abs=1e-6)
+    assert lo == pytest.approx((np.exp(0.1 - half) - 1) * 100, abs=0.02)
+    assert hi == pytest.approx((np.exp(0.1 + half) - 1) * 100, abs=0.02)
+
+
+def test_the_run_is_the_unit_not_the_request():
+    """Run-to-run variation sets the interval: 100x more requests per run must not shrink it
+    to nothing (a request-level resample would), because requests within a run are dependent
+    and the runs differ by their own offsets."""
+
+    def offset_runs(n, factors):
+        rng = np.random.default_rng(5)
+        return [_S(np.exp(rng.normal(np.log(80), 0.02, n)) * f) for f in factors]
+
+    few = compare(
+        offset_runs(34, (0.9, 1.0, 1.1)), offset_runs(34, (0.95, 1.05, 1.15)), GatePolicy()
+    )
+    many = compare(
+        offset_runs(3400, (0.9, 1.0, 1.1)), offset_runs(3400, (0.95, 1.05, 1.15)), GatePolicy()
+    )
+    w = lambda c: c["ci_pct"][1] - c["ci_pct"][0]  # noqa: E731
+    assert w(many) > 0.8 * w(few)
+    assert many["verdict"] == "inconclusive"  # +5% with +-10% run offsets cannot be settled
+
+
+def test_fewer_than_three_runs_per_side_is_inconclusive_not_a_verdict():
+    c = compare(sruns(seed=1, k=2), sruns(scale=10, seed=2, k=2), GatePolicy())
+    assert c["verdict"] == "inconclusive" and c["ci_pct"] is None
+    assert "at least 3 per side" in c["reason"]
+
+
+def test_a_tail_only_regression_is_reported_in_p95_but_does_not_decide():
+    """The documented limit of the geometric-mean gate (docs/gate-revision.md): slow the
+    slowest 6% of requests 3x and leave the rest alone. The p95 shows it; the verdict, which
+    is on the geometric mean, does not."""
+
+    def tail_slowed(seed, factor):
+        out = []
+        for r in sruns(seed=seed, n=100, spread=0.02):
+            xs = np.sort(r.xs)
+            xs[-6:] *= factor
+            out.append(_S(xs))
+        return out
+
+    c = compare(tail_slowed(1, 1.0), tail_slowed(2, 3.0), GatePolicy())
+    assert c["p95_advisory"]["ci_pct"][0] > 100
+    assert c["verdict"] == "pass" and c["change_pct"] < 10
+
+
+def test_the_gate_is_deterministic():
     a, b = sruns(seed=3), sruns(1.05, seed=4)
-    assert compare(a, b, GatePolicy())["ci_pct"] == compare(a, b, GatePolicy())["ci_pct"]
+    assert compare(a, b, GatePolicy()) == compare(a, b, GatePolicy())
 
 
 def _cmp(change, lo, hi, verdict="pass"):

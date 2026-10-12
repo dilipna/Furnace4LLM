@@ -147,7 +147,7 @@ def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_pa
     perf_table = (
         "\n".join(
             [
-                "| revision vs base | base p95 TTFT | p95 TTFT | change | 95% CI | prefix-cache hit | gate |",
+                "| revision vs base | base TTFT (geo. mean) | TTFT (geo. mean) | change | 90% interval | prefix-cache hit | gate |",
                 "|---|---:|---:|---:|---|---:|---|",
                 *rows,
             ]
@@ -180,7 +180,7 @@ def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_pa
             f"- prefix-cache hit rate: base {_hit(hv, 0)}, PR head {_hit(hv, 1)}"
             if hv
             else "- no benchmark run attached",
-            f"- p95 TTFT of the PR head vs base: {hv.get('change_pct'):+}% (95% CI {_ci(hv)})"
+            f"- geometric-mean TTFT of the PR head vs base: {hv.get('change_pct'):+}% (90% interval {_ci(hv)})"
             if hv
             else "",
             "",
@@ -204,7 +204,9 @@ def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_pa
             "### 8. What remains uncertain",
             f"- {runs or '?'} runs per revision"
             + (f" of {n_req} measured requests each" if n_req else "")
-            + "; the interval is a hierarchical bootstrap and is coarse at this size.",
+            + "; the interval is a Welch t interval across runs (the run is the unit; requests "
+            "within a run are dependent), 90% two-sided, on the geometric-mean TTFT. The p95 "
+            "is not used for the decision.",
             "- One model and one endpoint (the lab vLLM); the effect on other hardware, models "
             "or traffic mixes was not measured here.",
             "- Functional equivalence is only as strong as the existing tests plus the new "

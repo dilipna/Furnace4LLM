@@ -79,10 +79,10 @@ def render(res: dict[str, Any]) -> str:
         md_table(
             [
                 "trial",
-                "p95 TTFT a (ms)",
-                "p95 TTFT b (ms)",
+                "geo-mean TTFT a (ms)",
+                "geo-mean TTFT b (ms)",
                 "change",
-                "95% CI",
+                "interval",
                 "runs separated",
                 "verdict (policy)",
                 "SM MHz",
@@ -121,7 +121,7 @@ def render(res: dict[str, Any]) -> str:
         covers = sum(lo <= 0 <= hi for lo, hi in cis)
         widths = sorted(hi - lo for lo, hi in cis)
         lines.append(
-            f"Interval check: the 95% interval contains 0 (the true A/A difference) in "
+            f"Interval check: the {round(res['policy']['confidence'] * 100)}% interval contains 0 (the true A/A difference) in "
             f"{covers}/{len(cis)} trials; width median {statistics.median(widths):.1f} "
             f"percentage points, max {widths[-1]:.1f}."
         )
@@ -177,7 +177,7 @@ def main() -> None:
             "block_pct": policy.block_pct,
             "metric": policy.metric,
             "confidence": policy.confidence,
-            "n_boot": policy.n_boot,
+            "min_runs": policy.min_runs,
         },
         "request_multiplier": a.request_multiplier,
         "repeats": a.repeats,
