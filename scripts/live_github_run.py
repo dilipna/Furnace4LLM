@@ -41,7 +41,13 @@ sys.path.insert(0, str(ROOT / "bench"))
 from common import manifest, write_json  # noqa: E402
 from furnace import cli  # noqa: E402
 from furnace.github import flows  # noqa: E402
-from furnace.github.client import API, HEADERS, PR_PERMISSIONS, GitHubError  # noqa: E402
+from furnace.github.client import (  # noqa: E402
+    API,
+    HEADERS,
+    PR_PERMISSIONS,
+    SCAN_PERMISSIONS,
+    GitHubError,
+)
 
 Q = ROOT / "fixtures/apps/support-rag-py/docs/facts.json"
 SUITE = ROOT / "fixtures/scenarios/f1_suite.py"
@@ -77,6 +83,22 @@ async def ensure_r1_pr(app: Any, repo: str, head: str, base: str) -> dict[str, A
             raise GitHubError(f"open R1 PR: {r.status_code} {r.text[:200]}")
         p = r.json()
         return {"number": p["number"], "url": p["html_url"], "opened": True}
+
+
+async def branch_heads(app: Any, repo: str, names: list[str]) -> dict[str, str]:
+    """Head commit of each named branch, read with a read-only token (recorded before the run
+    so scripts/live_github_verify.py can prove Furnace never pushed to them)."""
+    reader = await flows._token(app, repo, SCAN_PERMISSIONS)
+    async with httpx.AsyncClient(
+        base_url=API, headers={**HEADERS, "Authorization": f"Bearer {reader.token}"}, timeout=30
+    ) as c:
+        out = {}
+        for n in names:
+            r = await c.get(f"/repos/{repo}/git/ref/heads/{n}")
+            if r.status_code >= 400:
+                raise GitHubError(f"branch {n}: {r.status_code} {r.text[:200]}")
+            out[n] = r.json()["object"]["sha"]
+    return out
 
 
 def _strip(out: dict[str, Any]) -> dict[str, Any]:
@@ -164,6 +186,10 @@ async def main_async(a: argparse.Namespace) -> dict[str, Any]:
     ok = True
     if await step("check", app.app_info) is None:
         ok = False
+    before = ok and await step(
+        "branches_before", lambda: branch_heads(app, a.repo, [a.base, a.head])
+    )
+    ok = bool(before)
     forge = ok and await step("forge", forge_once)
     r1 = forge and await step("r1_pr", lambda: ensure_r1_pr(app, a.repo, a.head, a.base))
     pr_number = int(r1["number"]) if r1 else 0  # only used when r1 exists
@@ -197,7 +223,7 @@ async def main_async(a: argparse.Namespace) -> dict[str, Any]:
         return ((s or {}).get("out") or {}).get("pr") or {}
 
     checks = {
-        "all_steps_ok": all(s["ok"] for s in steps) and len(steps) >= 5,
+        "all_steps_ok": all(s["ok"] for s in steps) and len(steps) >= 6,
         "guard_flagged_r1": (guard or {}).get("conclusion") == "failure",
         "repair_verified": (repair or {}).get("status") == "verified",
         "forge_replay_same_pr": bool(pr_of("forge"))
@@ -214,7 +240,13 @@ async def main_async(a: argparse.Namespace) -> dict[str, Any]:
         if all(checks.values())
         else "INCOMPLETE: " + ", ".join(k for k, v in checks.items() if not v)
     )
-    return {"repo": a.repo, "steps": steps, "checks": checks, "verdict": verdict}
+    return {
+        "repo": a.repo,
+        "branches_before": before or {},
+        "steps": steps,
+        "checks": checks,
+        "verdict": verdict,
+    }
 
 
 def main() -> int:
