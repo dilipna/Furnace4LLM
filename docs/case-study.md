@@ -97,6 +97,13 @@ in-repository includes (escapes refused), and one app's own suite runs in the sa
 passed, 1 pre-existing failure, so Forge still correctly opens no PR). Set 4 is no longer
 held-out for anything changed after that first scan (`2026-10-11-external/NOTES.md`).
 
+The fixes were then measured the right way: a fifth set (`openai/openai-cs-agents-demo`) was
+labeled and committed before the scanner change, and went from 0/3 to 3/3 call sites at
+precision 1.00, while F1 and sets 1-3 stayed identical in every category. One app is
+evidence the change generalizes, not a recall estimate. With agent instructions analyzed as
+system prompts, Guard picks the right checks on all 9 synthetic set-4 PRs; repair still
+does not rewrite agent instructions, and says so.
+
 ## A measurement mistake caught
 
 The Kernel Lab first showed a Triton RMSNorm kernel 9x faster than `torch.compile`. The
@@ -112,7 +119,7 @@ shape fresh put the two at parity (both ~9.8x eager, 99% of measured copy bandwi
 - The GitHub App path (Forge PR, check run, repair PR, webhooks) is tested against a mock
   GitHub only; the live run needs the App (`furnace gh-setup`, two clicks) and has not been
   done. Until it is, "works on real GitHub" is not claimed.
-- Scanner recall drops on indirection (agent frameworks, clients in containers, background
-  tasks): set 4, 2/9.
+- Scanner recall drops on indirection it does not model yet (routes reaching calls through
+  framework servers or background tasks, env/settings model defaults: models 0/6 on set 4).
 - Labels were written by the developer agent and not independently reviewed.
 - Python only; LLM-judge calibration needs human labels and a key.
