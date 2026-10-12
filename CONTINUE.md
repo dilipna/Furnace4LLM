@@ -6,8 +6,17 @@ Paste this file's path into a new Claude Code session ("read CONTINUE.md and con
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
 ## Oct 11 session (production hardening, statistics, generalization), newest first
-- **Not pushed.** Commits `23304a6`..HEAD are local on `main` (branch `oct11-hardening` merged
-  fast-forward; worktree `C:\dev\furnace-wt` can be removed: `git worktree remove ../furnace-wt`).
+- **Not pushed.** Commits `23304a6`..HEAD are local on `main` (CI has not run on them; push,
+  then check the Actions run: the sandbox tests behave differently on Linux).
+- **Scanner (later the same day):** OpenAI Agents SDK `Runner.run*` calls (model via the
+  `Agent`), subscript-held clients, `Agent(instructions=...)` as system prompts, class-attribute
+  templates as shared text. Held-out set 5 (`openai-cs-agents-demo`, labels `f038d20` before
+  the change): call sites 0/3 -> 3/3 at P 1.00. F1 and sets 1-3 unchanged in every RQ1
+  category. Set 4 Guard synthetic PRs 9/9 after fixes. Next: a repair strategy for agent
+  instructions; routes through framework servers (ChatKit) and `create_task`; env/settings
+  model defaults (models 0/6 on set 4).
+- Live API smoke (dev DB, 2026-10-11): signed delivery queued, replay refused as duplicate,
+  forged signature 401 (smoke rows deleted).
 - **GitHub path** (all mock-tested, live run still pending the App): idempotent draft PRs (same
   tree -> existing PR, closed PRs not reopened, never overwrite a branch; the old code opened a
   new PR on every retry); webhook delivery GUID dedupe + audit rows (`webhook_deliveries`),
@@ -34,7 +43,7 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
   without a workflow path (prompt scenario 0/3 -> 2/3). `2026-10-11-external/NOTES.md`.
 - **Adversarial suite**: `uv run poe adversarial` (marker `adversarial`).
 - Docs: case study, 90-second demo, security controls, event path + job lifecycle, perf gate rule.
-- `poe check`: 301 passed, 1 skipped.
+- `poe check`: 308 passed, 1 skipped.
 
 ## Oct 8-9 session (live demo work), newest first
 - **Oct 9 (evening): scanner coverage, robustness.** Held-out set 3 (Gemini, Mistral, Replicate,
