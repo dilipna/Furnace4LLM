@@ -1,0 +1,66 @@
+{
+  "manifest": {
+    "date": "2026-10-12-gate-validation",
+    "started_at": "2026-10-12T05:19:15+00:00",
+    "git": {
+      "sha": "26fa8eb2ccea95739a2e806cccc08486c7cf3994",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 98,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/gate_validate.py",
+      "calibrate-topk",
+      "--ks",
+      "4,5,6,8,12",
+      "--runs",
+      "3"
+    ]
+  },
+  "rows": [
+    {
+      "variant": "main",
+      "geomean_ms": 73.3,
+      "change_pct": 0.0,
+      "runs": 3
+    },
+    {
+      "variant": "topk_4",
+      "geomean_ms": 82.8,
+      "change_pct": 12.9,
+      "runs": 3
+    },
+    {
+      "variant": "topk_5",
+      "geomean_ms": 82.3,
+      "change_pct": 12.2,
+      "runs": 3
+    },
+    {
+      "variant": "topk_6",
+      "geomean_ms": 81.5,
+      "change_pct": 11.1,
+      "runs": 3
+    },
+    {
+      "variant": "topk_8",
+      "geomean_ms": 86.7,
+      "change_pct": 18.2,
+      "runs": 3
+    },
+    {
+      "variant": "topk_12",
+      "geomean_ms": 95.5,
+      "change_pct": 30.2,
+      "runs": 3
+    }
+  ]
+}

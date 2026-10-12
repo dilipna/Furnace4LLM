@@ -150,3 +150,16 @@ Allowed after validation, with the numbers: "A/A-characterized latency-location 
 geometric-mean TTFT, run-level 90% Welch interval, tolerance 10%". Not allowed: "calibrated",
 "p95 gate", "catches regressions" without the sizes tested, "repairs automatically" without
 the attempt counts and the conditions (one fixture, one regression family).
+
+## 7. Addendum before V1-V3 ran: graded-regression sizes (2026-10-12)
+
+`bench/gate_validate.py calibrate-topk` measured the raw geometric-mean TTFT effect of
+retrieval depth (3 interleaved runs per variant, no gate verdict used):
+depth 4 +12.9%, 5 +12.2%, 6 +11.1%, 8 +18.2%, 12 +30.2% vs main
+(`bench/results/2026-10-12-gate-validation/validation/calibration_topk.json`; depths 4-6 are
+indistinguishable at this precision). V3c therefore uses **depth 4 (about +13%) and depth
+8 (about +18%), 6 trials each**; V3b (R2, depth 12 with the budget x4) is the third graded
+point (about +30%) and V3a (R1) the large one (about +800%). Only these four sizes are
+tested; nothing is said about sizes between or beyond them. Sizes near the 10% tolerance
+are expected to come out INCONCLUSIVE; that is a result about the gate's resolution, not
+a failure to be tuned away.
