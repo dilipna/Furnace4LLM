@@ -6,6 +6,15 @@ Paste this file's path into a new Claude Code session ("read CONTINUE.md and con
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
 ## Oct 11 session (production hardening, statistics, generalization), newest first
+- **Oct 12 audit** (user asked: pause features, audit). E2E re-verified for real with
+  `poe demo-up` + `scripts/rehearse.py` (scan, graph, lab 80/80, Guard R1 FAILURE, /bench; no
+  page errors) and with vLLM stopped (lab refuses 503; perf gate ERROR not pass). Fixed: gate
+  ignored failed requests (now BLOCK; 0 of 317 stored summaries had failures); context_budget
+  SKIP on outage -> ERROR; landing hero showed rejected repairs / "5/3" footnote; vLLM image
+  pinned by digest (was :latest). RQ5 under the interval rule: **1/3 verified** (good fix
+  refused twice as unprovable); A/A at 5 runs: 7/8 INCONCLUSIVE -> the decision statistic is
+  the limit. /bench lists later studies; `scripts/live_github_run.py` records the live run.
+  Still BLOCKED: live GitHub run (no App). Not pushed: CI has not run on these commits.
 - **Not pushed.** Commits `23304a6`..HEAD are local on `main` (CI has not run on them; push,
   then check the Actions run: the sandbox tests behave differently on Linux).
 - **Scanner (later the same day):** OpenAI Agents SDK `Runner.run*` calls (model via the
@@ -43,7 +52,7 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
   without a workflow path (prompt scenario 0/3 -> 2/3). `2026-10-11-external/NOTES.md`.
 - **Adversarial suite**: `uv run poe adversarial` (marker `adversarial`).
 - Docs: case study, 90-second demo, security controls, event path + job lifecycle, perf gate rule.
-- `poe check`: 308 passed, 1 skipped.
+- `poe check`: 313 passed, 1 skipped (Oct 12).
 
 ## Oct 8-9 session (live demo work), newest first
 - **Oct 9 (evening): scanner coverage, robustness.** Held-out set 3 (Gemini, Mistral, Replicate,
