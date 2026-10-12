@@ -13,7 +13,9 @@ ROOT = Path(__file__).resolve().parents[3]
 
 @pytest.fixture
 def live(monkeypatch):
-    spec = importlib.util.spec_from_file_location("live_github_run", ROOT / "scripts/live_github_run.py")
+    spec = importlib.util.spec_from_file_location(
+        "live_github_run", ROOT / "scripts/live_github_run.py"
+    )
     assert spec and spec.loader
     mod = importlib.util.module_from_spec(spec)
     sys.modules["live_github_run"] = mod
@@ -48,7 +50,11 @@ def _stub(monkeypatch, mod, *, conclusion="failure", status="verified"):
 
     async def repair_pr(app, repo, number, **kw):
         calls["repair"] += 1
-        pr = {"number": 11, "url": "u11", "reused": calls["repair"] > 1} if status == "verified" else None
+        pr = (
+            {"number": 11, "url": "u11", "reused": calls["repair"] > 1}
+            if status == "verified"
+            else None
+        )
         return {"status": status, "pr": pr, "perf": {"summary": "s", "reasons": ["r"]}}
 
     monkeypatch.setattr(mod.flows, "forge_pr", forge_pr)
