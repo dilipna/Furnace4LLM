@@ -83,3 +83,21 @@ calls and instructions, subscripted clients, `create_task` edges, env/settings d
    scenario is correct in 2/3 apps (was 0/3), all scenarios 8/9; the remaining miss is
    rag-postgres, whose Agents SDK `instructions` are not recognized as a system prompt (a
    scanner gap, not a selection gap). F1's impact tests are unchanged.
+
+## Scanner change for set-4 misses, measured on held-out set 5
+
+Change (`code_intel/python_ast.py`): `Runner.run` / `run_streamed` / `run_sync` are LLM calls
+when `Runner` comes from the `agents` package (OpenAI Agents SDK), with the model read from
+the module-level `Agent(model=...)` passed to it (also across modules and for `Agent[Ctx](...)`);
+a client held in a subscript (`clients["openai"].responses.create`) is matched by API suffix.
+Negative tests: a local `Runner` class and an unrelated `registry["x"].get()` are not calls.
+
+Set 5 (`openai/openai-cs-agents-demo`, labels committed in `f038d20` before the change;
+baseline with the unchanged scanner in `rq1_set5_baseline_before_change.md`):
+LLM call sites **0/3 -> 3/3 at precision 1.00**, models 0/2 -> 1/2 (the streamed call's agent
+is chosen at runtime). Still missed: agent `instructions` are not extracted as prompts (0/8),
+and the ChatKit server's route does not trace to the call (workflows 0/1). One app with three
+call sites: evidence that the change generalizes beyond set 4, not a measurement of recall.
+
+Regression check (`rq1_after_agents_sdk.json` vs `2026-10-09/rq1.json`): F1 and sets 1-3
+unchanged in every category. Set 4 (no longer held-out): call sites 2/9 -> 9/9.

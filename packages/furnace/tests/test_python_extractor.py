@@ -424,3 +424,80 @@ def test_retry_library_counts_only_when_the_code_uses_it(tmp_path):
     assert not rec.appspec.reliability_existing.retries  # transitive pin, never imported
     (tmp_path / "app.py").write_text("import tenacity\n" + app, encoding="utf-8")
     assert reconstruct(tmp_path).appspec.reliability_existing.retries
+
+
+# ------------------------------------------------- OpenAI Agents SDK and indirect clients
+# (constructs held-out set 4 showed were missed; measured afterwards on held-out set 5)
+
+AGENTS_DEFS = """
+from agents import Agent
+
+MODEL = "gpt-4.1-mini"
+helper = Agent(name="Helper", model=MODEL, instructions="Be brief.")
+typed = Agent[dict](name="Typed", model="gpt-5.2", instructions="Typed context.")
+"""
+
+AGENTS_RUN = """
+from agents import Runner
+from defs import helper, typed
+
+async def ask(q):
+    return await Runner.run(helper, q)
+
+def stream(q):
+    return Runner.run_streamed(typed, input=q)
+
+def dynamic(agent, q):
+    return Runner.run_sync(agent, q)
+"""
+
+
+def test_agents_sdk_runner_calls_and_models_through_the_agent(tmp_path):
+    calls = {
+        c.key.split("::")[1]: c.data
+        for c in _facts(tmp_path, {"defs.py": AGENTS_DEFS, "run.py": AGENTS_RUN})
+        if c.kind == "llm_call"
+    }
+    assert set(calls) == {"ask#llm0", "stream#llm0", "dynamic#llm0"}
+    assert calls["ask#llm0"]["api"] == "openai_agents.Runner.run"
+    assert calls["ask#llm0"]["model_effective"] == "gpt-4.1-mini"  # via the imported agent
+    assert calls["stream#llm0"]["model_effective"] == "gpt-5.2"  # Agent[Ctx](...) form
+    assert calls["stream#llm0"]["stream"] is True
+    assert calls["dynamic#llm0"]["model_effective"] is None  # agent chosen at runtime
+
+
+def test_agents_module_import_form_and_a_foreign_runner_is_not_llm(tmp_path):
+    src = """
+import agents
+from mytasks import Runner as TaskRunner
+
+class Runner:
+    @staticmethod
+    def run(job):
+        return job()
+
+def via_module(a, q):
+    return agents.Runner.run(a, q)
+
+def not_llm(job):
+    Runner.run(job)
+    return TaskRunner.run(job)
+"""
+    calls = [f for f in _facts(tmp_path, {"m.py": src}) if f.kind == "llm_call"]
+    assert [c.key.split("::")[1] for c in calls] == ["via_module#llm0"]
+
+
+def test_client_held_in_a_dict_is_resolved_by_api_suffix(tmp_path):
+    src = """
+clients = {}
+
+async def chat_handler(messages):
+    return await clients["openai"].responses.create(model="gpt-x", input=messages)
+
+def cache_lookup(k):
+    return registry["x"].get(k)
+"""
+    calls = [f for f in _facts(tmp_path, {"chat.py": src}) if f.kind == "llm_call"]
+    assert [(c.key.split("::")[1], c.data["api"]) for c in calls] == [
+        ("chat_handler#llm0", "openai.responses.create")
+    ]
