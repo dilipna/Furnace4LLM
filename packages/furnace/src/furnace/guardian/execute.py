@@ -287,8 +287,12 @@ def _context_budget(item: SuiteItem, ctx: GuardContext) -> ItemResult:
     try:
         head = asyncio.run(_prompt_tokens(ctx.head, ctx))
         base = ctx._cache.setdefault("base_tokens", asyncio.run(_prompt_tokens(ctx.base, ctx)))
-    except httpx.HTTPError as exc:
+    except httpx.HTTPStatusError as exc:  # the server answered: no /tokenize route
         return ItemResult(item.key, "skip", f"endpoint has no tokenizer API: {exc}")
+    except httpx.HTTPError as exc:  # unreachable or timed out: not run, never "not applicable"
+        return ItemResult(
+            item.key, "error", f"inference endpoint unreachable ({type(exc).__name__}); not run"
+        )
     worst = max(head)
     verdict = "fail" if worst > ctx.max_prompt_tokens else "pass"
     return ItemResult(

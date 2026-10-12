@@ -42,7 +42,7 @@ from furnace_bench.runner import run_benchmark
 from furnace_bench.schema import AdapterName, BenchPlan, BenchTarget, LengthMode
 from furnace_bench.workload_spec import SLO, WorkloadSpec
 
-IMAGE = "vllm/vllm-openai:latest"
+IMAGE = "vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90"  # pinned: the image every result was measured with (vLLM 0.30.0)
 CONTAINER = "furnace-rq4-lab"
 PORT = 8101
 HF_HOME = Path.home() / ".cache" / "huggingface"

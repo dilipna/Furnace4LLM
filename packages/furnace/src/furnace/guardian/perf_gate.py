@@ -76,6 +76,7 @@ class VariantResult:
             "goodput_rps": lvl.slo_goodput_rps,
             "throughput_rps": lvl.request_throughput_rps,
             "prefix_hit_rate": lvl.telemetry.get("prefix_cache_hit_rate"),
+            "failure_rate": lvl.failure_rate,
         }[name]
 
 
@@ -154,6 +155,23 @@ def _median(xs: list[float]) -> float:
 MIN_SAMPLES_PER_RUN = 20  # below this a bootstrap of a tail percentile is not meaningful
 METHOD_BOOTSTRAP = "hierarchical bootstrap (runs, then requests within runs), 95% interval"
 METHOD_POINT = "point estimate only (no per-request samples); legacy thresholds"
+
+
+MAX_EXTRA_FAILURE_RATE = 0.01  # more failed requests than the baseline beyond this: BLOCK
+
+
+def _failure_rate(rs: Sequence[MetricSource]) -> float | None:
+    """Mean failed-request share across runs, or None if the source does not report it."""
+    vals = []
+    for r in rs:
+        try:
+            v = r.metric("failure_rate")
+        except KeyError:
+            return None
+        if v is None:
+            return None
+        vals.append(v)
+    return sum(vals) / len(vals) if vals else None
 
 
 def _percentile_of(metric: str) -> float | None:
@@ -261,6 +279,18 @@ def compare(
             verdict = "pass"
         method = METHOD_POINT
 
+    # Latency is measured over successful requests only, so a revision whose requests fail
+    # (context overflow, server errors) could look faster. More failures than the baseline
+    # (beyond one point, for a transient error) block regardless of latency.
+    b_fail, o_fail = _failure_rate(baseline), _failure_rate(other)
+    failures_note = None
+    if b_fail is not None and o_fail is not None and o_fail - b_fail > MAX_EXTRA_FAILURE_RATE:
+        verdict = "block"
+        failures_note = (
+            f"{o_fail:.0%} of requests failed vs {b_fail:.0%} on the baseline; latency over the "
+            "successful requests alone would be misleading"
+        )
+
     def med(rs: Sequence[MetricSource], name: str) -> float | None:
         vals = [v for v in (r.metric(name) for r in rs) if v is not None]
         return _median(vals) if vals else None
@@ -281,7 +311,13 @@ def compare(
         "separated": separated,
         "prefix_hit_rate": (med(baseline, "prefix_hit_rate"), med(other, "prefix_hit_rate")),
         "goodput_rps": (med(baseline, "goodput_rps"), med(other, "goodput_rps")),
+        "failure_rate": (
+            None if b_fail is None else round(b_fail, 4),
+            None if o_fail is None else round(o_fail, 4),
+        ),
     }
+    if failures_note:
+        out["reason"] = failures_note
     if b_samples and o_samples:
         out["samples_ms"] = {
             "baseline": [[round(float(x), 2) for x in a] for a in b_samples],
@@ -296,10 +332,11 @@ def describe(c: dict[str, Any]) -> str:
         return f"not measured: {c.get('reason')}"
     ci = c.get("ci_pct")
     ci_txt = f", 95% CI {ci[0]:+.1f}% to {ci[1]:+.1f}%" if ci else ""
-    return (
+    line = (
         f"{c['baseline']} -> {c['value']} ms ({c['change_pct']:+.1f}%{ci_txt}; "
         f"{c['verdict'].upper()} at tolerance {c['tolerance_pct']:g}%)"
     )
+    return f"{line}; {c['reason']}" if c.get("reason") else line
 
 
 def accept_repair(
@@ -317,6 +354,8 @@ def accept_repair(
     staying inside a tolerance band is not evidence of an improvement."""
     if "error" in (head_vs_base.get("verdict"), cand_vs_base.get("verdict")):
         return False, ["the benchmark measured nothing; a candidate is never accepted unmeasured"]
+    if cand_vs_base.get("reason") and cand_vs_base.get("verdict") == "block":
+        return False, [f"candidate blocked: {cand_vs_base['reason']}"]
     ci_h, ci_b = cand_vs_head.get("ci_pct"), cand_vs_base.get("ci_pct")
     if ci_h is None or ci_b is None:  # summaries only: the earlier rule, labeled
         ok = cand_vs_base["verdict"] in ("pass", "warn")
