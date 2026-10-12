@@ -1,0 +1,173 @@
+{
+  "trials": 20,
+  "runs": 152,
+  "requests_per_run": [
+    34
+  ],
+  "within_run": {
+    "consecutive_requests_within_3pct": 0.6238038277511961,
+    "lag1_autocorrelation_log_ttft": 0.32897707704044776
+  },
+  "gmean_variance": {
+    "sd_between_trial_means": 0.027043631962516378,
+    "sd_runs_within_trial": 0.05382096050441775,
+    "icc_trial": 0.20158411813655316,
+    "mean_lag1_corr_consecutive_runs": -0.18764071972516913,
+    "sd_run_log_p95": 0.11182589468550146,
+    "sd_run_log_gmean": 0.05596428133541637
+  },
+  "pairing": {
+    "sd_paired_differences": 0.07552066367033924,
+    "sd_expected_if_unpaired": 0.06508715157740866
+  },
+  "statistics": [
+    {
+      "statistic": "p95",
+      "aggregate": "median of runs",
+      "sd_log_ratio": 0.05255338502338217,
+      "max_abs_change_pct": 13.352686874780037
+    },
+    {
+      "statistic": "p95",
+      "aggregate": "pooled requests",
+      "sd_log_ratio": 0.1671130668728316,
+      "max_abs_change_pct": 102.27431370080899
+    },
+    {
+      "statistic": "p90",
+      "aggregate": "median of runs",
+      "sd_log_ratio": 0.05841206806101584,
+      "max_abs_change_pct": 19.665944696174485
+    },
+    {
+      "statistic": "p90",
+      "aggregate": "pooled requests",
+      "sd_log_ratio": 0.11804522349172576,
+      "max_abs_change_pct": 57.766285819589115
+    },
+    {
+      "statistic": "p75",
+      "aggregate": "median of runs",
+      "sd_log_ratio": 0.04446691414400777,
+      "max_abs_change_pct": 10.244039973685059
+    },
+    {
+      "statistic": "p75",
+      "aggregate": "pooled requests",
+      "sd_log_ratio": 0.0868661273675936,
+      "max_abs_change_pct": 38.900054814544106
+    },
+    {
+      "statistic": "p50",
+      "aggregate": "median of runs",
+      "sd_log_ratio": 0.05516346500210231,
+      "max_abs_change_pct": 11.868372943327321
+    },
+    {
+      "statistic": "p50",
+      "aggregate": "pooled requests",
+      "sd_log_ratio": 0.05418611073905149,
+      "max_abs_change_pct": 12.645942790426076
+    },
+    {
+      "statistic": "mean",
+      "aggregate": "median of runs",
+      "sd_log_ratio": 0.03619809025202458,
+      "max_abs_change_pct": 9.607311546491836
+    },
+    {
+      "statistic": "mean",
+      "aggregate": "pooled requests",
+      "sd_log_ratio": 0.05464081776928748,
+      "max_abs_change_pct": 21.630520701534714
+    },
+    {
+      "statistic": "gmean",
+      "aggregate": "median of runs",
+      "sd_log_ratio": 0.03531998692170136,
+      "max_abs_change_pct": 9.478141333916245
+    },
+    {
+      "statistic": "gmean",
+      "aggregate": "pooled requests",
+      "sd_log_ratio": 0.04384904723836478,
+      "max_abs_change_pct": 14.923790006884849
+    },
+    {
+      "statistic": "trim",
+      "aggregate": "median of runs",
+      "sd_log_ratio": 0.03493433255862023,
+      "max_abs_change_pct": 9.433329071848684
+    },
+    {
+      "statistic": "trim",
+      "aggregate": "pooled requests",
+      "sd_log_ratio": 0.043547919692261544,
+      "max_abs_change_pct": 13.490626216769241
+    }
+  ],
+  "p95_interval_widths_95pct": {
+    "stored_bootstrap_median_pts": 22.75,
+    "run_level_t_median_pts": 26.766913977872136
+  },
+  "development_operating_characteristics": [
+    {
+      "statistic": "gmean",
+      "runs_per_side": 3,
+      "subsets": 92,
+      "pass": 0.8695652173913043,
+      "inconclusive": 0.13043478260869565,
+      "fail": 0.0,
+      "median_width_pts": 10.74807281192291
+    },
+    {
+      "statistic": "gmean",
+      "runs_per_side": 4,
+      "subsets": 40,
+      "pass": 0.9,
+      "inconclusive": 0.1,
+      "fail": 0.0,
+      "median_width_pts": 8.183423559043014
+    },
+    {
+      "statistic": "gmean",
+      "runs_per_side": 5,
+      "subsets": 8,
+      "pass": 0.875,
+      "inconclusive": 0.125,
+      "fail": 0.0,
+      "median_width_pts": 6.970850890052529
+    },
+    {
+      "statistic": "p95",
+      "runs_per_side": 3,
+      "subsets": 92,
+      "pass": 0.18478260869565216,
+      "inconclusive": 0.8152173913043478,
+      "fail": 0.0,
+      "median_width_pts": 28.271655632238595
+    },
+    {
+      "statistic": "p95",
+      "runs_per_side": 4,
+      "subsets": 40,
+      "pass": 0.275,
+      "inconclusive": 0.725,
+      "fail": 0.0,
+      "median_width_pts": 21.11820111001174
+    },
+    {
+      "statistic": "p95",
+      "runs_per_side": 5,
+      "subsets": 8,
+      "pass": 0.375,
+      "inconclusive": 0.625,
+      "fail": 0.0,
+      "median_width_pts": 18.117706720138933
+    }
+  ],
+  "settings": {
+    "tolerance_pct": 10.0,
+    "confidence_two_sided": 0.9
+  }
+}

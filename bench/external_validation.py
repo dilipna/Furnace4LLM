@@ -183,7 +183,7 @@ def scan(root: Path) -> tuple[Reconstruction, list[Any], dict[str, Any]]:
     rec = Reconstruction(inventory=inv, facts=facts, claims=b.claims, appspec=spec, graph=graph)
     recs = run_rules(rec, fact_uuid)
     by_uuid = {fact_uuid[f.id]: f for f in facts.facts}
-    checked, broken = 0, []
+    checked, broken, file_level = 0, [], 0
     for r in recs:
         for eid in r.evidence_ids:
             f = by_uuid.get(eid)
@@ -199,6 +199,7 @@ def scan(root: Path) -> tuple[Reconstruction, list[Any], dict[str, Any]]:
                 broken.append(f"{r.rule_id}: {loc.path} does not exist")
                 continue
             if (f.excerpt or "").strip() == loc.path:
+                file_level += 1
                 continue  # file-level evidence ("this file exists"): existence was checked
             lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
             lo, hi = (loc.line_start or 1), (loc.line_end or loc.line_start or len(lines))
@@ -222,6 +223,7 @@ def scan(root: Path) -> tuple[Reconstruction, list[Any], dict[str, Any]]:
         "findings": len(recs),
         "findings_by_rule": sorted({r.rule_id for r in recs}),
         "evidence_checked": checked,
+        "evidence_file_level": file_level,  # checked for existence only
         "evidence_broken": broken,
     }
     return rec, recs, stats
@@ -371,7 +373,15 @@ def render(res: dict[str, Any]) -> str:
         "## Scan: findings link to real source",
         "",
         md_table(
-            ["app", "py files", "scan s", "findings", "evidence checked", "broken links"],
+            [
+                "app",
+                "py files",
+                "scan s",
+                "findings",
+                "evidence checked",
+                "of which file-existence only",
+                "broken links",
+            ],
             [
                 [
                     a["app"],
@@ -379,6 +389,7 @@ def render(res: dict[str, Any]) -> str:
                     a["scan"]["seconds"],
                     a["scan"]["findings"],
                     a["scan"]["evidence_checked"],
+                    a["scan"].get("evidence_file_level", "n/a"),
                     len(a["scan"]["evidence_broken"]),
                 ]
                 for a in res["apps"]

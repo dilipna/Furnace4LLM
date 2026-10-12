@@ -1,0 +1,850 @@
+{
+  "manifest": {
+    "date": "2026-10-12-reconcile",
+    "started_at": "2026-10-12T04:59:31+00:00",
+    "git": {
+      "sha": "86a67cf69bc1f99ec2388e46b58e4770d58311e3",
+      "dirty": true
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 97,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/scanner_reconcile.py"
+    ]
+  },
+  "first_scan": {
+    "set 1": {
+      "llm_call_sites": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 8
+      },
+      "routes": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "models": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 4
+      },
+      "serving_engines": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 4
+      },
+      "retrievers": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 2
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 1
+      },
+      "prompts": {
+        "tp": 1,
+        "pred": 5,
+        "truth": 3
+      },
+      "workflows": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 9
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 1
+      }
+    },
+    "set 2": {
+      "llm_call_sites": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 5
+      },
+      "routes": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 2
+      },
+      "models": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 2
+      },
+      "serving_engines": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 3
+      },
+      "retrievers": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "prompts": {
+        "tp": 0,
+        "pred": 3,
+        "truth": 4
+      },
+      "workflows": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 5
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 1,
+        "truth": 1
+      }
+    },
+    "set 3": {
+      "llm_call_sites": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 9
+      },
+      "routes": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "models": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 17
+      },
+      "serving_engines": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 5
+      },
+      "retrievers": {
+        "tp": 2,
+        "pred": 3,
+        "truth": 2
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "prompts": {
+        "tp": 0,
+        "pred": 2,
+        "truth": 2
+      },
+      "workflows": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 9
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 3,
+        "truth": 2
+      }
+    },
+    "set 4": {
+      "llm_call_sites": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 9
+      },
+      "routes": {
+        "tp": 10,
+        "pred": 10,
+        "truth": 13
+      },
+      "models": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 6
+      },
+      "serving_engines": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 3
+      },
+      "retrievers": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 2
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 2
+      },
+      "prompts": {
+        "tp": 2,
+        "pred": 16,
+        "truth": 5
+      },
+      "workflows": {
+        "tp": 0,
+        "pred": 1,
+        "truth": 7
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 4,
+        "truth": 1
+      }
+    },
+    "set 5": {
+      "llm_call_sites": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 3
+      },
+      "routes": {
+        "tp": 5,
+        "pred": 5,
+        "truth": 5
+      },
+      "models": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 2
+      },
+      "serving_engines": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 1
+      },
+      "retrievers": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 11
+      },
+      "prompts": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 8
+      },
+      "workflows": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 1
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      }
+    }
+  },
+  "first_scan_pooled": {
+    "llm_call_sites": {
+      "tp": 4,
+      "fp": 0,
+      "fn": 30,
+      "pred": 4,
+      "truth": 34,
+      "precision": 1.0,
+      "recall": 0.11764705882352941,
+      "precision_ci95": [
+        0.5100999795960008,
+        1.0
+      ],
+      "recall_ci95": [
+        0.04671370973436122,
+        0.26621174796298774
+      ]
+    },
+    "routes": {
+      "tp": 17,
+      "fp": 0,
+      "fn": 3,
+      "pred": 17,
+      "truth": 20,
+      "precision": 1.0,
+      "recall": 0.85,
+      "precision_ci95": [
+        0.8156763396284354,
+        1.0
+      ],
+      "recall_ci95": [
+        0.6395767041130426,
+        0.9476322080405041
+      ]
+    },
+    "models": {
+      "tp": 1,
+      "fp": 0,
+      "fn": 30,
+      "pred": 1,
+      "truth": 31,
+      "precision": 1.0,
+      "recall": 0.03225806451612903,
+      "precision_ci95": [
+        0.20654329147389294,
+        1.0
+      ],
+      "recall_ci95": [
+        0.00571707408694444,
+        0.16194457176169622
+      ]
+    },
+    "serving_engines": {
+      "tp": 2,
+      "fp": 0,
+      "fn": 14,
+      "pred": 2,
+      "truth": 16,
+      "precision": 1.0,
+      "recall": 0.125,
+      "precision_ci95": [
+        0.34237195288961925,
+        1.0
+      ],
+      "recall_ci95": [
+        0.034976749337057134,
+        0.3602333143674828
+      ]
+    },
+    "retrievers": {
+      "tp": 3,
+      "fp": 1,
+      "fn": 3,
+      "pred": 4,
+      "truth": 6,
+      "precision": 0.75,
+      "recall": 0.5,
+      "precision_ci95": [
+        0.3006360524426366,
+        0.9544139373553637
+      ],
+      "recall_ci95": [
+        0.18761280689940868,
+        0.8123871931005913
+      ]
+    },
+    "tools": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 14,
+      "pred": 0,
+      "truth": 14,
+      "precision": null,
+      "recall": 0.0,
+      "precision_ci95": null,
+      "recall_ci95": [
+        0.0,
+        0.21531701192718142
+      ]
+    },
+    "prompts": {
+      "tp": 3,
+      "fp": 23,
+      "fn": 19,
+      "pred": 26,
+      "truth": 22,
+      "precision": 0.11538461538461539,
+      "recall": 0.13636363636363635,
+      "precision_ci95": [
+        0.04003171821149494,
+        0.28976293086898336
+      ],
+      "recall_ci95": [
+        0.04748917264236269,
+        0.3333541187947
+      ]
+    },
+    "workflows": {
+      "tp": 1,
+      "fp": 1,
+      "fn": 30,
+      "pred": 2,
+      "truth": 31,
+      "precision": 0.5,
+      "recall": 0.03225806451612903,
+      "precision_ci95": [
+        0.09452865480086614,
+        0.9054713451991339
+      ],
+      "recall_ci95": [
+        0.00571707408694444,
+        0.16194457176169622
+      ]
+    },
+    "contradictions": {
+      "tp": 0,
+      "fp": 8,
+      "fn": 5,
+      "pred": 8,
+      "truth": 5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "precision_ci95": [
+        0.0,
+        0.3244156195108769
+      ],
+      "recall_ci95": [
+        0.0,
+        0.43449149475208104
+      ]
+    }
+  },
+  "current_pooled_sets_1_to_5": {
+    "llm_call_sites": {
+      "tp": 33,
+      "fp": 0,
+      "fn": 1,
+      "pred": 33,
+      "truth": 34,
+      "precision": 1.0,
+      "recall": 0.9705882352941176,
+      "precision_ci95": [
+        0.8957265699643882,
+        1.0
+      ],
+      "recall_ci95": [
+        0.8508409778365519,
+        0.9947892280744034
+      ]
+    },
+    "routes": {
+      "tp": 17,
+      "fp": 0,
+      "fn": 3,
+      "pred": 17,
+      "truth": 20,
+      "precision": 1.0,
+      "recall": 0.85,
+      "precision_ci95": [
+        0.8156763396284354,
+        1.0
+      ],
+      "recall_ci95": [
+        0.6395767041130426,
+        0.9476322080405041
+      ]
+    },
+    "models": {
+      "tp": 10,
+      "fp": 0,
+      "fn": 21,
+      "pred": 10,
+      "truth": 31,
+      "precision": 1.0,
+      "recall": 0.3225806451612903,
+      "precision_ci95": [
+        0.7224598312333834,
+        1.0
+      ],
+      "recall_ci95": [
+        0.18569230747313034,
+        0.49859314440049185
+      ]
+    },
+    "serving_engines": {
+      "tp": 12,
+      "fp": 0,
+      "fn": 4,
+      "pred": 12,
+      "truth": 16,
+      "precision": 1.0,
+      "recall": 0.75,
+      "precision_ci95": [
+        0.7574992425007574,
+        1.0
+      ],
+      "recall_ci95": [
+        0.5050123107060135,
+        0.8981809801576265
+      ]
+    },
+    "retrievers": {
+      "tp": 4,
+      "fp": 1,
+      "fn": 2,
+      "pred": 5,
+      "truth": 6,
+      "precision": 0.8,
+      "recall": 0.6666666666666666,
+      "precision_ci95": [
+        0.3755282641185388,
+        0.9637768390302125
+      ],
+      "recall_ci95": [
+        0.29998832134152864,
+        0.9032306674407831
+      ]
+    },
+    "tools": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 14,
+      "pred": 0,
+      "truth": 14,
+      "precision": null,
+      "recall": 0.0,
+      "precision_ci95": null,
+      "recall_ci95": [
+        0.0,
+        0.21531701192718142
+      ]
+    },
+    "prompts": {
+      "tp": 3,
+      "fp": 26,
+      "fn": 19,
+      "pred": 29,
+      "truth": 22,
+      "precision": 0.10344827586206896,
+      "recall": 0.13636363636363635,
+      "precision_ci95": [
+        0.035814240381301043,
+        0.26385447247069155
+      ],
+      "recall_ci95": [
+        0.04748917264236269,
+        0.3333541187947
+      ]
+    },
+    "workflows": {
+      "tp": 18,
+      "fp": 1,
+      "fn": 13,
+      "pred": 19,
+      "truth": 31,
+      "precision": 0.9473684210526315,
+      "recall": 0.5806451612903226,
+      "precision_ci95": [
+        0.7536078466345479,
+        0.99064824750947
+      ],
+      "recall_ci95": [
+        0.40765964352020967,
+        0.7358469692645074
+      ]
+    },
+    "contradictions": {
+      "tp": 1,
+      "fp": 7,
+      "fn": 4,
+      "pred": 8,
+      "truth": 5,
+      "precision": 0.125,
+      "recall": 0.2,
+      "precision_ci95": [
+        0.02241690886329617,
+        0.4708948057698615
+      ],
+      "recall_ci95": [
+        0.03622316096978745,
+        0.6244717358814613
+      ]
+    }
+  },
+  "current": {
+    "set 1": {
+      "llm_call_sites": {
+        "tp": 8,
+        "pred": 8,
+        "truth": 8
+      },
+      "routes": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "models": {
+        "tp": 4,
+        "pred": 4,
+        "truth": 4
+      },
+      "serving_engines": {
+        "tp": 4,
+        "pred": 4,
+        "truth": 4
+      },
+      "retrievers": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 2
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 1
+      },
+      "prompts": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 3
+      },
+      "workflows": {
+        "tp": 6,
+        "pred": 6,
+        "truth": 9
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 1
+      }
+    },
+    "set 2": {
+      "llm_call_sites": {
+        "tp": 5,
+        "pred": 5,
+        "truth": 5
+      },
+      "routes": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 2
+      },
+      "models": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 2
+      },
+      "serving_engines": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 3
+      },
+      "retrievers": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "prompts": {
+        "tp": 0,
+        "pred": 3,
+        "truth": 4
+      },
+      "workflows": {
+        "tp": 4,
+        "pred": 4,
+        "truth": 5
+      },
+      "contradictions": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 1
+      }
+    },
+    "set 3": {
+      "llm_call_sites": {
+        "tp": 8,
+        "pred": 8,
+        "truth": 9
+      },
+      "routes": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "models": {
+        "tp": 3,
+        "pred": 3,
+        "truth": 17
+      },
+      "serving_engines": {
+        "tp": 4,
+        "pred": 4,
+        "truth": 5
+      },
+      "retrievers": {
+        "tp": 2,
+        "pred": 3,
+        "truth": 2
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "prompts": {
+        "tp": 0,
+        "pred": 2,
+        "truth": 2
+      },
+      "workflows": {
+        "tp": 6,
+        "pred": 6,
+        "truth": 9
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 3,
+        "truth": 2
+      }
+    },
+    "set 4": {
+      "llm_call_sites": {
+        "tp": 9,
+        "pred": 9,
+        "truth": 9
+      },
+      "routes": {
+        "tp": 10,
+        "pred": 10,
+        "truth": 13
+      },
+      "models": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 6
+      },
+      "serving_engines": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 3
+      },
+      "retrievers": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 2
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 2
+      },
+      "prompts": {
+        "tp": 2,
+        "pred": 19,
+        "truth": 5
+      },
+      "workflows": {
+        "tp": 2,
+        "pred": 3,
+        "truth": 7
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 4,
+        "truth": 1
+      }
+    },
+    "set 5": {
+      "llm_call_sites": {
+        "tp": 3,
+        "pred": 3,
+        "truth": 3
+      },
+      "routes": {
+        "tp": 5,
+        "pred": 5,
+        "truth": 5
+      },
+      "models": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 2
+      },
+      "serving_engines": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 1
+      },
+      "retrievers": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      },
+      "tools": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 11
+      },
+      "prompts": {
+        "tp": 0,
+        "pred": 4,
+        "truth": 8
+      },
+      "workflows": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 1
+      },
+      "contradictions": {
+        "tp": 0,
+        "pred": 0,
+        "truth": 0
+      }
+    }
+  },
+  "dev_fixture_f1": {
+    "dev (F1)": {
+      "llm_call_sites": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 1
+      },
+      "routes": {
+        "tp": 3,
+        "pred": 3,
+        "truth": 3
+      },
+      "models": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 1
+      },
+      "serving_engines": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 1
+      },
+      "retrievers": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 1
+      },
+      "tools": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 1
+      },
+      "prompts": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 1
+      },
+      "workflows": {
+        "tp": 2,
+        "pred": 2,
+        "truth": 2
+      },
+      "contradictions": {
+        "tp": 1,
+        "pred": 1,
+        "truth": 1
+      }
+    }
+  }
+}
