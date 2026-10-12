@@ -105,3 +105,22 @@ def test_disposable_copy_is_opened_to_the_sandbox_user(tmp_path):
     assert (root / "pkg").stat().st_mode & 0o777 == 0o777
     assert (root / "pkg" / "a.py").stat().st_mode & 0o777 == 0o666
     assert (root / "run.sh").stat().st_mode & 0o777 == 0o777
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX modes; Windows has no 'others' bits")
+def test_staged_requirements_are_readable_but_not_writable_by_the_sandbox_user():
+    """Regression (Linux CI, 2026-10-12): requirements staged in a 0700 mkdtemp were
+    unreadable to uid 10001, so every dependency install failed on Linux hosts."""
+    import shutil
+
+    from furnace.sandbox.docker_sandbox import stage_requirements
+
+    d = stage_requirements({"requirements-dev.txt": b"-r src/requirements.txt\n",
+                            "src/requirements.txt": b"fastapi\n"})  # fmt: skip
+    try:
+        for p in [d, d / "src"]:
+            assert p.stat().st_mode & 0o777 == 0o755
+        for p in [d / "requirements-dev.txt", d / "src" / "requirements.txt"]:
+            assert p.stat().st_mode & 0o777 == 0o644
+    finally:
+        shutil.rmtree(d, ignore_errors=True)

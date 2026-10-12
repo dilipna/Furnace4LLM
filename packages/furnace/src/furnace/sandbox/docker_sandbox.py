@@ -117,6 +117,22 @@ def _requirements_digest(files: dict[str, bytes]) -> str:
     return h.hexdigest()[:16]
 
 
+def stage_requirements(files: dict[str, bytes]) -> Path:
+    """Write only the files pip will read, in their layout, readable by the sandbox user.
+
+    mkdtemp creates the directory 0700, which the container's uid 10001 cannot read on Linux
+    (Docker Desktop on Windows does not enforce it: CI on Linux found this on 2026-10-12).
+    The files are requirements lists copied from the repository, so read-only access for
+    others (0755 directories, 0644 files) exposes nothing new; nothing is made writable."""
+    req_dir = Path(tempfile.mkdtemp(prefix="furnace-req-"))
+    for rel, data in files.items():
+        (req_dir / rel).parent.mkdir(parents=True, exist_ok=True)
+        (req_dir / rel).write_bytes(data)
+    for p in [req_dir, *req_dir.rglob("*")]:
+        p.chmod(0o755 if p.is_dir() else 0o644)
+    return req_dir
+
+
 def _deps_volume(repo: Path) -> str | None:
     found = requirements_set(repo)
     if found is None:
@@ -126,10 +142,7 @@ def _deps_volume(repo: Path) -> str | None:
     if _docker("volume", "inspect", vol, check=False).returncode == 0:
         return vol
     _docker("volume", "create", vol)
-    req_dir = Path(tempfile.mkdtemp(prefix="furnace-req-"))
-    for rel, data in files.items():  # only the files pip will read, in their layout
-        (req_dir / rel).parent.mkdir(parents=True, exist_ok=True)
-        (req_dir / rel).write_bytes(data)
+    req_dir = stage_requirements(files)
     # Install phase: network allowed, still unprivileged and resource-limited.
     proc = _docker(
         "run",
