@@ -85,6 +85,11 @@ orphans on start. Each kind has a timeout (`jobs.timeout_s`, default 1 h); handl
 idempotent at the GitHub layer as well, so a retried attempt cannot open a second PR or
 post a second check run.
 
+Limit: a timeout or lost lease cancels the job's coroutine (and Guard closes its check run),
+but blocking work already handed to a worker thread (a sandboxed test run, a benchmark wave)
+runs to its own end; it is bounded by the sandbox's hard timeout and the benchmark's request
+timeouts, not stopped at the job timeout.
+
 ## Why these choices
 
 - One Postgres instead of Redis/Kafka/Neo4j: the graph is small per scan; `networkx` traverses it.
