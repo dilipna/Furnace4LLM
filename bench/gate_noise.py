@@ -29,7 +29,9 @@ TARGET = BenchTarget(
 )
 
 
-def trial(questions: list[str], policy: GatePolicy, mult: int = 1) -> dict[str, Any]:
+def trial(
+    questions: list[str], policy: GatePolicy, mult: int = 1, repeats: int = 3
+) -> dict[str, Any]:
     tmp = Path(tempfile.mkdtemp(prefix="gate-aa-"))
     try:
         a = materialize(None, tmp / "a")
@@ -43,6 +45,7 @@ def trial(questions: list[str], policy: GatePolicy, mult: int = 1) -> dict[str, 
                 TARGET,
                 concurrency=8,
                 request_multiplier=mult,
+                repeats=repeats,
             )
             secs = time.monotonic() - t0
         finally:
@@ -69,7 +72,7 @@ def render(res: dict[str, Any]) -> str:
     lines = [
         "# Perf-gate noise calibration (A/A)",
         "",
-        f"F1 main vs an identical copy of F1 main, {len(rows)} gate runs, each 3 interleaved "
+        f"F1 main vs an identical copy of F1 main, {len(rows)} gate runs, each {res.get('repeats', 3)} interleaved "
         f"repeats per side at concurrency 8 (the real gate path), "
         f"{res.get('requests_per_run', 34)} measured requests per run. Any change below is noise.",
         "",
@@ -139,6 +142,7 @@ def main() -> None:
     p.add_argument("--trials", type=int, default=12)
     p.add_argument("--request-multiplier", type=int, default=1, help="questions per run x N")
     p.add_argument("--out-name", default="gate_noise", help="output file stem")
+    p.add_argument("--repeats", type=int, default=3, help="interleaved runs per side")
     a = p.parse_args()
     power = power_state()
     if power.get("on_ac") is False:
@@ -148,7 +152,7 @@ def main() -> None:
     rows = []
     stopped = None
     for i in range(a.trials):
-        r = trial(questions, policy, a.request_multiplier)
+        r = trial(questions, policy, a.request_multiplier, a.repeats)
         # Power is checked after every trial, not only at start: on 2026-10-11 the laptop
         # lost AC partway through a run (gate_noise_x4, kept and labeled invalid).
         after = power_state()
@@ -176,6 +180,7 @@ def main() -> None:
             "n_boot": policy.n_boot,
         },
         "request_multiplier": a.request_multiplier,
+        "repeats": a.repeats,
         "requests_per_run": len(questions) * a.request_multiplier,
         "trials": rows,
         "stopped": stopped,
