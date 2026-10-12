@@ -34,6 +34,11 @@ def live(monkeypatch):
         return {"number": 7, "url": "https://github.com/o/r/pull/7", "opened": True}
 
     monkeypatch.setattr(mod, "ensure_r1_pr", r1)
+
+    async def heads(app, repo, names):
+        return {n: f"sha-{n}" for n in names}
+
+    monkeypatch.setattr(mod, "branch_heads", heads)
     return mod
 
 
@@ -68,9 +73,12 @@ async def test_full_run_passes_only_with_same_prs_on_replay(live, monkeypatch):
     res = await live.main_async(argparse.Namespace(repo="o/r", head="r1-request-id", base="main"))
     assert res["verdict"] == "PASS", res["checks"]
     assert [s["step"] for s in res["steps"]] == [
-        "check", "forge", "r1_pr", "guard", "repair", "replay_forge", "replay_repair",
+        "check", "branches_before", "forge", "r1_pr", "guard", "repair", "replay_forge",
+        "replay_repair",
     ]  # fmt: skip
     assert calls == {"forge": 2, "repair": 2}
+    # recorded before anything ran, for live_github_verify's branches_intact check
+    assert res["branches_before"] == {"main": "sha-main", "r1-request-id": "sha-r1-request-id"}
 
 
 async def test_guard_missing_r1_is_not_a_pass(live, monkeypatch):
@@ -87,6 +95,6 @@ async def test_a_failing_step_stops_the_run_and_is_recorded(live, monkeypatch):
 
     monkeypatch.setattr(live.flows, "forge_pr", broken)
     res = await live.main_async(argparse.Namespace(repo="o/r", head="r1-request-id", base="main"))
-    assert [s["step"] for s in res["steps"]] == ["check", "forge"]
-    assert "validation failed" in res["steps"][1]["error"]
+    assert [s["step"] for s in res["steps"]] == ["check", "branches_before", "forge"]
+    assert "validation failed" in res["steps"][2]["error"]
     assert res["verdict"].startswith("INCOMPLETE")
