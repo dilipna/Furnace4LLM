@@ -146,3 +146,29 @@ def test_inconclusive_is_never_a_successful_check():
     r = lambda v: ItemResult("k", v, "")  # noqa: E731
     # execute._bench maps an INCONCLUSIVE gate to an item verdict of warn -> neutral check
     assert verdict([r("pass"), r("warn")]) == "neutral"
+
+
+class _F(_S):
+    """A run that also reports its failed-request share, like VariantResult."""
+
+    def __init__(self, xs, failure_rate):
+        super().__init__(xs)
+        self.fr = failure_rate
+
+    def metric(self, name):
+        return self.fr if name == "failure_rate" else super().metric(name)
+
+
+def test_a_faster_revision_whose_requests_fail_is_blocked_not_passed():
+    """Audit 2026-10-12: latency is measured over successful requests only, so failures
+    used to be invisible to the gate; a candidate failing 20% of requests looked fine."""
+    base = [_F(r.xs, 0.0) for r in sruns(seed=1, n=200, spread=0.03)]
+    fast_but_failing = [_F(r.xs, 0.2) for r in sruns(0.9, seed=2, n=200, spread=0.03)]
+    c = compare(base, fast_but_failing, GatePolicy())
+    assert c["verdict"] == "block" and "20% of requests failed" in c["reason"]
+    assert c["failure_rate"] == (0.0, 0.2)
+    ok, why = accept_repair(_cmp(900, 700, 1100, "block"), c, _cmp(-90, -92, -88), GatePolicy())
+    assert not ok and "requests failed" in why[0]
+    # one transient failure in a hundred is within the allowance
+    one_off = [_F(r.xs, 0.01) for r in sruns(seed=3, n=200, spread=0.03)]
+    assert compare(base, one_off, GatePolicy())["verdict"] == "pass"

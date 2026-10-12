@@ -263,3 +263,15 @@ def test_repair_pr_body_reports_both_revisions():
     body = repair_pr_body(attempt, perf, "x", "t.py")
     assert "| +120.0% to +190.5% |" in body and "- faster than the PR head" in body
     assert "_No performance run attached._" in repair_pr_body(attempt, {}, "x", "t.py")
+
+
+def test_context_budget_with_the_endpoint_down_is_an_error_not_a_skip(tmp_path, monkeypatch):
+    """Audit 2026-10-12: with vLLM stopped this check reported SKIP ("no tokenizer API"),
+    which reads as not applicable; an unreachable dependency means it was not run."""
+    monkeypatch.setattr(
+        execute, "render_in_sandbox", lambda root, qs: [[{"role": "user", "content": "q"}]]
+    )
+    (r,) = run_items(
+        [item("check:context_budget", "check")], ctx(tmp_path, TARGET, max_prompt_tokens=100)
+    )
+    assert r.verdict == "error" and "unreachable" in r.detail

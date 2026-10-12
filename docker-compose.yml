@@ -17,7 +17,9 @@ services:
   # Laptop inference lab. `docker compose --profile gpu up -d vllm`
   vllm:
     profiles: ["gpu"]
-    image: vllm/vllm-openai:latest
+    # Pinned to the image every FurnaceBench result was measured with (vLLM 0.30.0; results
+    # record engine_version and image_digest). `latest` would silently change the numbers.
+    image: vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90
     command:
       - --model=${FURNACE_LAB_MODEL:-Qwen/Qwen2.5-0.5B-Instruct}
       - --served-model-name=lab

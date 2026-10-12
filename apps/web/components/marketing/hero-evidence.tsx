@@ -18,23 +18,30 @@ export async function HeroEvidence() {
   );
   if (!att.length) return null;
   const hv = att.map((a) => a.perf.head_vs_base!);
-  const cv = att.map((a) => a.perf.candidate_vs_base!);
+  // The repair bar shows only repairs the gate accepted: a rejected attempt's last candidate is
+  // not "Furnace's repair" (2026-10-12: 2 of 3 attempts rejected under the interval rule).
+  const ok = att.filter((a) => a.status === "verified");
+  const cv = ok.map((a) => a.perf.candidate_vs_base!);
   const hits = (xs: (number | null | undefined)[]) => {
     const v = xs.filter((x): x is number => x != null);
     return v.length ? median(v) : null;
   };
-  const verified = att.filter((a) => a.status === "verified").length;
-  // the candidate each attempt proposed (or, if none passed, the last one it measured)
-  const chosen = att.map((a) => a.candidates.find((c) => c.verdict === "pass") ?? a.candidates[a.candidates.length - 1]);
+  const verified = ok.length;
+  const chosen = ok.map((a) => a.candidates.find((c) => c.verdict === "pass"));
   const toLog = chosen.length > 0 && chosen.every((c) => c?.strategy.includes("to_log"));
-  const rejected = att.flatMap((a) => a.candidates.filter((c) => c.verdict === "fail" && c.perf_summary));
-  const pcts = rejected
-    .map((c) => /repair [\d.]+ \(\+?(-?[\d.]+)%/.exec(c.perf_summary ?? "")?.[1])
+  // Only each attempt's FIRST strategy (keep the values, move them to the end) counts as a
+  // "first candidate blocked"; later candidates rejected as unproven are reported in rq5.md.
+  const firstBlocked = att
+    .map((a) => a.candidates[0])
+    .filter((c) => c != null && c.verdict === "fail" && c.strategy.includes("to_suffix") && c.perf_summary);
+  // summaries: "repair 154.1 (+42.6%" before 2026-10-11, "repair 108.0 -> 154.1 ms (+42.6%" after
+  const pcts = firstBlocked
+    .map((c) => /repair [\d.]+(?: -> [\d.]+ ms)? \(\+?(-?[\d.]+)%/.exec(c?.perf_summary ?? "")?.[1])
     .filter((x): x is string => x != null)
     .map(Number);
   const footnote =
-    rejected.length > 0
-      ? `Furnace's first candidate kept the values in the prompt (moved to the end) and was blocked by its own perf gate in ${rejected.length}/${att.length} attempts` +
+    firstBlocked.length > 0
+      ? `Furnace's first candidate kept the values in the prompt (moved to the end) and was blocked by its own perf gate in ${firstBlocked.length}/${att.length} attempts` +
         (pcts.length ? ` (+${Math.min(...pcts).toFixed(0)}% to +${Math.max(...pcts).toFixed(0)}% p95 vs main)` : "") +
         "."
       : null;
@@ -55,15 +62,17 @@ export async function HeroEvidence() {
       runs: hv.map((h) => h.value),
       hit: hits(hv.map((h) => h.prefix_hit_rate?.[1])),
     },
-    {
+  ];
+  if (cv.length > 0) {
+    stages.push({
       key: "repair",
       label: "Furnace repair",
-      note: `${toLog ? "values logged, no longer sent in the prompt" : "values moved to the end of the user message"} · ${verified}/${att.length} verified`,
+      note: `${toLog ? "values logged, no longer sent in the prompt" : "values moved to the end of the user message"} · verified in ${verified}/${att.length} attempts (only verified shown)`,
       p95: median(cv.map((c) => c.value)),
       runs: cv.map((c) => c.value),
       hit: hits(cv.map((c) => c.prefix_hit_rate?.[1])),
-    },
-  ];
+    });
+  }
   return (
     <BeforeAfter stages={stages} n={att.length} footnote={footnote} source={`${REPO}/bench/results/${campaign}/rq5.md`} />
   );

@@ -9,4 +9,4 @@ MSYS_NO_PATHCONV=1 docker run --rm --gpus all --ipc host \
   -e FURNACE_GIT_SHA="$(git rev-parse HEAD)" \
   -e TRITON_CACHE_DIR=/tmp/triton \
   -v "$(pwd -W 2>/dev/null || pwd)/kernel_lab:/lab" -w /lab \
-  --entrypoint python3 vllm/vllm-openai:latest "/lab/${script}.py"
+  --entrypoint python3 vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90 "/lab/${script}.py"

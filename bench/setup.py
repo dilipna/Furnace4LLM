@@ -12,7 +12,7 @@ import sys
 import yaml
 from common import EXTERNAL, GROUND_TRUTH, ROOT
 
-IMAGE = "vllm/vllm-openai:latest"
+IMAGE = "vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90"  # pinned: the image every result was measured with (vLLM 0.30.0)
 MODELS = ["Qwen/Qwen2.5-0.5B-Instruct", "Qwen/Qwen2.5-1.5B-Instruct-AWQ"]
 
 
