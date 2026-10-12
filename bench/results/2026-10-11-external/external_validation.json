@@ -1,9 +1,9 @@
 {
   "manifest": {
     "date": "2026-10-11-external",
-    "started_at": "2026-10-11T23:55:55+00:00",
+    "started_at": "2026-10-12T00:10:20+00:00",
     "git": {
-      "sha": "5cb8cd96f111e21556ac68d032ae9601379cd7dd",
+      "sha": "7a3b431b7a8f8dfaf0e184f9bb0d27b3521aaeb0",
       "dirty": true
     },
     "python": "3.12.13",
@@ -13,12 +13,11 @@
     "memory_mb": 4096,
     "power": {
       "on_ac": false,
-      "battery_pct": 52,
+      "battery_pct": 43,
       "gpu_enforced_power_limit_w": 30.0
     },
     "argv": [
-      "bench/external_validation.py",
-      "--sandbox"
+      "bench/external_validation.py"
     ]
   },
   "expected": {
@@ -57,13 +56,18 @@
       "root": "C:\\dev\\furnace\\bench\\.cache\\external\\openai-chat-backend-fastapi",
       "commit": "79174c34228951080cde7be2a7990057e40457fa",
       "scan": {
-        "seconds": 0.11,
+        "seconds": 0.19,
         "python_files": 7,
-        "llm_call_facts": 0,
+        "llm_call_facts": 2,
         "routes": 2,
-        "findings": 0,
-        "findings_by_rule": [],
-        "evidence_checked": 0,
+        "findings": 4,
+        "findings_by_rule": [
+          "eval.regression_suite",
+          "obs.genai_tracing",
+          "rel.fallback_gateway",
+          "rel.llm_timeout"
+        ],
+        "evidence_checked": 5,
         "evidence_broken": []
       },
       "forge": {
@@ -73,16 +77,12 @@
           {
             "rule_id": "forge.harness",
             "reason": "cannot generate an eval harness: src/api/chat.py::chat_handler: control flow before the messages are built; cannot slice safely"
+          },
+          {
+            "rule_id": "rel.llm_timeout",
+            "reason": "timeout must be set per call; client-level codemod not applicable"
           }
-        ],
-        "validation": {
-          "ok": false,
-          "prompts_identical": true,
-          "installed_tests": "none",
-          "existing_tests": "fail",
-          "resolved_findings": [],
-          "remaining_findings": []
-        }
+        ]
       },
       "guard": [
         {
@@ -99,6 +99,7 @@
           ],
           "selected": [
             "bench:perf_gate",
+            "check:answer_quality",
             "check:prompt_prefix_stable",
             "unit:existing_tests"
           ],
@@ -170,9 +171,9 @@
       "root": "C:\\dev\\furnace\\bench\\.cache\\external\\rag-postgres-openai-python",
       "commit": "2c23c488bb8698159739b0a01c22396b788f7de6",
       "scan": {
-        "seconds": 1.03,
+        "seconds": 0.91,
         "python_files": 34,
-        "llm_call_facts": 2,
+        "llm_call_facts": 7,
         "routes": 5,
         "findings": 4,
         "findings_by_rule": [
@@ -181,7 +182,7 @@
           "rel.fallback_gateway",
           "rel.llm_timeout"
         ],
-        "evidence_checked": 5,
+        "evidence_checked": 10,
         "evidence_broken": []
       },
       "forge": {
@@ -204,11 +205,7 @@
             "rule_id": "rel.llm_timeout",
             "reason": "client create_openai_embed_client.openai_embed_client not found at module level in src/backend/fastapi_app/openai_clients.py"
           }
-        ],
-        "validation": {
-          "ok": false,
-          "error": "SandboxError: dependency install failed: xecutable path with the\n      option:\n      \n          python setup.py build_ext --pg-config /path/to/pg_config build ...\n      \n      or with the pg_config option in 'setup.cfg'.\n      \n      If you prefer to avoid building psycopg2 from source, please install the PyPI\n      'psycopg2-binary' package instead.\n      \n      For further information please check the 'doc/src/install.rst' file (also at\n      <https://www.psycopg.org/docs/install.html>).\n      \n      [end of output]\n  \n  note: This error originates from a subprocess, and is likely not a problem with pip.\nerror: subprocess-exited-with-error\n\n\u00d7 Getting requirements to build wheel did not run successfully.\n\u2502 exit code: 1\n\u2570\u2500> See above for output.\n\nnote: This error originates from a subprocess, and is lik"
-        }
+        ]
       },
       "guard": [
         {
@@ -219,21 +216,36 @@
             "src/backend/fastapi_app/rag_simple.py"
           ],
           "categories": [
-            "code_off_llm_path",
-            "imports"
+            "code",
+            "imports",
+            "prompt"
           ],
-          "selected": [],
-          "fell_back_to_full": false,
-          "signatures": [],
-          "missing": [
+          "selected": [
             "bench:perf_gate",
-            "check:prompt_prefix_stable"
+            "check:prompt_prefix_stable",
+            "unit:existing_tests"
           ],
+          "fell_back_to_full": false,
+          "signatures": [
+            "prefix_instability"
+          ],
+          "missing": [],
           "unexpected": [],
-          "signature_ok": false,
-          "correct": false,
+          "signature_ok": true,
+          "correct": true,
           "repair": {
-            "signature_detected": false
+            "signature_detected": true,
+            "node": "prompt:src/backend/fastapi_app/rag_simple.py::SimpleRAGChat.__init__@Answerer#system",
+            "strategies": {
+              "rule:prefix_stability.move_dynamic_to_suffix": {
+                "applicable": false,
+                "reason": "function SimpleRAGChat.__init__@Answerer not found"
+              },
+              "rule:prefix_stability.move_dynamic_to_log": {
+                "applicable": false,
+                "reason": "function SimpleRAGChat.__init__@Answerer not found"
+              }
+            }
           }
         },
         {
@@ -279,7 +291,7 @@
       "root": "C:\\dev\\furnace\\bench\\.cache\\external\\tech-trends-chatbot",
       "commit": "d416f3cb711fa7c4d846111c890e7a37c70337c8",
       "scan": {
-        "seconds": 0.2,
+        "seconds": 0.27,
         "python_files": 16,
         "llm_call_facts": 1,
         "routes": 3,
@@ -311,23 +323,7 @@
             "rule_id": "forge.harness",
             "reason": "cannot generate an eval harness: no route handler reaches the system-message builder"
           }
-        ],
-        "validation": {
-          "ok": false,
-          "prompts_identical": true,
-          "installed_tests": "fail",
-          "existing_tests": "none",
-          "resolved_findings": [
-            "obs.prompt_versioning",
-            "rel.llm_timeout"
-          ],
-          "remaining_findings": [
-            "eval.grounding_judge",
-            "eval.regression_suite",
-            "obs.genai_tracing",
-            "rel.fallback_gateway"
-          ]
-        }
+        ]
       },
       "guard": [
         {

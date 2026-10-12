@@ -501,3 +501,81 @@ def cache_lookup(k):
     assert [(c.key.split("::")[1], c.data["api"]) for c in calls] == [
         ("chat_handler#llm0", "openai.responses.create")
     ]
+
+
+AGENT_PROMPTS = """
+import uuid
+from agents import Agent
+
+BASE = "You are a careful airline assistant. Answer only from the provided records."
+
+def dynamic_instructions(ctx, agent):
+    return BASE + ctx
+
+def build(model):
+    stable = Agent(name="Stable", model=model, instructions=BASE)
+    unstable = Agent(name="Unstable", model=model, instructions=f"Request {uuid.uuid4()} " + BASE)
+    per_run = Agent(name="PerRun", model=model, instructions=dynamic_instructions)
+    return stable, unstable, per_run
+"""
+
+
+def test_agent_instructions_are_system_prompts_with_prefix_analysis(tmp_path):
+    msgs = {
+        f.key: f.data
+        for f in _facts(tmp_path, {"a.py": AGENT_PROMPTS})
+        if f.kind == "system_message"
+    }
+    assert set(msgs) == {"prompt:a.py::build@Stable#system", "prompt:a.py::build@Unstable#system"}
+    assert msgs["prompt:a.py::build@Stable#system"]["dynamic_head"] is False
+    assert msgs["prompt:a.py::build@Unstable#system"]["dynamic_head"] is True
+
+
+def test_an_agent_class_from_elsewhere_is_not_a_prompt_source(tmp_path):
+    src = """
+from mylib import Agent
+
+def build():
+    return Agent(name="x", instructions="You are a robot vacuum controller.")
+"""
+    assert not [f for f in _facts(tmp_path, {"b.py": src}) if f.kind == "system_message"]
+
+
+def test_module_level_agents_are_prompt_sources_but_module_dicts_stay_out(tmp_path):
+    src = """
+from agents import Agent
+
+triage = Agent(name="Triage", model="gpt-x", instructions="You route airline requests.")
+MESSAGES = [{"role": "system", "content": "module-level dicts are not analyzed"}]
+"""
+    keys = [f.key for f in _facts(tmp_path, {"m.py": src}) if f.kind == "system_message"]
+    assert keys == ["prompt:m.py::<module>@Triage#system"]
+
+
+def test_class_attribute_templates_are_shared_text_not_per_request(tmp_path):
+    base = """
+class ChatBase:
+    answer_prompt_template = open("prompts/answer.txt").read()
+"""
+    app = """
+import uuid
+from agents import Agent
+from base import ChatBase
+
+class Simple(ChatBase):
+    def __init__(self, model):
+        self.agent = Agent(name="Answerer", model=model, instructions=self.answer_prompt_template)
+
+class Leaky(ChatBase):
+    def __init__(self, model):
+        self.agent = Agent(name="Answerer", model=model, instructions=f"Request {uuid.uuid4()} " + self.answer_prompt_template)
+"""
+    msgs = {
+        f.key: f.data["dynamic_head"]
+        for f in _facts(tmp_path, {"base.py": base, "app.py": app})
+        if f.kind == "system_message"
+    }
+    assert msgs == {
+        "prompt:app.py::Simple.__init__@Answerer#system": False,
+        "prompt:app.py::Leaky.__init__@Answerer#system": True,
+    }

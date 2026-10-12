@@ -375,6 +375,7 @@ class PythonExtractor:
         self.mods: dict[str, ModInfo] = {}
         self.facts: list[Fact] = []
         self._implicit: set[str] = set()  # implicit endpoints already emitted (module APIs)
+        self._class_attr_cache: set[str] | None = None
 
     # ------------------------------------------------------------------ parsing
 
@@ -842,6 +843,13 @@ class PythonExtractor:
             # Only LLM calls are taken from module-level code; routes, tools and the call
             # graph stay function-scoped.
             self._llm_calls(mod, mod.module_func, node_key(NodeKind.component, mod.file.path))
+            # Agents SDK apps define their agents (and their instructions) at module level.
+            self._message_assembly(
+                mod,
+                mod.module_func,
+                node_key(NodeKind.component, mod.file.path),
+                agents_only=True,
+            )
         self._prompt_constants(mod)
         self._entrypoint(mod)
         imported_modules = {origin for origin, _ in mod.imports.values()}
@@ -1016,7 +1024,35 @@ class PythonExtractor:
             )
         if isinstance(expr, ast.Name):
             return [self._name_segment(mod, expr, func)]
+        if (
+            isinstance(expr, ast.Attribute)
+            and isinstance(expr.value, ast.Name)
+            and expr.value.id in ("self", "cls")
+            and expr.attr in self._class_attrs()
+        ):
+            # A class attribute (e.g. a template read from a file in the class body) is
+            # evaluated once at import: shared by every request, length unknown.
+            return [("static_ext", f"{expr.value.id}.{expr.attr}")]
         return [("dynamic", ast.unparse(expr))]
+
+    def _class_attrs(self) -> set[str]:
+        """Names assigned in any class body in the repository (cached)."""
+        if self._class_attr_cache is None:
+            names: set[str] = set()
+            for m in self.mods.values():
+                for cls in ast.walk(m.tree):
+                    if not isinstance(cls, ast.ClassDef):
+                        continue
+                    for st in cls.body:
+                        if isinstance(st, ast.Assign):
+                            targets = st.targets
+                        elif isinstance(st, ast.AnnAssign) and st.value is not None:
+                            targets = [st.target]
+                        else:
+                            continue
+                        names.update(t.id for t in targets if isinstance(t, ast.Name))
+            self._class_attr_cache = names
+        return self._class_attr_cache
 
     def _name_segment(self, mod: ModInfo, expr: ast.Name, func: FuncInfo) -> tuple[str, str]:
         """A name inside a prompt expression. Module-level bindings are evaluated once at
@@ -1074,21 +1110,54 @@ class PythonExtractor:
                 return text
         return None
 
-    def _message_assembly(self, mod: ModInfo, info: FuncInfo, fkey: str) -> None:
+    def _system_texts(
+        self, mod: ModInfo, info: FuncInfo, agents_only: bool = False
+    ) -> list[tuple[ast.AST, ast.expr, str]]:
+        """(node, content expression, node-key suffix) for every system instruction built here:
+        `{"role": "system", "content": ...}` message dicts, and OpenAI Agents SDK
+        `Agent(instructions=<text>)` (only when `Agent` comes from `agents`; instructions given
+        as a function are not text and are skipped). Each agent gets its own key, named by its
+        literal `name=` or its position, so several agents in one scope do not collide."""
+        out: list[tuple[ast.AST, ast.expr, str]] = []
+        agent_n = 0
         for node in walk_own(info.node):
-            if not isinstance(node, ast.Dict):
-                continue
-            pairs = {
-                k.value: v
-                for k, v in zip(node.keys, node.values, strict=True)
-                if isinstance(k, ast.Constant) and isinstance(k.value, str)
-            }
-            role = pairs.get("role")
-            if not (
-                isinstance(role, ast.Constant) and role.value == "system" and "content" in pairs
-            ):
-                continue
-            segs = self._segments(mod, pairs["content"], info)
+            if isinstance(node, ast.Dict) and not agents_only:
+                pairs = {
+                    k.value: v
+                    for k, v in zip(node.keys, node.values, strict=True)
+                    if isinstance(k, ast.Constant) and isinstance(k.value, str)
+                }
+                role = pairs.get("role")
+                if isinstance(role, ast.Constant) and role.value == "system" and "content" in pairs:
+                    out.append((node, pairs["content"], f"{info.qualname}#system"))
+            elif isinstance(node, ast.Call):
+                ctor = node.func.value if isinstance(node.func, ast.Subscript) else node.func
+                d = dotted(ctor) or ""
+                is_agent = mod.imports.get(d) == ("agents", "Agent") or (
+                    d.endswith(".Agent") and mod.imports.get(d.split(".")[0]) == ("agents", None)
+                )
+                kw = {k.arg: k.value for k in node.keywords if k.arg}
+                text = kw.get("instructions")
+                if not is_agent or text is None or isinstance(text, ast.Lambda):
+                    continue
+                if isinstance(text, ast.Name) and text.id in mod.funcs:
+                    continue  # an instructions function, called per run: not a text prompt
+                name = kw.get("name")
+                label = (
+                    name.value
+                    if isinstance(name, ast.Constant) and isinstance(name.value, str)
+                    else f"agent{agent_n}"
+                )
+                agent_n += 1
+                safe = re.sub(r"[^A-Za-z0-9_.-]", "_", label)
+                out.append((node, text, f"{info.qualname}@{safe}#system"))
+        return out
+
+    def _message_assembly(
+        self, mod: ModInfo, info: FuncInfo, fkey: str, agents_only: bool = False
+    ) -> None:
+        for node, content_expr, key_suffix in self._system_texts(mod, info, agents_only):
+            segs = self._segments(mod, content_expr, info)
             static_total = sum(len(t) for k, t in segs if k == "static")
             prefix = 0
             dynamic: list[dict[str, Any]] = []
@@ -1118,11 +1187,10 @@ class PythonExtractor:
                 dynamic_head = True  # a per-request value precedes the shared prompt text
             else:
                 dynamic_head = prefix < 0.5 * static_total
-            content = pairs["content"]
-            refs = [n.id for n in ast.walk(content) if isinstance(n, ast.Name)]
+            refs = [n.id for n in ast.walk(content_expr) if isinstance(n, ast.Name)]
             self._emit(
                 "system_message",
-                node_key(NodeKind.prompt, mod.file.path, f"{info.qualname}#system"),
+                node_key(NodeKind.prompt, mod.file.path, key_suffix),
                 {
                     "function": info.qualname,
                     "static_chars": static_total,
