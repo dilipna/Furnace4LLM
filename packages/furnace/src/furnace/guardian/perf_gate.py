@@ -7,6 +7,10 @@ requests is the prompt prefix the code produces (no request is ever repeated
 verbatim, within or across runs). Results are compared against a regression
 budget (warn/block thresholds as fractions of the baseline).
 
+The decision statistic and interval are specified in docs/gate-revision.md (frozen before
+this code was written): geometric-mean TTFT per run, the run as the unit of analysis, and
+a Welch t interval across runs.
+
 Each measured run is preceded by one unmeasured warmup wave (as many distinct requests as
 the concurrency) rendered from the same revision. Without it, the first wave after the GPU
 sat idle (while the next revision's prompts were rendered) took ~200 ms instead of ~65 ms,
@@ -19,7 +23,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 import tempfile
 import uuid
 from collections.abc import Sequence
@@ -33,22 +36,24 @@ from furnace_bench.schema import BenchPlan, BenchReport, BenchTarget, LengthMode
 from furnace_bench.workload_spec import SLO, WorkloadSource, WorkloadSpec
 
 from furnace.guardian.repair.regression import render_in_sandbox
+from furnace.guardian.tdist import t_quantile
 
 
 @dataclass
 class GatePolicy:
-    """`warn_pct` is the tolerance: the largest change treated as measurement noise. It must
-    be at least the A/A calibration's worst case (9.7% on 2026-10-09, gate_noise.md); a change
-    is only called a regression when its whole 95% interval lies above it. `block_pct` is
-    the smallest regression that blocks a merge, and the worst case (interval upper bound)
-    a repair candidate may have against the base revision."""
+    """`warn_pct` is the tolerance: a change is only called a regression when the whole
+    two-sided `confidence` interval of the change lies above it. `block_pct` is the smallest
+    point change that blocks a merge (given the interval is above the tolerance) and the
+    worst case (interval upper bound) a repair candidate may have against the base revision.
+    The tolerance is not a bound on point noise: A/A point changes of 13% were observed
+    (bench/results/2026-10-12-gate-revision/dev_analysis.md); the interval is what protects
+    unchanged code. `confidence` is two-sided: (1 - confidence) / 2 in each tail."""
 
     warn_pct: float = 10.0
     block_pct: float = 25.0
-    metric: str = "ttft_p95_ms"
-    confidence: float = 0.95
-    n_boot: int = 2000
-    seed: int = 0
+    metric: str = "ttft_gmean_ms"  # geometric-mean TTFT of a run's successful requests
+    confidence: float = 0.90
+    min_runs: int = 3  # per side; fewer cannot give a usable interval
 
 
 class MetricSource(Protocol):
@@ -59,13 +64,13 @@ class MetricSource(Protocol):
 class VariantResult:
     name: str
     report: BenchReport
-    # Raw per-request TTFT of the successful measured requests (ms), for the bootstrap
-    # interval and for the report; empty when only the summary is known.
+    # Raw per-request TTFT of the successful measured requests (ms), for the interval
+    # and for the report; empty when only the summary is known.
     ttft_ms: list[float] = field(default_factory=list)
     position: int = 0  # order of this run inside its repeat (0 = measured first)
 
     def samples(self, name: str) -> list[float]:
-        return self.ttft_ms if name.startswith("ttft_") else []
+        return self.ttft_ms if name == "ttft_ms" else []
 
     def metric(self, name: str) -> float | None:
         lvl = self.report.levels[0]
@@ -152,9 +157,10 @@ def _median(xs: list[float]) -> float:
     return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2
 
 
-MIN_SAMPLES_PER_RUN = 20  # below this a bootstrap of a tail percentile is not meaningful
-METHOD_BOOTSTRAP = "hierarchical bootstrap (runs, then requests within runs), 95% interval"
-METHOD_POINT = "point estimate only (no per-request samples); legacy thresholds"
+MIN_SAMPLES_PER_RUN = 20  # below this a run's TTFT summary is not meaningful
+METHOD_WELCH = "run-level Welch t interval on mean log TTFT (geometric mean), {pct}% two-sided"
+METHOD_POINT = "point estimate only (no per-request samples); legacy p95 thresholds"
+LEGACY_METRIC = "ttft_p95_ms"
 
 
 MAX_EXTRA_FAILURE_RATE = 0.01  # more failed requests than the baseline beyond this: BLOCK
@@ -174,155 +180,190 @@ def _failure_rate(rs: Sequence[MetricSource]) -> float | None:
     return sum(vals) / len(vals) if vals else None
 
 
-def _percentile_of(metric: str) -> float | None:
-    m = re.fullmatch(r"ttft_p(\d+)_ms", metric)
-    return float(m.group(1)) if m else None
+def _run_logs(rs: Sequence[MetricSource], percentile: float | None = None) -> list[float] | None:
+    """One number per run: the mean of log TTFT, or the log of its `percentile`-th percentile.
 
-
-def _run_samples(rs: Sequence[MetricSource], metric: str) -> list[np.ndarray] | None:
-    out = []
+    None if any run lacks per-request samples. A run is the unit of analysis; its requests
+    are not independent (closed-loop waves share a scheduler step) so they are never
+    resampled, only summarized."""
+    out: list[float] = []
     for r in rs:
         get = getattr(r, "samples", None)
-        xs = get(metric) if get else []
-        if len(xs) < MIN_SAMPLES_PER_RUN:
+        xs = np.asarray(get("ttft_ms") if get else [], dtype=float)
+        if xs.size < MIN_SAMPLES_PER_RUN or not np.all(xs > 0):
             return None
-        out.append(np.asarray(xs, dtype=float))
+        out.append(
+            float(np.log(xs).mean())
+            if percentile is None
+            else float(np.log(np.percentile(xs, percentile)))
+        )
     return out or None
 
 
-def bootstrap_change_ci(
-    base_runs: list[np.ndarray],
-    other_runs: list[np.ndarray],
-    q: float,
-    *,
-    n_boot: int = 2000,
-    seed: int = 0,
-    confidence: float = 0.95,
-) -> tuple[float, float]:
-    """Percentile interval for the % change of the median-of-runs q-th percentile.
-
-    Hierarchical: each replicate resamples whole runs with replacement (between-run noise:
-    clocks, scheduling, cache state), then the requests inside each chosen run (within-run
-    noise), recomputes each run's q-th percentile (numpy linear, as furnace-bench does) and
-    the median across runs. With 3 runs per side the run level has few distinct resamples,
-    so the interval is coarse; that coarseness is real uncertainty, not an artifact."""
-    rng = np.random.default_rng(seed)
-
-    def replicates(runs: list[np.ndarray]) -> np.ndarray:
-        k = len(runs)
-        per_run = np.stack(  # (k, n_boot): bootstrap percentiles of each run
-            [
-                np.percentile(a[rng.integers(0, a.size, size=(n_boot, a.size))], q, axis=1)
-                for a in runs
-            ]
-        )
-        which = rng.integers(0, k, size=(n_boot, k))  # runs drawn with replacement
-        col = rng.integers(0, n_boot, size=(n_boot, k))  # an independent resample of each
-        return np.median(per_run[which, col], axis=1)
-
-    b, o = replicates(base_runs), replicates(other_runs)
-    change = (o - b) / b * 100
-    tail = (1 - confidence) / 2 * 100
-    return float(np.percentile(change, tail)), float(np.percentile(change, 100 - tail))
-
-
-def compare(
-    baseline: Sequence[MetricSource], other: Sequence[MetricSource], policy: GatePolicy
-) -> dict[str, Any]:
-    """Compare `other` against `baseline` on the median across runs of `policy.metric`.
-
-    With per-request samples (the real gate path) the verdict comes from the 95% interval
-    of the change, against the tolerance (warn_pct) and the block threshold:
-      pass          the interval lies at or below the tolerance (no regression beyond noise);
-      block         the interval lies above the tolerance, the point change exceeds
-                    block_pct, and every `other` run is slower than every baseline run
-                    (with 3 runs a side, a 1-in-20 event under no difference);
-      warn          a regression beyond the tolerance, but small or with overlapping runs;
-      inconclusive  the interval straddles the tolerance: the noise does not support either
-                    answer, and it is reported as such, never as a pass.
-    Without samples (summaries only) the earlier point rule is used and labeled."""
-    bs = [v for v in (r.metric(policy.metric) for r in baseline) if v is not None]
-    os_ = [v for v in (r.metric(policy.metric) for r in other) if v is not None]
-    if not bs or not os_:
-        return {"verdict": "error", "reason": f"{policy.metric} not measured"}
-    b, o = _median(bs), _median(os_)
-    change_pct = (o - b) / b * 100
-    separated = min(os_) > max(bs)
-    q = _percentile_of(policy.metric)
-    b_samples = _run_samples(baseline, policy.metric) if q is not None else None
-    o_samples = _run_samples(other, policy.metric) if q is not None else None
-    ci: tuple[float, float] | None = None
-    if q is not None and b_samples and o_samples:
-        ci = bootstrap_change_ci(
-            b_samples,
-            o_samples,
-            q,
-            n_boot=policy.n_boot,
-            seed=policy.seed,
-            confidence=policy.confidence,
-        )
-        lo, hi = ci
-        if hi <= policy.warn_pct:
-            verdict = "pass"
-        elif lo > policy.warn_pct:
-            big = change_pct > policy.block_pct
-            verdict = "block" if big and (separated or len(bs) == 1) else "warn"
-        else:
-            verdict = "inconclusive"
-        method = METHOD_BOOTSTRAP
+def welch_change_ci(
+    base_logs: Sequence[float], other_logs: Sequence[float], confidence: float
+) -> tuple[float, float, float]:
+    """(change, low, high) in percent of exp(mean(other) - mean(base)) - 1, with a Welch
+    (unequal variance) t interval, Satterthwaite degrees of freedom, two-sided."""
+    x, y = np.asarray(base_logs, dtype=float), np.asarray(other_logs, dtype=float)
+    va, vb = x.var(ddof=1) / x.size, y.var(ddof=1) / y.size
+    se = float(np.sqrt(va + vb))
+    d = float(y.mean() - x.mean())
+    if se == 0.0:
+        lo = hi = d
     else:
-        if change_pct > policy.block_pct:
-            verdict = "block" if separated or len(bs) == 1 else "warn"
-        elif change_pct > policy.warn_pct:
-            verdict = "warn"
-        else:
-            verdict = "pass"
-        method = METHOD_POINT
+        df = (va + vb) ** 2 / (va**2 / (x.size - 1) + vb**2 / (y.size - 1))
+        q = t_quantile(1 - (1 - confidence) / 2, df)
+        lo, hi = d - q * se, d + q * se
+    return float(np.expm1(d) * 100), float(np.expm1(lo) * 100), float(np.expm1(hi) * 100)
 
-    # Latency is measured over successful requests only, so a revision whose requests fail
-    # (context overflow, server errors) could look faster. More failures than the baseline
-    # (beyond one point, for a transient error) block regardless of latency.
-    b_fail, o_fail = _failure_rate(baseline), _failure_rate(other)
-    failures_note = None
-    if b_fail is not None and o_fail is not None and o_fail - b_fail > MAX_EXTRA_FAILURE_RATE:
-        verdict = "block"
-        failures_note = (
-            f"{o_fail:.0%} of requests failed vs {b_fail:.0%} on the baseline; latency over the "
-            "successful requests alone would be misleading"
-        )
 
-    def med(rs: Sequence[MetricSource], name: str) -> float | None:
-        vals = [v for v in (r.metric(name) for r in rs) if v is not None]
-        return _median(vals) if vals else None
+def _verdict(lo: float, hi: float, change: float, policy: GatePolicy) -> str:
+    if hi <= policy.warn_pct:
+        return "pass"
+    if lo > policy.warn_pct:
+        return "block" if change > policy.block_pct else "warn"
+    return "inconclusive"
 
+
+def _med(rs: Sequence[MetricSource], name: str) -> float | None:
+    vals = [v for v in (r.metric(name) for r in rs) if v is not None]
+    return _median(vals) if vals else None
+
+
+def _compare_welch(
+    baseline: Sequence[MetricSource],
+    other: Sequence[MetricSource],
+    b_logs: list[float],
+    o_logs: list[float],
+    policy: GatePolicy,
+) -> dict[str, Any]:
+    gm_b, gm_o = float(np.exp(np.mean(b_logs))), float(np.exp(np.mean(o_logs)))
+    base_runs = [round(float(np.exp(v)), 1) for v in b_logs]
+    value_runs = [round(float(np.exp(v)), 1) for v in o_logs]
     out: dict[str, Any] = {
         "metric": policy.metric,
+        "baseline": round(gm_b, 1),
+        "value": round(gm_o, 1),
+        "tolerance_pct": policy.warn_pct,
+        "block_pct": policy.block_pct,
+        "confidence": policy.confidence,
+        "runs": len(o_logs),
+        "baseline_runs": base_runs,
+        "value_runs": value_runs,
+        "separated": min(value_runs) > max(base_runs),
+        "method": METHOD_WELCH.format(pct=round(policy.confidence * 100)),
+    }
+    if min(len(b_logs), len(o_logs)) < policy.min_runs:
+        out |= {
+            "change_pct": round((gm_o - gm_b) / gm_b * 100, 1),
+            "ci_pct": None,
+            "verdict": "inconclusive",
+            "reason": (
+                f"{len(b_logs)} vs {len(o_logs)} runs; at least {policy.min_runs} per side "
+                "are needed for an interval"
+            ),
+        }
+        return out
+    change, lo, hi = welch_change_ci(b_logs, o_logs, policy.confidence)
+    out |= {
+        "change_pct": round(change, 1),
+        "ci_pct": [round(lo, 1), round(hi, 1)],
+        "verdict": _verdict(lo, hi, change, policy),
+    }
+    bp, op = _run_logs(baseline, 95), _run_logs(other, 95)
+    if bp and op:
+        p_change, p_lo, p_hi = welch_change_ci(bp, op, policy.confidence)
+        out["p95_advisory"] = {
+            "baseline": round(float(np.exp(np.mean(bp))), 1),
+            "value": round(float(np.exp(np.mean(op))), 1),
+            "change_pct": round(p_change, 1),
+            "ci_pct": [round(p_lo, 1), round(p_hi, 1)],
+            "note": "reported, not used for the verdict: a p95 over a few dozen requests is "
+            "too noisy to confirm a 10% tolerance",
+        }
+    out["samples_ms"] = {
+        "baseline": [[round(float(x), 2) for x in r.samples("ttft_ms")] for r in baseline],  # type: ignore[attr-defined]
+        "value": [[round(float(x), 2) for x in r.samples("ttft_ms")] for r in other],  # type: ignore[attr-defined]
+    }
+    return out
+
+
+def _compare_point(
+    baseline: Sequence[MetricSource], other: Sequence[MetricSource], policy: GatePolicy
+) -> dict[str, Any]:
+    """Summaries only (no per-request samples): the earlier point rule on p95, labeled."""
+    bs = [v for v in (r.metric(LEGACY_METRIC) for r in baseline) if v is not None]
+    os_ = [v for v in (r.metric(LEGACY_METRIC) for r in other) if v is not None]
+    if not bs or not os_:
+        return {"verdict": "error", "reason": f"{LEGACY_METRIC} not measured"}
+    b, o = _median(bs), _median(os_)
+    change = (o - b) / b * 100
+    separated = min(os_) > max(bs)
+    if change > policy.block_pct:
+        verdict = "block" if separated or len(bs) == 1 else "warn"
+    elif change > policy.warn_pct:
+        verdict = "warn"
+    else:
+        verdict = "pass"
+    return {
+        "metric": LEGACY_METRIC,
         "baseline": round(b, 1),
         "value": round(o, 1),
-        "change_pct": round(change_pct, 1),
-        "ci_pct": [round(ci[0], 1), round(ci[1], 1)] if ci else None,
+        "change_pct": round(change, 1),
+        "ci_pct": None,
         "verdict": verdict,
-        "method": method,
+        "method": METHOD_POINT,
         "tolerance_pct": policy.warn_pct,
         "block_pct": policy.block_pct,
         "runs": len(os_),
         "baseline_runs": [round(x, 1) for x in bs],
         "value_runs": [round(x, 1) for x in os_],
         "separated": separated,
-        "prefix_hit_rate": (med(baseline, "prefix_hit_rate"), med(other, "prefix_hit_rate")),
-        "goodput_rps": (med(baseline, "goodput_rps"), med(other, "goodput_rps")),
+    }
+
+
+def compare(
+    baseline: Sequence[MetricSource], other: Sequence[MetricSource], policy: GatePolicy
+) -> dict[str, Any]:
+    """Compare `other` against `baseline`.
+
+    With per-request samples (the real gate path), the verdict comes from the two-sided
+    `policy.confidence` Welch interval of the change in geometric-mean TTFT, against the
+    tolerance (warn_pct) and block_pct:
+      pass          the interval lies at or below the tolerance (a larger regression is ruled out);
+      block         the interval lies above the tolerance and the point change exceeds block_pct;
+      warn          the interval lies above the tolerance, the point change is modest;
+      inconclusive  the interval straddles the tolerance, or fewer than `min_runs` runs per
+                    side: the data support neither answer, and it is never reported as a pass.
+    The p95 is reported (`p95_advisory`) with its own interval but does not decide.
+    Without samples (summaries only) the earlier point rule on p95 is used and labeled."""
+    b_logs, o_logs = _run_logs(baseline), _run_logs(other)
+    if b_logs is not None and o_logs is not None:
+        out = _compare_welch(baseline, other, b_logs, o_logs, policy)
+    else:
+        out = _compare_point(baseline, other, policy)
+        if out["verdict"] == "error":
+            return out
+
+    # Latency is measured over successful requests only, so a revision whose requests fail
+    # (context overflow, server errors) could look faster. More failures than the baseline
+    # (beyond one point, for a transient error) block regardless of latency.
+    b_fail, o_fail = _failure_rate(baseline), _failure_rate(other)
+    if b_fail is not None and o_fail is not None and o_fail - b_fail > MAX_EXTRA_FAILURE_RATE:
+        out["verdict"] = "block"
+        out["reason"] = (
+            f"{o_fail:.0%} of requests failed vs {b_fail:.0%} on the baseline; latency over the "
+            "successful requests alone would be misleading"
+        )
+    out |= {
+        "prefix_hit_rate": (_med(baseline, "prefix_hit_rate"), _med(other, "prefix_hit_rate")),
+        "goodput_rps": (_med(baseline, "goodput_rps"), _med(other, "goodput_rps")),
         "failure_rate": (
             None if b_fail is None else round(b_fail, 4),
             None if o_fail is None else round(o_fail, 4),
         ),
     }
-    if failures_note:
-        out["reason"] = failures_note
-    if b_samples and o_samples:
-        out["samples_ms"] = {
-            "baseline": [[round(float(x), 2) for x in a] for a in b_samples],
-            "value": [[round(float(x), 2) for x in a] for a in o_samples],
-        }
     return out
 
 
@@ -331,7 +372,8 @@ def describe(c: dict[str, Any]) -> str:
     if c.get("verdict") == "error":
         return f"not measured: {c.get('reason')}"
     ci = c.get("ci_pct")
-    ci_txt = f", 95% CI {ci[0]:+.1f}% to {ci[1]:+.1f}%" if ci else ""
+    conf = round(c.get("confidence", 0.95) * 100)
+    ci_txt = f", {conf}% interval {ci[0]:+.1f}% to {ci[1]:+.1f}%" if ci else ""
     line = (
         f"{c['baseline']} -> {c['value']} ms ({c['change_pct']:+.1f}%{ci_txt}; "
         f"{c['verdict'].upper()} at tolerance {c['tolerance_pct']:g}%)"
@@ -347,10 +389,10 @@ def accept_repair(
 ) -> tuple[bool, list[str]]:
     """The perf gate for a repair candidate, kept separate from its functional tests.
 
-    Accept only if (1) the candidate is faster than the PR head with 95% confidence (it
-    actually repairs the regression) and (2) its worst case against the base revision (the
-    interval's upper bound) stays below block_pct (it is not a new regression of blocking
-    size). Whether it is within the noise tolerance of base is reported, not assumed:
+    Accept only if (1) the candidate is faster than the PR head (the interval's upper bound
+    is below zero: a 95% one-sided limit for a 90% two-sided interval) and (2) its worst case
+    against the base revision (the interval's upper bound) stays below block_pct (it is not
+    a new regression of blocking size). Whether it is within the noise tolerance of base is reported, not assumed:
     staying inside a tolerance band is not evidence of an improvement."""
     if "error" in (head_vs_base.get("verdict"), cand_vs_base.get("verdict")):
         return False, ["the benchmark measured nothing; a candidate is never accepted unmeasured"]
@@ -366,7 +408,8 @@ def accept_repair(
     fixes = ci_h[1] < 0
     reasons.append(
         f"{'faster' if fixes else 'NOT shown faster'} than the PR head: change "
-        f"{cand_vs_head['change_pct']:+.1f}% (95% CI {ci_h[0]:+.1f}% to {ci_h[1]:+.1f}%)"
+        f"{cand_vs_head['change_pct']:+.1f}% ({round(policy.confidence * 100)}% interval "
+        f"{ci_h[0]:+.1f}% to {ci_h[1]:+.1f}%)"
     )
     bounded = ci_b[1] < policy.block_pct
     reasons.append(

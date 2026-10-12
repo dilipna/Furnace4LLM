@@ -347,12 +347,21 @@ def _bench(item: SuiteItem, ctx: GuardContext) -> ItemResult:
     return ItemResult(
         item.key,
         verdict,
-        f"median p95 TTFT {describe(c)}; {c['runs']} runs each, {sep}{hit_txt}",
+        f"geometric-mean TTFT {describe(c)}; {c['runs']} runs each, {sep}{hit_txt}{_p95_txt(c)}",
         {
             **c,
             "reports": {k: [v.report.model_dump(mode="json") for v in vs] for k, vs in res.items()},
         },
     )
+
+
+def _p95_txt(c: dict[str, Any]) -> str:
+    """The advisory p95 (reported, never decisive), for the check summary."""
+    p = c.get("p95_advisory")
+    if not p:
+        return ""
+    lo, hi = p["ci_pct"]
+    return f"; p95 {p['baseline']} -> {p['value']} ms ({p['change_pct']:+.1f}%, interval {lo:+.1f}% to {hi:+.1f}%; advisory)"
 
 
 def _judge(item: SuiteItem, ctx: GuardContext) -> ItemResult:
