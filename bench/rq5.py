@@ -27,6 +27,7 @@ from common import (
     fmt,
     manifest,
     md_table,
+    power_state,
     read_json,
     require_ac_power,
     results_dir,
@@ -264,9 +265,12 @@ def main() -> None:
             continue
         require_ac_power(args.allow_battery)  # checked per item: power can change mid-run
         print(f"== {scen} repeat {rep}", flush=True)
-        attempts.append(
-            attempt(scen, rep, q, out, audit=not args.no_audit and scen == "r1_dynamic_head")
-        )
+        result = attempt(scen, rep, q, out, audit=not args.no_audit and scen == "r1_dynamic_head")
+        if power_state().get("on_ac") is False and not args.allow_battery:
+            # AC was lost during this attempt: its numbers are not comparable (2026-10-11).
+            stored.unlink(missing_ok=True)
+            raise SystemExit(f"AC power lost during {scen} repeat {rep}; attempt discarded")
+        attempts.append(result)
     res = {"manifest": manifest(), "attempts": attempts}
     write_json(out.parent / "rq5.json", res)
     (out.parent / "rq5.md").write_text(render(res), encoding="utf-8")
