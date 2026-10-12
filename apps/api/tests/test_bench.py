@@ -48,9 +48,17 @@ def test_campaigns_and_results(client):
     camps = c.get("/api/bench/campaigns").json()
     assert [x["name"] for x in camps] == ["2026-10-11-gate-ci", "2026-10-06"]
     later, main = camps
-    assert later == {"name": "2026-10-11-gate-ci", "available": [], "has_report": False, "has_notes": True}
+    assert later == {
+        "name": "2026-10-11-gate-ci",
+        "available": [],
+        "has_report": False,
+        "has_notes": True,
+    }
     assert set(main["available"]) == {"rq1", "rq4"} and main["has_report"] and not main["has_notes"]
-    assert c.get("/api/bench/campaigns/2026-10-11-gate-ci").json()["notes_md"] == "# A/A with intervals"
+    assert (
+        c.get("/api/bench/campaigns/2026-10-11-gate-ci").json()["notes_md"]
+        == "# A/A with intervals"
+    )
     assert c.get("/api/bench/campaigns/2026-10-06").json()["report_md"] == "# report"
     assert c.get("/api/bench/campaigns/2026-10-06").json()["corrections_md"] == "# correction"
     assert c.get("/api/bench/campaigns/2026-10-06/rq4").json() == {"rows": [1]}
