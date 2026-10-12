@@ -1,0 +1,556 @@
+{
+  "manifest": {
+    "date": "2026-10-11-external",
+    "started_at": "2026-10-11T23:59:20+00:00",
+    "git": {
+      "sha": "c4d900e41bd1fbdf97924960ab40657a8f2572ee",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": false,
+      "battery_pct": 50,
+      "gpu_enforced_power_limit_w": 30.0
+    },
+    "argv": [
+      "bench/rq1.py",
+      "--splits",
+      "held-out-5",
+      "--tag",
+      "set5_baseline_before_change"
+    ]
+  },
+  "apps": [
+    {
+      "app": "openai-cs-agents-demo",
+      "split": "held-out-5",
+      "commit": "bd7bfca0f5abf50529370814c3e7c88542011925",
+      "seconds": 0.9070000000065193,
+      "score": {
+        "categories": {
+          "routes": {
+            "tp": 5,
+            "n_pred": 5,
+            "n_truth": 5,
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "missed": [],
+            "false_positives": []
+          },
+          "llm_call_sites": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 3,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "python-backend/server.py::AirlineServer.respond",
+              "python-backend/airline/guardrails.py::relevance_guardrail",
+              "python-backend/airline/guardrails.py::jailbreak_guardrail"
+            ],
+            "false_positives": []
+          },
+          "models": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 2,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "gpt-5.2",
+              "gpt-4.1-mini"
+            ],
+            "false_positives": []
+          },
+          "serving_engines": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "openai"
+            ],
+            "false_positives": []
+          },
+          "retrievers": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          },
+          "tools": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 11,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "faq_lookup_tool",
+              "get_trip_details",
+              "update_seat",
+              "flight_status_tool",
+              "baggage_tool",
+              "get_matching_flights",
+              "book_new_flight",
+              "assign_special_service_seat",
+              "issue_compensation",
+              "display_seat_map",
+              "cancel_flight"
+            ],
+            "false_positives": []
+          },
+          "prompts": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 8,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "python-backend/airline/agents.py::seat_services_instructions",
+              "python-backend/airline/agents.py::flight_information_instructions",
+              "python-backend/airline/agents.py::booking_cancellation_instructions",
+              "python-backend/airline/agents.py::refunds_compensation_instructions",
+              "python-backend/airline/agents.py::faq_agent",
+              "python-backend/airline/agents.py::triage_agent",
+              "python-backend/airline/guardrails.py::guardrail_agent",
+              "python-backend/airline/guardrails.py::jailbreak_guardrail_agent"
+            ],
+            "false_positives": [],
+            "duplicates": []
+          },
+          "workflows": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 1,
+            "precision": null,
+            "recall": 0.0,
+            "f1": 0.0,
+            "missed": [
+              "POST /chatkit"
+            ],
+            "false_positives": []
+          },
+          "contradictions": {
+            "tp": 0,
+            "n_pred": 0,
+            "n_truth": 0,
+            "precision": null,
+            "recall": null,
+            "f1": null,
+            "missed": [],
+            "false_positives": []
+          }
+        },
+        "attributes": [
+          {
+            "attr": "rag.present",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "prompt.dynamic_head",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.tests",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.tracing",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.timeouts",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.retries",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          },
+          {
+            "attr": "existing.evals",
+            "truth": false,
+            "pred": false,
+            "correct": true
+          }
+        ],
+        "calibration": [
+          [
+            0.6,
+            true,
+            "rag.present"
+          ]
+        ]
+      },
+      "empty_scan_attributes": [
+        {
+          "attr": "rag.present",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "prompt.dynamic_head",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.tests",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.tracing",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.timeouts",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.retries",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        },
+        {
+          "attr": "existing.evals",
+          "truth": false,
+          "pred": false,
+          "correct": true
+        }
+      ],
+      "appspec": {
+        "schema_version": "furnace.appspec/v1",
+        "purpose": {
+          "value": "Customer Service Agents Demo",
+          "confidence": 0.5,
+          "observation": "inference",
+          "method": "deterministic",
+          "evidence_ids": [],
+          "contradicted_by": [],
+          "status": "supported",
+          "alternatives": []
+        },
+        "architecture": {
+          "languages": {
+            "typescript": 18,
+            "python": 10,
+            "javascript": 2,
+            "markdown": 1,
+            "yaml": 1
+          },
+          "frameworks": [
+            {
+              "value": "FastAPI",
+              "confidence": 0.6,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            },
+            {
+              "value": "Next.js",
+              "confidence": 0.6,
+              "observation": "inference",
+              "method": "deterministic",
+              "evidence_ids": [],
+              "contradicted_by": [],
+              "status": "supported",
+              "alternatives": []
+            }
+          ],
+          "services": [],
+          "entrypoints": [
+            "component:python-backend/main.py::chatkit_endpoint",
+            "component:python-backend/main.py::chatkit_state",
+            "component:python-backend/main.py::chatkit_bootstrap",
+            "component:python-backend/main.py::chatkit_state_stream",
+            "component:python-backend/main.py::health_check"
+          ],
+          "deploy": []
+        },
+        "workflows": [],
+        "routes": [
+          {
+            "key": "route:python-backend/main.py::POST /chatkit",
+            "method": "POST",
+            "path": "/chatkit",
+            "handler": "component:python-backend/main.py::chatkit_endpoint",
+            "locator": {
+              "path": "python-backend/main.py",
+              "line_start": 49,
+              "line_end": 49,
+              "symbol": "chatkit_endpoint",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          },
+          {
+            "key": "route:python-backend/main.py::GET /chatkit/state",
+            "method": "GET",
+            "path": "/chatkit/state",
+            "handler": "component:python-backend/main.py::chatkit_state",
+            "locator": {
+              "path": "python-backend/main.py",
+              "line_start": 62,
+              "line_end": 62,
+              "symbol": "chatkit_state",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          },
+          {
+            "key": "route:python-backend/main.py::GET /chatkit/bootstrap",
+            "method": "GET",
+            "path": "/chatkit/bootstrap",
+            "handler": "component:python-backend/main.py::chatkit_bootstrap",
+            "locator": {
+              "path": "python-backend/main.py",
+              "line_start": 70,
+              "line_end": 70,
+              "symbol": "chatkit_bootstrap",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          },
+          {
+            "key": "route:python-backend/main.py::GET /chatkit/state/stream",
+            "method": "GET",
+            "path": "/chatkit/state/stream",
+            "handler": "component:python-backend/main.py::chatkit_state_stream",
+            "locator": {
+              "path": "python-backend/main.py",
+              "line_start": 77,
+              "line_end": 77,
+              "symbol": "chatkit_state_stream",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          },
+          {
+            "key": "route:python-backend/main.py::GET /health",
+            "method": "GET",
+            "path": "/health",
+            "handler": "component:python-backend/main.py::health_check",
+            "locator": {
+              "path": "python-backend/main.py",
+              "line_start": 98,
+              "line_end": 98,
+              "symbol": "health_check",
+              "url": null,
+              "frame_ts": null,
+              "bbox": null,
+              "trace_ids": null
+            }
+          }
+        ],
+        "llm_calls": [],
+        "endpoints": [],
+        "prompts": [],
+        "rag": {
+          "present": {
+            "value": false,
+            "confidence": 0.6,
+            "observation": "inference",
+            "method": "deterministic",
+            "evidence_ids": [],
+            "contradicted_by": [],
+            "status": "supported",
+            "alternatives": []
+          },
+          "retrievers": [],
+          "context_assembly": null
+        },
+        "tools": [],
+        "reliability_existing": {
+          "evals": [],
+          "tests": [],
+          "tracing": [],
+          "retries": [],
+          "timeouts": [],
+          "fallbacks": [],
+          "rate_limits": [],
+          "guardrails": []
+        },
+        "contradictions": []
+      }
+    }
+  ],
+  "micro": {
+    "dev": {
+      "_attributes": {
+        "correct": 0,
+        "n": 0,
+        "empty_scan_correct": 0,
+        "empty_scan_n": 0
+      }
+    },
+    "held-out": {
+      "_attributes": {
+        "correct": 0,
+        "n": 0,
+        "empty_scan_correct": 0,
+        "empty_scan_n": 0
+      }
+    },
+    "held-out-2": {
+      "_attributes": {
+        "correct": 0,
+        "n": 0,
+        "empty_scan_correct": 0,
+        "empty_scan_n": 0
+      }
+    },
+    "held-out-3": {
+      "_attributes": {
+        "correct": 0,
+        "n": 0,
+        "empty_scan_correct": 0,
+        "empty_scan_n": 0
+      }
+    },
+    "held-out-4": {
+      "_attributes": {
+        "correct": 0,
+        "n": 0,
+        "empty_scan_correct": 0,
+        "empty_scan_n": 0
+      }
+    },
+    "held-out-5": {
+      "routes": {
+        "tp": 5,
+        "n_pred": 5,
+        "n_truth": 5,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "llm_call_sites": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 3,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "models": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 2,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "serving_engines": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "retrievers": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      },
+      "tools": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 11,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "prompts": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 8,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "workflows": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 1,
+        "precision": null,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      "contradictions": {
+        "tp": 0,
+        "n_pred": 0,
+        "n_truth": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null
+      },
+      "_attributes": {
+        "correct": 7,
+        "n": 7,
+        "empty_scan_correct": 7,
+        "empty_scan_n": 7
+      }
+    }
+  },
+  "calibration": {
+    "ece": 0.4,
+    "n": 1,
+    "table": [
+      {
+        "bin": "[0.6, 0.8)",
+        "n": 1,
+        "mean_conf": 0.6,
+        "accuracy": 1.0
+      }
+    ]
+  }
+}

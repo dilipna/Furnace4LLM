@@ -72,8 +72,21 @@ LLM_FUNCS = {
 MODULE_FUNC_SDKS = {"replicate": "replicate", "ollama": "ollama"}
 # APIs whose first positional argument is the model (`replicate.run("owner/model", input=...)`).
 MODEL_ARG0_APIS = {"replicate.run", "replicate.stream", "replicate.async_run"}
+# OpenAI Agents SDK: `Runner.run(agent, input)` runs the agent's model; recognized only when
+# `Runner` comes from the `agents` package. The model is read from the `Agent(model=...)`
+# passed as the first argument when that agent is bound at module level (here or imported).
+AGENT_RUNNER_APIS = {
+    "run": "openai_agents.Runner.run",
+    "run_streamed": "openai_agents.Runner.run_streamed",
+    "run_sync": "openai_agents.Runner.run_sync",
+}
 # For language models replicate.run returns an iterator of output chunks (SDK behavior).
-STREAMING_APIS = {"replicate.run", "replicate.stream", "replicate.async_run"}
+STREAMING_APIS = {
+    "replicate.run",
+    "replicate.stream",
+    "replicate.async_run",
+    "openai_agents.Runner.run_streamed",
+}
 
 # SDK client classes recognized by the module they are imported from: prefix -> (sdk, classes).
 # Generic names such as `Client` or `Llama` only count when imported from that SDK.
@@ -276,6 +289,18 @@ def dotted(node: ast.AST) -> str | None:
             node = node.func
         else:
             return None
+
+
+def subscript_tail(node: ast.AST) -> str | None:
+    """`[].a.b` for an attribute chain on a subscript, e.g. a client kept in a dict:
+    `clients["openai"].responses.create` -> `[].responses.create` (matched by API suffix)."""
+    parts: list[str] = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    if parts and isinstance(node, ast.Subscript):
+        return "[]." + ".".join(reversed(parts))
+    return None
 
 
 def module_name(path: str) -> str:
@@ -1165,6 +1190,17 @@ class PythonExtractor:
                 root = d.split(".")[0]
                 return api, root
         parts = d.split(".")
+        if (
+            len(parts) == 2
+            and parts[1] in AGENT_RUNNER_APIS
+            and mod.imports.get(parts[0]) == ("agents", "Runner")
+        ) or (
+            len(parts) == 3
+            and parts[1] == "Runner"
+            and parts[2] in AGENT_RUNNER_APIS
+            and mod.imports.get(parts[0]) == ("agents", None)
+        ):
+            return AGENT_RUNNER_APIS[parts[-1]], None
         if len(parts) == 2 and (parts[0], parts[1]) in LLM_FUNCS:
             return LLM_FUNCS[(parts[0], parts[1])], None
         if len(parts) == 1 and parts[0] in mod.imports:
@@ -1172,6 +1208,26 @@ class PythonExtractor:
             if (origin[0], origin[1]) in LLM_FUNCS:
                 return LLM_FUNCS[(origin[0], origin[1] or "")], None
         return None, None
+
+    def _agent_model(self, mod: ModInfo, expr: ast.expr | None) -> Resolved:
+        """Model of an Agents SDK agent handed to Runner: the `model=` of the `Agent(...)` (or
+        `Agent[Ctx](...)`) call that binds it at module level, in this module or imported."""
+        if not isinstance(expr, ast.Name):
+            return Resolved("unknown", note="agent built at runtime")
+        owner, name = mod, expr.id
+        if name not in mod.call_bindings and name in mod.imports:
+            origin_mod, origin_name = mod.imports[name]
+            target = self._find_module(origin_mod)
+            if target is not None and origin_name:
+                owner, name = target, origin_name
+        call = owner.call_bindings.get(name)
+        if call is None:
+            return Resolved("unknown", note=expr.id)
+        ctor = call.func.value if isinstance(call.func, ast.Subscript) else call.func
+        if (dotted(ctor) or "").split(".")[-1] != "Agent":
+            return Resolved("unknown", note=expr.id)
+        kw = {k.arg: k.value for k in call.keywords if k.arg}
+        return self.resolve(owner, kw.get("model"))
 
     def _client_for(
         self, mod: ModInfo, var: str | None, local: dict[str, tuple[str, ast.Call]] | None = None
@@ -1273,7 +1329,8 @@ class PythonExtractor:
         ] = {}  # id(call node) -> SDK client constructor (model fallback)
         for node in walk_own(info.node):
             if isinstance(node, ast.Call):
-                api, client_var = self._llm_api(mod, dotted(node.func) or "")
+                callee = dotted(node.func) or subscript_tail(node.func) or ""
+                api, client_var = self._llm_api(mod, callee)
                 if api:
                     client = self._client_for(mod, client_var, local)
                     root = api.split(".")[0]
@@ -1327,6 +1384,10 @@ class PythonExtractor:
                     if model_expr is None and sctor.args and sk and sk[0] in SDK_CTOR_MODEL_ARG0:
                         model_expr = sctor.args[0]
             model = self.resolve(mod, model_expr, func=info)
+            if api.startswith("openai_agents.") and model_expr is None:
+                model = self._agent_model(
+                    mod, node.args[0] if node.args else kw.get("starting_agent")
+                )
             if "stream" in kw:
                 stream = self.resolve(mod, kw.get("stream"), func=info)
             elif ctor is not None and "streaming" in ctor_kw:
