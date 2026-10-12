@@ -37,7 +37,7 @@ from f1_scenarios import by_name, materialize
 from f1_suite import F1_SUITE
 from furnace.guardian.execute import GuardContext, prepare, run_items, verdict
 from furnace.guardian.impact import analyze_impact, analyze_tree
-from furnace.guardian.perf_gate import GatePolicy, repair_perf_check, run_gate
+from furnace.guardian.perf_gate import GatePolicy, metric_label, repair_perf_check, run_gate
 from furnace.guardian.repair.loop import repair_prefix_instability
 from furnace_bench.schema import AdapterName, BenchTarget
 
@@ -152,6 +152,12 @@ def _chosen(a: dict[str, Any]) -> dict[str, Any]:
 
 def render(res: dict[str, Any]) -> str:
     r1 = [a for a in res["attempts"] if a["scenario"] == "r1_dynamic_head"]
+    label = metric_label(
+        next(
+            (a["perf"]["head_vs_base"].get("metric") for a in r1 if a["perf"].get("head_vs_base")),
+            None,
+        )
+    )
     tried = list(dict.fromkeys(_short(c["strategy"]) for a in r1 for c in a["candidates"]))
     lines = [
         "# RQ5: failing-test-first repair",
@@ -170,8 +176,8 @@ def render(res: dict[str, Any]) -> str:
                 "fails on head / passes on base",
                 "regression test",
                 "existing tests",
-                "PR p95 TTFT vs base",
-                "repair p95 TTFT vs base",
+                f"PR {label} vs base",
+                f"repair {label} vs base",
                 "repair hit rate",
                 "audit (full suite on repair)",
                 "time (s)",
@@ -240,7 +246,9 @@ def render(res: dict[str, Any]) -> str:
 def _cmp(c: dict[str, Any] | None) -> str:
     if not c:
         return "–"
-    return f"{c['baseline']} → {c['value']} ms ({c['change_pct']:+.1f}%, {c['verdict']})"
+    ci = c.get("ci_pct")
+    ci_txt = f", interval {ci[0]:+.1f}% to {ci[1]:+.1f}%" if ci else ""
+    return f"{c['baseline']} → {c['value']} ms ({c['change_pct']:+.1f}%{ci_txt}, {c['verdict']})"
 
 
 def _hit(c: dict[str, Any] | None) -> str:

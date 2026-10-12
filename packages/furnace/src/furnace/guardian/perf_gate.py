@@ -367,6 +367,13 @@ def compare(
     return out
 
 
+def metric_label(metric: str | None) -> str:
+    """Human name of a comparison's metric, so reports never call a geometric mean a p95."""
+    return {"ttft_gmean_ms": "geometric-mean TTFT", "ttft_p95_ms": "p95 TTFT"}.get(
+        metric or "", metric or "TTFT"
+    )
+
+
 def describe(c: dict[str, Any]) -> str:
     """One line for logs, check runs and PR bodies."""
     if c.get("verdict") == "error":
@@ -435,7 +442,8 @@ def repair_perf_check(res: dict[str, list[VariantResult]], policy: GatePolicy) -
         "candidate_vs_head": ch,
         "within_budget": ok,
         "reasons": reasons,
-        "summary": f"p95 TTFT base {hv.get('baseline')} | PR {describe(hv)} | repair {describe(cv)}",
+        "summary": f"{metric_label(hv.get('metric'))} base {hv.get('baseline')} | PR {describe(hv)} "
+        f"| repair {describe(cv)}",
     }
 
 
