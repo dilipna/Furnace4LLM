@@ -97,6 +97,7 @@ Docker). Web: `pnpm lint && pnpm exec tsc --noEmit` in `apps/web`. CI runs both 
 uv run furnace gh-setup --name furnace-dev-<you>         # create the GitHub App from its manifest (2 clicks)
 uv run poe gh-poll                                       # webhook events from the App's delivery log
 uv run furnace gh-check                                  # verify the GitHub App
+uv run python scripts/live_github_run.py --repo OWNER/furnace-demo-f1   # the whole live run, recorded
 uv run furnace gh-forge OWNER/REPO [--open-pr]           # Forge
 uv run furnace gh-guard OWNER/REPO PR --suite FILE.py    # Guard check run
 uv run furnace gh-repair OWNER/REPO PR --suite FILE.py [--open-pr]

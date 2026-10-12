@@ -65,7 +65,21 @@ git remote add origin https://github.com/<you>/furnace-demo-f1.git
 git push -u origin main r1-request-id
 ```
 
-## 3. The live run, command by command
+## 3. The live run in one command (recorded as evidence)
+
+```bash
+uv run python scripts/live_github_run.py --repo <you>/furnace-demo-f1
+```
+
+It runs, in order: App check, Forge draft PR, the R1 PR (found, or opened from
+`r1-request-id` as its developer would), Guard check run, repair draft PR, then Forge and
+repair **again on the same commits**, which must return the same PRs (`reused=True`): the
+live proof that retries never open duplicates. It stops at the first failing step and writes
+`bench/results/<date>-live-github/live_run.{json,md}` with every URL and timing; exit code 0
+only if every step passed and Guard flagged R1. Commit that directory: it is the evidence
+that the GitHub path works on real GitHub.
+
+## 3b. The live run, command by command
 
 Prerequisites: Docker Desktop; lab vLLM up
 (`HF_HOME_HOST=... docker compose --profile gpu up -d vllm`); laptop on AC power.

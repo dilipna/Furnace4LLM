@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 
 export default async function BenchPage({ searchParams }: PageProps<"/bench">) {
   const sp = await searchParams;
-  const list = (await campaigns()).filter((c) => c.has_report);
+  const all = await campaigns();
+  const list = all.filter((c) => c.has_report);
   const wanted = typeof sp.c === "string" ? sp.c : undefined;
   const chosen: Campaign | undefined = list.find((c) => c.name === wanted) ?? list[0];
   const data = chosen
@@ -15,6 +16,14 @@ export default async function BenchPage({ searchParams }: PageProps<"/bench">) {
         `/api/bench/campaigns/${chosen.name}`,
       )
     : null;
+  // Studies run after the chosen report (notes-only result directories), newest first.
+  const later = chosen ? all.filter((c) => c.has_notes && !c.has_report && c.name > chosen.name) : [];
+  const laterNotes = await Promise.all(
+    later.map(async (c) => ({
+      name: c.name,
+      md: (await apiGet<{ notes_md: string | null }>(`/api/bench/campaigns/${c.name}`)).notes_md,
+    })),
+  );
 
   return (
     <div className="flex min-h-full flex-col">
@@ -47,6 +56,25 @@ export default async function BenchPage({ searchParams }: PageProps<"/bench">) {
         {data?.corrections_md && (
           <section aria-label="Corrections" className="mt-6 rounded-[6px] border border-warn/50 bg-bg-1 px-5 py-3">
             <Markdown source={data.corrections_md} />
+          </section>
+        )}
+        {laterNotes.length > 0 && (
+          <section aria-label="Since this report" className="mt-6">
+            <h2 className="text-[15px] font-semibold text-fg-0">Since this report</h2>
+            <p className="mt-1 text-[12px] text-fg-2">
+              Later studies, newest first. Each is the committed <span className="num">NOTES.md</span> of its directory
+              in <span className="num">bench/results/</span>, next to its raw JSON.
+            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              {laterNotes.map((n, i) =>
+                n.md ? (
+                  <details key={n.name} open={i === 0} className="rounded-[6px] border border-line bg-bg-1 px-5 py-3">
+                    <summary className="num cursor-pointer text-[13px] text-fg-1">{n.name}</summary>
+                    <Markdown source={n.md} />
+                  </details>
+                ) : null,
+              )}
+            </div>
           </section>
         )}
         {data?.notes_md && (

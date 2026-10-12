@@ -3,7 +3,7 @@ import { ApiError, apiGet } from "@/lib/api";
 
 export type Agg = { median: number | null; min: number | null; max: number | null; n: number };
 
-export type Campaign = { name: string; available: string[]; has_report: boolean };
+export type Campaign = { name: string; available: string[]; has_report: boolean; has_notes?: boolean };
 
 export type Rq4Row = {
   config: string;
