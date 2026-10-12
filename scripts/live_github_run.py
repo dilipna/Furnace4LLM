@@ -61,7 +61,8 @@ async def ensure_r1_pr(app: Any, repo: str, head: str, base: str) -> dict[str, A
         base_url=API, headers={**HEADERS, "Authorization": f"Bearer {writer.token}"}, timeout=30
     ) as c:
         r = await c.get(
-            f"/repos/{repo}/pulls", params={"head": f"{owner}:{head}", "base": base, "state": "open"}
+            f"/repos/{repo}/pulls",
+            params={"head": f"{owner}:{head}", "base": base, "state": "open"},
         )
         if r.status_code >= 400:
             raise GitHubError(f"list pulls: {r.status_code} {r.text[:200]}")
@@ -87,8 +88,12 @@ def _strip(out: dict[str, Any]) -> dict[str, Any]:
             "summary": perf.get("summary"),
             "reasons": perf.get("reasons"),
             "within_budget": perf.get("within_budget"),
-            "head_vs_base": {k: v for k, v in (perf.get("head_vs_base") or {}).items() if k != "samples_ms"},
-            "candidate_vs_base": {k: v for k, v in (perf.get("candidate_vs_base") or {}).items() if k != "samples_ms"},
+            "head_vs_base": {
+                k: v for k, v in (perf.get("head_vs_base") or {}).items() if k != "samples_ms"
+            },
+            "candidate_vs_base": {
+                k: v for k, v in (perf.get("candidate_vs_base") or {}).items() if k != "samples_ms"
+            },
         }
     return keep
 
@@ -139,7 +144,11 @@ async def main_async(a: argparse.Namespace) -> dict[str, Any]:
             out = await coro_fn()
             rec.update(ok=True, out=_strip(out) if isinstance(out, dict) else out)
         except Exception as exc:  # recorded, then the run stops
-            rec.update(ok=False, error=f"{type(exc).__name__}: {str(exc)[:500]}", trace=traceback.format_exc()[-2000:])
+            rec.update(
+                ok=False,
+                error=f"{type(exc).__name__}: {str(exc)[:500]}",
+                trace=traceback.format_exc()[-2000:],
+            )
         rec["seconds"] = round(time.monotonic() - t0, 1)
         steps.append(rec)
         return rec.get("out") if rec["ok"] else None
@@ -157,17 +166,18 @@ async def main_async(a: argparse.Namespace) -> dict[str, Any]:
         ok = False
     forge = ok and await step("forge", forge_once)
     r1 = forge and await step("r1_pr", lambda: ensure_r1_pr(app, a.repo, a.head, a.base))
+    pr_number = int(r1["number"]) if r1 else 0  # only used when r1 exists
     guard = r1 and await step(
         "guard",
         lambda: flows.guard_pr(
-            app, a.repo, r1["number"], suite=suite, target=target, questions=questions,
+            app, a.repo, pr_number, suite=suite, target=target, questions=questions,
             max_prompt_tokens=3840, progress=say, rerun=True,
         ),
     )  # fmt: skip
     repair = guard and await step(
         "repair",
         lambda: flows.repair_pr(
-            app, a.repo, r1["number"], suite=suite, target=target, questions=questions,
+            app, a.repo, pr_number, suite=suite, target=target, questions=questions,
             open_pr=True, progress=say,
         ),
     )  # fmt: skip
@@ -177,7 +187,7 @@ async def main_async(a: argparse.Namespace) -> dict[str, Any]:
             await step(
                 "replay_repair",
                 lambda: flows.repair_pr(
-                    app, a.repo, r1["number"], suite=suite, target=target, questions=questions,
+                    app, a.repo, pr_number, suite=suite, target=target, questions=questions,
                     open_pr=True, progress=say,
                 ),
             )  # fmt: skip
@@ -199,7 +209,11 @@ async def main_async(a: argparse.Namespace) -> dict[str, Any]:
             and pr_of("replay_repair").get("reused") is True
         ),
     }
-    verdict = "PASS" if all(checks.values()) else "INCOMPLETE: " + ", ".join(k for k, v in checks.items() if not v)
+    verdict = (
+        "PASS"
+        if all(checks.values())
+        else "INCOMPLETE: " + ", ".join(k for k, v in checks.items() if not v)
+    )
     return {"repo": a.repo, "steps": steps, "checks": checks, "verdict": verdict}
 
 
