@@ -43,7 +43,7 @@ measured; an LLM judge is built but not calibrated (no labels or key yet).
 
 | area | status |
 |---|---|
-| Scan of public GitHub repos / ZIPs: Python code (OpenAI, Anthropic, Groq, Ollama, LiteLLM, Cohere, Mistral, Google, Hugging Face, Bedrock, Replicate, llama.cpp, LangChain), routes, Streamlit/CLI workflows, Blueprint, contradictions, graph | working; other languages are reported as not analyzed (their configs and docs still are) |
+| Scan of public GitHub repos / ZIPs: Python code (OpenAI, Anthropic, Groq, Ollama, LiteLLM, Cohere, Mistral, Google, Hugging Face, Bedrock, Replicate, llama.cpp, LangChain, OpenAI Agents SDK incl. agent instructions), routes, Streamlit/CLI workflows, Blueprint, contradictions, graph | working; other languages are reported as not analyzed (their configs and docs still are) |
 | Live views: lab telemetry (vLLM /metrics + NVML), "Run it now" benchmark, Guard run streamed check by check, graph path trace, scan terminal | working locally; hosted deploys show the recorded runs, labeled |
 | `furnace-bench` load generator (TTFT/TPOT/goodput, CIs, telemetry, mock-validated) | working |
 | Inference Lab: prefix-cache and scheduler sweep on the real F1 workload | working (RQ4) |
