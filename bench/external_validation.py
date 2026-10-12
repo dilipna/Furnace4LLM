@@ -198,6 +198,8 @@ def scan(root: Path) -> tuple[Reconstruction, list[Any], dict[str, Any]]:
             if not p.is_file():
                 broken.append(f"{r.rule_id}: {loc.path} does not exist")
                 continue
+            if (f.excerpt or "").strip() == loc.path:
+                continue  # file-level evidence ("this file exists"): existence was checked
             lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
             lo, hi = (loc.line_start or 1), (loc.line_end or loc.line_start or len(lines))
             if lo < 1 or hi > len(lines) or lo > hi:

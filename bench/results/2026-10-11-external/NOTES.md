@@ -101,3 +101,17 @@ call sites: evidence that the change generalizes beyond set 4, not a measurement
 
 Regression check (`rq1_after_agents_sdk.json` vs `2026-10-09/rq1.json`): F1 and sets 1-3
 unchanged in every category. Set 4 (no longer held-out): call sites 2/9 -> 9/9.
+
+## Agent instructions as system prompts (after fixes; set 4 and 5 no longer held-out for this)
+
+`Agent(instructions=<text>)` from the Agents SDK is analyzed like a system message (prefix
+stability; one key per agent, `<scope>@<name>#system`); instruction *functions* are skipped;
+module-level agents are included (module-level message dicts still are not). `self.X` /
+`cls.X` in a prompt is shared text when X is a class attribute somewhere in the repository
+(evaluated once at import). Results (`external_validation.md`, `rq1_after_agent_prompts.md`):
+Guard on set 4 synthetic PRs now 9/9 correct, including rag-postgres's prompt regression;
+the repair strategies do not handle agent instructions ("not applicable", reported), so
+that app gets a correct diagnosis but no automated fix. Prompt P/R on sets 4-5 stays low by
+the labeling convention noted above. F1 and sets 1-3 unchanged in every RQ1 category.
+The driver now treats file-level evidence (excerpt = the path) as a file-existence check;
+before, it reported one such link as broken.
