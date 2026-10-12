@@ -62,10 +62,13 @@ correct but was still +40% to +50% slower than main, and the perf gate rejected 
 second strategy (log the value instead of sending it) was accepted
 (`2026-10-09-gate-warmup-v2/`). The acceptance rule is now interval-based: the candidate must
 be faster than the PR head with 95% confidence and its worst case against main must stay
-below the block threshold. That rule is strictly stronger than the one RQ5 was measured
-with (point estimate PASS or WARN), and RQ5 has not been re-run under it yet: the run was
-blocked when the laptop went on battery, and the benchmark drivers refuse to measure on
-battery rather than record numbers at a different power limit.
+below the block threshold. That rule is strictly stronger than the point rule RQ5 first
+used, and re-measured on 2026-10-12 it verified **1/3**: the good candidate (+1.7% to +8.6%
+vs main, prefix-cache hit back to 98%) was refused twice because its interval reached
++30% and +33%. No unproven repair was accepted, but at 3 runs x 34 requests the gate rarely
+has the power to confirm a good one; an A/A run with 5 runs per side did not narrow the
+interval (7/8 INCONCLUSIVE), so the decision statistic (a median of per-run p95s), not the
+run count, is the limit to fix next (`2026-10-12-gate-ci/NOTES.md`).
 
 ## Hard problem 3: side effects exactly once
 
