@@ -2,10 +2,10 @@
 # Everything the Oct 12 follow-up still owes the GPU, resumable: the gate validation sets
 # (kept trials are not rerun), the report, RQ5 under the frozen gate, then the optimizer grid
 # (configs already measured are skipped). Laptop on AC; start it through the keep-awake
-# launcher so Windows does not idle-sleep mid-run:
-#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run_awake.ps1 -Bash \
-#     "export PATH=/c/Users/user/.local/bin:\$PATH; cd /c/dev/furnace && bash bench/run_remaining_gpu.sh"
-# Logs: bench/results/2026-10-12-gate-validation/gpu.log and .../optimizer.log
+# launcher so Windows does not idle-sleep mid-run. From PowerShell (single quotes keep $PATH
+# for bash; keep the window open until it prints "job exited"):
+#   powershell -NoProfile -ExecutionPolicy Bypass -File C:\dev\furnace\scripts\run_awake.ps1 -Bash 'export PATH=/c/Users/user/.local/bin:$PATH; cd /c/dev/furnace && bash bench/run_remaining_gpu.sh'
+# About 2 hours. Logs: bench/results/2026-10-12-gate-validation/gpu.log and optimizer.log
 set -u
 cd "$(dirname "$0")/.."
 # Docker Desktop, Postgres and the lab vLLM do not survive a sleep: bring them up, or stop.
