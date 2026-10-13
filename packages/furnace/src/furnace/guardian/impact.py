@@ -15,6 +15,7 @@ the full suite, and says why.
 
 from __future__ import annotations
 
+import ast
 import difflib
 import fnmatch
 import re
@@ -39,6 +40,17 @@ LLM_SDK_NAMES = re.compile(
     r"(?i)\b(openai|anthropic|litellm|langchain|llama[-_]index|vllm|sglang|ollama|transformers|groq|tiktoken|tokenizers)\b"
 )
 IGNORABLE_LINE = re.compile(r"^\s*(#.*|import\s.+|from\s+\S+\s+import\s.+|)$")
+# Files no check can be about: repository metadata, CI definitions, images and fonts.
+INERT_FILES = re.compile(
+    r"(?i)((^|/)(\.gitignore|\.gitattributes|\.dockerignore|\.editorconfig|LICENSE[^/]*|"
+    r"CHANGELOG[^/]*|CONTRIBUTING[^/]*|CODE_OF_CONDUCT[^/]*)$|^\.github/|"
+    r"\.(png|jpe?g|gif|svg|ico|webp|woff2?|ttf|eot)$)"
+)
+# Source in a language the analysis does not parse (only Python is modelled).
+OTHER_SOURCE = re.compile(
+    r"\.(tsx?|jsx?|mjs|cjs|go|rs|java|kt|rb|php|cs|swift|c|cc|cpp|h|hpp|scala|sh|ipynb)$"
+)
+DOC_FILES = re.compile(r"(?i)\.(md|rst|txt)$")
 
 
 @dataclass
@@ -249,6 +261,36 @@ def lost_stable_prefix(t: TouchedNode) -> bool:
     return t.node_key.endswith("#system") and change is not None and tuple(change) == (False, True)
 
 
+def _parses(path: Path) -> bool:
+    try:
+        ast.parse(path.read_text(encoding="utf-8", errors="replace"), filename=str(path))
+    except (SyntaxError, ValueError):
+        return False
+    return True
+
+
+def _read_by_app(path: str, *trees: TreeState) -> str | None:
+    """Where application code (not tests, scripts or packaging) names this file or its
+    directory in a string literal, e.g. `(ROOT / "docs").glob("*.md")` for docs/pairing.md:
+    then the file is data the app reads. Returns "file:line", or None. A heuristic that errs
+    toward finding a reference (a directory name is enough), since a hit only widens the
+    selection."""
+    p = Path(path)
+    tokens = [p.name] + ([p.parent.name] if p.parent.name else [])
+    pats = [
+        re.compile(rf"""["'](?:[^"'\n]*[/\\])?{re.escape(t)}(?:[/\\][^"'\n]*)?["']""")
+        for t in tokens
+    ]
+    for tree in trees:
+        for f in tree.inventory.by_lang("python"):
+            if f.path.startswith(NON_APP_PREFIXES) or f.path.endswith(("setup.py", "conftest.py")):
+                continue
+            for i, line in enumerate(tree.inventory.read(f).splitlines(), 1):
+                if any(pat.search(line) for pat in pats):
+                    return f"{f.path}:{i}"
+    return None
+
+
 def analyze_impact(
     base: TreeState,
     head: TreeState,
@@ -321,20 +363,59 @@ def analyze_impact(
         node = head_nodes.get(key) or base_nodes.get(key)
         categories |= categorize(key, node.kind if node else None, t.attr_changes)
 
-    # unmapped application-code changes -> conservative full-suite fallback
+    # Anything the analysis cannot account for selects the full suite, with the reason:
+    # unmapped application code, Python that does not parse, an added or removed module with
+    # no graph node, other-language source, and non-code files the application reads or that
+    # are not modelled. Only files known to be inert, tests and unreferenced docs are skipped.
     fallback_reasons: list[str] = []
     all_facts = head.facts + base.facts
+    modelled = {
+        f.locator.path
+        for f in all_facts
+        if f.locator.path and f.kind not in ("module", "call_edge")
+    }
     for cf in changed:
         if DEPENDENCY_FILES.search(cf.path):
             categories.add("dependency")
             if _changed_lines_match(cf, base.root, head.root, LLM_SDK_NAMES):
                 categories.add("llm_sdk")
             continue
-        if not cf.path.endswith(".py") or cf.path.startswith(NON_APP_PREFIXES):
-            if cf.path.startswith(("tests/", "test/")):
-                categories.add("tests")
-            elif cf.path.endswith((".md", ".rst", ".txt")) or cf.path.startswith("docs/"):
+        if cf.path.startswith(("tests/", "test/")):
+            categories.add("tests")
+            continue
+        if INERT_FILES.search(cf.path):
+            categories.add("repo_meta")
+            continue
+        if not cf.path.endswith(".py"):
+            if cf.path in modelled:  # its nodes were touched above
+                if DOC_FILES.search(cf.path):
+                    categories.add("docs")
+                continue
+            ref = _read_by_app(cf.path, head, base)
+            if ref:
+                fallback_reasons.append(
+                    f"{cf.path} is read by application code ({ref}) and maps to no graph node"
+                )
+            elif OTHER_SOURCE.search(cf.path):
+                fallback_reasons.append(
+                    f"{cf.path}: source the analysis does not parse (only Python is modelled)"
+                )
+            elif DOC_FILES.search(cf.path) or cf.path.startswith(NON_APP_PREFIXES):
                 categories.add("docs")
+            else:
+                fallback_reasons.append(f"{cf.path}: a file the analysis does not model")
+            continue
+        if cf.path.startswith(NON_APP_PREFIXES):
+            continue
+        if cf.status != "removed" and not _parses(head.root / cf.path):
+            fallback_reasons.append(f"{cf.path} does not parse as Python")
+            continue
+        if cf.status in ("added", "removed"):
+            side = head.facts if cf.status == "added" else base.facts
+            if not any(
+                f.locator.path == cf.path and f.kind not in ("module", "call_edge") for f in side
+            ):
+                fallback_reasons.append(f"{cf.path} was {cf.status} and maps to no graph node")
             continue
         head_lines = (
             (head.root / cf.path).read_text(encoding="utf-8", errors="replace").splitlines()
