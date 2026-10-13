@@ -65,7 +65,7 @@ App, which does not exist yet): every step passed, no page errors. Landing + liv
 requests), Guard run on R1 97.8 s (FAILURE: `prompt_prefix_stable` and the perf gate, BLOCK
 at +546.6%, 90% interval +503.1 to +593.2), /bench 0.2 s. Screenshots
 `docs/demo-shots/rehearsal-2026-10-13/` and a silent screen recording
-`docs/demo-video/demo-2026-10-13-1537.webm` (both git-ignored, kept locally). The hero and
+`docs/demo-video/demo-2026-10-13-1537.webm` (the video is git-ignored and kept locally; the screenshots are committed). The hero and
 product-card copy were narrowed after this rehearsal (text only).
 
 Four browser rehearsals on 2026-10-09 (`docs/demo-shots/rehearsal-1/` … `rehearsal-4/`) passed
