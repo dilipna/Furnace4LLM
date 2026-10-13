@@ -5,7 +5,7 @@ import { GuardLive } from "@/components/guard/guard-live";
 import { Verdict } from "@/components/guard/verdict";
 import { AppHeader } from "@/components/ui/app-header";
 import { apiGet } from "@/lib/api";
-import { type GateCompare, getRq, latestWith, type RepairAttempt, type Rq3, type Rq5 } from "@/lib/bench";
+import { type GateCompare, getRq, latestWith, metricLabel, type RepairAttempt, type Rq3, type Rq5 } from "@/lib/bench";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,9 @@ function perfRow(name: string, c: GateCompare | undefined) {
       <td className="num pr-4 text-right text-fg-0">
         {c.change_pct > 0 ? "+" : ""}
         {c.change_pct.toFixed(1)}%
+      </td>
+      <td className="num pr-4 text-right">
+        {c.ci_pct ? `${c.ci_pct[0] > 0 ? "+" : ""}${c.ci_pct[0].toFixed(1)}% to ${c.ci_pct[1] > 0 ? "+" : ""}${c.ci_pct[1].toFixed(1)}%` : "–"}
       </td>
       <td className="num pr-4 text-right">
         {hit[0] == null ? "–" : `${Math.round(hit[0] * 100)}%`} → {hit[1] == null ? "–" : `${Math.round(hit[1] * 100)}%`}
@@ -68,13 +71,14 @@ function Attempt({ a, open }: { a: RepairAttempt; open: boolean }) {
 
       {(a.perf.head_vs_base || a.perf.candidate_vs_base) && (
         <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-[12px]">
+          <table className="w-full min-w-[840px] border-collapse text-[12px]">
             <thead>
               <tr className="border-b border-line text-left text-fg-3">
                 <th className="py-2 pr-4 font-normal">revision</th>
-                <th className="py-2 pr-4 text-right font-normal">base p95 TTFT, ms</th>
-                <th className="py-2 pr-4 text-right font-normal">p95 TTFT, ms</th>
+                <th className="py-2 pr-4 text-right font-normal">base {metricLabel(a.perf.head_vs_base?.metric)}, ms</th>
+                <th className="py-2 pr-4 text-right font-normal">{metricLabel(a.perf.head_vs_base?.metric)}, ms</th>
                 <th className="py-2 pr-4 text-right font-normal">change</th>
+                <th className="py-2 pr-4 text-right font-normal">interval</th>
                 <th className="py-2 pr-4 text-right font-normal">prefix-cache hit</th>
                 <th className="py-2 pr-4 font-normal">runs</th>
                 <th className="py-2 font-normal">gate</th>

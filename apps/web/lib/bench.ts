@@ -131,14 +131,25 @@ export type Rq3 = {
 };
 
 export type GateCompare = {
+  /** "ttft_gmean_ms" (gate since 2026-10-12) or "ttft_p95_ms" (earlier results) */
+  metric?: string;
   baseline: number;
   value: number;
   change_pct: number;
+  /** interval of the change in %, absent for point-rule results */
+  ci_pct?: [number, number] | null;
+  confidence?: number;
   verdict: string;
   prefix_hit_rate?: [number | null, number | null] | null;
   runs?: number;
   separated?: boolean;
 };
+
+/** Name of a gate comparison's metric, so a geometric mean is never labeled p95. */
+export function metricLabel(metric: string | undefined): string {
+  if (metric === "ttft_gmean_ms") return "geometric-mean TTFT";
+  return "p95 TTFT";
+}
 
 export type RepairAttempt = {
   scenario: string;
