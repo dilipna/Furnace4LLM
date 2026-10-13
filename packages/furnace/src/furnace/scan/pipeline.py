@@ -11,7 +11,7 @@ from typing import Any
 
 from sqlalchemy import update
 
-from furnace.blueprint.rules import run_rules
+from furnace.blueprint.rules import actionable, run_rules
 from furnace.code_intel import python_ast
 from furnace.code_intel.facts import FactSet
 from furnace.db.models import (
@@ -238,11 +238,15 @@ async def run_scan(ctx: JobContext) -> dict[str, Any]:
             ),
             fact_uuid,
         )
-        by_p = {p: sum(1 for r in recs if r.priority.value == p) for p in ("P0", "P1", "P2")}
+        shown = actionable(recs)
+        n_exp = len(recs) - len(shown)
+        by_p = {p: sum(1 for r in shown if r.priority.value == p) for p in ("P0", "P1", "P2")}
         await ctx.emit(
             "blueprint",
-            f"{len(recs)} recommendations (P0 {by_p['P0']}, P1 {by_p['P1']}, P2 {by_p['P2']})",
+            f"{len(shown)} recommendations (P0 {by_p['P0']}, P1 {by_p['P1']}, P2 {by_p['P2']})"
+            + (f"; {n_exp} experimental, listed separately" if n_exp else ""),
             by_priority=by_p,
+            experimental=n_exp,
         )
         await persist(
             scan=scan,
@@ -262,7 +266,8 @@ async def run_scan(ctx: JobContext) -> dict[str, Any]:
             "claims": len(builder.claims),
             "nodes": len(graph.nodes),
             "edges": len(graph.edges),
-            "recommendations": len(recs),
+            "recommendations": len(shown),
+            "experimental_recommendations": n_exp,
             **meta,
         }
         await _set_scan(

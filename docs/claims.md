@@ -21,8 +21,8 @@ Results from different gate versions are never pooled or shown as one figure.
 | landing tile 1 | LLM call sites found on never-seen apps, a/b | pinned `2026-10-13-set6/rq1.json`, split held-out-6 | scanner 41ca529 (frozen), labels ebd5824 | n/a | **fixed 2026-10-13**: it showed set 3 after the scanner was fixed on set 3 (8/9) as "labeled before the scanner saw them"; figure appears once the set-6 RQ1 run is stored |
 | landing tile 2 | regressions caught 3/3, 46% of checks, 13 PRs | `2026-10-06/rq3.json` | 2026-10-06 commits (map: `bench/results/commit-map.txt`), 780 MHz | G0 | label now names the campaign and gate |
 | landing tile 3 | p95 TTFT with prefix caching off, c=16, seqs 32 | `2026-10-06/rq4` | 780 MHz, AC | n/a (direct benchmark) | label now names campaign and clock |
-| landing tile 4 | prompt-cache repairs verified x/3 | newest campaign with rq5 | as recorded in that rq5.json | named from the stored metric (G3 if geometric mean) | label now names campaign and gate; becomes the G3 result when V4 is stored |
-| landing hero | R1 before/after, first candidate blocked | newest campaign with rq5 (single campaign) | as recorded | one gate (that campaign's) | consistent; switches to G3 with V4 |
+| landing tile 4 | prompt-cache repairs verified 3/3 | `2026-10-12-gate-validation/rq5.json` | 6efebfd, 780 MHz, AC | G3 | label says "repeated trials of one scenario (fixture F1, regression R1)" |
+| landing hero | R1 before/after, first candidate rejected | `2026-10-12-gate-validation/rq5.json` | 6efebfd, 780 MHz | G3 | "rejected (blocked or not shown within tolerance)": one of the three was INCONCLUSIVE, not BLOCK |
 | /lab | RQ4 cells, live run | `2026-10-06/rq4`; live runs are labeled live | 780 MHz | n/a | ok |
 | /guard, /guard/<scenario> | RQ3 selections; RQ5 timeline | newest rq3 (G0) and newest rq5 | as recorded | each page names its metric | ok; pending: gate label on /guard RQ3 table |
 | /evals | deterministic checks on seeded failures; human/judge parts | newest rq2 | as recorded | n/a | ok (judge and labels shown as not run) |
@@ -33,13 +33,15 @@ Results from different gate versions are never pooled or shown as one figure.
 | claim | source | gate | status |
 |---|---|---|---|
 | held-out first-scan call sites 4/34 (P 4/4) over sets 1-5 | `2026-10-12-reconcile/scanner_reconciliation.md` | n/a | ok; to be joined (not pooled) by set 6 |
-| set 6: finding precision 39/77, recall 39/64; citations 148/148 | `2026-10-13-set6/set6/{findings,citations}.md` | n/a | new; not yet in README |
+| set 6: call sites 32/48 (32/32 correct); finding precision 39/77, recall 39/64; citations 148/148 | `2026-10-13-set6/` (`rq1.md`, `set6/`, `NOTES.md`) | n/a | in README; reported beside sets 1-5, not pooled |
 | R1 size: p95 TTFT +905% to +1,004%, hit 98% -> 0% | `2026-10-09-gate-warmup-v2/rq5.md` | G1 measurement (a p95 effect size, not a verdict) | ok as labeled (p95, that campaign) |
-| repair 1/3 verified | `2026-10-12-gate-ci/rq5.md` | G2 | ok as labeled; G3 result pending (V4) |
+| repair 1/3 verified | `2026-10-12-gate-ci/rq5.md` | G2 | ok as labeled; never pooled with G3 |
+| repair 3/3 verified = 3 repeated trials of one scenario (F1, R1); accepted at +4.2% / +0.9% / +1.7% vs main (90% upper bounds 9.5 / 4.1 / 7.2); first strategy rejected 3/3; prompts byte-identical to main 34/34; judge skipped | `2026-10-12-gate-validation/rq5.md`, `rq5/`, `rq5/prompt_identity.md`, `NOTES.md` | G3 | done |
+| optimizer: keep the baseline; confirmation inconclusive (goodput +3.8%, 90% CI -8.8 to +18.2) | `2026-10-12-optimizer/NOTES.md`, `optimizer/{optimizer,confirm}.md` | n/a | done; no improvement claimed |
 | RQ3 46% of checks, 3/3 caught, 13/13 same conclusion | `2026-10-06/rq3.md` | G0 | needs "under the gate of 2026-10-06" next to it |
 | RQ4 +193% to +433% (seqs 32), all 15 cells | `2026-10-06/rq4` | n/a | ok, 780 MHz |
 | A/A: 0 false WARN/BLOCK in 12, max +13.4% | `2026-10-11-gate-ci` | G2 | ok as labeled |
-| gate validation figures | `2026-10-12-gate-validation/validation/report.md` | G3 | pending the run; README/case study say "in progress" until then |
+| gate validation: 63 trials = 60 counted + 3 affected; 0/36 false FAIL, PASS 29/36, INCONCLUSIVE 7/36; R1 BLOCK 6/6; graded sets INCONCLUSIVE 15/18 / PASS 3/18; 780-828 MHz | `2026-10-12-gate-validation/validation/{report,trials}.md`, `NOTES.md` | G3 | done |
 | Kernel Lab 36/36, parity with torch.compile | `kernel_lab/results/2026-10-09/` | n/a | ok |
 
 ## Resume

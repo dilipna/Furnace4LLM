@@ -55,6 +55,19 @@ class Ctx:
 Rule = Callable[[Ctx], list[Recommendation]]
 RULES: list[Rule] = []
 
+# Rules that still run and are stored (so measured results stay reproducible) but are kept out
+# of the default, actionable Blueprint: rule id -> why, shown next to them.
+EXPERIMENTAL: dict[str, str] = {
+    "sec.tool_approval_boundary": (
+        "Experimental: it treats any side-effecting function as a tool, including functions no "
+        "model can call (held-out set 6: 28 of 38 unexpected findings came from this rule)."
+    ),
+}
+
+
+def actionable(recs: list[Recommendation]) -> list[Recommendation]:
+    return [r for r in recs if r.rule_id not in EXPERIMENTAL]
+
 
 def rule(fn: Rule) -> Rule:
     RULES.append(fn)

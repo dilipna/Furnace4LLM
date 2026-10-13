@@ -241,7 +241,9 @@ def move_dynamic_to_log(path: str, source: str, function: str) -> Edit:
             "information is kept in the application log, and every request again starts with "
             "exactly the base revision's prompt, so the prefix cache reuses all of it. Trade-off: "
             "the model no longer sees these values; if it needs them, the suffix variant keeps "
-            "them in the prompt at the measured latency cost."
+            "them in the prompt at the measured latency cost. Review before merging: these "
+            "values are written to the application log at INFO, and Furnace does not check "
+            "whether they contain user or secret data."
         ),
     )
 

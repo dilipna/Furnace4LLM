@@ -42,7 +42,7 @@ export async function HeroEvidence() {
     .map(Number);
   const footnote =
     firstBlocked.length > 0
-      ? `Furnace's first candidate kept the values in the prompt (moved to the end) and was blocked by its own perf gate in ${firstBlocked.length}/${att.length} attempts` +
+      ? `Furnace's first candidate kept the values in the prompt (moved to the end) and was rejected by its own perf gate (blocked or not shown within tolerance) in ${firstBlocked.length}/${att.length} attempts` +
         (pcts.length ? ` (+${Math.min(...pcts).toFixed(0)}% to +${Math.max(...pcts).toFixed(0)}% ${metric} vs main)` : "") +
         "."
       : null;

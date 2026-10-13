@@ -15,7 +15,7 @@ const PLANS = [
     price: "$15",
     cadence: "once per repository",
     body: "A draft pull request that installs only what the Blueprint justified, validated in a sandbox before it is opened.",
-    items: ["Deterministic checks and targeted judges", "Prompt extraction (byte-identical)", "Workload and benchmark configs", "CI gate; you review and merge"],
+    items: ["Deterministic checks; judge specs (uncalibrated)", "Prompt extraction (byte-identical)", "Workload and benchmark configs", "CI gate; you review and merge"],
     cta: null,
   },
   {

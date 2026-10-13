@@ -14,7 +14,7 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
   optimizer grid (8 configs). About 2 hours. Then: commit `bench/results/2026-10-12-gate-validation/`
   and `2026-10-12-optimizer/`, write NOTES.md there (name trial 10 of V1: a 36 s test run
   overlapped it; editor lint/typecheck ran intermittently during V1), and replace every
-  "in progress" / "not measured yet" in README, case-study, scope.md, demo-90s with the results.
+  "in progress" / "not measured yet" in README, case-study, scope.md, demo-3min with the results.
   **Do not change any threshold after seeing them.**
 - **Still owed to the user**: GitHub App (`uv run furnace gh-setup --name furnace-dev-dilipna`,
   click Create, install on `furnace-demo-f1` only) and the empty public repo `furnace-demo-f1`;

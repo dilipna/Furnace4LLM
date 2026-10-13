@@ -59,6 +59,29 @@ function Row({ r, evidence }: { r: Recommendation; evidence: Record<string, Evid
   );
 }
 
+/** Findings of experimental rules: collapsed, outside the findings count, with the reason. */
+export function ExperimentalFindings({ recs, evidence }: { recs: Recommendation[]; evidence: Record<string, Evidence> }) {
+  if (!recs.length) return null;
+  const reasons = [...new Set(recs.map((r) => r.experimental_reason).filter(Boolean))];
+  return (
+    <details className="mt-10 border-t border-line pt-4">
+      <summary className="cursor-pointer text-[13px] text-fg-2">
+        Experimental, not counted as findings ({recs.length})
+      </summary>
+      {reasons.map((t) => (
+        <p key={t} className="mt-2 max-w-[760px] text-[12px] text-fg-3">
+          {t}
+        </p>
+      ))}
+      <ul>
+        {recs.map((r) => (
+          <Row key={r.id} r={r} evidence={evidence} />
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 export function Recommendations({ recs, evidence }: { recs: Recommendation[]; evidence: Record<string, Evidence> }) {
   return (
     <div className="space-y-10">
