@@ -27,6 +27,7 @@ run bench/gate_validate.py run --set v3b_r2 "${RESUME[@]}"
 run bench/gate_validate.py run --set v3c_topk4 "${RESUME[@]}"
 run bench/gate_validate.py run --set v3c_topk8 "${RESUME[@]}"
 run bench/gate_validate.py summarize
+run bench/gate_validation_report.py
 # V4: the repair loop under the frozen gate. Reported as measured; not a criterion for the gate.
 run bench/rq5.py --repeats 3
 echo "=== done $(date -u +%T)" >>"$LOG"
