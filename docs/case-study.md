@@ -15,7 +15,7 @@ to a file in `bench/results/`.
 | Scan (call sites, prompts, routes, graph, findings) | Python AST + config/doc parsing, noisy-OR reconciliation | no |
 | Forge (harness, prompt extraction, tests, CI) | templates and codemods, sandbox-validated | no |
 | Guard impact analysis | graph diff between base and head | no |
-| Perf gate | load generation + bootstrap statistics | no (measures the served model) |
+| Perf gate | load generation + run-level interval statistics | no (measures the served model) |
 | Repair | rule strategies over the AST, gated by tests and the perf gate | no |
 | Quality checks | deterministic checks; LLM judge built, not calibrated (no key) | judge only |
 
@@ -38,19 +38,29 @@ Measuring that is easy; measuring that a *fix* is fine is not. Three findings sh
    A second A/A on 2026-10-11, same clock, found +13.4% and +13.0% between identical
    revisions: the old point rule would have raised 2/12 false WARNs
    (`2026-10-11-gate-ci/gate_noise.md`).
-3. **p95 from 34 requests is nearly the maximum.** So the gate now decides on a 95%
-   hierarchical-bootstrap interval (runs, then requests within runs), rotates run order,
-   keeps raw per-request data, and has an honest fourth verdict, INCONCLUSIVE. On the same
-   12 A/A trials: 0 false WARN or BLOCK, 7 PASS, 5 INCONCLUSIVE, and the interval contained
-   the true difference (0) in 12/12. A run with 4x the requests per run was invalidated when
-   the laptop lost AC power partway through; it is kept, labeled invalid, and the A/A driver
-   now checks power after every trial and stops.
+3. **p95 from 34 requests is nearly the maximum.** The gate then moved to a 95%
+   hierarchical-bootstrap interval with an honest fourth verdict, INCONCLUSIVE (12 A/A
+   trials: 0 false WARN or BLOCK, 5 INCONCLUSIVE). With 5 runs per side it was still
+   INCONCLUSIVE in 7/8 A/A trials: more runs did not help.
+4. **The statistic, not the run count, was the limit.** Requests in a closed-loop run arrive
+   in waves that share a scheduler step (62% of consecutive TTFTs within 3%), so 34 requests
+   behave like about 4-5 independent observations, and the request-level bootstrap treated them as 34.
+   On the 20 earlier A/A trials (and only those), every candidate was compared: pooling all
+   requests is the worst choice for a tail (one slow run sets the pooled p95; A/A spread
+   0.167 on the log scale), while a run's geometric-mean TTFT has half the run-to-run noise
+   of its p95. The revision, frozen in `docs/gate-revision.md` before any code changed:
+   geometric-mean TTFT, the run as the unit, a 90% Welch t interval, the plan's unchanged
+   10% / 25% thresholds; p95 is reported but does not decide. What it gives up is stated: a
+   regression confined to the slowest few percent of requests is not seen. On the
+   development data it gives PASS 87% / INCONCLUSIVE 13% (optimistic: chosen there); a fresh
+   validation (unchanged code, a restored baseline, regressions of about +13%, +18%, +30%
+   and +800%) is in progress in `2026-10-12-gate-validation/`: 14 of 24 unchanged-code
+   trials so far, 0 false FAIL, 10 PASS, 4 INCONCLUSIVE.
 
-Alternatives considered: fixed thresholds on the point estimate (what failed above); more
-repeats only (helps, costs GPU minutes per PR); a Mann-Whitney test on per-request TTFT
-(ignores between-run variance, which is large here: the three runs of the same revision
-differed by a median of 9.8%). The interval is coarse at this sample size and says so
-instead of passing.
+Alternatives rejected on data: fixed thresholds on the point estimate (false WARNs above);
+more requests per run (adds waves slowly, does nothing about run-to-run variation); pooled
+p95 (worst of all); a Mann-Whitney test on per-request TTFT (treats dependent requests as
+independent).
 
 ## Hard problem 2: repairs that do not create a new regression
 
@@ -68,7 +78,9 @@ vs main, prefix-cache hit back to 98%) was refused twice because its interval re
 +30% and +33%. No unproven repair was accepted, but at 3 runs x 34 requests the gate rarely
 has the power to confirm a good one; an A/A run with 5 runs per side did not narrow the
 interval (7/8 INCONCLUSIVE), so the decision statistic (a median of per-run p95s), not the
-run count, is the limit to fix next (`2026-10-12-gate-ci/NOTES.md`).
+run count, was the limit (`2026-10-12-gate-ci/NOTES.md`). The gate has since been revised
+(hard problem 1, point 4); repair under the revised gate is queued and **not measured yet**,
+and its result will be reported whatever it is: the thresholds were not changed to let it pass.
 
 ## Hard problem 3: side effects exactly once
 
@@ -85,13 +97,15 @@ of credentials before they become job events or check text.
 
 Scanner changes are measured on held-out apps labeled and committed before any scan. On
 held-out set 3 (Gemini, Mistral, Replicate, Bedrock, Cohere apps) LLM call-site recall went
-from 1/9 to 8/9 at precision 1.00 (`2026-10-09/rq1.md`). Set 4 (three apps chosen on
+from 1/9 to 8/9 with no false positive (8 of 8 predicted; `2026-10-09/rq1.md`); set 3
+was used to make that change, so 8/9 is not a held-out figure. Set 4 (three apps chosen on
 2026-10-11, labels committed in `f0fce9d` before any scan) tests what a demo hides: an app
 whose calls all go through the OpenAI Agents SDK, a Redis-backed tool-calling chatbot, and a
-minimal Responses-API backend. First scan: **2/9 LLM call sites at precision 1.00**; the
+minimal Responses-API backend. First scan: **2/9 LLM call sites** (2 predicted, both right); the
 Agents SDK calls, a client held in a dict and env/settings model defaults are not resolved.
-What held up is failing safe: all 10 evidence links of the findings resolve to the cited
-lines; docs-only and unrelated-code PRs selected no checks (6/6); an injected prompt
+What held up is failing safe: the 10 evidence items behind its 11 findings point at
+existing files and line ranges that contain their excerpts (a consistency check of the
+links, not of whether a finding is right; no label set measures that); docs-only and unrelated-code PRs selected no checks (6/6); an injected prompt
 regression was caught by the prefix check in 2 of 3 apps, but the perf gate was not reached
 in any (0/3 fully correct); Forge planned on 1 of 3 and refused with a stated reason on the
 others. Validating Forge there exposed a real infrastructure gap: the sandbox installed only
@@ -101,11 +115,16 @@ passed, 1 pre-existing failure, so Forge still correctly opens no PR). Set 4 is 
 held-out for anything changed after that first scan (`2026-10-11-external/NOTES.md`).
 
 The fixes were then measured the right way: a fifth set (`openai/openai-cs-agents-demo`) was
-labeled and committed before the scanner change, and went from 0/3 to 3/3 call sites at
-precision 1.00, while F1 and sets 1-3 stayed identical in every category. One app is
+labeled and committed before the scanner change, and went from 0/3 to 3/3 call sites (3
+predicted, all right), while F1 and sets 1-3 stayed identical in every category. One app is
 evidence the change generalizes, not a recall estimate. With agent instructions analyzed as
 system prompts, Guard picks the right checks on all 9 synthetic set-4 PRs; repair still
 does not rewrite agent instructions, and says so.
+
+Pooled over all five held-out sets, on each set's first scan: **4/34 call sites found**
+(12%; 95% CI 5-27%), 4 of 4 predictions right. After the fixes each set prompted, the same
+34 labels score 33/34, which measures fit to those apps, not generalization
+(`2026-10-12-reconcile/scanner_reconciliation.md`).
 
 ## A measurement mistake caught
 

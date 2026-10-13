@@ -76,8 +76,12 @@ It runs, in order: App check, Forge draft PR, the R1 PR (found, or opened from
 repair **again on the same commits**, which must return the same PRs (`reused=True`): the
 live proof that retries never open duplicates. It stops at the first failing step and writes
 `bench/results/<date>-live-github/live_run.{json,md}` with every URL and timing; exit code 0
-only if every step passed and Guard flagged R1. Commit that directory: it is the evidence
-that the GitHub path works on real GitHub.
+only if every step passed, Guard flagged R1, the repair was verified (so a repair PR exists)
+and both replays returned the same PRs. If the perf gate refuses the repair, the run is
+INCOMPLETE and the repair-PR checks cannot be verified that time; that is reported, not
+retried until it passes. Commit that directory together with the
+verifier's `verify.{json,md}` (section 3a): both are needed before claiming the GitHub path
+works on real GitHub.
 
 ## 3a. Verify the live run against GitHub
 
@@ -153,7 +157,7 @@ Two terminals: `uv run poe runner` (claims jobs) and `uv run poe gh-poll` (reads
 delivery log every 10 s). Opening or pushing to a non-draft PR from the same repository
 then: delivery recorded once → one `guard.pr` job per head commit → check run. If the check
 fails with a regression signature the repair loop supports (today: prefix instability)
-and auto-repair is on, one `repair.pr` job per head commit follows and, only if a
+and repair is enabled (`FURNACE_GUARD_AUTO_REPAIR=true`), one `repair.pr` job per head commit follows and, only if a
 candidate passes the regression test, the existing tests and the perf gate, opens a draft
 PR into the PR's branch. Every delivery and its outcome is a row in `webhook_deliveries`;
 every job's stages are `job_events`.

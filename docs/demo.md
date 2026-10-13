@@ -1,112 +1,65 @@
-# Demo script (about 5 minutes) and pre-flight checklist
+# Five-minute demo: reproducible script, sources and fallbacks
 
-Every number shown comes from the running system or `bench/results/`; say "measured on a laptop
-RTX 3050 Ti" when showing latency. The driver picks the GPU clock for this light load: 780 MHz
-on Oct 6-9, ~1,960 MHz on Oct 11 after a reboot (never throttled; `bench/results/2026-10-06/NOTES.md`).
-The FurnaceBench numbers were measured at ~780 MHz; a live run at ~1,960 MHz is 32-48% faster
-at p95 (`bench/results/2026-10-11-live-clock/`). Pre-flight prints today's clock: say it when the
-live dots land below the RQ4 reference ticks, which were recorded at 780-830 MHz.
+Every number on screen comes from the running system or a file in `bench/results/`. Say
+"measured on a laptop RTX 3050 Ti" for every latency. The driver picks the GPU clock for this
+light load (780 MHz on Oct 6-9 and Oct 12, ~1,960 MHz on Oct 11 after a reboot; never
+throttled); pre-flight prints today's clock. Stored results were measured at 780 MHz unless
+their folder says otherwise; a run at ~1,960 MHz is 32-48% faster at p95
+(`bench/results/2026-10-11-live-clock/`), so compare live dots with stored ticks only at
+equal clocks.
 
-Timings below are from four full rehearsals on 2026-10-09 (`scripts/rehearse.py`, results and
-screenshots in `docs/demo-shots/rehearsal-1/` … `rehearsal-4/`): every step passed in all four.
-Rehearsals 3 and 4 recorded a video (the browser recording adds host load; 4 is the latest code).
+The script has two parts. **Part A** runs on the laptop alone and is what can be shown today.
+**Part B** (real GitHub) may be shown only after `scripts/live_github_run.py` and
+`scripts/live_github_verify.py` have both passed on the demo repository (docs/github-app.md).
 
-| step (rehearsed in a browser) | 1 | 2 | 3 | 4 |
-|---|---:|---:|---:|---:|
-| landing loads, live lab panel connects | 1.8 s | 0.4 s | 8.9 s* | 8.8 s* |
-| GitHub scan (Azure-Samples/openai-chat-app-quickstart) to Blueprint | 5.8 s | 3.7 s | 4.5 s | 7.2 s |
-| graph: select the workflow, path trace finishes | 1.8 s | 1.7 s | 2.5 s | 1.7 s |
-| /lab "Run it now": 80 requests, c = 1, 2, 4, 8 | 27.6 s | 32.5 s | 31.5 s | 31.3 s |
-| /guard/r1_dynamic_head "Run Guard on this PR" to verdict | 85.5 s | 83.9 s | 92.5 s | 129.2 s† |
-| /bench | 0.4 s | 0.4 s | 0.3 s | 0.2 s |
+## Start (about 5 minutes before)
 
-\* includes the deliberate pauses for the recording (hero replay, live panel).
-† rehearsal 4 runs the fixed perf gate, which adds an unmeasured warmup wave before each measured
-run: plan on **~2 minutes** for a live Guard run, so start it at step 5 and come back at step 7.
+```bash
+uv run poe demo-up                           # Docker, Postgres, lab vLLM, API, scan worker, Guard runner, web build
+uv run python scripts/preflight.py --load    # every line OK; "GitHub App" FAILs until part B exists
+uv run python scripts/rehearse.py            # optional: the whole part A path in a real browser, ~3.5 min
+```
 
-Every Guard run ended `FAILURE: 2 regressions found: prompt_prefix_stable, chat_perf_gate`
-(rehearsal 4: p95 TTFT 139.8 → 981.6 ms, +602%, prefix-cache hit 98% → 0%; absolute values move
-with host load, the comparison shares it). Not rehearsed yet: the GitHub App steps (Forge PR, R1
-PR check run, repair PR): they need the App (docs/github-app.md).
+Keep the laptop on AC and the lid open (a sleeping laptop stops Docker and every job). Open
+tabs: `http://localhost:3100/`, `/lab`, `/guard/r1_dynamic_head`, `/bench`.
 
-## Pre-flight (30 minutes before)
+## Part A (local, 5:00)
 
-**One command:** `uv run poe demo-up` starts Docker, Postgres, the lab vLLM, the API, the scan
-worker, the Guard runner and a production build of the web app (logs in `.data/logs/`), then runs
-the pre-flight below. `uv run poe demo-down` stops them. The steps it automates:
+| time | show | say, and where the number comes from |
+|---|---|---|
+| 0:00 | **Landing**: press Replay on the R1 before/after | "A PR adds a request id to the top of the system prompt 'for debugging'. Nothing breaks functionally, but no two requests share a prompt prefix any more: prefix-cache hit 98% → 0% and time to first token up about 9x." Read the bars off the page; the caption names the metric and links the source (`rq5.md` of the newest campaign). The repair bar shows only repairs the gate accepted, with "verified in k/n attempts". |
+| 0:30 | **Live lab panel** under the hero | vLLM's own counters and the GPU's power, clock and temperature, once a second; nothing moves unless the system moved. |
+| 0:45 | **Scan**: paste `github.com/Azure-Samples/openai-chat-app-quickstart` | The stage log types in with real timings (a few seconds); every Blueprint finding cites file and line. "It reads Python. On apps it had never seen, its first scans found 4 of 34 labeled LLM call sites: precise, not yet broad, and the misses are listed." (`2026-10-12-reconcile/scanner_reconciliation.md`) |
+| 1:30 | **Graph**: click the `POST` workflow | The path traces route → handler → system prompt → model → endpoint → vLLM flags. "This graph is how Guard decides which checks a diff can affect." |
+| 1:50 | **/lab → Run it now** (~30 s), and **start step 3:00 in the other tab now** | Each dot is one real request's TTFT against the RQ4 ticks for prefix caching on/off. "Turning prefix caching off raised p95 TTFT by +96% to +433% across all 15 measured cells, same sign in every paired repeat." (`2026-10-06/rq4/rq4.md`) |
+| 2:30 | **Queue correlation** (`2026-10-12-correlation/correlation.md`) | "vLLM only queues when concurrency exceeds max-num-seqs; there, time to first token tracks the queue (rho +0.41 with caching on). Below that there is no queue to blame." |
+| 3:00 | **/guard/r1_dynamic_head → Run Guard on this PR** (started at 1:50; ~2 min) | The impact graph lights the changed prompt, then what it reaches; each check flips to its verdict. Expected: FAILURE on `prompt_prefix_stable` and the perf gate. "The gate decides on geometric-mean TTFT with an interval across runs; the p95 is shown as advisory, because 34 requests cannot confirm a 10% change in a p95." |
+| 3:45 | **Repair timeline** (same page) | The regression test was written first (fails on the PR, passes on main); two rule strategies tried in order; the gate's decision for each. Read the outcome off the page (accepted or refused, with the interval). "It tries its own fixes and refuses the ones it cannot show are faster without a new regression. A human merges; Furnace never pushes to your branches." |
+| 4:20 | **/bench → Corrections**, then `docs/gate-revision.md` | "We test our own instrument. Identical code on both sides: the old gate called 5 of 12, and with more runs 7 of 8, such comparisons inconclusive, because its statistic was too noisy. We redesigned it on old data only, froze the design, then validated it on fresh runs, including regressions near the 10% threshold that it is expected not to resolve." Quote only the numbers in the latest `2026-10-12-gate-validation/validation/report.md`. |
+| 4:50 | Close | "Every number links to a file. What I did not show is not claimed: real GitHub pull requests, a hosted deploy, TypeScript apps." |
 
-- [ ] Laptop on AC. `uv run python scripts/preflight.py --load --owner <you>` prints OK/WARN/FAIL
-      for power mode, API + database, lab vLLM, GPU clock under load (with the driver's
-      clock-event reasons), every page, a live sample through the web proxy, worker + runner,
-      the offline fallback and the GitHub App. Fix every FAIL.
-- [ ] Docker Desktop running; `docker compose up -d postgres`; lab vLLM up
-      (`HF_HOME_HOST=C:/Users/Dilip/.cache/huggingface docker compose --profile gpu up -d vllm`,
-      ready after ~60 s: `curl localhost:8100/v1/models`).
-- [ ] Four processes (`demo-up` starts them): API (:8010), scan worker, Guard runner, web (:3100).
-      Restarting the runner mid-run is safe now: on start it fails the job it was running, with
-      that reason, instead of leaving it "running".
-- [ ] `uv run python scripts/rehearse.py` passes (about 3.5 minutes; it runs one real benchmark
-      and one real Guard run, so the pages then show fresh results).
-- [ ] `uv run furnace gh-check` prints the App and the `furnace-demo-f1` installation (needs the App).
-- [ ] Demo repo has the R1 PR open and Guard has already run once on it (the local copy is ready at
-      `C:\dev\furnace-demo-f1`: `main` = F1, branch `r1-request-id` = the R1 change; create the public
-      repo, `git remote add origin ...`, `git push -u origin main r1-request-id`, open the PR).
-- [ ] Browser tabs: landing, the F1 scan Blueprint, its graph, /lab, /guard/r1_dynamic_head,
-      /bench, the demo repo's PR and the repair draft PR.
-- [ ] Fallback: `docs/demo-shots/` (desktop), `docs/demo-shots/mobile/` (390 px), the rehearsal
-      folders, and a screen recording of the whole local path
-      (`uv run python scripts/rehearse.py --video docs/demo-video`, about 3:30, saved as .webm;
-      not committed). Copy the video to a USB stick as well.
-- [ ] If someone hands you their own repo: renamed repos now resolve; a TypeScript-only repo gets
-      a "what this scan could read" notice (Furnace analyzes Python today), not an empty page.
+## Part B (real GitHub; only after both live scripts passed)
 
-## Script
-
-1. **(0:00) Problem.** "You already built the AI app. Nobody can tell you whether the next PR
-   makes it slower or wrong." The landing hero replays one PR: main 84 ms p95 TTFT, the R1 PR
-   896 ms with the prefix-cache hit at 0%, Furnace's repair 89 ms at 98% (RQ5 2026-10-09, median
-   of 3 repeats; ticks are the repeats). Under it: Furnace's *first* candidate was blocked by its
-   own perf gate (+44% to +50%), so it proposed the second. Press **Replay**; sources are linked.
-2. **(0:30) The furnace is on.** Scroll to "The lab endpoint, right now": vLLM's own counters
-   and the GPU's power, clock and temperature, every second. Nothing on it is animated unless
-   the system moved.
-3. **(0:50) Scan.** Paste `github.com/<you>/furnace-demo-f1`; the scan log types in stage by
-   stage with real timings (a few seconds). The Blueprint shows the vLLM + Qwen endpoint with
-   evidence chips, the README-vs-code model contradiction, the approval gate on `create_ticket`,
-   and the prefix-stability finding. "Scan log" replays the stage timings.
-4. **(1:30) Graph.** Open "Graph →"; click the `POST /chat` workflow; the path traces hop by hop
-   through the handler, the system prompt, the model, the endpoint and the vLLM flags.
-5. **(1:50) Inference Lab** (`/lab`). Press **Run it now** first (about 30 s): each dot is one
-   real request's TTFT landing on the chart, against the RQ4 ticks for prefix caching on (blue)
-   and off (ember). While it runs: F1's fingerprint from 89 real traces, prefix-cache hit
-   predicted 89.0% vs measured ~89%, caching off raises p95 TTFT by +193% to +433% at
-   every concurrency (max-num-seqs 32, the default view; same sign in every paired repeat). The finished run's table shows its own measured hit rate and GPU clock.
-6. **(2:50) Forge.** The Forge draft PR on the demo repo: manifest table (file, reason, target,
-   risk), extracted prompt (byte-identical), installed tests. *(Needs the GitHub App.)*
-7. **(3:15) Guard.** Open the R1 PR: the Furnace Guard check fails, ran a subset with reasons
-   for what it skipped, perf table shows p95 TTFT and prefix-cache hit collapsing. Then
-   `/guard/r1_dynamic_head`: press **Run Guard on this PR** (about 85 s, so press it at step 5
-   and come back) — the impact graph lights the changed prompt, then what it reaches; each check
-   flips to its verdict with its time; hover a check to see the path that selected it.
-8. **(4:00) Repair.** Same page, below: regression test written first (fails on the PR, passes on
-   main), localized hunk, then two candidates in order: keeping the request id in the prompt (moved
-   to the end) is still +44-50% and the gate blocks it; logging it instead of sending it is within
-   noise and passes, with its trade-off stated (the model no longer sees the id). Full-suite audit
-   clean, draft repair PR. "Furnace rejected its own first fix. A human merges; Furnace never
-   touches production."
-9. **(4:30) Evidence** (`/bench`). The yellow "Corrections" box first: we found our own perf gate
-   was biased (A/A test, up to 60% between identical revisions), fixed it, and re-measured;
-   a second A/A (Oct 11) found the "within 9.7%" bound optimistic (+13.4%), so the gate now
-   decides on a 95% interval and says INCONCLUSIVE instead of passing noise. Then RQ1 held-out
-   recall including the misses (set 4: 2/9, agent frameworks and indirect clients), RQ3
-   recall at the share of the suite executed, the negative results. Close.
+| show | where | evidence to have open |
+|---|---|---|
+| Forge draft PR: manifest table, extracted prompt, installed tests | the demo repo's pull requests | `bench/results/<date>-live-github/live_run.md` |
+| Furnace Guard check run on the R1 PR, failing, annotated on the prompt hunk | the R1 PR → Checks | `verify.md`: `attribution`, `check_updates` |
+| Repair draft PR into the R1 branch, built on its head commit | linked from the R1 PR | `verify.md`: `draft_prs`, `branches_intact` |
+| A re-run returns the same PRs; forged webhooks are refused | `live_run.md` replay rows; `verify.md` webhook rows | `verify.md`: `no_duplicates`, `webhook_*` |
 
 ## If something fails live
 
 | failure | fallback |
 |---|---|
-| lab vLLM down / GPU busy | the live panel switches to "lab offline · showing recorded run" (RQ4 telemetry, labeled with its file); /lab and /guard read stored results |
+| lab vLLM down or the GPU busy | the live panel switches to "lab offline · showing recorded run" (RQ4 telemetry, labeled with its file); /lab and /guard read stored results |
 | Run it now refused (one run at a time, cool-down, rate limit) | the message says why; the last run stays on the chart |
-| Guard run: "No Guard runner is online" | start `uv run poe runner`, or show the last run (it replays from stored events) |
-| GitHub scan rate-limited | show the scan of the same repo done earlier (keep its URL) |
-| Network down | local stack + screenshots in `docs/demo-shots/` |
+| "No Guard runner is online" | start `uv run poe runner`, or show the last run (it replays from stored events) |
+| GitHub scan rate-limited | show the scan of the same repository done earlier (keep its URL) |
+| Network down | the local stack, and the screenshots in `docs/demo-shots/` |
+
+## Rehearsal record
+
+Four browser rehearsals on 2026-10-09 (`docs/demo-shots/rehearsal-1/` … `rehearsal-4/`) passed
+every step: scan to Blueprint 3.7-7.2 s, graph trace 1.7-2.5 s, Run it now 27.6-32.5 s, Guard
+run to verdict 84-129 s, /bench under 0.5 s. They predate the gate revision and the queue
+correlation; rehearse again (`scripts/rehearse.py`) after `poe demo-up` and before showing.

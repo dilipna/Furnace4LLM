@@ -38,12 +38,12 @@ an action only you can take), **not built**.
 | Lab launcher (docker vLLM configs) | done as a bench launcher (pinned image, fresh container per config); not a product runner job | `bench/rq4.py launch`, `bench/optimize.py` | partial: accepted |
 | Prefix caching optimization end to end | done | RQ4, R1, repair | retained |
 | Batching / scheduler optimization | measured (RQ4) and part of the optimizer grid | RQ4 `max-num-seqs` | retained |
-| Quality-constrained optimizer (grid + Pareto) | PENDING-RUN | `docs/optimizer.md` (design fixed before measuring), `furnace/optimizer.py`, `bench/optimize.py` | retained |
+| Quality-constrained optimizer (grid + Pareto) | **built and unit-tested; grid not measured yet** (needs ~45 GPU minutes on AC: `bench/run_remaining_gpu.sh`) | `docs/optimizer.md` (design fixed before measuring), `furnace/optimizer.py`, `bench/optimize.py` | retained |
 | 8 deterministic checks + per-failure-mode judges + calibration | checks done (8); judge and Rogan-Gladen calibration built; **judge never run, 0/60 items labeled** | `evals/checks.py`, `rq2.md` §3 | blocked on you: 60 labels and a Groq key |
 | Labeling UI (minimal) | done | `/evals`, `bench/label.py` | retained |
 | Forge: templates + libcst codemods + sandbox validation + draft PR + patch | done locally (sandbox-validated on F1); **live draft PR not yet opened** | `test_forge.py` | blocked on the GitHub App |
 | GitHub App, scoped tokens, write consent, webhooks, Checks API | built, mock-tested, verifier written; **never run against GitHub** | `live_github_verify.py` checks every property you listed | blocked on the GitHub App |
-| Guard impact analysis + targeted selection + perf gate | done locally; gate statistic revised and validated (PENDING-RUN) | `docs/gate-revision.md` | retained |
+| Guard impact analysis + targeted selection + perf gate | done locally; gate statistic revised (design frozen first); **fresh validation partial**: unchanged code 14/24 trials (0 false FAIL); other sets and RQ5 under the new gate not run yet | `docs/gate-revision.md` | retained |
 | Repair loop R1 (rule + LLM strategies) | rule strategies done; **LLM-patch strategy not built** | RQ5 | deviation D2 (the plan's own fallback) |
 | FurnaceBench RQ1-RQ5 + reproducible commands | done, with gaps: RQ1 has no F2; RQ2 has no judge or human labels; RQ4 has no Ollama or T4 point; RQ5 has no LLM strategy | `bench/results/` | retained, gaps stated |
 | Kernel Lab Triton RMSNorm (laptop) | done (36/36 correct; parity with torch.compile) | `kernel_lab/results/2026-10-09/` | retained |
