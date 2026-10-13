@@ -78,3 +78,12 @@ better; the 'incl. affected' row shows the difference. Not quantifiable: the edi
 lint/type checking ran in the background at unknown times during trials 1-14 (the editor
 was open on the repository). That applies to every one of those trials and is a limitation
 of trials 1-14, not grounds to mark any one of them.
+
+## Launch on 2026-10-13 (02:04 UTC), stopped before any trial
+
+The first launch never reached a trial: the lab vLLM container hung on Hugging Face Hub
+lookups ("Network is unreachable": it is also attached to the internal sandbox network) and
+the wrapper's readiness poll had no per-request timeout. Stopped by hand at 02:23 UTC; no
+trial, discard or record was written. Fix: `HF_HUB_OFFLINE=1` for the vLLM service (the
+same cached model files; serving flags unchanged) and a 5 s timeout on the poll. The image
+digest and every measured setting are as before; the conditions check runs again.

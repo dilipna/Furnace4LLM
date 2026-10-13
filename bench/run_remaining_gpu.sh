@@ -21,8 +21,8 @@ fi
 docker info >/dev/null 2>&1 || { echo "Docker is not running; stopping" >&2; exit 1; }
 docker compose up -d postgres >/dev/null
 HF_HOME_HOST="C:/Users/Dilip/.cache/huggingface" docker compose --profile gpu up -d vllm >/dev/null
-for _ in $(seq 1 90); do curl -sf http://localhost:8100/v1/models >/dev/null && break; sleep 5; done
-curl -sf http://localhost:8100/v1/models >/dev/null || { echo "lab vLLM did not come up; stopping" >&2; exit 1; }
+for _ in $(seq 1 90); do curl -sf -m 5 http://localhost:8100/v1/models >/dev/null && break; sleep 5; done
+curl -sf -m 5 http://localhost:8100/v1/models >/dev/null || { echo "lab vLLM did not come up; stopping" >&2; exit 1; }
 
 # Frozen conditions (AC, pinned image, clean measurement code, 780 MHz under load): stop if not met.
 note "conditions check"
