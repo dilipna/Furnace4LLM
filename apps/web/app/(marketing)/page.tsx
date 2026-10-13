@@ -11,7 +11,7 @@ const STAGES = [
   {
     name: "Scan",
     price: "Free",
-    body: "Reconstructs the application from its code, configs and docs. Every finding cites its evidence and confidence; conflicts between README and code are shown, not hidden.",
+    body: "Reconstructs the application from its code, configs and docs. Every finding cites its evidence and confidence and is advisory; conflicts between README and code are shown, not hidden.",
     output: "Reliability + Inference Blueprint",
   },
   {
@@ -23,7 +23,7 @@ const STAGES = [
   {
     name: "Guard",
     price: "$25, then $10/mo",
-    body: "Runs only the quality evals and serving benchmarks a change can affect. On a regression it writes the failing test first, localizes the cause, and validates a fix in a sandbox before proposing it.",
+    body: "Runs only the quality evals and serving benchmarks a change can affect. On a supported regression (today: an unstable prompt prefix) it writes the failing test first, localizes the cause, and validates a rule-based fix in a sandbox and against the perf gate before proposing it.",
     output: "Checks + verified draft repairs",
   },
 ];
@@ -43,9 +43,9 @@ export default function Landing() {
               without breaking it.
             </h1>
             <p className="mt-6 max-w-[560px] text-[16px] leading-relaxed text-fg-1">
-              Connect an existing AI application. Furnace reconstructs its workload, installs the
-              reliability layer, optimizes serving, and prevents quality or performance
-              regressions.
+              Point it at an existing Python LLM application. Furnace maps where its serving
+              performance depends on the code, gates each pull request on measured time to first
+              token, and proposes a tested, rule-based fix for prompt-cache regressions.
             </p>
             <div className="mt-10">
               <EvidenceInput />

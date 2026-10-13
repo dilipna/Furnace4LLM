@@ -59,6 +59,15 @@ tabs: `http://localhost:3100/`, `/lab`, `/guard/r1_dynamic_head`, `/bench`.
 
 ## Rehearsal record
 
+**2026-10-13, at commit baa02a2** (after `poe demo-up`; pre-flight all OK except the GitHub
+App, which does not exist yet): every step passed, no page errors. Landing + live panel
+8.9 s, GitHub scan to Blueprint 5.1 s, graph trace 1.6 s, Run it now 32.1 s (80/80
+requests), Guard run on R1 97.8 s (FAILURE: `prompt_prefix_stable` and the perf gate, BLOCK
+at +546.6%, 90% interval +503.1 to +593.2), /bench 0.2 s. Screenshots
+`docs/demo-shots/rehearsal-2026-10-13/` and a silent screen recording
+`docs/demo-video/demo-2026-10-13-1537.webm` (both git-ignored, kept locally). The hero and
+product-card copy were narrowed after this rehearsal (text only).
+
 Four browser rehearsals on 2026-10-09 (`docs/demo-shots/rehearsal-1/` … `rehearsal-4/`) passed
 every step: scan to Blueprint 3.7-7.2 s, graph trace 1.7-2.5 s, Run it now 27.6-32.5 s, Guard
 run to verdict 84-129 s, /bench under 0.5 s. They predate the gate revision and the queue

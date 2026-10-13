@@ -5,6 +5,19 @@ Paste this file's path into a new Claude Code session ("read CONTINUE.md and con
 `C:\Users\user\.claude\projects\c--Users-user-OneDrive-Pictures-saas-reviewer\memory\` (read `laptop-gpu-power-cap.md`).
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
+## Release state (2026-10-13 evening): bounded portfolio release
+- Final acceptance checklist: `docs/completion.md` (verified / failed / inconclusive / deferred / blocked).
+- GPU work is DONE (nothing owed to the GPU): RQ5 under G3 3/3 repeated trials of F1/R1 verified;
+  optimizer: keep baseline, confirmation inconclusive. Notes in `2026-10-12-gate-validation/NOTES.md`
+  and `2026-10-12-optimizer/NOTES.md`.
+- Only remaining blocked item: the live GitHub run. Owner creates the public repo `furnace-demo-f1`
+  and the App (`uv run furnace gh-setup --name furnace-dev-dilipna`, install on that repo only);
+  then push `C:\devurnace-demo-f1` (main, r1-request-id), run `scripts/live_github_run.py` and
+  `scripts/live_github_verify.py --api http://localhost:8010` (API + smee forwarding running), commit
+  `bench/results/<date>-live-github/`, and update completion.md section E, README, demo-3min Part B.
+- Deferred by decision: hosted deploy (D3), judge calibration (D4). Approval-boundary rule is experimental.
+- Demo: `docs/demo-3min.md`; rehearsal 2026-10-13 passed (`docs/demo.md`).
+
 ## Oct 12-13 follow-up (user's reconciliation request), newest first
 - **Still owed to the GPU** (laptop on AC, lid open; resumable, kept trials are not rerun):
   from PowerShell (single quotes, so PowerShell does not expand `$PATH`; keep the window open):

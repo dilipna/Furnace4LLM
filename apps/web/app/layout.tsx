@@ -23,7 +23,7 @@ const mono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Furnace",
   description:
-    "Make your LLM faster without breaking it. Furnace reconstructs an existing AI application, installs the reliability layer, optimizes serving, and prevents quality or performance regressions.",
+    "Make your LLM faster without breaking it. Furnace maps an existing Python LLM application, gates each pull request on measured time to first token, and proposes a tested, rule-based fix for prompt-cache regressions.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
