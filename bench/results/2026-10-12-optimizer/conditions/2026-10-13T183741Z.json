@@ -1,0 +1,38 @@
+{
+  "label": "before the optimizer grid",
+  "at_utc": "2026-10-13T18:37:41Z",
+  "git_sha": "6efebfd6b69fa1afa4244cda0cb92bb556c0bd8e",
+  "checks": {
+    "power": {
+      "status": "OK",
+      "detail": "on AC, battery 80%"
+    },
+    "image": {
+      "status": "OK",
+      "detail": "sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90"
+    },
+    "code": {
+      "status": "OK",
+      "detail": "measurement code clean at 6efebfd"
+    },
+    "clock": {
+      "status": "OK",
+      "detail": "under load: median 780 MHz, peak 31 W, reasons idle; not throttled (the driver picks this clock for this load)"
+    }
+  },
+  "power": {
+    "on_ac": true,
+    "battery_pct": 80,
+    "gpu_enforced_power_limit_w": 80.0
+  },
+  "gpu_sm_mhz_under_load": 780.0,
+  "other_containers": [
+    "cal-api",
+    "wc26-mlops-grafana-1",
+    "wc26-mlops-prometheus-1",
+    "wc26-mlops-serving-1",
+    "wc26-mlops-mlflow-1",
+    "wc26-mlops-postgres-1"
+  ],
+  "cpu_busy_pct_5s_idle": 13.7
+}

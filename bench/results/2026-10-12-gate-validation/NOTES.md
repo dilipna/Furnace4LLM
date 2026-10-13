@@ -87,3 +87,160 @@ the wrapper's readiness poll had no per-request timeout. Stopped by hand at 02:2
 trial, discard or record was written. Fix: `HF_HUB_OFFLINE=1` for the vLLM service (the
 same cached model files; serving flags unchanged) and a 5 s timeout on the poll. The image
 digest and every measured setting are as before; the conditions check runs again.
+
+## Result (all sets complete, 2026-10-13 03:10 UTC; `validation/report.md`)
+
+All 63 counted-or-affected trials ran on AC (checked after every trial; no discard, no stop)
+at 780-828 MHz. Nothing was retuned.
+
+- Unchanged code: false FAIL **0/36** (V1 24 + V2 12; exact 95% CI 0-9.7%), PASS 29/36
+  (V1 18/24 = 75%, V2 11/12 = 92%). Including the affected V1 trials: 0/39, PASS 32/39.
+  Pre-declared targets (FAIL <= 10%, PASS >= 70%) met in both sets.
+- R1 (known large regression): BLOCK **6/6** (geometric mean +608.9% to +620.6%), target met.
+- Graded sets: **the calibrated sizes were not reproduced.** Before any trial,
+  `calibrate-topk` measured depth 4 at +12.9%, depth 8 at +18.2% and depth 12 (R2) at +30.2%
+  (3 interleaved runs per variant, five variants in one rotation). Inside the gate trials the
+  same changes measured medians of +4.3%, +6.5% and +7.2% (ranges +2.2..+6.5, +4.4..+33.0,
+  +1.1..+54.5). The gate's verdicts are consistent with its own measurements (15/18
+  INCONCLUSIVE, 3/18 PASS, 0 FAIL), so the trials do not test detection of a regression
+  above the 10% tolerance at these sizes. Whether the 3 PASS verdicts are wrong depends on
+  which measurement of the true size is right; these data cannot decide it. Stated as a
+  finding about the calibration, not tuned away; a separate calibration replication would
+  be needed (exploratory, not part of this protocol).
+- Tail (p95, advisory): R1 +941% median; on unchanged code the p95 interval ruled out a
+  >10% tail regression in only 13/36 trials (width ~22-27 points), which is why p95 does not
+  decide.
+- Observation, no rule attached: the first trial after each vLLM (re)start was the noisiest
+  (trial 3: -15.0%, interval -46.6..+35.3; trial 15: -12.0%, interval -51.1..+58.5; both
+  INCONCLUSIVE, neither a false FAIL).
+
+## Reconciliation (2026-10-13, after all sets; every row in `validation/trials.md`)
+
+**Why 63 trials when the sets total 60.** The planned sets are V1 24 + V2 12 + V3a 6 + V3b 6
++ V3c 6 + 6 = 60 counted trials. V1 trials 6, 9 and 10 were *affected* (tests, lint or an
+analysis script ran during them; rule and evidence above). They are kept with their results,
+left out of the counted 60 and replaced by three extra V1 trials, so V1 recorded 27 trials:
+60 counted + 3 affected = 63 recorded. V1 trial 15's first attempt, cut off by Windows Sleep
+before it finished, wrote no record and is in no count.
+
+**Why unchanged-code validation is "36", not "24".** It was 36 from the start. The protocol
+frozen in 6e90c99 (before any validation trial) defines two unchanged-code sets, V1 fresh A/A
+(24) and V2 restored baseline (12), and states "Unchanged-code trials V1+V2 give 36" with the
+0/36 Clopper-Pearson bound. Progress notes during the run ("14 of 24 trials so far") counted V1
+alone, which made 24 look like the cohort. Nothing was added after outcomes were seen; the
+only change during the run was the affected-trial rule (section 8 of the protocol), which
+removed three PASS trials from the tally and replaced them. Both sets are also reported
+separately: V1 PASS 18/24, V2 PASS 11/12, false FAIL 0 in each.
+
+**GPU clock: configured versus observed.** No clock is set: the laptop's driver chooses it
+for the load (780 MHz for this light serving load on Oct 6-9 and 12-13, ~1,960 MHz on Oct 11
+after a reboot; `2026-10-11-live-clock/`). What is configured is a pre-run
+condition, `bench/conditions.py`: on AC and a median SM clock of 780 MHz +/- 80 under a probe
+load, or the set does not start (passed at 02:24 and 18:23 UTC, `conditions/`). Observed per
+run (378 runs): **780-828 MHz**, 359 runs at exactly 780. Every unchanged-code trial ran at
+780 MHz in all six runs. The higher clocks (up to 828 MHz) occurred only in the R1 trials (all
+six) and one R2 trial, i.e. under the heavier prefill load of a regressed revision; a faster
+clock on that side can only make a regression measure smaller, so it does not inflate any
+BLOCK. No result here is compared with runs at another clock.
+
+**Every unchanged-code outcome.** 36 counted: 29 PASS, 7 INCONCLUSIVE, 0 FAIL; the 3
+affected trials are PASS. The seven that did not pass (none is a FAIL; an INCONCLUSIVE is
+reported as "the data cannot say", not as a pass):
+
+| set | trial | change | 90% interval | note |
+|---|---:|---:|---|---|
+| V1 | 1 | +4.3% | -1.3 to +10.1 | upper bound 0.1 pt over the tolerance |
+| V1 | 3 | -15.0% | -46.6 to +35.3 | first trial after a vLLM restart |
+| V1 | 7 | +4.5% | -7.0 to +17.4 | |
+| V1 | 12 | +5.4% | -3.9 to +15.6 | |
+| V1 | 15 | -12.0% | -51.1 to +58.5 | first trial after a vLLM restart |
+| V1 | 20 | +3.5% | -5.1 to +13.0 | |
+| V2 | 3 | -1.0% | -11.5 to +10.8 | |
+
+## RQ5 under the frozen gate: first attempt lost AC
+
+Attempt 0 (started 03:10:10 UTC) lost AC at 03:10:38 (System log, Kernel-Power 105: the
+charger was disconnected). The attempt finished on battery and is kept, not counted, under
+`rq5/discarded/` (it would have verified the second strategy at -2.7%; that number is not
+used). The optimizer's conditions check then refused to start (battery, 1,125 MHz). At 03:30
+Windows Sleep was chosen (Kernel-Power 187, winlogon), after the run had ended. RQ5 and the
+optimizer were relaunched on AC at 18:21 UTC; the conditions check is in `gpu.log`.
+
+## RQ5 under the frozen gate: result (2026-10-13 18:23-18:37 UTC; `rq5.md`, `rq5.json`, `rq5/`)
+
+**What "3/3" is.** Three repeated verification trials of **one** supported repair scenario:
+fixture F1 (`support-rag-py`), regression R1 (a request id and timestamp prepended to the
+system prompt "for debugging", `fixtures/scenarios/f1_scenarios.py`), the two rule
+strategies in their fixed order. It is not a success rate over apps, regressions or
+strategies. No LLM strategy exists.
+
+**Conditions and versions.** Pre-run conditions check `conditions/2026-10-13T182330Z.json`:
+on AC, vLLM image `sha256:8a69ffad...`, measurement code clean at **6efebfd**, 780 MHz under
+load; power re-checked after the run (`gpu.log`: on AC, 80%). Gate **G3** (design frozen
+6e90c99, implemented 26fa8eb; repair acceptance `perf_gate.accept_repair`: the candidate must
+be faster than the PR head with 95% confidence and its interval upper bound against base
+must stay below the 25% block threshold). Same F1 workload as V1-V3: c=8, 34 requests per
+run, 3 interleaved runs per revision.
+
+| repeat | strategy 1 `move_dynamic_to_suffix` (vs base) | strategy 2 `move_dynamic_to_log` (vs base) | PR head vs base | outcome |
+|---:|---|---|---|---|
+| 0 | +9.5%, 90% interval -26.0..+62.1, INCONCLUSIVE: rejected | +4.2%, -0.8..+9.5, PASS: accepted | +620.7%, +590.3..+652.5, BLOCK | verified |
+| 1 | +37.8%, +28.6..+47.6, BLOCK: rejected | +0.9%, -2.2..+4.1, PASS: accepted | +601.8%, +577.9..+626.5, BLOCK | verified |
+| 2 | +39.6%, +33.7..+45.8, BLOCK: rejected | +1.7%, -3.6..+7.2, PASS: accepted | +626.1%, +608.8..+643.8, BLOCK | verified |
+
+Geometric-mean TTFT. Each strategy is measured in its own interleaved block with its own base
+runs (strategy 1's repeat-0 base was 91.0 ms against 68.6-71.3 ms elsewhere, the first block
+after the vLLM restart). In every repeat the generated regression test failed on the PR head
+and passed on base, and the regression test and existing tests passed on the accepted
+candidate. Prefix-cache hit rate: 98% on base, 98% on the repair.
+
+**Full-suite audit of each repaired tree** (the whole F1 suite with the repair as head, run
+after acceptance; it does not decide "verified"): every executed item passed in 3/3 (unit
+tests, `citation_required`, `prompt_prefix_stable`, `context_budget`, `security:approval_gate`,
+`bench:chat_perf_gate`). `judge:ungrounded_answer` was **skipped** in 3/3 (no judge key).
+Two limits of that audit: the citation check passed at **0/34 vs 0/34** (Qwen2.5-0.5B never
+meets the citation contract on base either, the known floor effect), so it cannot detect a
+quality change here; and the judge did not run.
+
+**Is the skipped judge optional under the frozen criteria? Yes.** "Verified" is decided in
+`guardian/repair/loop.py` by the regression test, the existing tests and the perf gate only;
+the plan's RQ5 criteria are regression + existing tests + perf budget, with the full-suite
+audit reporting new failures; and the plan makes an uncalibrated judge advisory (§ LLM judges:
+"Otherwise the judge stays calibrating and its results show as advisory"). The judge is
+uncalibrated (no human labels), so even a run would have been advisory. No released claim
+depends on it.
+
+**Is removing the value from the prompt behavior-preserving?** The moved expression is
+`f"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\n"`: a random id and
+the current UTC time, generated in the function and derived from no input. The PR's stated
+purpose is debugging, so it is diagnostic metadata. The accepted patch (`patch` in
+`rq5/r1_dynamic_head_r*.json`) restores the system message to exactly `SYSTEM_PROMPT` and
+leaves the user message untouched; the repaired `app/prompts.py` differs from base only by
+imports and the one logging call (the system dict is also split over four lines, same
+content). Checked by rendering after the run (`bench/rq5_prompt_identity.py`,
+`rq5/prompt_identity.md`): for each of the 3 accepted patches, **34/34** documented questions
+render byte-identical chat messages on base and repair. The F1 application (pricing, plans, invoices,
+refunds from its documentation) has no question that needs the time or a request id, and
+the base revision never sent them. Trade-off, stated in the repair PR: the model no longer
+sees these values.
+
+**Does the new logging expose sensitive values?** Not in this scenario: the log line is
+`logging.getLogger(__name__).info("per-request values (logged, not sent in the prompt): %s", <the id and timestamp>)`,
+which writes a random 8-hex id and a timestamp, no question text, user data or credential.
+In general the strategy logs whatever expressions it moves out of the prompt and does not
+inspect them; in another app those could be user identifiers. That is a limit of the
+strategy, stated in the repair PR's explanation (2026-10-13), not something it checks.
+
+**Kept, not counted, not hidden:**
+- the three rejected strategy-1 candidates, one per repeat, with their measurements above
+  (INCONCLUSIVE once, BLOCK twice);
+- R2 (context bloat), attempted once: `rejected` in 0.16 s, "no system message changed from
+  prefix-stable to dynamic-head" (`rq5/r2_context_bloat_r0.json`): outside the one supported
+  regression family, so the loop refuses instead of guessing;
+- the interrupted attempt of 03:10 UTC (AC lost), `rq5/discarded/`.
+
+**Operator activity during the run** (rule above: reads, searches, edits, git and status
+checks of about 2 s or less are not competing compute): `nvidia-smi`, `docker ps`,
+`docker stats --no-stream`, one PowerShell process listing, `curl` of a public URL, file
+reads, greps, `git status`/`git diff`, all around 18:24-18:33 UTC. No test, lint, build or
+analysis script ran.
