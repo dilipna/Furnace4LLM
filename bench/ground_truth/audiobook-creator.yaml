@@ -1,0 +1,99 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 6 (docs/scanner-eval-set6.md).
+# Selected by the fixed search procedure (bench/results/2026-10-13-set6/selection.md, #19).
+# Labeled from source at the pinned commit on 2026-10-13 BEFORE Furnace ran on this
+# repository; scanner frozen at 41ca529. Author: the developer agent (Claude), not
+# independently reviewed.
+# Labeling rules: an LLM call site is a direct text-generation call (SDK, agent-SDK run, or
+# raw HTTP chat request) in non-test Python; TTS and embedding calls are not LLM calls. A
+# prompt is a system message, agent instructions, or a named prompt constant (module or
+# class level, name containing "prompt"/"instruction"/"system"); user-message f-strings
+# built inside a function are not. dynamic_head: a system message whose first per-request
+# value comes before more than half of its static text (values fixed per deployment, e.g.
+# an env-configured token, are not per-request).
+app: audiobook-creator
+split: held-out-6
+repo: https://github.com/prakharsr/audiobook-creator
+commit: 94a353f9aad97b46d6b6ccf1be4af8b6ff6df90c
+purpose: Gradio app and CLI scripts that turn an ebook into an audiobook; an OpenAI-compatible LLM (LM Studio by default) identifies characters and adds emotion tags; TTS through an OpenAI-compatible audio API
+
+routes: []
+
+llm_calls:
+  - file: utils/llm_utils.py
+    function: check_if_llm_is_up
+    api: openai.AsyncOpenAI.chat.completions.create (health check)
+    model: null     # chosen at runtime (the caller's model_name)
+    streaming: false
+    has_timeout: false
+  - file: utils/add_emotion_tags_to_text.py
+    function: enhance_text_with_emotions
+    also_accept: [_call_llm]          # nested async def inside enhance_text_with_emotions
+    api: openai.AsyncOpenAI.chat.completions.create
+    model: openai/gpt-oss-20b         # EMOTION_TAG_ADDITION_LLM_MODEL_NAME default
+    streaming: false
+    has_timeout: false
+  - file: utils/find_book_protagonist.py
+    function: find_book_protagonist_using_search_engine_and_llm
+    api: openai.AsyncOpenAI.chat.completions.create
+    model: null     # chosen at runtime (the caller's model_name)
+    streaming: false
+    has_timeout: false
+  - file: utils/character_extraction_llm.py
+    function: extract_character_info_from_batch
+    api: pydantic_ai.Agent.run (OpenAIChatModel over the caller's AsyncOpenAI client)
+    model: Qwen/Qwen3-30B-A3B-Instruct-2507   # CHARACTER_IDENTIFICATION_LLM_MODEL_NAME default
+    streaming: false
+    has_timeout: false
+  - file: utils/character_extraction_llm.py
+    function: identify_speaker_for_dialogue_matching_only
+    api: pydantic_ai.Agent.run
+    model: Qwen/Qwen3-30B-A3B-Instruct-2507
+    streaming: false
+    has_timeout: false
+
+model: Qwen/Qwen3-30B-A3B-Instruct-2507
+models: [Qwen/Qwen3-30B-A3B-Instruct-2507, openai/gpt-oss-20b]
+serving_engine: openai      # OpenAI SDK against a configurable OpenAI-compatible base URL
+
+uses_rag: false
+retrievers: []
+tools: []
+
+prompts:
+  - utils/add_emotion_tags_to_text.py::enhance_text_with_emotions
+  - utils/character_extraction_llm.py::extract_character_info_from_batch
+  - utils/character_extraction_llm.py::identify_speaker_for_dialogue_matching_only
+  - utils/find_book_protagonist.py::find_book_protagonist_using_search_engine_and_llm
+# extract_character_info_from_batch: 407 static chars, then the per-request character map,
+# then ~9.3k static chars; identify_speaker...: 308 static, then the map, then ~2.3k static.
+dynamic_head: true
+
+workflows:
+  - gradio:app.py
+  - cli:identify_characters_and_output_book_to_jsonl.py
+  - cli:add_emotion_tags.py
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: false        # the LLM clients set none (the TTS calls set timeout=600)
+  retries: false         # LLM calls: only a context-overflow retry loop and Pydantic AI output-validation retries; no retry on transport failures (TTS has its own backoff)
+  evals: false
+
+contradictions: []
+
+expected_findings:
+  - {rule: rel.llm_timeout, item: app}
+  - {rule: rel.fallback_gateway, item: app}
+  - {rule: eval.regression_suite, item: app}
+  - {rule: obs.genai_tracing, item: app}
+  - {rule: obs.prompt_versioning, item: {file: utils/add_emotion_tags_to_text.py, function: enhance_text_with_emotions, line: 533}}
+  - {rule: obs.prompt_versioning, item: {file: utils/character_extraction_llm.py, function: extract_character_info_from_batch, line: 360}}
+  - {rule: obs.prompt_versioning, item: {file: utils/character_extraction_llm.py, function: identify_speaker_for_dialogue_matching_only, line: 764}}
+  - {rule: obs.prompt_versioning, item: {file: utils/find_book_protagonist.py, function: find_book_protagonist_using_search_engine_and_llm, line: 241}}
+  - {rule: inf.prefix_instability, item: {file: utils/character_extraction_llm.py, function: extract_character_info_from_batch, line: 360}}
+  - {rule: inf.prefix_instability, item: {file: utils/character_extraction_llm.py, function: identify_speaker_for_dialogue_matching_only, line: 764}}
+  - {rule: inf.prefix_stability_guard, item: {file: utils/add_emotion_tags_to_text.py, function: enhance_text_with_emotions, line: 533}}   # 8,332 static chars, no per-request value
+
+notes:
+  - The no-think token at the start of every system prompt comes from NO_THINK_MODE (deployment configuration), so it does not make the head dynamic.

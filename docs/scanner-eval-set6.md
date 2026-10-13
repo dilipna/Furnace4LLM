@@ -83,3 +83,26 @@ Afterwards every disagreement (a missed or an unexpected finding or call site) i
 and listed with a note saying whether the label or the scanner was wrong; that review is
 reported beside the result, never folded into it. With 5 apps, intervals are wide and are
 reported (exact binomial).
+
+## 6. Addendum before the first scan (2026-10-13): definitions fixed while labeling
+
+Written after the apps were read and before Furnace ran on any of them.
+
+- **LLM call site**: a direct text-generation request in non-test Python (SDK call, agent-SDK
+  run, or a raw HTTP chat request); calls made through a wrapper are labeled where the request
+  is made. TTS, embedding and CLI-subprocess calls are not LLM call sites.
+- **Prompt**: a system message, agent instructions, or a named prompt constant (module or
+  class level, name containing "prompt", "instruction" or "system"); user-message f-strings
+  built inside a function are not prompts. `obs.prompt_versioning` is expected per such
+  prompt written as a string literal in Python.
+- **Dynamic head**: a system message whose first per-request value comes before more than
+  half of its static text. Values fixed per deployment (e.g. an env-configured token) and
+  per conversation (character name) are not per-request.
+- **Scope cut, declared now**: Soul-of-Waifu (about 67,000 lines; system messages assembled
+  from user templates, character cards, world state and memory) is labeled for call sites,
+  routes, existing reliability and app-level findings only; its other categories and per-item
+  findings are `not_labeled` and scored as nothing. BYO-LLM-WIKI does not label workflows.
+- **Scoring code, fixed now** (`bench/rq1.py`, `bench/set6_findings.py`, tested in
+  `bench/tests/test_set6_findings.py`): `not_labeled` categories and `not_labeled_findings`
+  rules count on neither side; a workflow label `<kind>:<file>.py` (cli, streamlit, gradio)
+  matches a predicted workflow whose key contains the file, as `cli:`/`streamlit:` already did.
