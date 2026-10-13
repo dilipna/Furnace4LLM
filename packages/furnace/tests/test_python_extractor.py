@@ -579,3 +579,13 @@ class Leaky(ChatBase):
         "prompt:app.py::Simple.__init__@Answerer#system": False,
         "prompt:app.py::Leaky.__init__@Answerer#system": True,
     }
+
+
+def test_python_the_extractor_cannot_read_is_reported_not_dropped(tmp_path):
+    from furnace.code_intel.python_ast import unanalyzed_python
+
+    (tmp_path / "ok.py").write_text("x = 1\n", encoding="utf-8")
+    (tmp_path / "py2.py").write_text('print "hello"\n', encoding="utf-8")
+    (tmp_path / "half.py").write_text("def f(:\n", encoding="utf-8")
+    got = {d["path"]: d["reason"] for d in unanalyzed_python(build_inventory(tmp_path))}
+    assert set(got) == {"py2.py", "half.py"} and got["half.py"].startswith("does not parse")

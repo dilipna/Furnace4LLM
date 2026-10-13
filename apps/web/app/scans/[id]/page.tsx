@@ -13,13 +13,23 @@ export const dynamic = "force-dynamic";
 const UNANALYZED = ["typescript", "javascript", "go", "java", "rust", "csharp", "ruby", "php", "kotlin", "swift"];
 
 /** What the scan could read: Python code is analyzed; other source languages are not (yet). */
-function Coverage({ languages, nodes, findings }: { languages: Record<string, number>; nodes: number; findings: number }) {
+function Coverage({
+  languages,
+  nodes,
+  findings,
+  skipped,
+}: {
+  languages: Record<string, number>;
+  nodes: number;
+  findings: number;
+  skipped: { path: string; reason: string }[];
+}) {
   const py = languages.python ?? 0;
   const other = Object.entries(languages)
     .filter(([l]) => UNANALYZED.includes(l))
     .sort((a, b) => b[1] - a[1]);
   const otherFiles = other.reduce((a, [, n]) => a + n, 0);
-  if (!otherFiles && findings > 0) return null;
+  if (!otherFiles && !skipped.length && findings > 0) return null;
   const share = otherFiles / Math.max(1, otherFiles + py);
   return (
     <section aria-label="Scan coverage" className="mt-6 rounded-[6px] border border-line-strong bg-bg-1 px-5 py-4 text-[13px]">
@@ -35,6 +45,17 @@ function Coverage({ languages, nodes, findings }: { languages: Record<string, nu
         )}
         {otherFiles === 0 && "."}
       </p>
+      {skipped.length > 0 && (
+        <p className="mt-2 text-fg-2">
+          {skipped.length} Python file{skipped.length === 1 ? "" : "s"} could not be analyzed, so anything in{" "}
+          {skipped.length === 1 ? "it" : "them"} is missing from this Blueprint:{" "}
+          {skipped
+            .slice(0, 5)
+            .map((f) => `${f.path} (${f.reason})`)
+            .join(", ")}
+          {skipped.length > 5 ? ", …" : ""}.
+        </p>
+      )}
       {findings === 0 && (
         <p className="mt-2 text-fg-2">
           {nodes === 0
@@ -115,6 +136,7 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
             languages={(s.languages as Record<string, number> | undefined) ?? {}}
             nodes={Number(s.nodes ?? 0)}
             findings={bp.recommendations.length}
+            skipped={(s.python_not_analyzed as { path: string; reason: string }[] | undefined) ?? []}
           />
         )}
         {bp && <ScanLog scanId={scan.id} />}

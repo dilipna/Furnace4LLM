@@ -157,3 +157,83 @@ def test_signature_selection_on_a_real_tree_without_workflows(tmp_path):
     sel = {s.key: s.reason for s in imp.impact.selected}
     assert "bench:perf_gate" in sel and "prefix-instability signature" in sel["bench:perf_gate"]
     assert "bench:unrelated" not in sel  # only benchmarks that detect prompt changes
+
+
+# ---- uncertain or unsupported analysis must widen the selection, never silently narrow it
+
+
+def _head_with(tmp_path, edits: dict[str, str | None]):
+    """F1 with files written (str) or deleted (None), on top of an unchanged tree."""
+    root = materialize(None, tmp_path / "h")
+    for rel, text in edits.items():
+        p = root / rel
+        if text is None:
+            p.unlink()
+        else:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(text, encoding="utf-8")
+    return root
+
+
+def _impact(base, root):
+    return analyze_impact(base, analyze_tree(root), F1_SUITE).impact
+
+
+def test_a_corpus_file_the_app_reads_falls_back(base, tmp_path):
+    # app/retriever.py loads docs/*.md: an edited article changes what is retrieved and cited
+    p = materialize(None, tmp_path / "x") / "docs" / "pairing.md"
+    text = p.read_text(encoding="utf-8").replace("controller", "kiln controller", 1)
+    imp = _impact(base, _head_with(tmp_path, {"docs/pairing.md": text}))
+    assert imp.fell_back_to_full and "docs/pairing.md" in imp.selected[0].reason
+
+
+def test_unsupported_language_source_falls_back(base, tmp_path):
+    imp = _impact(base, _head_with(tmp_path, {"app/static/widget.ts": "export const x = 1;\n"}))
+    assert imp.fell_back_to_full and "does not parse" in imp.selected[0].reason
+
+
+def test_unmodelled_file_in_the_app_falls_back(base, tmp_path):
+    imp = _impact(base, _head_with(tmp_path, {"app/data/thresholds.csv": "kiln,1280\n"}))
+    assert imp.fell_back_to_full and "app/data/thresholds.csv" in imp.selected[0].reason
+
+
+def test_a_template_the_scanner_models_is_targeted_not_a_fallback(base, tmp_path):
+    imp = _impact(base, _head_with(tmp_path, {"app/templates/answer.j2": "{{ answer }}\n"}))
+    assert not imp.fell_back_to_full
+
+
+def test_added_module_that_maps_to_no_node_falls_back(base, tmp_path):
+    imp = _impact(base, _head_with(tmp_path, {"app/flags.py": "FLAG = compute_flag()\n"}))
+    assert imp.fell_back_to_full
+
+
+def test_removed_module_that_maps_to_no_node_falls_back(base, tmp_path):
+    src = materialize(None, tmp_path / "y")
+    empty = [p for p in (src / "app").glob("*.py") if p.name == "__init__.py"]
+    target = "app/__init__.py" if empty else None
+    if target is None:
+        pytest.skip("F1 has no app/__init__.py")
+    imp = _impact(base, _head_with(tmp_path, {target: None}))
+    assert imp.fell_back_to_full
+
+
+def test_unparseable_python_falls_back(base, tmp_path):
+    p = materialize(None, tmp_path / "z") / "app" / "main.py"
+    broken = p.read_text(encoding="utf-8").replace("def ", "def (", 1)
+    imp = _impact(base, _head_with(tmp_path, {"app/main.py": broken}))
+    assert imp.fell_back_to_full and "does not parse" in imp.selected[0].reason
+
+
+def test_inert_changes_do_not_fall_back(base, tmp_path):
+    imp = _impact(
+        base,
+        _head_with(
+            tmp_path,
+            {
+                ".github/workflows/ci.yml": "on: push\n",
+                "docs/diagram.png": "not really a png\n",
+                "CHANGELOG.md": "- wording\n",
+            },
+        ),
+    )
+    assert not imp.fell_back_to_full

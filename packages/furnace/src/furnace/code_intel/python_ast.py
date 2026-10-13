@@ -1793,3 +1793,21 @@ class PythonExtractor:
 
 def extract_python(inventory: Inventory) -> list[Fact]:
     return PythonExtractor(inventory).run()
+
+
+def unanalyzed_python(inventory: Inventory) -> list[dict[str, str]]:
+    """Python files the extractor skips, with why: too large to parse, or not valid Python
+    (a syntax error, or Python 2). Their LLM calls, prompts and routes are not in the scan,
+    so the scan reports them instead of looking complete."""
+    out = []
+    for f in inventory.files:
+        if f.lang != "python":
+            continue
+        if not f.parseable:
+            out.append({"path": f.path, "reason": "too large or binary"})
+            continue
+        try:
+            ast.parse(inventory.read(f), filename=f.path)
+        except (SyntaxError, ValueError) as exc:
+            out.append({"path": f.path, "reason": f"does not parse: {type(exc).__name__}"})
+    return out

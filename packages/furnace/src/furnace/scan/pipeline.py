@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import update
 
 from furnace.blueprint.rules import run_rules
+from furnace.code_intel import python_ast
 from furnace.code_intel.facts import FactSet
 from furnace.db.models import (
     AppSpecRow,
@@ -256,6 +257,7 @@ async def run_scan(ctx: JobContext) -> dict[str, Any]:
         stats = {
             "files": len(inv.files),
             "languages": inv.languages,
+            "python_not_analyzed": python_ast.unanalyzed_python(inv)[:50],
             "facts": len(facts),
             "claims": len(builder.claims),
             "nodes": len(graph.nodes),
