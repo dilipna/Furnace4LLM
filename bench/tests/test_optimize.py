@@ -38,3 +38,27 @@ def test_grid_and_baseline():
 
 def test_sentence_final_number_counts():
     assert optimize.facts_pass("Support replies within 4 business hours.", "Within 4.") is True
+
+
+def test_measure_perf_runs_the_requested_number_of_runs(monkeypatch):
+    seen = []
+
+    class _Lv:
+        slo_goodput_rps, failure_rate, telemetry = 6.0, 0.0, {}
+
+        class ttft_ms:
+            p95 = 100.0
+
+    class _Res:
+        class report:
+            levels = [_Lv()]
+
+    async def fake(target, spec, plan):
+        seen.append(plan.seed)
+        return _Res()
+
+    monkeypatch.setattr(optimize, "run_benchmark", fake)
+    cfg = optimize.GRID[0]
+    assert len(optimize.measure_perf(cfg)) == optimize.PERF_RUNS
+    seen.clear()
+    assert len(optimize.measure_perf(cfg, n_runs=1, seed0=5003)) == 1 and seen == [5003]

@@ -4064,5 +4064,25 @@
       "note": "the machine slept or Docker Desktop stopped after trial 2 (about 05:22 UTC); every Furnace process was gone at 19:18 UTC; resumed on AC at 780 MHz"
     }
   ],
-  "stopped": null
+  "stopped": null,
+  "affected": [
+    {
+      "trial": 6,
+      "reason": "ruff check over packages, ruff format and the bench/correlation.py analysis ran 19:45:43-19:46:10 inside the trial (19:45:39-19:46:29)",
+      "evidence": "previous session's command log (f87e7c7f jsonl), shell command start/end vs the trial window; NOTES.md",
+      "marked_at_utc": "2026-10-13T00:54:53Z"
+    },
+    {
+      "trial": 9,
+      "reason": "pytest test_repair+test_gate_stats with the Docker sandbox ran 19:48:22-19:49:13 (26 passed in 35.69 s): ~44 s of trial 9 (19:48:14-19:49:06), ~5 s of trial 10 (19:49:08-19:49:58)",
+      "evidence": "previous session's command log (f87e7c7f jsonl), shell command start/end vs the trial window; NOTES.md",
+      "marked_at_utc": "2026-10-13T00:54:55Z"
+    },
+    {
+      "trial": 10,
+      "reason": "pytest test_repair+test_gate_stats with the Docker sandbox ran 19:48:22-19:49:13 (26 passed in 35.69 s): ~44 s of trial 9 (19:48:14-19:49:06), ~5 s of trial 10 (19:49:08-19:49:58)",
+      "evidence": "previous session's command log (f87e7c7f jsonl), shell command start/end vs the trial window; NOTES.md",
+      "marked_at_utc": "2026-10-13T00:54:55Z"
+    }
+  ]
 }

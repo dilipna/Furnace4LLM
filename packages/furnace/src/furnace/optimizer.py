@@ -166,3 +166,96 @@ def select(
             f" (indistinguishable from {', '.join(ties)} on goodput)" if ties else ""
         )
     return {"rows": rows, "pick": top["name"], "ties": ties, "recommendation": rec}
+
+
+# ------------------------------------------------------------------ independent confirmation
+
+
+def confirmation_target(sel: dict[str, Any], baseline: str) -> tuple[str | None, str]:
+    """Which config the confirmation rerun compares with the baseline, and why. The pick when
+    it is not the baseline; when the baseline is the pick, the feasible config with the next
+    highest median goodput (the closest challenger), so 'keep the baseline' is tested too."""
+    if sel.get("pick") is None:
+        return None, "no config met the constraints: nothing to confirm"
+    if sel["pick"] != baseline:
+        return sel["pick"], "the selected config (highest median goodput among feasible configs)"
+    others = [
+        r for r in sel["rows"] if r.get("feasible") and not r["baseline"] and "goodput_rps" in r
+    ]
+    if not others:
+        return None, "the baseline is the only feasible config: nothing to compare"
+    best = max(others, key=lambda r: r["goodput_rps"])
+    return best["name"], "the baseline was selected; this is the closest feasible challenger"
+
+
+def welch_ratio_ci(
+    base: list[float], other: list[float], confidence: float
+) -> tuple[float, float, float]:
+    """(change, low, high) in percent of other/base, from a Welch t interval on the logs (run
+    as the unit). Values must be positive."""
+    if min(base + other) <= 0:
+        raise ValueError("values must be positive for a ratio interval")
+    import math
+
+    x = [math.log(v) for v in base]
+    y = [math.log(v) for v in other]
+    va = statistics.variance(x) / len(x)
+    vb = statistics.variance(y) / len(y)
+    d = statistics.fmean(y) - statistics.fmean(x)
+    se = (va + vb) ** 0.5
+    if se == 0:
+        lo = hi = d
+    else:
+        df = (va + vb) ** 2 / (va**2 / (len(x) - 1) + vb**2 / (len(y) - 1))
+        q = t_quantile(1 - (1 - confidence) / 2, df)
+        lo, hi = d - q * se, d + q * se
+    return (math.expm1(d) * 100, math.expm1(lo) * 100, math.expm1(hi) * 100)
+
+
+def confirm(
+    base: ConfigResult, cand: ConfigResult, policy: OptimizerPolicy | None = None
+) -> dict[str, Any]:
+    """Decide the independent rerun (fresh launches, alternating order, new seeds; rules in
+    docs/optimizer.md, fixed before the grid was measured). Outcomes:
+      confirmed      goodput higher with the interval above 0, quality within tolerance
+                     (same paired rule as selection), failures and p95 SLO met;
+      not confirmed: no improvement   the goodput interval's upper bound is at or below 0;
+      not confirmed: constraints      goodput higher, but quality/failures/SLO not shown;
+      inconclusive   the goodput interval contains 0."""
+    policy = policy or OptimizerPolicy()
+    if len(base.goodput_rps) < 2 or len(cand.goodput_rps) < 2:
+        return {"outcome": "inconclusive", "reasons": ["fewer than 2 runs per side"]}
+    out: dict[str, Any] = {}
+    reasons: list[str] = []
+    if min(base.goodput_rps + cand.goodput_rps) <= 0:
+        return {
+            "outcome": "inconclusive",
+            "reasons": ["a run had zero SLO goodput: no ratio interval"],
+            "goodput_rps": {"base": base.goodput_rps, "candidate": cand.goodput_rps},
+        }
+    g, glo, ghi = welch_ratio_ci(base.goodput_rps, cand.goodput_rps, policy.confidence)
+    p, plo, phi = welch_ratio_ci(base.ttft_p95_ms, cand.ttft_p95_ms, policy.confidence)
+    out["goodput_change_pct"] = {"change": g, "ci": [glo, ghi]}
+    out["ttft_p95_change_pct"] = {"change": p, "ci": [plo, phi]}
+    out["quality_vs_baseline"] = {}
+    for m, q in cand.quality.items():
+        diff, lo, hi, n = paired_diff_ci(base.quality.get(m, {}), q, policy.confidence)
+        out["quality_vs_baseline"][m] = {"diff_pts": diff, "ci_pts": [lo, hi], "questions": n}
+        if lo < -policy.quality_tol_pts:
+            reasons.append(
+                f"{m}: {diff:+.1f} pts (interval {lo:+.1f} to {hi:+.1f}) not shown within "
+                f"the {policy.quality_tol_pts:g}-point tolerance"
+            )
+    fr = statistics.median(cand.failure_rate) if cand.failure_rate else 0.0
+    if fr > policy.max_failure_rate:
+        reasons.append(f"failure rate {fr:.1%} > {policy.max_failure_rate:.0%}")
+    p95 = statistics.median(cand.ttft_p95_ms)
+    if p95 > policy.slo_ttft_p95_ms:
+        reasons.append(f"p95 TTFT {p95:.0f} ms > SLO {policy.slo_ttft_p95_ms:.0f} ms")
+    if ghi <= 0:
+        outcome = "not confirmed: no improvement"
+    elif glo > 0:
+        outcome = "confirmed" if not reasons else "not confirmed: constraints"
+    else:
+        outcome = "inconclusive"
+    return {"outcome": outcome, "reasons": reasons, **out}

@@ -276,8 +276,14 @@ def main() -> None:
         result = attempt(scen, rep, q, out, audit=not args.no_audit and scen == "r1_dynamic_head")
         if power_state().get("on_ac") is False and not args.allow_battery:
             # AC was lost during this attempt: its numbers are not comparable (2026-10-11).
-            stored.unlink(missing_ok=True)
-            raise SystemExit(f"AC power lost during {scen} repeat {rep}; attempt discarded")
+            # Kept under discarded/ (not counted); the next start runs it again.
+            keep = out / "discarded"
+            keep.mkdir(exist_ok=True)
+            for f in out.glob(f"{scen}_r{rep}.*json"):
+                f.replace(keep / f"{f.stem}.ac-lost-{int(time.time())}{f.suffix}")
+            raise SystemExit(
+                f"AC power lost during {scen} repeat {rep}; attempt kept under discarded/"
+            )
         attempts.append(result)
     res = {"manifest": manifest(), "attempts": attempts}
     write_json(out.parent / "rq5.json", res)
