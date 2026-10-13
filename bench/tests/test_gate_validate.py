@@ -80,8 +80,10 @@ def test_affected_trials_stay_recorded_and_are_replaced(driver):
     assert [t["trial"] for t in f["trials"]] == [1, 2, 3, 4, 5, 6]  # 2 and 3 kept, 5-6 added
     assert [a["trial"] for a in f["affected"]] == [2, 3] and state["n"] == 6
     assert f["affected"][0]["reason"] == "a test run overlapped"
+    before = _final(d)
     gv.run("v1_aa", 4, smoke=False, resume_note="nothing left to do")
     assert len(_final(d)["trials"]) == 6 and state["n"] == 6  # already complete
+    assert _final(d)["resumed"] == before["resumed"]  # and left exactly as it was
 
 
 def test_a_cut_off_jsonl_line_is_kept_aside_and_never_counted(driver):

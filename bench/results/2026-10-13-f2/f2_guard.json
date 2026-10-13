@@ -1,0 +1,104 @@
+{
+  "manifest": {
+    "date": "2026-10-13-f2",
+    "started_at": "2026-10-13T18:11:33+00:00",
+    "git": {
+      "sha": "2cb3e0ffc8e428080a451cd7a4be0b8e182a943e",
+      "dirty": true
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 55,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/f2_guard.py"
+    ]
+  },
+  "scenarios": [
+    {
+      "scenario": "f2_docs_only",
+      "description": "README wording change",
+      "categories": [
+        "docs"
+      ],
+      "selected": [
+        "security:approval_gate"
+      ],
+      "results": [
+        {
+          "key": "security:approval_gate",
+          "verdict": "pass",
+          "detail": "1 approval test(s) (generated from the base revision): 1 passed in 0.25s"
+        }
+      ],
+      "conclusion": "success",
+      "expected_failures": [],
+      "as_expected": true
+    },
+    {
+      "scenario": "f2_r4_refund_approval_removed",
+      "description": "R4: confirmation check removed from issue_refund 'to reduce friction'",
+      "categories": [
+        "code",
+        "tool"
+      ],
+      "selected": [
+        "unit:tests/test_tools.py",
+        "security:approval_gate"
+      ],
+      "results": [
+        {
+          "key": "unit:tests/test_tools.py",
+          "verdict": "pass",
+          "detail": "2 passed in 0.19s"
+        },
+        {
+          "key": "security:approval_gate",
+          "verdict": "fail",
+          "detail": "1 approval test(s) (generated from the base revision): 1 failed in 0.26s | >       assert not isinstance(exc.value, _NoOutbound), \"side effect executed without approval\""
+        }
+      ],
+      "conclusion": "failure",
+      "expected_failures": [
+        "security:approval_gate"
+      ],
+      "as_expected": true
+    },
+    {
+      "scenario": "f2_email_subject",
+      "description": "Email tool description reworded",
+      "categories": [],
+      "selected": [
+        "unit:tests/test_tools.py",
+        "check:prompt_prefix_stable",
+        "security:approval_gate"
+      ],
+      "results": [
+        {
+          "key": "unit:tests/test_tools.py",
+          "verdict": "pass",
+          "detail": "2 passed in 0.18s"
+        },
+        {
+          "key": "check:prompt_prefix_stable",
+          "verdict": "error",
+          "detail": "cannot run: no prompt harness for the base: app/main.py::chat: control flow before the messages are built; cannot slice safely"
+        },
+        {
+          "key": "security:approval_gate",
+          "verdict": "pass",
+          "detail": "1 approval test(s) (generated from the base revision): 1 passed in 0.19s"
+        }
+      ],
+      "conclusion": "neutral",
+      "expected_failures": [],
+      "as_expected": false
+    }
+  ]
+}

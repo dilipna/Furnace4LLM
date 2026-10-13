@@ -1,0 +1,38 @@
+{
+  "label": "before the optimizer grid",
+  "at_utc": "2026-10-13T03:15:47Z",
+  "git_sha": "2cb3e0ffc8e428080a451cd7a4be0b8e182a943e",
+  "checks": {
+    "power": {
+      "status": "FAIL",
+      "detail": "not on AC ({'on_ac': False, 'battery_pct': 86, 'gpu_enforced_power_limit_w': 30.0})"
+    },
+    "image": {
+      "status": "OK",
+      "detail": "sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90"
+    },
+    "code": {
+      "status": "OK",
+      "detail": "measurement code clean at 2cb3e0f"
+    },
+    "clock": {
+      "status": "FAIL",
+      "detail": "under load: median 1125 MHz, peak 30 W, reasons power limit+SW thermal; throttled: say so when showing latency; the kept trials ran at 780 MHz (+-80): a different clock is a different condition (rerun with --any-clock only on purpose)"
+    }
+  },
+  "power": {
+    "on_ac": false,
+    "battery_pct": 86,
+    "gpu_enforced_power_limit_w": 30.0
+  },
+  "gpu_sm_mhz_under_load": 1125.0,
+  "other_containers": [
+    "cal-api",
+    "wc26-mlops-grafana-1",
+    "wc26-mlops-prometheus-1",
+    "wc26-mlops-serving-1",
+    "wc26-mlops-mlflow-1",
+    "wc26-mlops-postgres-1"
+  ],
+  "cpu_busy_pct_5s_idle": 7.9
+}

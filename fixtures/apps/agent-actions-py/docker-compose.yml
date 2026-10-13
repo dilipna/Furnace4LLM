@@ -1,0 +1,12 @@
+services:
+  vllm:
+    image: vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90
+    command:
+      - --model
+      - Qwen/Qwen2.5-0.5B-Instruct
+      - --enable-prefix-caching
+      - --enable-auto-tool-choice
+      - --tool-call-parser
+      - hermes
+    ports:
+      - "8100:8000"

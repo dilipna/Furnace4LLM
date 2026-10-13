@@ -1,0 +1,73 @@
+# Hand-written ground truth for FurnaceBench RQ1 (reconstruction), fixture F2 (Python).
+# F2 replaces the plan's TypeScript `agent-actions-ts` (owner decision 2026-10-13: TS and
+# VLM deferred, a second Python fixture kept). Written by the fixture author (the developer
+# agent) from the plan's F2 specification, translated to Python: a tool-calling agent on an
+# OpenAI-compatible endpoint, tools search_orders (read), issue_refund (write), send_email
+# (external), no evals and no tracing. Two departures, stated:
+# - The plan both plants a missing approval gate on issue_refund and has R4 delete it. Here
+#   issue_refund is gated in the base (so R4, deleting the gate, is a real regression) and the
+#   planted missing gate is on send_email (an external side effect with no approval).
+# - The plan's multimodal contradiction (a diagram showing a cache layer) is text here, since
+#   VLM extraction is deferred: docs/architecture.md describes a Redis response cache that the
+#   code does not have.
+# Like F1, this is a development fixture: its scores are optimistic and not held-out.
+app: agent-actions-py
+purpose: tool-calling order-support agent (orders lookup, refunds after confirmation, follow-up email) behind FastAPI, on vLLM
+
+routes:
+  - POST /agent/chat
+  - GET /health
+
+llm_calls:
+  - file: app/agent.py
+    function: run_agent
+    api: openai.chat.completions.create (tools)
+    streaming: false
+    has_timeout: false
+
+model: Qwen/Qwen2.5-0.5B-Instruct
+serving_engine: vllm
+serving_flags:
+  enable-prefix-caching: true
+
+uses_rag: false
+retrievers: []
+
+tools:
+  - name: search_orders
+    side_effect: none
+    approval_gate: false
+  - name: issue_refund
+    side_effect: external     # POST to the payments service
+    approval_gate: true
+  - name: send_email
+    side_effect: external     # POST to the mailer service; planted: no approval gate
+    approval_gate: false
+
+prompts:
+  - app/prompts.py::SYSTEM_PROMPT
+dynamic_head: false
+
+workflows:
+  - POST /agent/chat
+
+existing_reliability:
+  tests: true
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions:
+  - predicate: response_cache
+    values: [none, redis]     # docs/architecture.md says every request goes through a Redis cache; there is none
+
+expected_findings:
+  - {rule: rel.llm_timeout, item: app}
+  - {rule: rel.fallback_gateway, item: app}
+  - {rule: eval.regression_suite, item: app}
+  - {rule: obs.genai_tracing, item: app}
+  - {rule: sec.tool_approval_boundary, item: {file: app/tools.py, symbol: send_email, line: 30}}
+  - {rule: sec.approval_gate_regression_test, item: {file: app/tools.py, symbol: issue_refund, line: 21}}
+  - {rule: obs.prompt_versioning, item: {file: app/prompts.py, symbol: SYSTEM_PROMPT, line: 1}}
+  - {rule: inf.serving_baseline, item: app}

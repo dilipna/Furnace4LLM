@@ -1,17 +1,24 @@
 # Perf-gate validation: fresh trials under the frozen rule
 
-Every trial is the real gate path (prompts rendered from each revision in the sandbox, 3 interleaved runs per side, c=8, 34 requests per run). Rule frozen in `docs/gate-revision.md` (6e90c99; implemented 26fa8eb; sizes for the graded sets fixed in 9d80db8 before any trial). The last column applies the rule that was replaced to the same raw samples. Trials affected by competing work on the machine are left out of the primary row, replaced, and shown again in an 'incl. affected' row (rule: `../NOTES.md`). SM clock across all trials: 780-780 MHz.
+Every trial is the real gate path (prompts rendered from each revision in the sandbox, 3 interleaved runs per side, c=8, 34 requests per run). Rule frozen in `docs/gate-revision.md` (6e90c99; implemented 26fa8eb; sizes for the graded sets fixed in 9d80db8 before any trial). The last column applies the rule that was replaced to the same raw samples. Trials affected by competing work on the machine are left out of the primary row, replaced, and shown again in an 'incl. affected' row (rule: `../NOTES.md`). SM clock across all trials: 780-828 MHz.
 
 | set | true change | trials | PASS | INCONCL. | WARN | BLOCK | FAIL = WARN+BLOCK (exact 95% CI) | measured change, median (range) | interval width, median (pts) | interval contains 0 | old rule on same data: P/I/W/B |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| v1_aa | none (unchanged) | 11/24 | 7 | 4 | 0 | 0 | 0/11 (0%-28%) | -0.3% (-15.0 to +5.4) | 13.0 | 10/11 | 3/8/0/0 |
-| v1_aa, incl. affected trials [6, 9, 10] | none (unchanged) | 14/24 | 10 | 4 | 0 | 0 | 0/14 (0%-23%) | -0.0% (-15.0 to +5.4) | 12.4 | 13/14 | 6/8/0/0 |
+| v1_aa | none (unchanged) | 24/24 | 18 | 6 | 0 | 0 | 0/24 (0%-14%) | -0.0% (-15.0 to +5.4) | 11.9 | 23/24 | 8/16/0/0 |
+| v1_aa, incl. affected trials [6, 9, 10] | none (unchanged) | 27/24 | 21 | 6 | 0 | 0 | 0/27 (0%-13%) | +0.2% (-15.0 to +5.4) | 11.8 | 26/27 | 11/16/0/0 |
+| v2_restored | none (unchanged) | 12/12 | 11 | 1 | 0 | 0 | 0/12 (0%-26%) | -1.1% (-2.7 to +4.4) | 14.6 | 11/12 | 5/7/0/0 |
+| v3c_topk4 | +12.9% | 6/6 | 1 | 5 | 0 | 0 | 0/6 (0%-46%) | +4.3% (+2.2 to +6.5) | 11.6 | – | 4/2/0/0 |
+| v3c_topk8 | +18.2% | 6/6 | 1 | 5 | 0 | 0 | 0/6 (0%-46%) | +6.5% (+4.4 to +33.0) | 15.1 | – | 1/5/0/0 |
+| v3b_r2 | about +30% (depth 12) | 6/6 | 1 | 5 | 0 | 0 | 0/6 (0%-46%) | +7.2% (+1.1 to +54.5) | 11.3 | – | 0/6/0/0 |
+| v3a_r1 | about +800% (earlier studies) | 6/6 | 0 | 0 | 0 | 6 | 6/6 (54%-100%) | +612.7% (+608.9 to +620.6) | 42.7 | – | 0/0/0/6 |
 
-Unchanged code (V1 + V2 together): false FAIL 0/11 (exact 95% CI 0.0% to 28.5%), PASS 7/11.
-The same, including affected trials: false FAIL 0/14 (exact 95% CI 0.0% to 23.2%), PASS 10/14.
+Unchanged code (V1 + V2 together): false FAIL 0/36 (exact 95% CI 0.0% to 9.7%), PASS 29/36.
+The same, including affected trials: false FAIL 0/39 (exact 95% CI 0.0% to 9.0%), PASS 32/39.
 
 Pre-declared targets (primary rows):
-- v1_aa: false FAIL 0% (target <= 10%: met), PASS 64% (target >= 70%: NOT met) [partial: 11/24]
+- v1_aa: false FAIL 0% (target <= 10%: met), PASS 75% (target >= 70%: met)
+- v2_restored: false FAIL 0% (target <= 10%: met), PASS 92% (target >= 70%: met)
+- v3a_r1: BLOCK in 6/6 (target: all: met)
 
 ## Tail latency (p95), reported separately; advisory, never decides a verdict
 
@@ -19,7 +26,12 @@ Same trials and runs: each run's p95 TTFT, compared with the same run-level 90% 
 
 | set | trials | p95 change, median (range) | interval width, median (pts) | tail regression > 10% ruled out | established | unresolved |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| v1_aa | 11 | +1.1% (-20.1 to +7.1) | 27.4 | 3 | 0 | 8 |
+| v1_aa | 24 | +0.2% (-20.1 to +7.1) | 21.6 | 11 | 0 | 13 |
+| v2_restored | 12 | -0.5% (-8.3 to +5.9) | 26.5 | 2 | 0 | 10 |
+| v3c_topk4 | 6 | +2.9% (+0.0 to +8.2) | 13.1 | 3 | 0 | 3 |
+| v3c_topk8 | 6 | +5.6% (+2.3 to +37.1) | 18.3 | 1 | 0 | 5 |
+| v3b_r2 | 6 | +6.5% (+2.2 to +59.4) | 18.4 | 0 | 0 | 6 |
+| v3a_r1 | 6 | +941.0% (+921.5 to +981.2) | 93.5 | 0 | 6 | 0 |
 
 ## Why this metric, interval and these thresholds
 

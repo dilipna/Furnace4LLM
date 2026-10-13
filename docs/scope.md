@@ -16,7 +16,7 @@ an action only you can take), **not built**.
 | criterion (plan, Outcome) | status | evidence | decision |
 |---|---|---|---|
 | One vertical slice: Scan → Blueprint → Inference Lab → Forge PR → Guard check → Repair draft PR | done locally; **GitHub half blocked** | local: `scripts/rehearse.py`, `docs/demo.md`; live: `scripts/live_github_run.py` + `scripts/live_github_verify.py` ready, not run | retained; needs your GitHub App (below) |
-| Proven on 2 fixture apps + 1 real OSS repo | **partial**: 1 fixture (F1) + 14 labeled OSS apps in 5 held-out sets | `bench/results/2026-10-12-reconcile/scanner_reconciliation.md` | F2: **proposed deviation D1** |
+| Proven on 2 fixture apps + 1 real OSS repo | **in progress**: F1 + F2 (`agent-actions-py`, Python, built 2026-10-13, not yet scanned or Guarded in a recorded run) + 19 labeled OSS apps in 6 held-out sets | `fixtures/apps/agent-actions-py/`, `docs/scanner-eval-set6.md` | retained: the second fixture is Python (D1 as signed off) |
 | FurnaceBench results from documented commands | done | `docs/furnacebench.md`, every result folder records its command and commit | retained |
 
 ## MUST items (plan §16)
@@ -56,17 +56,16 @@ AWQ on T4 (an AWQ model is in the laptop optimizer grid instead), `vllm bench se
 cross-check, note clustering, Kernel Lab on T4, Postgres RLS, Stripe test checkout, repair
 R2 (attempted in RQ5: rejected at diagnosis, since R2 is not a prefix-instability regression).
 
-## Decisions that need your sign-off
+## Decisions (signed off by the owner on 2026-10-13)
 
-- **D1: defer F2 (`agent-actions-ts`), TypeScript extraction, VLM image claims and free-text
-  evidence to after the MVP.** They are one unit: F2's planted contradiction is a diagram, and
-  its security regression (R4) lives in TypeScript. Building them is more than the remaining
-  time before the Oct 15 freeze, and none affects whether the Python vertical slice is
-  correct. Consequence: every claim says **Python apps**; the Outcome line "2 fixture apps"
-  is **not met** (it is 1 fixture plus 14 labeled independent OSS apps), and RQ1 has no F2 column.
-  If you want F2 in the MVP instead, the minimum is the plan's own fallback: TS call sites
-  and tools only, F2 scanned and Guarded, Forge patch download only.
-- **D2: the LLM-patch repair strategy stays out of the MVP**, as the plan's Oct 12 fallback
-  already allows ("the rule strategy carries the demo"). Claims say "rule-based repair".
+- **D1, approved with a change:** TypeScript extraction, VLM image claims and free-text
+  evidence are deferred to after the MVP, and every claim says **Python apps only**. The
+  second fixture stays in the completion criteria, as a **Python** fixture: F2
+  `agent-actions-py` follows the plan's F2 specification (tool-calling agent, read / write /
+  external tools, no evals, no tracing, R4 approval removal) with two stated departures (the
+  planted missing gate is on `send_email`; the cache-layer contradiction is in text, not a
+  diagram). See its `ground_truth.yaml` header.
+- **D2, approved:** repair is rule-based for the documented supported case (prompt-prefix
+  instability on F1); no LLM-patch strategy in the MVP. Claims say "rule-based repair".
 - **Retained, blocked on you:** GitHub App + demo repository (live slice), 60 labels + a Groq
   key (judge calibration), Vercel/Render/Supabase accounts (hosted control plane).

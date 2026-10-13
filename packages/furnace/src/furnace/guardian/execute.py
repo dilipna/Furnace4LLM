@@ -21,7 +21,7 @@ from typing import Any
 import httpx
 from furnace_bench.schema import BenchTarget
 
-from furnace.forge.harness import HARNESS_FILE, write_harness
+from furnace.forge.harness import HARNESS_FILE, HarnessError, write_harness
 from furnace.forge.planner import approval_test_source
 from furnace.guardian.impact import ImpactResult, SuiteItem
 from furnace.guardian.perf_gate import GatePolicy, compare, describe, run_gate
@@ -62,16 +62,35 @@ class GuardContext:
     _cache: dict[str, Any] = field(default_factory=dict)
 
 
+NO_HARNESS_FILE = ".furnace_no_harness"  # why no prompt harness could be generated
+NEEDS_HARNESS = {"check", "benchmark", "judge"}  # items that render the app's prompts
+
+
 def prepare(base_root: Path, head_root: Path) -> tuple[Path, Path, Path]:
-    """Disposable copies of both revisions, each with a harness generated from its own code."""
+    """Disposable copies of both revisions, each with a harness generated from its own code.
+    When no harness can be generated (e.g. control flow before the messages are built), the
+    reason is recorded and the copies are still returned: items that need rendered prompts
+    then report ERROR with that reason (never a pass), and the others (unit tests, approval
+    gates) still run. Raising here would have skipped every check, relevant or not."""
     work = Path(tempfile.mkdtemp(prefix="furnace-guard-"))
     ign = shutil.ignore_patterns(".git", ".venv", "__pycache__", ".pytest_cache", "traces")
     base = Path(shutil.copytree(base_root, work / "base", ignore=ign))
     head = Path(shutil.copytree(head_root, work / "head", ignore=ign))
     for root in (base, head):
         if not (root / HARNESS_FILE).exists():
-            write_harness(reconstruct(root))
+            try:
+                write_harness(reconstruct(root))
+            except HarnessError as exc:
+                (root / NO_HARNESS_FILE).write_text(str(exc), encoding="utf-8")
     return work, base, head
+
+
+def _no_harness(ctx: GuardContext) -> str | None:
+    for side, root in (("base", ctx.base), ("PR head", ctx.head)):
+        p = root / NO_HARNESS_FILE
+        if p.exists():
+            return f"no prompt harness for the {side}: {p.read_text(encoding='utf-8')[:200]}"
+    return None
 
 
 # ---------------------------------------------------------------------------- executors
@@ -394,8 +413,11 @@ def run_items(
         if on_event:
             on_event({"type": "check_start", "key": item.key, "kind": item.kind})
         t0 = time.monotonic()
+        missing = _no_harness(ctx) if item.kind in NEEDS_HARNESS else None
         if fn is None:
             r = ItemResult(item.key, "skip", f"no executor for {item.kind}")
+        elif missing:
+            r = ItemResult(item.key, "error", f"cannot run: {missing}")
         else:
             try:
                 r = fn(item, ctx)
