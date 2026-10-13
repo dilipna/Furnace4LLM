@@ -1,0 +1,5 @@
+[
+  {"order_id": "KW-1001", "email": "ada@example.com", "item": "Studio kiln controller", "total": 349.0, "state": "delivered"},
+  {"order_id": "KW-1002", "email": "ada@example.com", "item": "Thermocouple kit", "total": 39.0, "state": "shipped"},
+  {"order_id": "KW-1003", "email": "lin@example.com", "item": "Workshop kiln controller", "total": 899.0, "state": "damaged"}
+]

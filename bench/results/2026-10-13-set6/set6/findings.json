@@ -1,0 +1,1126 @@
+{
+  "manifest": {
+    "date": "2026-10-13-set6",
+    "started_at": "2026-10-13T02:04:24+00:00",
+    "git": {
+      "sha": "ebd5824de728d888172a0492d2bb2ac9cc248fa9",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 37,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/set6_findings.py"
+    ]
+  },
+  "per_app": {
+    "audiobook-creator": {
+      "expected": 11,
+      "emitted": 28,
+      "matched": 3,
+      "matched_items": [
+        {
+          "expected": {
+            "rule": "rel.llm_timeout",
+            "item": "app"
+          },
+          "emitted": "Set explicit timeouts on 3 LLM calls"
+        },
+        {
+          "expected": {
+            "rule": "rel.fallback_gateway",
+            "item": "app"
+          },
+          "emitted": "Add retry with backoff, and a fallback endpoint through an existing gateway"
+        },
+        {
+          "expected": {
+            "rule": "eval.regression_suite",
+            "item": "app"
+          },
+          "emitted": "Start a regression suite for LLM behaviour"
+        }
+      ],
+      "missed": [
+        {
+          "rule": "obs.genai_tracing",
+          "item": "app"
+        },
+        {
+          "rule": "obs.prompt_versioning",
+          "item": {
+            "file": "utils/add_emotion_tags_to_text.py",
+            "function": "enhance_text_with_emotions",
+            "line": 533
+          }
+        },
+        {
+          "rule": "obs.prompt_versioning",
+          "item": {
+            "file": "utils/character_extraction_llm.py",
+            "function": "extract_character_info_from_batch",
+            "line": 360
+          }
+        },
+        {
+          "rule": "obs.prompt_versioning",
+          "item": {
+            "file": "utils/character_extraction_llm.py",
+            "function": "identify_speaker_for_dialogue_matching_only",
+            "line": 764
+          }
+        },
+        {
+          "rule": "obs.prompt_versioning",
+          "item": {
+            "file": "utils/find_book_protagonist.py",
+            "function": "find_book_protagonist_using_search_engine_and_llm",
+            "line": 241
+          }
+        },
+        {
+          "rule": "inf.prefix_instability",
+          "item": {
+            "file": "utils/character_extraction_llm.py",
+            "function": "extract_character_info_from_batch",
+            "line": 360
+          }
+        },
+        {
+          "rule": "inf.prefix_instability",
+          "item": {
+            "file": "utils/character_extraction_llm.py",
+            "function": "identify_speaker_for_dialogue_matching_only",
+            "line": 764
+          }
+        },
+        {
+          "rule": "inf.prefix_stability_guard",
+          "item": {
+            "file": "utils/add_emotion_tags_to_text.py",
+            "function": "enhance_text_with_emotions",
+            "line": 533
+          }
+        }
+      ],
+      "unexpected": [
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `process_emotion_tags`",
+          "node_keys": [
+            "tool:add_emotion_tags.py::process_emotion_tags"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `extract_text_from_book_using_calibre`",
+          "node_keys": [
+            "tool:book_to_txt.py::extract_text_from_book_using_calibre"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `save_book`",
+          "node_keys": [
+            "tool:book_to_txt.py::save_book"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `process_book_and_extract_text`",
+          "node_keys": [
+            "tool:book_to_txt.py::process_book_and_extract_text"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `main`",
+          "node_keys": [
+            "tool:book_to_txt.py::main"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `generate_audio_with_single_voice`",
+          "node_keys": [
+            "tool:generate_audiobook.py::generate_audio_with_single_voice"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `apply_emotion_tags_to_multi_voice_data`",
+          "node_keys": [
+            "tool:generate_audiobook.py::apply_emotion_tags_to_multi_voice_data"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `process_single_line`",
+          "node_keys": [
+            "tool:generate_audiobook.py::generate_audio_with_single_voice.process_single_line"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `process_single_line`",
+          "node_keys": [
+            "tool:generate_audiobook.py::generate_audio_with_multiple_voices.process_single_line"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `process_book_and_identify_characters`",
+          "node_keys": [
+            "tool:identify_characters_and_output_book_to_jsonl.py::process_book_and_identify_characters"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `main`",
+          "node_keys": [
+            "tool:identify_characters_and_output_book_to_jsonl.py::main"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `add_tags_to_text_chunks`",
+          "node_keys": [
+            "tool:utils/add_emotion_tags_to_text.py::add_tags_to_text_chunks"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `process_emotion_tags_for_jsonl_data`",
+          "node_keys": [
+            "tool:utils/add_emotion_tags_to_text.py::process_emotion_tags_for_jsonl_data"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `generate_chapters_file`",
+          "node_keys": [
+            "tool:utils/audiobook_utils.py::generate_chapters_file"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `merge_chapters_to_m4b`",
+          "node_keys": [
+            "tool:utils/audiobook_utils.py::merge_chapters_to_m4b"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `add_silence_to_audio_file_by_appending_pre_generated_silence`",
+          "node_keys": [
+            "tool:utils/audiobook_utils.py::add_silence_to_audio_file_by_appending_pre_generated_silence"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `merge_chapters_to_standard_audio_file`",
+          "node_keys": [
+            "tool:utils/audiobook_utils.py::merge_chapters_to_standard_audio_file"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `assemble_chapter_with_ffmpeg`",
+          "node_keys": [
+            "tool:utils/audiobook_utils.py::assemble_chapter_with_ffmpeg"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `add_silence_to_chapter_with_ffmpeg`",
+          "node_keys": [
+            "tool:utils/audiobook_utils.py::add_silence_to_chapter_with_ffmpeg"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `empty_file`",
+          "node_keys": [
+            "tool:utils/file_utils.py::empty_file"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `write_json_to_file`",
+          "node_keys": [
+            "tool:utils/file_utils.py::write_json_to_file"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `write_jsons_to_jsonl_file`",
+          "node_keys": [
+            "tool:utils/file_utils.py::write_jsons_to_jsonl_file"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `run_shell_command_secure`",
+          "node_keys": [
+            "tool:utils/run_shell_commands.py::run_shell_command_secure"
+          ]
+        },
+        {
+          "rule": "inf.prefix_instability",
+          "title": "Move per-request values out of the start of the system prompt",
+          "node_keys": [
+            "prompt:utils/find_book_protagonist.py::find_book_protagonist_using_search_engine_and_llm#system"
+          ]
+        },
+        {
+          "rule": "inf.serving_baseline",
+          "title": "Record a serving baseline: TTFT, TPOT and SLO goodput by concurrency",
+          "node_keys": [
+            "endpoint:generate_audiobook.py::async_openai_client",
+            "endpoint:identify_characters_and_output_book_to_jsonl.py::async_openai_client",
+            "endpoint:utils/add_emotion_tags_to_text.py::openai_llm_client",
+            "endpoint:utils/generate_audio_samples.py::client"
+          ]
+        }
+      ],
+      "excluded_rules": [],
+      "excluded_emitted": []
+    },
+    "BYO-LLM-WIKI": {
+      "expected": 30,
+      "emitted": 26,
+      "matched": 21,
+      "matched_items": [
+        {
+          "expected": {
+            "rule": "rel.llm_timeout",
+            "item": "app"
+          },
+          "emitted": "Set explicit timeouts on 5 LLM calls"
+        },
+        {
+          "expected": {
+            "rule": "eval.citation_contract",
+            "item": "app"
+          },
+          "emitted": "Verify the citation contract the prompt already asks for"
+        },
+        {
+          "expected": {
+            "rule": "eval.grounding_judge",
+            "item": "app"
+          },
+          "emitted": "Add a calibrated grounding judge for answers built from retrieval"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "agent.py",
+              "symbol": "_BASE_SYSTEM_PROMPT",
+              "line": 48
+            }
+          },
+          "emitted": "Move `_BASE_SYSTEM_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "agent.py",
+              "symbol": "_INGEST_PROMPT",
+              "line": 85
+            }
+          },
+          "emitted": "Move `_INGEST_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "agent.py",
+              "symbol": "_QUERY_PROMPT",
+              "line": 113
+            }
+          },
+          "emitted": "Move `_QUERY_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "agent.py",
+              "symbol": "_LINT_PROMPT",
+              "line": 137
+            }
+          },
+          "emitted": "Move `_LINT_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "crossdoc.py",
+              "symbol": "_GEN_PROMPT",
+              "line": 61
+            }
+          },
+          "emitted": "Move `_GEN_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "crossdoc.py",
+              "symbol": "_KEYPOINTS_PROMPT",
+              "line": 229
+            }
+          },
+          "emitted": "Move `_KEYPOINTS_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "enrich.py",
+              "symbol": "_TOPIC_PROMPT",
+              "line": 75
+            }
+          },
+          "emitted": "Move `_TOPIC_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "extraction.py",
+              "symbol": "ENTITY_PROMPT",
+              "line": 39
+            }
+          },
+          "emitted": "Move `ENTITY_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "rag.py",
+              "symbol": "_RERANK_PROMPT",
+              "line": 52
+            }
+          },
+          "emitted": "Move `_RERANK_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "rag.py",
+              "symbol": "_RAG_PROMPT",
+              "line": 141
+            }
+          },
+          "emitted": "Move `_RAG_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "rag.py",
+              "symbol": "_ICL_SYSTEM",
+              "line": 188
+            }
+          },
+          "emitted": "Move `_ICL_SYSTEM` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "rag.py",
+              "symbol": "_JUDGE_PROMPT",
+              "line": 481
+            }
+          },
+          "emitted": "Move `_JUDGE_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "skill_agent.py",
+              "symbol": "_UNDERSTAND_PROMPT",
+              "line": 215
+            }
+          },
+          "emitted": "Move `_UNDERSTAND_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "skill_agent.py",
+              "symbol": "_ANALYZE_PROMPT",
+              "line": 245
+            }
+          },
+          "emitted": "Move `_ANALYZE_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "skill_agent.py",
+              "symbol": "_CODEACT_PROMPT",
+              "line": 298
+            }
+          },
+          "emitted": "Move `_CODEACT_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "skill_agent.py",
+              "symbol": "_CODEACT_TOOLS_SYSTEM",
+              "line": 357
+            }
+          },
+          "emitted": "Move `_CODEACT_TOOLS_SYSTEM` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "skill_eval.py",
+              "symbol": "_RUBRIC_PROMPT",
+              "line": 115
+            }
+          },
+          "emitted": "Move `_RUBRIC_PROMPT` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "skill_eval.py",
+              "symbol": "_TRIGGER_PROMPT",
+              "line": 264
+            }
+          },
+          "emitted": "Move `_TRIGGER_PROMPT` into a versioned prompt file"
+        }
+      ],
+      "missed": [
+        {
+          "rule": "sec.tool_approval_boundary",
+          "item": {
+            "file": "kg_tools.py",
+            "symbol": "kg_upsert_entity",
+            "line": 116
+          }
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "item": {
+            "file": "kg_tools.py",
+            "symbol": "kg_set_entity_summary",
+            "line": 137
+          }
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "item": {
+            "file": "kg_tools.py",
+            "symbol": "kg_add_relation",
+            "line": 148
+          }
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "item": {
+            "file": "kg_tools.py",
+            "symbol": "kg_merge_entities",
+            "line": 162
+          }
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "item": {
+            "file": "kg_tools.py",
+            "symbol": "kg_upsert_topic",
+            "line": 176
+          }
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "item": {
+            "file": "kg_tools.py",
+            "symbol": "kg_assign_entity_to_topic",
+            "line": 192
+          }
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "item": {
+            "file": "memory_tools.py",
+            "symbol": "memory_write",
+            "line": 42
+          }
+        },
+        {
+          "rule": "sec.approval_gate_regression_test",
+          "item": {
+            "file": "mcp_tools.py",
+            "symbol": "execute_write",
+            "line": 122
+          }
+        },
+        {
+          "rule": "inf.prefix_stability_guard",
+          "item": {
+            "file": "agent.py",
+            "symbol": "_BASE_SYSTEM_PROMPT",
+            "line": 48
+          }
+        }
+      ],
+      "unexpected": [
+        {
+          "rule": "eval.regression_suite",
+          "title": "Start a regression suite for LLM behaviour",
+          "node_keys": [
+            "workflow:app.py::POST /api/summarize"
+          ]
+        },
+        {
+          "rule": "obs.prompt_versioning",
+          "title": "Move `_CROSSDOC_JUDGE` into a versioned prompt file",
+          "node_keys": [
+            "prompt:crossdoc.py::_CROSSDOC_JUDGE"
+          ]
+        },
+        {
+          "rule": "obs.prompt_versioning",
+          "title": "Move `_REQUIREMENTS` into a versioned prompt file",
+          "node_keys": [
+            "prompt:skill_claude_agent.py::_REQUIREMENTS"
+          ]
+        },
+        {
+          "rule": "obs.prompt_versioning",
+          "title": "Move `_SKILL_JSON_SHAPE` into a versioned prompt file",
+          "node_keys": [
+            "prompt:skill_claude_agent.py::_SKILL_JSON_SHAPE"
+          ]
+        },
+        {
+          "rule": "rel.fallback_gateway",
+          "title": "Add retry with backoff, and a fallback endpoint through an existing gateway",
+          "node_keys": []
+        }
+      ],
+      "excluded_rules": [],
+      "excluded_emitted": []
+    },
+    "mdflux": {
+      "expected": 5,
+      "emitted": 6,
+      "matched": 1,
+      "matched_items": [
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "app/src-tauri/resources/sidecar/cleanup.py",
+              "symbol": "_SYSTEM_PROMPT",
+              "line": 63
+            }
+          },
+          "emitted": "Move `_SYSTEM_PROMPT` into a versioned prompt file"
+        }
+      ],
+      "missed": [
+        {
+          "rule": "rel.fallback_gateway",
+          "item": "app"
+        },
+        {
+          "rule": "eval.regression_suite",
+          "item": "app"
+        },
+        {
+          "rule": "obs.genai_tracing",
+          "item": "app"
+        },
+        {
+          "rule": "inf.serving_baseline",
+          "item": "app"
+        }
+      ],
+      "unexpected": [
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `_safe_extract_zip`",
+          "node_keys": [
+            "tool:tools/release/extract.py::_safe_extract_zip"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `_run_python`",
+          "node_keys": [
+            "tool:tools/release/runtime_checks.py::_run_python"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `_sidecar_request`",
+          "node_keys": [
+            "tool:tools/release/runtime_checks.py::_sidecar_request"
+          ]
+        },
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `terminate_process_tree`",
+          "node_keys": [
+            "tool:tools/release/runtime_checks.py::_sidecar_request.terminate_process_tree"
+          ]
+        },
+        {
+          "rule": "eval.grounding_judge",
+          "title": "Add a calibrated grounding judge for answers built from retrieval",
+          "node_keys": []
+        }
+      ],
+      "excluded_rules": [],
+      "excluded_emitted": []
+    },
+    "ps-fuzz": {
+      "expected": 14,
+      "emitted": 13,
+      "matched": 10,
+      "matched_items": [
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/aim.py",
+              "symbol": "unethical_task_generation_prompt",
+              "line": 12
+            }
+          },
+          "emitted": "Move `unethical_task_generation_prompt` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/aim.py",
+              "symbol": "aim_prompt_template",
+              "line": 18
+            }
+          },
+          "emitted": "Move `aim_prompt_template` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/complimentary_transition.py",
+              "symbol": "complimentary_transition_prompt",
+              "line": 12
+            }
+          },
+          "emitted": "Move `complimentary_transition_prompt` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/dan.py",
+              "symbol": "dan_prompt_template",
+              "line": 12
+            }
+          },
+          "emitted": "Move `dan_prompt_template` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/dynamic_test.py",
+              "symbol": "attack_prompt_gen_template",
+              "line": 16
+            }
+          },
+          "emitted": "Move `attack_prompt_gen_template` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/dynamic_test.py",
+              "symbol": "steal_system_prompt_attack_text",
+              "line": 34
+            }
+          },
+          "emitted": "Move `steal_system_prompt_attack_text` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/ethical_compliance.py",
+              "symbol": "unethical_task_generation_prompt",
+              "line": 12
+            }
+          },
+          "emitted": "Move `unethical_task_generation_prompt` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/self_refine.py",
+              "symbol": "unethical_task_generation_prompt",
+              "line": 12
+            }
+          },
+          "emitted": "Move `unethical_task_generation_prompt` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/self_refine.py",
+              "symbol": "self_refine_prompt_template",
+              "line": 18
+            }
+          },
+          "emitted": "Move `self_refine_prompt_template` into a versioned prompt file"
+        },
+        {
+          "expected": {
+            "rule": "obs.prompt_versioning",
+            "item": {
+              "file": "ps_fuzz/attacks/ucar.py",
+              "symbol": "ucar_task_generation_prompt",
+              "line": 12
+            }
+          },
+          "emitted": "Move `ucar_task_generation_prompt` into a versioned prompt file"
+        }
+      ],
+      "missed": [
+        {
+          "rule": "rel.llm_timeout",
+          "item": "app"
+        },
+        {
+          "rule": "rel.fallback_gateway",
+          "item": "app"
+        },
+        {
+          "rule": "eval.regression_suite",
+          "item": "app"
+        },
+        {
+          "rule": "obs.genai_tracing",
+          "item": "app"
+        }
+      ],
+      "unexpected": [
+        {
+          "rule": "sec.tool_approval_boundary",
+          "title": "Put a deterministic approval boundary in front of `save`",
+          "node_keys": [
+            "tool:ps_fuzz/app_config.py::AppConfig.save"
+          ]
+        },
+        {
+          "rule": "eval.grounding_judge",
+          "title": "Add a calibrated grounding judge for answers built from retrieval",
+          "node_keys": [
+            "retriever:ps_fuzz/attacks/rag_poisoning.py::TestRAGPoisoning._retrieve_relevant_documents"
+          ]
+        },
+        {
+          "rule": "obs.prompt_versioning",
+          "title": "Move `ethical_compliance_template` into a versioned prompt file",
+          "node_keys": [
+            "prompt:ps_fuzz/attacks/ethical_compliance.py::ethical_compliance_template"
+          ]
+        }
+      ],
+      "excluded_rules": [],
+      "excluded_emitted": []
+    },
+    "Soul-of-Waifu": {
+      "expected": 4,
+      "emitted": 4,
+      "matched": 4,
+      "matched_items": [
+        {
+          "expected": {
+            "rule": "rel.llm_timeout",
+            "item": "app"
+          },
+          "emitted": "Set explicit timeouts on 24 LLM calls"
+        },
+        {
+          "expected": {
+            "rule": "rel.fallback_gateway",
+            "item": "app"
+          },
+          "emitted": "Add retry with backoff, and a fallback endpoint through an existing gateway"
+        },
+        {
+          "expected": {
+            "rule": "eval.regression_suite",
+            "item": "app"
+          },
+          "emitted": "Start a regression suite for LLM behaviour"
+        },
+        {
+          "expected": {
+            "rule": "obs.genai_tracing",
+            "item": "app"
+          },
+          "emitted": "Emit OpenTelemetry GenAI spans with trace id, prompt version and model"
+        }
+      ],
+      "missed": [],
+      "unexpected": [],
+      "excluded_rules": [
+        "eval.citation_contract",
+        "eval.grounding_judge",
+        "inf.context_budget_gate",
+        "inf.prefix_caching_disabled",
+        "inf.prefix_instability",
+        "inf.prefix_stability_guard",
+        "obs.prompt_versioning",
+        "sec.approval_gate_regression_test",
+        "sec.tool_approval_boundary"
+      ],
+      "excluded_emitted": [
+        "sec.tool_approval_boundary",
+        "inf.prefix_instability",
+        "eval.grounding_judge",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning",
+        "obs.prompt_versioning"
+      ]
+    }
+  },
+  "by_rule": {
+    "eval.citation_contract": {
+      "matched": 1,
+      "emitted": 1,
+      "expected": 1,
+      "precision": 1.0,
+      "precision_ci95": [
+        0.024999999999999967,
+        1.0
+      ],
+      "recall": 1.0,
+      "recall_ci95": [
+        0.024999999999999967,
+        1.0
+      ]
+    },
+    "eval.grounding_judge": {
+      "matched": 1,
+      "emitted": 3,
+      "expected": 1,
+      "precision": 0.3333333333333333,
+      "precision_ci95": [
+        0.00840375865961257,
+        0.9057006759497539
+      ],
+      "recall": 1.0,
+      "recall_ci95": [
+        0.024999999999999967,
+        1.0
+      ]
+    },
+    "eval.regression_suite": {
+      "matched": 2,
+      "emitted": 3,
+      "expected": 4,
+      "precision": 0.6666666666666666,
+      "precision_ci95": [
+        0.09429932405024594,
+        0.9915962413403874
+      ],
+      "recall": 0.5,
+      "recall_ci95": [
+        0.06758598648854292,
+        0.9324140135114571
+      ]
+    },
+    "inf.prefix_instability": {
+      "matched": 0,
+      "emitted": 1,
+      "expected": 2,
+      "precision": 0.0,
+      "precision_ci95": [
+        0.0,
+        0.9750000000000001
+      ],
+      "recall": 0.0,
+      "recall_ci95": [
+        0.0,
+        0.841886116991581
+      ]
+    },
+    "inf.prefix_stability_guard": {
+      "matched": 0,
+      "emitted": 0,
+      "expected": 2,
+      "precision": null,
+      "precision_ci95": null,
+      "recall": 0.0,
+      "recall_ci95": [
+        0.0,
+        0.841886116991581
+      ]
+    },
+    "inf.serving_baseline": {
+      "matched": 0,
+      "emitted": 1,
+      "expected": 1,
+      "precision": 0.0,
+      "precision_ci95": [
+        0.0,
+        0.9750000000000001
+      ],
+      "recall": 0.0,
+      "recall_ci95": [
+        0.0,
+        0.9750000000000001
+      ]
+    },
+    "obs.genai_tracing": {
+      "matched": 1,
+      "emitted": 1,
+      "expected": 4,
+      "precision": 1.0,
+      "precision_ci95": [
+        0.024999999999999967,
+        1.0
+      ],
+      "recall": 0.25,
+      "recall_ci95": [
+        0.006309463209709876,
+        0.8058795503167566
+      ]
+    },
+    "obs.prompt_versioning": {
+      "matched": 29,
+      "emitted": 33,
+      "expected": 33,
+      "precision": 0.8787878787878788,
+      "precision_ci95": [
+        0.7179837714627797,
+        0.9659671185770213
+      ],
+      "recall": 0.8787878787878788,
+      "recall_ci95": [
+        0.7179837714627797,
+        0.9659671185770213
+      ]
+    },
+    "rel.fallback_gateway": {
+      "matched": 2,
+      "emitted": 3,
+      "expected": 4,
+      "precision": 0.6666666666666666,
+      "precision_ci95": [
+        0.09429932405024594,
+        0.9915962413403874
+      ],
+      "recall": 0.5,
+      "recall_ci95": [
+        0.06758598648854292,
+        0.9324140135114571
+      ]
+    },
+    "rel.llm_timeout": {
+      "matched": 3,
+      "emitted": 3,
+      "expected": 4,
+      "precision": 1.0,
+      "precision_ci95": [
+        0.2924017738212864,
+        1.0
+      ],
+      "recall": 0.75,
+      "recall_ci95": [
+        0.19412044968324332,
+        0.9936905367902902
+      ]
+    },
+    "sec.approval_gate_regression_test": {
+      "matched": 0,
+      "emitted": 0,
+      "expected": 1,
+      "precision": null,
+      "precision_ci95": null,
+      "recall": 0.0,
+      "recall_ci95": [
+        0.0,
+        0.9750000000000001
+      ]
+    },
+    "sec.tool_approval_boundary": {
+      "matched": 0,
+      "emitted": 28,
+      "expected": 7,
+      "precision": 0.0,
+      "precision_ci95": [
+        0.0,
+        0.12343611850026387
+      ],
+      "recall": 0.0,
+      "recall_ci95": [
+        0.0,
+        0.4096163972250034
+      ]
+    }
+  },
+  "pooled": {
+    "matched": 39,
+    "emitted": 77,
+    "expected": 64,
+    "precision": 0.5064935064935064,
+    "precision_ci95": [
+      0.390049367819283,
+      0.6224231284406125
+    ],
+    "recall": 0.609375,
+    "recall_ci95": [
+      0.47931542900088486,
+      0.7289644784402727
+    ]
+  }
+}

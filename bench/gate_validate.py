@@ -254,6 +254,9 @@ def run(name: str, trials: int, smoke: bool, resume_note: str | None = None) -> 
         with (out / f"{name}.jsonl.cut").open("a", encoding="utf-8") as f:
             f.write("\n".join(broken) + "\n")
         jsonl.write_text("".join(json.dumps(r, default=str) + "\n" for r in rows), encoding="utf-8")
+    if sum(1 for r in rows if r["trial"] not in skip) >= trials:
+        print(f"{name}: complete ({trials} counted trials); nothing to run", flush=True)
+        return  # a finished set is left exactly as it is (no 'resumed' entry)
     if rows:
         if not resume_note:
             raise SystemExit(

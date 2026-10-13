@@ -2,7 +2,7 @@
   "sets": {
     "v1_aa": {
       "set": "v1_aa",
-      "trials": 11,
+      "trials": 24,
       "requested": 24,
       "errors": 0,
       "discarded": 0,
@@ -17,28 +17,33 @@
           "after_trial": 2,
           "at_utc": "2026-10-12T19:42:59Z",
           "note": "the machine slept or Docker Desktop stopped after trial 2 (about 05:22 UTC); every Furnace process was gone at 19:18 UTC; resumed on AC at 780 MHz"
+        },
+        {
+          "after_trial": 14,
+          "at_utc": "2026-10-13T02:24:56Z",
+          "note": "Windows Sleep was chosen at 19:54 UTC on 2026-10-12 (Kernel-Power 42 and 187, winlogon) after trial 14; trial 15 left no record; resumed on AC after the conditions check, with replacements for affected trials 6, 9, 10"
         }
       ],
-      "pass": 7,
-      "inconclusive": 4,
+      "pass": 18,
+      "inconclusive": 6,
       "warn": 0,
       "block": 0,
       "fail_rate_ci95": [
         0.0,
-        0.28491415291815436
+        0.1424735977225257
       ],
       "interval_contains_0": [
-        10,
-        11
+        23,
+        24
       ],
-      "change_median": -0.3,
+      "change_median": -0.04999999999999999,
       "change_range": [
         -15.0,
         5.4
       ],
       "old_rule": {
-        "pass": 3,
-        "inconclusive": 8,
+        "pass": 8,
+        "inconclusive": 16,
         "warn": 0,
         "block": 0
       },
@@ -49,24 +54,284 @@
         780.0
       ],
       "tail_p95": {
-        "n": 11,
-        "ruled_out": 3,
+        "n": 24,
+        "ruled_out": 11,
         "established": 0,
-        "unresolved": 8,
-        "change_median": 1.1,
+        "unresolved": 13,
+        "change_median": 0.24999999999999997,
         "change_range": [
           -20.1,
           7.1
         ],
-        "width_median": 27.4
+        "width_median": 21.6
       },
-      "ci_width_median": 13.0
+      "ci_width_median": 11.850000000000001
+    },
+    "v2_restored": {
+      "set": "v2_restored",
+      "trials": 12,
+      "requested": 12,
+      "errors": 0,
+      "discarded": 0,
+      "affected": [],
+      "affected_included": false,
+      "resumed": [],
+      "pass": 11,
+      "inconclusive": 1,
+      "warn": 0,
+      "block": 0,
+      "fail_rate_ci95": [
+        0.0,
+        0.26464846939705133
+      ],
+      "interval_contains_0": [
+        11,
+        12
+      ],
+      "change_median": -1.15,
+      "change_range": [
+        -2.7,
+        4.4
+      ],
+      "old_rule": {
+        "pass": 5,
+        "inconclusive": 7,
+        "warn": 0,
+        "block": 0
+      },
+      "recompute_mismatches": [],
+      "recompute_max_ci_diff_pts": 0.1,
+      "sm_clock_mhz": [
+        780.0,
+        780.0
+      ],
+      "tail_p95": {
+        "n": 12,
+        "ruled_out": 2,
+        "established": 0,
+        "unresolved": 10,
+        "change_median": -0.45000000000000007,
+        "change_range": [
+          -8.3,
+          5.9
+        ],
+        "width_median": 26.450000000000003
+      },
+      "ci_width_median": 14.55
+    },
+    "v3a_r1": {
+      "set": "v3a_r1",
+      "trials": 6,
+      "requested": 6,
+      "errors": 0,
+      "discarded": 0,
+      "affected": [],
+      "affected_included": false,
+      "resumed": [],
+      "pass": 0,
+      "inconclusive": 0,
+      "warn": 0,
+      "block": 6,
+      "fail_rate_ci95": [
+        0.5407418735600993,
+        1.0
+      ],
+      "interval_contains_0": [
+        0,
+        6
+      ],
+      "change_median": 612.6500000000001,
+      "change_range": [
+        608.9,
+        620.6
+      ],
+      "old_rule": {
+        "pass": 0,
+        "inconclusive": 0,
+        "warn": 0,
+        "block": 6
+      },
+      "recompute_mismatches": [],
+      "recompute_max_ci_diff_pts": 0.1,
+      "sm_clock_mhz": [
+        780.0,
+        828.4117647058823
+      ],
+      "tail_p95": {
+        "n": 6,
+        "ruled_out": 0,
+        "established": 6,
+        "unresolved": 0,
+        "change_median": 941.05,
+        "change_range": [
+          921.5,
+          981.2
+        ],
+        "width_median": 93.5
+      },
+      "ci_width_median": 42.700000000000045
+    },
+    "v3b_r2": {
+      "set": "v3b_r2",
+      "trials": 6,
+      "requested": 6,
+      "errors": 0,
+      "discarded": 0,
+      "affected": [],
+      "affected_included": false,
+      "resumed": [],
+      "pass": 1,
+      "inconclusive": 5,
+      "warn": 0,
+      "block": 0,
+      "fail_rate_ci95": [
+        0.0,
+        0.4592581264399006
+      ],
+      "interval_contains_0": [
+        3,
+        6
+      ],
+      "change_median": 7.25,
+      "change_range": [
+        1.1,
+        54.5
+      ],
+      "old_rule": {
+        "pass": 0,
+        "inconclusive": 6,
+        "warn": 0,
+        "block": 0
+      },
+      "recompute_mismatches": [],
+      "recompute_max_ci_diff_pts": 0.0,
+      "sm_clock_mhz": [
+        780.0,
+        782.4166666666666
+      ],
+      "tail_p95": {
+        "n": 6,
+        "ruled_out": 0,
+        "established": 0,
+        "unresolved": 6,
+        "change_median": 6.45,
+        "change_range": [
+          2.2,
+          59.4
+        ],
+        "width_median": 18.35
+      },
+      "ci_width_median": 11.35
+    },
+    "v3c_topk4": {
+      "set": "v3c_topk4",
+      "trials": 6,
+      "requested": 6,
+      "errors": 0,
+      "discarded": 0,
+      "affected": [],
+      "affected_included": false,
+      "resumed": [],
+      "pass": 1,
+      "inconclusive": 5,
+      "warn": 0,
+      "block": 0,
+      "fail_rate_ci95": [
+        0.0,
+        0.4592581264399006
+      ],
+      "interval_contains_0": [
+        4,
+        6
+      ],
+      "change_median": 4.3,
+      "change_range": [
+        2.2,
+        6.5
+      ],
+      "old_rule": {
+        "pass": 4,
+        "inconclusive": 2,
+        "warn": 0,
+        "block": 0
+      },
+      "recompute_mismatches": [],
+      "recompute_max_ci_diff_pts": 0.0,
+      "sm_clock_mhz": [
+        780.0,
+        780.0
+      ],
+      "tail_p95": {
+        "n": 6,
+        "ruled_out": 3,
+        "established": 0,
+        "unresolved": 3,
+        "change_median": 2.85,
+        "change_range": [
+          0.0,
+          8.2
+        ],
+        "width_median": 13.1
+      },
+      "ci_width_median": 11.6
+    },
+    "v3c_topk8": {
+      "set": "v3c_topk8",
+      "trials": 6,
+      "requested": 6,
+      "errors": 0,
+      "discarded": 0,
+      "affected": [],
+      "affected_included": false,
+      "resumed": [],
+      "pass": 1,
+      "inconclusive": 5,
+      "warn": 0,
+      "block": 0,
+      "fail_rate_ci95": [
+        0.0,
+        0.4592581264399006
+      ],
+      "interval_contains_0": [
+        5,
+        6
+      ],
+      "change_median": 6.45,
+      "change_range": [
+        4.4,
+        33.0
+      ],
+      "old_rule": {
+        "pass": 1,
+        "inconclusive": 5,
+        "warn": 0,
+        "block": 0
+      },
+      "recompute_mismatches": [],
+      "recompute_max_ci_diff_pts": 0.0,
+      "sm_clock_mhz": [
+        780.0,
+        780.0
+      ],
+      "tail_p95": {
+        "n": 6,
+        "ruled_out": 1,
+        "established": 0,
+        "unresolved": 5,
+        "change_median": 5.6,
+        "change_range": [
+          2.3,
+          37.1
+        ],
+        "width_median": 18.3
+      },
+      "ci_width_median": 15.149999999999999
     }
   },
   "sets_including_affected": {
     "v1_aa": {
       "set": "v1_aa",
-      "trials": 14,
+      "trials": 27,
       "requested": 24,
       "errors": 0,
       "discarded": 0,
@@ -81,28 +346,33 @@
           "after_trial": 2,
           "at_utc": "2026-10-12T19:42:59Z",
           "note": "the machine slept or Docker Desktop stopped after trial 2 (about 05:22 UTC); every Furnace process was gone at 19:18 UTC; resumed on AC at 780 MHz"
+        },
+        {
+          "after_trial": 14,
+          "at_utc": "2026-10-13T02:24:56Z",
+          "note": "Windows Sleep was chosen at 19:54 UTC on 2026-10-12 (Kernel-Power 42 and 187, winlogon) after trial 14; trial 15 left no record; resumed on AC after the conditions check, with replacements for affected trials 6, 9, 10"
         }
       ],
-      "pass": 10,
-      "inconclusive": 4,
+      "pass": 21,
+      "inconclusive": 6,
       "warn": 0,
       "block": 0,
       "fail_rate_ci95": [
         0.0,
-        0.2316357616501165
+        0.12770286761543231
       ],
       "interval_contains_0": [
-        13,
-        14
+        26,
+        27
       ],
-      "change_median": -0.04999999999999999,
+      "change_median": 0.2,
       "change_range": [
         -15.0,
         5.4
       ],
       "old_rule": {
-        "pass": 6,
-        "inconclusive": 8,
+        "pass": 11,
+        "inconclusive": 16,
         "warn": 0,
         "block": 0
       },
@@ -113,18 +383,18 @@
         780.0
       ],
       "tail_p95": {
-        "n": 14,
-        "ruled_out": 5,
+        "n": 27,
+        "ruled_out": 13,
         "established": 0,
-        "unresolved": 9,
-        "change_median": 0.9,
+        "unresolved": 14,
+        "change_median": -0.2,
         "change_range": [
           -20.1,
           7.1
         ],
-        "width_median": 26.45
+        "width_median": 21.3
       },
-      "ci_width_median": 12.4
+      "ci_width_median": 11.8
     }
   }
 }

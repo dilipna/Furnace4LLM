@@ -36,10 +36,19 @@ from common import EXTERNAL, F1, GROUND_TRUTH, fmt, manifest, md_table, results_
 from furnace.contracts.appspec import AppSpec
 from furnace.reconstruction.build import reconstruct
 
+F2 = F1.parent / "agent-actions-py"  # second Python development fixture
+
 
 def apps() -> list[dict[str, Any]]:
     out = [
-        {"app": "support-rag-py (F1)", "split": "dev", "root": F1, "gt": F1 / "ground_truth.yaml"}
+        {"app": "support-rag-py (F1)", "split": "dev", "root": F1, "gt": F1 / "ground_truth.yaml"},
+        # F2, the second (Python) development fixture: its own column, never pooled with F1
+        {
+            "app": "agent-actions-py (F2)",
+            "split": "dev-2",
+            "root": F2,
+            "gt": F2 / "ground_truth.yaml",
+        },
     ]
     for gt in sorted(GROUND_TRUTH.glob("*.yaml")):
         spec = yaml.safe_load(gt.read_text(encoding="utf-8"))
@@ -57,7 +66,16 @@ def apps() -> list[dict[str, Any]]:
 # ------------------------------------------------------------------------- matching
 
 
-SPLITS = ("dev", "held-out", "held-out-2", "held-out-3", "held-out-4", "held-out-5", "held-out-6")
+SPLITS = (
+    "dev",
+    "dev-2",
+    "held-out",
+    "held-out-2",
+    "held-out-3",
+    "held-out-4",
+    "held-out-5",
+    "held-out-6",
+)
 
 
 def _split_key(key: str) -> tuple[str, str]:
@@ -368,6 +386,7 @@ def render(res: dict[str, Any]) -> str:
             [
                 "category",
                 "F1 (dev)",
+                "F2 (dev)",
                 "held-out set 1",
                 "held-out set 2",
                 "held-out set 3",

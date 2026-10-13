@@ -1,0 +1,111 @@
+{
+  "manifest": {
+    "date": "2026-10-13-set6",
+    "started_at": "2026-10-13T02:04:23+00:00",
+    "git": {
+      "sha": "ebd5824de728d888172a0492d2bb2ac9cc248fa9",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 37,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/set6_findings.py"
+    ]
+  },
+  "apps": {
+    "audiobook-creator": {
+      "seconds": 0.38,
+      "python_files": 16,
+      "llm_call_facts": 3,
+      "routes": 0,
+      "findings": 28,
+      "findings_by_rule": [
+        "eval.regression_suite",
+        "inf.prefix_instability",
+        "inf.serving_baseline",
+        "rel.fallback_gateway",
+        "rel.llm_timeout",
+        "sec.tool_approval_boundary"
+      ],
+      "evidence_checked": 31,
+      "evidence_file_level": 0,
+      "evidence_broken": []
+    },
+    "BYO-LLM-WIKI": {
+      "seconds": 2.2,
+      "python_files": 39,
+      "llm_call_facts": 5,
+      "routes": 64,
+      "findings": 26,
+      "findings_by_rule": [
+        "eval.citation_contract",
+        "eval.grounding_judge",
+        "eval.regression_suite",
+        "obs.prompt_versioning",
+        "rel.fallback_gateway",
+        "rel.llm_timeout"
+      ],
+      "evidence_checked": 33,
+      "evidence_file_level": 6,
+      "evidence_broken": []
+    },
+    "mdflux": {
+      "seconds": 0.61,
+      "python_files": 33,
+      "llm_call_facts": 0,
+      "routes": 0,
+      "findings": 6,
+      "findings_by_rule": [
+        "eval.grounding_judge",
+        "obs.prompt_versioning",
+        "sec.tool_approval_boundary"
+      ],
+      "evidence_checked": 5,
+      "evidence_file_level": 0,
+      "evidence_broken": []
+    },
+    "ps-fuzz": {
+      "seconds": 0.45,
+      "python_files": 46,
+      "llm_call_facts": 0,
+      "routes": 0,
+      "findings": 13,
+      "findings_by_rule": [
+        "eval.grounding_judge",
+        "obs.prompt_versioning",
+        "sec.tool_approval_boundary"
+      ],
+      "evidence_checked": 13,
+      "evidence_file_level": 0,
+      "evidence_broken": []
+    },
+    "Soul-of-Waifu": {
+      "seconds": 213.81,
+      "python_files": 43,
+      "llm_call_facts": 24,
+      "routes": 14,
+      "findings": 22,
+      "findings_by_rule": [
+        "eval.grounding_judge",
+        "eval.regression_suite",
+        "inf.prefix_instability",
+        "obs.genai_tracing",
+        "obs.prompt_versioning",
+        "rel.fallback_gateway",
+        "rel.llm_timeout",
+        "sec.tool_approval_boundary"
+      ],
+      "evidence_checked": 66,
+      "evidence_file_level": 0,
+      "evidence_broken": []
+    }
+  }
+}
