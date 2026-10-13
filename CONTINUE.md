@@ -8,7 +8,7 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
 ## Oct 12-13 follow-up (user's reconciliation request), newest first
 - **Still owed to the GPU** (laptop on AC, lid open; resumable, kept trials are not rerun):
   from PowerShell (single quotes, so PowerShell does not expand `$PATH`; keep the window open):
-  `powershell -NoProfile -ExecutionPolicy Bypass -File C:\devurnace\scriptsun_awake.ps1 -Bash 'export PATH=/c/Users/user/.local/bin:$PATH; cd /c/dev/furnace && bash bench/run_remaining_gpu.sh'`
+  `powershell -NoProfile -ExecutionPolicy Bypass -File C:\dev\furnace\scripts\run_awake.ps1 -Bash 'export PATH=/c/Users/user/.local/bin:$PATH; cd /c/dev/furnace && bash bench/run_remaining_gpu.sh'`
   = gate validation V1 trials 15-24, V2 restored baseline (12), V3a R1 (6), V3b R2 (6), V3c
   depth 4 and 8 (6 each), `gate_validation_report.py`, RQ5 under the new gate (3), then the
   optimizer grid (8 configs). About 2 hours. Then: commit `bench/results/2026-10-12-gate-validation/`
@@ -18,7 +18,7 @@ Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; n
   **Do not change any threshold after seeing them.**
 - **Still owed to the user**: GitHub App (`uv run furnace gh-setup --name furnace-dev-dilipna`,
   click Create, install on `furnace-demo-f1` only) and the empty public repo `furnace-demo-f1`;
-  then push `C:\devurnace-demo-f1` (main, r1-request-id), run `scripts/live_github_run.py`
+  then push `C:\dev\furnace-demo-f1` (main, r1-request-id), run `scripts/live_github_run.py`
   and `scripts/live_github_verify.py` (with `--api` and smee forwarding for the webhook checks).
   Sign-off on scope deviations D1 (F2/TS/VLM deferred) and D2 (no LLM repair): `docs/scope.md`.
 - Gate redesign: frozen in `docs/gate-revision.md` (6e90c99) before code (26fa8eb); dev analysis
