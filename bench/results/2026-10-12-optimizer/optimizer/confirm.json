@@ -1,0 +1,603 @@
+{
+  "manifest": {
+    "date": "2026-10-12-optimizer",
+    "started_at": "2026-10-13T19:06:08+00:00",
+    "git": {
+      "sha": "6efebfd6b69fa1afa4244cda0cb92bb556c0bd8e",
+      "dirty": true
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 95,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "bench/optimize.py",
+      "--confirm"
+    ],
+    "image_digest": "vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90"
+  },
+  "baseline": "q05_pc-on_seqs-32",
+  "target": "q05_pc-on_seqs-8",
+  "why": "the selected config (highest median goodput among feasible configs)",
+  "order": "ABBAABBA",
+  "quality_seeds": [
+    10,
+    11,
+    12
+  ],
+  "launches": [
+    {
+      "index": 0,
+      "side": "A",
+      "config": "q05_pc-on_seqs-32",
+      "perf": {
+        "goodput_rps": 8.245508872282452,
+        "ttft_p95_ms": 169.795914972201,
+        "failure_rate": 0.0,
+        "prefix_hit_rate": 0.8860932585806098,
+        "sm_clock_mhz": 780.0
+      },
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 95,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 95,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "index": 1,
+      "side": "B",
+      "config": "q05_pc-on_seqs-8",
+      "perf": {
+        "goodput_rps": 7.02325335388326,
+        "ttft_p95_ms": 166.1213550483808,
+        "failure_rate": 0.0,
+        "prefix_hit_rate": 0.8863962793242596,
+        "sm_clock_mhz": 780.0
+      },
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 95,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 96,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "index": 2,
+      "side": "B",
+      "config": "q05_pc-on_seqs-8",
+      "perf": {
+        "goodput_rps": 8.343969286642693,
+        "ttft_p95_ms": 173.08797494042665,
+        "failure_rate": 0.0,
+        "prefix_hit_rate": 0.8839025388327166,
+        "sm_clock_mhz": 780.0
+      },
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 96,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 96,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "index": 3,
+      "side": "A",
+      "config": "q05_pc-on_seqs-32",
+      "perf": {
+        "goodput_rps": 7.861263478779549,
+        "ttft_p95_ms": 169.22029500710778,
+        "failure_rate": 0.0,
+        "prefix_hit_rate": 0.8883938134612913,
+        "sm_clock_mhz": 780.0
+      },
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 96,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 97,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "index": 4,
+      "side": "A",
+      "config": "q05_pc-on_seqs-32",
+      "perf": {
+        "goodput_rps": 7.498335041602704,
+        "ttft_p95_ms": 148.12698499299586,
+        "failure_rate": 0.0,
+        "prefix_hit_rate": 0.8913649025069638,
+        "sm_clock_mhz": 780.0
+      },
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 97,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 97,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "index": 5,
+      "side": "B",
+      "config": "q05_pc-on_seqs-8",
+      "perf": {
+        "goodput_rps": 9.099163893806942,
+        "ttft_p95_ms": 157.64578999369405,
+        "failure_rate": 0.0,
+        "prefix_hit_rate": 0.8872382484575164,
+        "sm_clock_mhz": 780.0
+      },
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 97,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 98,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "index": 6,
+      "side": "B",
+      "config": "q05_pc-on_seqs-8",
+      "perf": {
+        "goodput_rps": 8.666874820963136,
+        "ttft_p95_ms": 155.326720001176,
+        "failure_rate": 0.0,
+        "prefix_hit_rate": 0.8843549019942339,
+        "sm_clock_mhz": 780.0
+      },
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 98,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 98,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    },
+    {
+      "index": 7,
+      "side": "A",
+      "config": "q05_pc-on_seqs-32",
+      "perf": {
+        "goodput_rps": 8.186131901245144,
+        "ttft_p95_ms": 158.68105504778214,
+        "failure_rate": 0.0,
+        "prefix_hit_rate": 0.8868284421483008,
+        "sm_clock_mhz": 780.0
+      },
+      "power": {
+        "before": {
+          "on_ac": true,
+          "battery_pct": 98,
+          "gpu_enforced_power_limit_w": 80.0
+        },
+        "after": {
+          "on_ac": true,
+          "battery_pct": 98,
+          "gpu_enforced_power_limit_w": 80.0
+        }
+      }
+    }
+  ],
+  "quality": {
+    "A": {
+      "quality": {
+        "facts": {
+          "How much does the Studio plan cost?": 1.0,
+          "How many kilns does the Workshop plan support?": 0.0,
+          "Is there a free trial?": 1.0,
+          "When are invoices issued?": 0.0,
+          "How do I get a refund?": 0.0,
+          "How do I pair a controller?": 1.0,
+          "What network does the controller need?": 1.0,
+          "What does error E14 mean?": 1.0,
+          "What does error E22 mean?": 1.0,
+          "What does error E31 mean?": 0.6666666666666666,
+          "How many segments can a schedule have?": 1.0,
+          "How fast are temperature alerts?": 1.0,
+          "How long is firing history kept?": 1.0,
+          "What is the API rate limit?": 1.0,
+          "What happens if the lid opens?": 1.0,
+          "What is the current firmware version?": 0.0,
+          "How long is the controller warranty?": 1.0,
+          "When is support available?": 1.0,
+          "How fast does support respond?": 1.0,
+          "How do I delete my account?": 0.0,
+          "Do webhooks retry?": 0.3333333333333333
+        },
+        "citations": {
+          "How much does the Studio plan cost?": 0.0,
+          "How many kilns does the Workshop plan support?": 0.0,
+          "Is there a free trial?": 0.0,
+          "When are invoices issued?": 0.0,
+          "Which payment methods are accepted?": 0.0,
+          "How do I get a refund?": 0.0,
+          "How do I pair a controller?": 0.0,
+          "What network does the controller need?": 0.0,
+          "What does error E14 mean?": 0.0,
+          "What does error E22 mean?": 0.0,
+          "What does error E31 mean?": 0.0,
+          "How many segments can a schedule have?": 0.0,
+          "Can I edit a schedule during a firing?": 0.0,
+          "Which alert channels exist?": 0.0,
+          "How fast are temperature alerts?": 0.0,
+          "How long is firing history kept?": 0.0,
+          "Can I export my data?": 0.0,
+          "What roles exist?": 0.0,
+          "Can a Viewer start a firing?": 0.0,
+          "What is the API rate limit?": 0.0,
+          "How do I authenticate to the API?": 0.0,
+          "What happens if the lid opens?": 0.0,
+          "Can safety interlocks be disabled remotely?": 0.0,
+          "How are firmware updates installed?": 0.0,
+          "What is the current firmware version?": 0.0,
+          "How long is the controller warranty?": 0.0,
+          "Are thermocouples covered by warranty?": 0.0,
+          "When is support available?": 0.0,
+          "How fast does support respond?": 0.0,
+          "How do I delete my account?": 0.0,
+          "Is deleted data recoverable?": 0.0,
+          "Does the controller work offline?": 0.0,
+          "Which integrations are supported?": 0.0,
+          "Do webhooks retry?": 0.0
+        }
+      },
+      "failed_requests": 0,
+      "answers": {
+        "How many kilns does the Workshop plan support?#11": "The Workshop plan supports **12** kilns.",
+        "How many kilns does the Workshop plan support?#10": "The Workshop plan supports **12** kilns.",
+        "How many kilns does the Workshop plan support?#12": "The Workshop plan supports **12** kilns.",
+        "How much does the Studio plan cost?#10": "The Studio plan costs $29 per month and supports up to 3 kilns.",
+        "How much does the Studio plan cost?#12": "The Studio plan costs $29 per month and supports up to 3 kilns.",
+        "How much does the Studio plan cost?#11": "The Studio plan costs $29 per month and supports up to 3 kilns.",
+        "When are invoices issued?#10": "The invoice is typically issued on the first day of each month in UTC.",
+        "When are invoices issued?#11": "The invoice is typically issued on the first day of each month in UTC.",
+        "Is there a free trial?#10": "Yes, there is a free trial offered with every plan starting with a 14-day period. No additional fees apply during the free trial period.",
+        "Is there a free trial?#11": "Yes, there is a free trial offered by Kilnworks. Users can start their journey with a 14-day free trial without needing to provide a credit card number.",
+        "When are invoices issued?#12": "The invoice is typically issued on the first day of each month in UTC.",
+        "Which payment methods are accepted?#10": "Kilnworks accepts Visa, Mastercard and SEPA direct debit.",
+        "Which payment methods are accepted?#11": "Kilnworks accepts Visa, Mastercard and SEPA direct debit.",
+        "Is there a free trial?#12": "Yes, there is a free trial offered with every plan starting at 14 days. No additional fees apply during the free trial period.",
+        "Which payment methods are accepted?#12": "Kilnworks accepts Visa, Mastercard and SEPA direct debit.",
+        "How do I pair a controller?#10": "To pair a controller, hold the PAIR button for 5 seconds until the LED blinks blue, then enter the 6-digit code shown in the app.",
+        "How do I pair a controller?#11": "To pair a controller, hold the PAIR button for 5 seconds until the LED blinks blue, then enter the 6-digit code shown in the app.",
+        "How do I pair a controller?#12": "To pair a controller, hold the PAIR button for 5 seconds until the LED blinks blue, then enter the 6-digit code shown in the app.",
+        "What network does the controller need?#11": "To connect your kiln to the internet, you'll need a Wi-Fi network that supports 2.4 GHz and 5 GHz frequencies. The correct network type is 2.4 GHz Wi-Fi.",
+        "How do I get a refund?#12": "To get a refund, follow these steps:\n\n1. Open the Support Ticket page.\n2. Click on the \"Get Refund\" button.\n3. Provide the necessary information to complete the refund process, including the reason for the refund and any additional details required by the support team.",
+        "What does error E14 mean?#10": "Error E14 indicates that the thermocouple is disconnected, requiring reinstallation and restarting the firing process.",
+        "How do I get a refund?#11": "To get a refund, follow these steps:\n\n1. Open the Support Ticket page.\n2. Click on the \"Get Refund\" button.\n3. Provide the necessary information to complete the refund process, including the reason for the refund and the amount requested.\n4. Submit the ticket and wait for a response from our support team.",
+        "What network does the controller need?#10": "To connect your kiln to the internet, you'll need to choose between 2.4 GHz Wi-Fi or 5 GHz networks. Controllers require either 2.4 GHz or 5 GHz Wi-Fi. If you're unsure, please check the manufacturer's website for specific requirements.",
+        "How do I get a refund?#10": "To get a refund, follow these steps:\n\n1. Open the Support tab in the top right corner of the screen.\n2. Click on the \"Get Refund\" button.\n3. Provide the necessary information required by the support team, including the reason for the refund and the amount requested.\n4. Follow the prompts to complete the refund process.",
+        "What does error E14 mean?#11": "Error E14 indicates that the thermocouple is disconnected, requiring you to reseat the thermocouple connector and restart the firing process.",
+        "What does error E14 mean?#12": "Error E14 indicates that the thermocouple is disconnected, requiring reinstallation and restarting the firing process.",
+        "What network does the controller need?#12": "To connect your kiln to the internet, you'll need to choose either 2.4 GHz Wi-Fi or 5 GHz Wi-Fi. Controllers require 2.4 GHz Wi-Fi; 5 GHz networks are not supported.",
+        "What does error E22 mean?#10": "Error E22 indicates that the kiln has reached its maximum temperature limit and the firing process has been automatically terminated.",
+        "What does error E22 mean?#11": "Error E22 indicates that the kiln has reached its maximum temperature limit and the firing process is being automatically halted.",
+        "What does error E22 mean?#12": "Error E22 indicates that the kiln has reached its maximum temperature limit and the firing process has been automatically terminated.",
+        "What does error E31 mean?#10": "Error E31 indicates that the controller has experienced a prolonged loss of Wi-Fi connectivity, causing the firing to continue locally.",
+        "What does error E31 mean?#11": "Error E31 indicates that the Wi-Fi connection has been lost for more than 10 minutes, causing the firing to continue locally.",
+        "How many segments can a schedule have?#10": "Sure! Kilnworks allows scheduling up to 16 segments per firing.",
+        "How many segments can a schedule have?#11": "Sure! Kilnworks allows up to 16 segments in a scheduling system.",
+        "How many segments can a schedule have?#12": "Sure! Kilnworks allows up to 16 segments in a scheduling system.",
+        "What does error E31 mean?#12": "Error E31 indicates the controller has lost Wi-Fi connectivity for more than 10 minutes during the firing process. This causes the system to continue operating locally without proper communication with the controller.",
+        "Can I edit a schedule during a firing?#11": "Yes, you can edit a schedule during a firing. However, please ensure that no fires are currently ongoing before making any changes.",
+        "Which alert channels exist?#10": "The alert channels available include push notifications, email, and SMS. SMS is specifically available on the Workshop plan only.",
+        "Which alert channels exist?#11": "The alert channels available include push notifications, email, and SMS. SMS is specifically available on the Workshop plan.",
+        "Can I edit a schedule during a firing?#12": "Yes, you can edit a schedule during a firing. However, please ensure that no fires are currently ongoing before making any changes.",
+        "How fast are temperature alerts?#10": "The temperature alerts are delivered within 60 seconds of crossing the threshold.",
+        "Can I edit a schedule during a firing?#10": "Yes, you can edit a schedule during a firing. However, please note that schedules cannot be edited while a firing is running; you can only skip to the next segment.",
+        "How fast are temperature alerts?#11": "The temperature alerts are delivered within 60 seconds of crossing the threshold.",
+        "Which alert channels exist?#12": "The alert channels available include push notifications, email, and SMS. SMS is specifically available on the Workshop plan.",
+        "How fast are temperature alerts?#12": "The temperature alerts are delivered within 60 seconds of crossing the threshold.",
+        "Can I export my data?#10": "Certainly! To export your data, go to Settings > Data.",
+        "How long is firing history kept?#10": "Firing history is kept for 24 months on all plans.",
+        "How long is firing history kept?#11": "Firing history is kept for 24 months on all plans.",
+        "Can I export my data?#11": "Certainly! To export your data, go to Settings > Data.",
+        "How long is firing history kept?#12": "Firing history is kept for 24 months on all plans.",
+        "Can I export my data?#12": "Sure! To export your data, go to Settings > Data.",
+        "What roles exist?#10": "Kilnworks has three primary roles: Owner, Technician and Viewer.",
+        "What roles exist?#11": "Kilnworks has three primary roles: Owner, Technician and Viewer.",
+        "What roles exist?#12": "Kilnworks has three roles: Owner, Technician and Viewer.",
+        "What is the API rate limit?#10": "The public API allows 600 requests per minute per organization.",
+        "What is the API rate limit?#11": "The public API allows 600 requests per minute per organization.",
+        "Can a Viewer start a firing?#10": "Yes, a Viewer can start a firing. They need to be an Owner or Technician to initiate a firing.",
+        "Can a Viewer start a firing?#11": "Yes, a Viewer can start a firing. They need to be an Owner or Technician to initiate a firing.",
+        "Can a Viewer start a firing?#12": "Yes, a Viewer can start a firing. They need to be an Owner or Technician to initiate a firing.",
+        "What happens if the lid opens?#10": "If the lid opens, the heating elements will be cut within 2 seconds.",
+        "What is the API rate limit?#12": "The public API allows up to 600 requests per minute per organization. To authenticate, please use the bearer token created in Settings > API keys.",
+        "Can safety interlocks be disabled remotely?#10": "Yes, safety interlocks cannot be disabled remotely under any plan.",
+        "What happens if the lid opens?#11": "If the lid sensor detects an open lid, heating elements are cut within 2 seconds.",
+        "What happens if the lid opens?#12": "If the lid sensor detects an open lid, heating elements are cut within 2 seconds.",
+        "Can safety interlocks be disabled remotely?#11": "Yes, safety interlocks cannot be disabled remotely under any plan.",
+        "Can safety interlocks be disabled remotely?#12": "Yes, safety interlocks cannot be disabled remotely under any plan.",
+        "What is the current firmware version?#10": "The current firmware version is 4.2.1.",
+        "What is the current firmware version?#11": "The current firmware version is 4.2.1.",
+        "How are firmware updates installed?#10": "Firmware updates are automatically installed between firings, ensuring compatibility and security. They do not require manual intervention during an active firing session.",
+        "What is the current firmware version?#12": "The current firmware version is 4.2.1.",
+        "How long is the controller warranty?#10": "The controller has a 2-year limited hardware warranty.",
+        "How are firmware updates installed?#11": "Firmware updates are installed automatically between firings and never during an active firing. To ensure smooth operation, please check the system's firmware version before installing any new software updates.",
+        "How long is the controller warranty?#11": "The controller has a 2-year limited hardware warranty.",
+        "How do I authenticate to the API?#10": "To authenticate to the API, please follow these steps:\n\n1. Go to Settings > API keys.\n2. Click on the \"Create new API key\" button.\n3. Enter a unique 6-digit code in the app.\n4. Save the API key.\n\nOnce you have successfully saved your API key, you can use it to make authenticated API requests.",
+        "How do I authenticate to the API?#12": "To authenticate to the API, please follow these steps:\n\n1. Open the Settings > API keys page.\n2. Click the \"Create new API key\" button.\n3. Enter a unique 6-digit code in the app.\n4. Save the API key.\n\nOnce you have the API key, you can use it to make authenticated API requests.",
+        "How are firmware updates installed?#12": "Firmware updates are automatically installed between firings and never during an active firing. To check the current firmware version, go to the **Settings** > **Data** tab and look for the **Firmware Version** field.",
+        "How do I authenticate to the API?#11": "To authenticate to the API, please follow these steps:\n\n1. Go to Settings > API keys.\n2. Enter the 6-digit code displayed in the app.\n3. Click the PAIR button.\n4. Wait for 5 seconds before the LED blinks blue.\n5. Enter the 6-digit code again.\n6. Confirm authentication by clicking the green button.\n\nGood luck!",
+        "How long is the controller warranty?#12": "The controller has a 2-year limited hardware warranty.",
+        "When is support available?#10": "The support team is available Monday to Friday, 08:00 to 18:00 CET.",
+        "Are thermocouples covered by warranty?#12": "Yes, thermocouples are covered by the Kilnworks warranty. They are consumables and are not included in the hardware warranty.",
+        "Are thermocouples covered by warranty?#10": "Yes, thermocouples are covered by the Kilnworks warranty. They are consumables and are not included in the controller's hardware warranty.",
+        "Are thermocouples covered by warranty?#11": "Yes, thermocouples are covered by the Kilnworks warranty. They are consumables and are not included in the controller's hardware warranty.",
+        "When is support available?#12": "The support team is available from Monday to Friday, 08:00 to 18:00 CET.",
+        "How fast does support respond?#11": "The Support team responds to tickets within 1 business day, while Workshop plan tickets are resolved within 4 business hours.",
+        "How fast does support respond?#10": "The Support team responds to tickets within 1 business day, while Workshop plan tickets are resolved within 4 business hours.",
+        "How fast does support respond?#12": "The Support team responds to tickets within 1 business day, while Workshop plan tickets are resolved within 4 business hours.",
+        "When is support available?#11": "Customer asked about support availability. Kilnworks supports Monday to Friday, 08:00 to 18:00 CET. Support is available 24/7, but please note that tickets are handled within 1 business day.",
+        "Is deleted data recoverable?#10": "Yes, deleted data is recoverable. You can export all firing logs as CSV from Settings > Data.",
+        "Is deleted data recoverable?#12": "Yes, deleted data is recoverable. You can export all firing logs as CSV from Settings > Data.",
+        "Is deleted data recoverable?#11": "Yes, deleted data is recoverable. You can export all firing logs as CSV from Settings > Data.",
+        "How do I delete my account?#11": "To delete your account, please follow these steps:\n\n1. Go to Settings > Account.\n2. Click on the Delete button.\n3. Confirm the deletion by clicking Yes.\n\nOnce deleted, your account will be permanently removed.",
+        "Does the controller work offline?#10": "Yes, the controller works offline. It runs stored schedules offline and synchronizes logs when the connection returns.",
+        "Does the controller work offline?#11": "Yes, the controller works offline. It runs stored schedules offline and synchronizes logs when the connection returns.",
+        "Which integrations are supported?#10": "Kilnworks supports the following integrations: Slack and generic webhooks.",
+        "Does the controller work offline?#12": "Yes, the controller works offline. It runs stored schedules offline and synchronizes logs when the connection returns.",
+        "How do I delete my account?#12": "To delete your account, please follow these steps:\n\n1. Go to Settings > Account.\n2. Click on the Delete button.\n3. Confirm the deletion by clicking the confirmation link sent to your email address.\n\nOnce deleted, your account will be completely removed from our system.",
+        "How do I delete my account?#10": "To delete your account, please follow these steps:\n\n1. Go to Settings > Account.\n2. Click on the Delete button.\n3. Confirm the deletion by clicking Yes.\n\n---\n\n**Note:** Deleting your account may result in the loss of any saved data. Ensure you have backups before proceeding.",
+        "Do webhooks retry?#10": "Yes, webhooks have a retry policy of 5 attempts with exponential backoff. They are supported via Slack and generic webhooks.",
+        "Do webhooks retry?#11": "Yes, webhooks are designed to retry failed deliveries up to five times with exponential backoff. This ensures reliability and prevents data loss.",
+        "Do webhooks retry?#12": "Yes, webhooks are designed to retry failed deliveries up to five times with exponential backoff. This ensures reliability and minimizes downtime.",
+        "Which integrations are supported?#11": "Kilnworks supports the following integrations:\n\n- Slack integration\n- Generic webhooks\n\nAnd here's how they're integrated:\n\n- **Slack Integration:** Integrates directly into Slack channels.\n- **Generic Webhooks:** Allows sending messages via HTTP POST requests to specific URLs.\n\nSo, you can integrate Kilnworks with Slack for communication within the platform, or with generic webhooks for real-time notifications and updates.",
+        "Which integrations are supported?#12": "Kilnworks supports the following integrations:\n\n- Slack integration\n- Generic webhooks\n\nAnd here's how they're integrated:\n\n- **Slack Integration:** Integrates with Slack for real-time communication and notifications.\n- **Generic Webhooks:** Allows for easy integration with external systems like email, social media, and third-party APIs.\n\nSo, you can integrate your business processes directly into Kilnworks without needing to set up additional software or services."
+      }
+    },
+    "B": {
+      "quality": {
+        "facts": {
+          "How much does the Studio plan cost?": 1.0,
+          "How many kilns does the Workshop plan support?": 0.0,
+          "Is there a free trial?": 1.0,
+          "When are invoices issued?": 0.0,
+          "How do I get a refund?": 0.0,
+          "How do I pair a controller?": 1.0,
+          "What network does the controller need?": 0.6666666666666666,
+          "What does error E14 mean?": 1.0,
+          "What does error E22 mean?": 1.0,
+          "What does error E31 mean?": 1.0,
+          "How many segments can a schedule have?": 1.0,
+          "How fast are temperature alerts?": 1.0,
+          "How long is firing history kept?": 1.0,
+          "What is the API rate limit?": 1.0,
+          "What happens if the lid opens?": 1.0,
+          "What is the current firmware version?": 0.0,
+          "How long is the controller warranty?": 1.0,
+          "When is support available?": 1.0,
+          "How fast does support respond?": 1.0,
+          "How do I delete my account?": 0.0,
+          "Do webhooks retry?": 0.3333333333333333
+        },
+        "citations": {
+          "How much does the Studio plan cost?": 0.0,
+          "How many kilns does the Workshop plan support?": 0.0,
+          "Is there a free trial?": 0.0,
+          "When are invoices issued?": 0.0,
+          "Which payment methods are accepted?": 0.0,
+          "How do I get a refund?": 0.0,
+          "How do I pair a controller?": 0.0,
+          "What network does the controller need?": 0.0,
+          "What does error E14 mean?": 0.0,
+          "What does error E22 mean?": 0.0,
+          "What does error E31 mean?": 0.0,
+          "How many segments can a schedule have?": 0.0,
+          "Can I edit a schedule during a firing?": 0.0,
+          "Which alert channels exist?": 0.0,
+          "How fast are temperature alerts?": 0.0,
+          "How long is firing history kept?": 0.0,
+          "Can I export my data?": 0.0,
+          "What roles exist?": 0.0,
+          "Can a Viewer start a firing?": 0.0,
+          "What is the API rate limit?": 0.0,
+          "How do I authenticate to the API?": 0.0,
+          "What happens if the lid opens?": 0.0,
+          "Can safety interlocks be disabled remotely?": 0.0,
+          "How are firmware updates installed?": 0.0,
+          "What is the current firmware version?": 0.0,
+          "How long is the controller warranty?": 0.0,
+          "Are thermocouples covered by warranty?": 0.0,
+          "When is support available?": 0.0,
+          "How fast does support respond?": 0.0,
+          "How do I delete my account?": 0.0,
+          "Is deleted data recoverable?": 0.0,
+          "Does the controller work offline?": 0.0,
+          "Which integrations are supported?": 0.0,
+          "Do webhooks retry?": 0.0
+        }
+      },
+      "failed_requests": 0,
+      "answers": {
+        "How many kilns does the Workshop plan support?#11": "The Workshop plan supports **12** kilns.",
+        "How many kilns does the Workshop plan support?#10": "The Workshop plan supports **12** kilns.",
+        "How many kilns does the Workshop plan support?#12": "The Workshop plan supports **12** kilns.",
+        "How much does the Studio plan cost?#11": "The Studio plan costs $29 per month and supports up to 3 kilns.",
+        "How much does the Studio plan cost?#10": "The Studio plan costs $29 per month and supports up to 3 kilns.",
+        "How much does the Studio plan cost?#12": "The Studio plan costs $29 per month and supports up to 3 kilns.",
+        "When are invoices issued?#10": "The invoice is typically issued on the first day of each month in UTC.",
+        "When are invoices issued?#11": "The invoice is typically issued on the first day of each month in UTC.",
+        "Is there a free trial?#10": "Yes, there is a free trial offered with every plan starting with a 14-day period. No additional fees apply during the free trial period.",
+        "When are invoices issued?#12": "The invoice is typically issued on the first day of each month in UTC.",
+        "Is there a free trial?#11": "Yes, there is a free trial offered by Kilnworks. Users can start their journey with a 14-day free trial without needing to provide a credit card number.",
+        "Which payment methods are accepted?#10": "Kilnworks accepts Visa, Mastercard and SEPA direct debit.",
+        "Which payment methods are accepted?#11": "Kilnworks accepts Visa, Mastercard and SEPA direct debit.",
+        "Is there a free trial?#12": "Yes, there is a free trial offered with every plan starting with a 14-day period. No additional fees apply during the free trial period.",
+        "Which payment methods are accepted?#12": "Kilnworks accepts Visa, Mastercard and SEPA direct debit.",
+        "How do I pair a controller?#10": "To pair a controller, hold the PAIR button for 5 seconds until the LED blinks blue, then enter the 6-digit code shown in the app.",
+        "How do I pair a controller?#12": "To pair a controller, hold the PAIR button for 5 seconds until the LED blinks blue, then enter the 6-digit code shown in the app.",
+        "How do I pair a controller?#11": "To pair a controller, hold the PAIR button for 5 seconds until the LED blinks blue, then enter the 6-digit code shown in the app.",
+        "How do I get a refund?#11": "To get a refund, follow these steps:\n\n1. Open the Support Ticket page.\n2. Click on the \"Get Refund\" button.\n3. Provide the necessary information to complete the refund process, including the reason for the refund and the amount requested.",
+        "How do I get a refund?#12": "To get a refund, follow these steps:\n\n1. Open the Support Ticket page.\n2. Click on the \"Get Refund\" button.\n3. Provide the necessary information to complete the refund process, including the reason for the refund and any additional details required by the support team.",
+        "What does error E14 mean?#10": "Error E14 indicates that the thermocouple is disconnected, requiring reinstallation of the connector and restarting the firing process.",
+        "How do I get a refund?#10": "To get a refund, follow these steps:\n\n1. Open the Support tab in the top right corner of the screen.\n2. Click on the \"Get Refund\" button.\n3. Provide the necessary information required by the support team, including the reason for the refund and the amount requested.\n4. Follow the prompts to complete the refund process.",
+        "What does error E14 mean?#11": "Error E14 indicates that the thermocouple is disconnected, requiring you to reseat the thermocouple connector and restart the firing process.",
+        "What network does the controller need?#10": "To connect your kiln to the internet, you'll need to choose between 2.4 GHz Wi-Fi or 5 GHz networks. Controllers require either 2.4 GHz or 5 GHz Wi-Fi. If you're unsure, please check the manufacturer's website for specific requirements.",
+        "What network does the controller need?#11": "To connect your kiln to the internet, you'll need a Wi-Fi network with a 2.4 GHz frequency. Your controller should ideally have access to this network to communicate with your kiln. If you're unsure, please check the controller's manual or contact the manufacturer for guidance.",
+        "What does error E14 mean?#12": "Error E14 indicates that the thermocouple is disconnected, requiring reinstallation and restarting the firing process.",
+        "What network does the controller need?#12": "To connect your controller to the internet, please choose one of the following networks:\n\n- 2.4 GHz Wi-Fi\n- 5 GHz networks\n\nPlease note that 5 GHz networks are not supported by the controller.",
+        "What does error E22 mean?#10": "Error E22 indicates that the kiln has reached its maximum temperature limit and the firing process has been automatically terminated.",
+        "What does error E22 mean?#11": "Error E22 indicates that the kiln has reached its maximum temperature limit and the firing process is being automatically halted.",
+        "How many segments can a schedule have?#10": "Sure! Kilnworks allows scheduling up to 16 segments per firing.",
+        "What does error E22 mean?#12": "Error E22 indicates that the kiln has reached its maximum temperature limit and the firing process has been automatically terminated.",
+        "What does error E31 mean?#10": "Error E31 indicates that the controller has lost Wi-Fi connectivity for more than 10 minutes, causing the firing to continue locally.",
+        "What does error E31 mean?#11": "Error E31 indicates that the Wi-Fi connection has been lost for more than 10 minutes, causing the firing to continue locally.",
+        "How many segments can a schedule have?#11": "Sure! Kilnworks allows up to 16 segments in a scheduling system.",
+        "How many segments can a schedule have?#12": "Sure! Kilnworks allows up to 16 segments in a scheduling system.",
+        "What does error E31 mean?#12": "Error E31 indicates the controller has lost Wi-Fi connectivity for more than 10 minutes during the firing process. This causes the system to continue operating locally without proper communication with the controller.",
+        "Can I edit a schedule during a firing?#12": "Yes, you can edit a schedule during a firing. However, please ensure that no fires are currently ongoing before making any changes.",
+        "Can I edit a schedule during a firing?#11": "Yes, you can edit a schedule during a firing. However, please ensure that no fires are currently ongoing before making any changes.",
+        "How fast are temperature alerts?#10": "The temperature alerts are delivered within 60 seconds of crossing the threshold.",
+        "Which alert channels exist?#11": "The alert channels available include push notifications, email, and SMS. SMS is specifically available on the Workshop plan.",
+        "Which alert channels exist?#10": "The alert channels available include push notifications, email, and SMS. SMS is specifically available on the Workshop plan only.",
+        "Which alert channels exist?#12": "The alert channels available include push notifications, email, and SMS. SMS is specifically available on the Workshop plan.",
+        "Can I edit a schedule during a firing?#10": "Yes, you can edit a schedule during a firing. However, please note that schedules cannot be edited while a firing is running; you can only skip to the next segment.",
+        "How fast are temperature alerts?#11": "The temperature alerts are delivered within 60 seconds of crossing the threshold.",
+        "How fast are temperature alerts?#12": "Temperature alerts are delivered within 60 seconds of crossing the threshold.",
+        "How long is firing history kept?#10": "Firing history is kept for 24 months on all plans.",
+        "Can I export my data?#10": "Certainly! To export your data, go to Settings > Data.",
+        "How long is firing history kept?#12": "Firing history is kept for 24 months on all plans.",
+        "How long is firing history kept?#11": "Firing history is kept for 24 months on all plans.",
+        "Can I export my data?#12": "Sure! To export your data, go to Settings > Data.",
+        "Can I export my data?#11": "Yes, you can export your data as CSV from Settings > Data.",
+        "What roles exist?#10": "Kilnworks has three primary roles: Owner, Technician and Viewer.",
+        "What roles exist?#12": "Kilnworks has three primary roles: Owner, Technician and Viewer.",
+        "What roles exist?#11": "Kilnworks has three distinct roles: Owner, Technician, and Viewer.",
+        "What is the API rate limit?#10": "The public API allows 600 requests per minute per organization.",
+        "What is the API rate limit?#11": "The public API allows 600 requests per minute per organization.",
+        "Can a Viewer start a firing?#10": "Yes, a Viewer can start a firing. They need to be an Owner or Technician to initiate a firing.",
+        "Can a Viewer start a firing?#12": "Yes, a Viewer can start a firing. They need to be an Owner or Technician to initiate the process.",
+        "Can a Viewer start a firing?#11": "Yes, a Viewer can start a firing. They need to be an Owner or Technician to initiate the process.",
+        "What happens if the lid opens?#10": "If the lid opens, the heating elements will be cut within 2 seconds.",
+        "Can safety interlocks be disabled remotely?#10": "Yes, safety interlocks cannot be disabled remotely under any plan.",
+        "What is the API rate limit?#12": "The public API allows up to 600 requests per minute per organization. To authenticate, please use the bearer token created in Settings > API keys.",
+        "What happens if the lid opens?#11": "If the lid sensor detects an open lid, heating elements are cut within 2 seconds.",
+        "What happens if the lid opens?#12": "If the lid sensor detects an open lid, heating elements are cut within 2 seconds.",
+        "Can safety interlocks be disabled remotely?#11": "Yes, safety interlocks cannot be disabled remotely under any plan.",
+        "Can safety interlocks be disabled remotely?#12": "Yes, safety interlocks cannot be disabled remotely under any plan.",
+        "What is the current firmware version?#10": "The current firmware version is 4.2.1.",
+        "What is the current firmware version?#11": "The current firmware version is 4.2.1.",
+        "How are firmware updates installed?#11": "Firmware updates are automatically installed between firings, ensuring compatibility and security. They never activate during an active firing session.",
+        "How are firmware updates installed?#10": "Firmware updates are automatically installed between firings and never during an active firing. To check the current firmware version, please visit the [doc:firmware-updates] page.",
+        "What is the current firmware version?#12": "The current firmware version is 4.2.1.",
+        "How long is the controller warranty?#10": "The controller has a 2-year limited hardware warranty.",
+        "How long is the controller warranty?#11": "The controller has a 2-year limited hardware warranty.",
+        "How do I authenticate to the API?#11": "To authenticate to the API, please follow these steps:\n\n1. Go to Settings > API keys.\n2. Click the \"Create new API key\" button.\n3. Enter a unique 6-digit code in the app.\n4. Save the API key.\n\nOnce you have the API key, you can use it to make authenticated API requests.",
+        "How do I authenticate to the API?#10": "To authenticate to the API, please follow these steps:\n\n1. Go to Settings > API keys.\n2. Click on the \"Create new API key\" button.\n3. Enter a unique 6-digit code in the app.\n4. Save the API key.\n\nOnce you have successfully saved your API key, you can use it to make authenticated API requests.",
+        "How do I authenticate to the API?#12": "To authenticate to the API, please follow these steps:\n\n1. Open the Settings > API keys page.\n2. Click the \"Create new API key\" button.\n3. Enter a unique 6-digit code in the app.\n4. Save the API key.\n\nOnce you have the API key, you can use it to make authenticated API requests.",
+        "How are firmware updates installed?#12": "Firmware updates are automatically installed between firings and never during an active firing. To check the current firmware version, go to the **Settings** > **Data** tab and look for the **Firmware Version** field.",
+        "How long is the controller warranty?#12": "The controller has a 2-year limited hardware warranty.",
+        "When is support available?#10": "The support team is available Monday to Friday, 08:00 to 18:00 CET.",
+        "Are thermocouples covered by warranty?#10": "Yes, thermocouples are covered by the Kilnworks warranty. They are consumables and are not included in the controller's hardware warranty period.",
+        "Are thermocouples covered by warranty?#12": "Yes, thermocouples are covered by the Kilnworks warranty. They are consumables and are not included in the hardware warranty.",
+        "When is support available?#12": "The support team is available from Monday to Friday, 08:00 to 18:00 CET.",
+        "How fast does support respond?#11": "Customer queries how quickly support responds. Support responds within 1 business day for tickets within 4 business hours.",
+        "Are thermocouples covered by warranty?#11": "Yes, thermocouples are covered by the Kilnworks warranty. They are consumables and are not included in the controller's hardware warranty.",
+        "How fast does support respond?#10": "The Support team responds to tickets within 1 business day, while Workshop plan tickets are resolved within 4 business hours.",
+        "When is support available?#11": "Customer asked about support availability. According to the context, support is available **Monday to Friday**, 08:00 to 18:00 CET.",
+        "Is deleted data recoverable?#12": "Yes, deleted data is recoverable. You can export all firing logs as CSV from Settings > Data.",
+        "Is deleted data recoverable?#11": "Yes, deleted data is recoverable. You can export all firing logs as CSV from Settings > Data.",
+        "Is deleted data recoverable?#10": "Yes, deleted data is recoverable. You can export all firing logs as CSV from Settings > Data.",
+        "Does the controller work offline?#10": "Yes, the controller works offline. It runs stored schedules offline and synchronizes logs when the connection returns.",
+        "How fast does support respond?#12": "Customer queries the response time of support staff. Support responds within 1 business day for tickets within the workshop plan, and within 4 business hours for tickets within the workshop plan.",
+        "How do I delete my account?#11": "To delete your account, please follow these steps:\n\n1. Go to Settings > Account.\n2. Click on the Delete button.\n3. Confirm the deletion by clicking Yes.\n\nOnce deleted, your account will be permanently removed.",
+        "Which integrations are supported?#10": "Kilnworks supports the following integrations: Slack and generic webhooks.",
+        "Does the controller work offline?#11": "Yes, the controller works offline. It runs stored schedules offline and syncs logs when the connection returns.",
+        "Does the controller work offline?#12": "Yes, the controller works offline. It runs stored schedules offline and synchronizes logs when the connection returns.",
+        "How do I delete my account?#12": "To delete your account, please follow these steps:\n\n1. Go to Settings > Account.\n2. Click on the Delete button.\n3. Confirm the deletion by clicking the confirmation link sent to your email address.\n\nOnce deleted, your account will be completely removed from our system.",
+        "How do I delete my account?#10": "To delete your account, please follow these steps:\n\n1. Go to Settings > Account.\n2. Click on the Delete button.\n3. Confirm the deletion by clicking Yes.\n\n---\n\n**Note:** Deleting your account may result in the loss of any saved data. Ensure you have backups before proceeding.",
+        "Do webhooks retry?#11": "Yes, webhooks are designed to retry failed deliveries up to five times with exponential backoff. This ensures reliability and prevents data loss.",
+        "Do webhooks retry?#10": "Yes, webhooks are designed to retry failed deliveries up to five times with exponential backoff. This ensures reliability and prevents data loss.",
+        "Do webhooks retry?#12": "Yes, webhooks are designed to retry failed deliveries up to 5 times with exponential backoff. This ensures reliability and prevents data loss.",
+        "Which integrations are supported?#12": "Kilnworks supports the following integrations:\n\n- Slack integration\n- Generic webhooks\n\nAnd here's how they're integrated:\n\n- **Slack Integration:** Integrates with Slack for communication between users and the system.\n- **Generic Webhooks:** Allows for real-time data exchange between the system and external services like Slack.\n\nSo, the integrations supported include Slack and generic webhooks.",
+        "Which integrations are supported?#11": "Kilnworks supports the following integrations:\n\n- Slack integration\n- Generic webhooks\n\nAnd here's how they're integrated:\n\n- **Slack Integration:** Integrates directly into Slack channels.\n- **Generic Webhooks:** Allows sending messages via HTTP POST requests to specific URLs.\n\nSo, you can integrate Kilnworks with Slack for real-time communication within your team, or with generic webhooks for quick notifications without needing to manually send messages."
+      }
+    }
+  },
+  "invalid_launches": [],
+  "decision": {
+    "outcome": "inconclusive",
+    "reasons": [],
+    "goodput_change_pct": {
+      "change": 3.813877397552262,
+      "ci": [
+        -8.834319760501549,
+        18.216867487866658
+      ]
+    },
+    "ttft_p95_change_pct": {
+      "change": 1.0463174488352234,
+      "ci": [
+        -6.720864076206524,
+        9.460257847074907
+      ]
+    },
+    "quality_vs_baseline": {
+      "facts": {
+        "diff_pts": 0.0,
+        "ci_pts": [
+          -3.96722886336303,
+          3.96722886336303
+        ],
+        "questions": 21
+      },
+      "citations": {
+        "diff_pts": 0.0,
+        "ci_pts": [
+          0.0,
+          0.0
+        ],
+        "questions": 34
+      }
+    }
+  }
+}

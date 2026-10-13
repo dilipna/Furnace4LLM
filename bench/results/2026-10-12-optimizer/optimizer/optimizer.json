@@ -1,0 +1,389 @@
+{
+  "policy": {
+    "quality_tol_pts": 5.0,
+    "confidence": 0.9,
+    "max_failure_rate": 0.01,
+    "slo_ttft_p95_ms": 500.0
+  },
+  "rows": [
+    {
+      "name": "q05_pc-on_seqs-8",
+      "params": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "prefix_cache": true,
+        "max_num_seqs": 8
+      },
+      "baseline": false,
+      "goodput_rps": 8.33663585688666,
+      "goodput_range": [
+        7.367464697587901,
+        8.344279347415647
+      ],
+      "ttft_p95_ms": 171.49157993262634,
+      "ttft_p95_range": [
+        145.66620005643927,
+        178.9260899007786
+      ],
+      "failure_rate": 0.0,
+      "runs": 3,
+      "quality_pct": {
+        "facts": 73.01587301587303,
+        "citations": 0.0
+      },
+      "quality_vs_baseline": {
+        "facts": {
+          "diff_pts": -1.587301587301587,
+          "ci_pts": [
+            -4.324949591937328,
+            1.1503464173341533
+          ],
+          "questions": 21
+        },
+        "citations": {
+          "diff_pts": 0.0,
+          "ci_pts": [
+            0.0,
+            0.0
+          ],
+          "questions": 34
+        }
+      },
+      "feasible": true,
+      "reasons": [],
+      "pareto": true
+    },
+    {
+      "name": "q05_pc-on_seqs-32",
+      "params": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "prefix_cache": true,
+        "max_num_seqs": 32
+      },
+      "baseline": true,
+      "goodput_rps": 8.297488700736379,
+      "goodput_range": [
+        7.3596779424321985,
+        8.372005136637089
+      ],
+      "ttft_p95_ms": 173.18975997623056,
+      "ttft_p95_range": [
+        134.12152000237256,
+        177.52892497228459
+      ],
+      "failure_rate": 0.0,
+      "runs": 3,
+      "quality_pct": {
+        "facts": 74.60317460317461,
+        "citations": 0.0
+      },
+      "quality_vs_baseline": {
+        "facts": {
+          "diff_pts": 0.0,
+          "ci_pts": [
+            0.0,
+            0.0
+          ],
+          "questions": 21
+        },
+        "citations": {
+          "diff_pts": 0.0,
+          "ci_pts": [
+            0.0,
+            0.0
+          ],
+          "questions": 34
+        }
+      },
+      "feasible": true,
+      "reasons": [],
+      "pareto": true
+    },
+    {
+      "name": "q05_pc-off_seqs-8",
+      "params": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "prefix_cache": false,
+        "max_num_seqs": 8
+      },
+      "baseline": false,
+      "goodput_rps": 4.6920071446172695,
+      "goodput_range": [
+        4.1714509127984964,
+        4.699514551592942
+      ],
+      "ttft_p95_ms": 404.53628504765214,
+      "ttft_p95_range": [
+        399.0838550205808,
+        467.85779503406957
+      ],
+      "failure_rate": 0.0,
+      "runs": 3,
+      "quality_pct": {
+        "facts": 73.01587301587303,
+        "citations": 0.0
+      },
+      "quality_vs_baseline": {
+        "facts": {
+          "diff_pts": -1.587301587301587,
+          "ci_pts": [
+            -7.830099542216312,
+            4.6554963676131385
+          ],
+          "questions": 21
+        },
+        "citations": {
+          "diff_pts": 0.0,
+          "ci_pts": [
+            0.0,
+            0.0
+          ],
+          "questions": 34
+        }
+      },
+      "feasible": false,
+      "reasons": [
+        "facts: -1.6 pts vs baseline (interval -7.8 to +4.7); not shown within the 5-point tolerance"
+      ],
+      "pareto": false
+    },
+    {
+      "name": "q05_pc-off_seqs-32",
+      "params": {
+        "model": "Qwen/Qwen2.5-0.5B-Instruct",
+        "prefix_cache": false,
+        "max_num_seqs": 32
+      },
+      "baseline": false,
+      "goodput_rps": 4.355847598520151,
+      "goodput_range": [
+        4.207666889359009,
+        4.451880212556385
+      ],
+      "ttft_p95_ms": 410.07595493574627,
+      "ttft_p95_range": [
+        388.0127349402755,
+        499.9880800372921
+      ],
+      "failure_rate": 0.0,
+      "runs": 3,
+      "quality_pct": {
+        "facts": 76.19047619047619,
+        "citations": 0.0
+      },
+      "quality_vs_baseline": {
+        "facts": {
+          "diff_pts": 1.587301587301587,
+          "ci_pts": [
+            -1.1503464173341533,
+            4.324949591937328
+          ],
+          "questions": 21
+        },
+        "citations": {
+          "diff_pts": 0.0,
+          "ci_pts": [
+            0.0,
+            0.0
+          ],
+          "questions": 34
+        }
+      },
+      "feasible": true,
+      "reasons": [],
+      "pareto": true
+    },
+    {
+      "name": "q15awq_pc-on_seqs-8",
+      "params": {
+        "model": "Qwen/Qwen2.5-1.5B-Instruct-AWQ",
+        "prefix_cache": true,
+        "max_num_seqs": 8
+      },
+      "baseline": false,
+      "goodput_rps": 6.387225106943066,
+      "goodput_range": [
+        5.884113762223047,
+        6.655310193248963
+      ],
+      "ttft_p95_ms": 430.6296250782907,
+      "ttft_p95_range": [
+        327.00210994808003,
+        444.2797700408846
+      ],
+      "failure_rate": 0.0,
+      "runs": 3,
+      "quality_pct": {
+        "facts": 85.71428571428571,
+        "citations": 12.745098039215685
+      },
+      "quality_vs_baseline": {
+        "facts": {
+          "diff_pts": 11.11111111111111,
+          "ci_pts": [
+            -0.3412921498863799,
+            22.5635143721086
+          ],
+          "questions": 21
+        },
+        "citations": {
+          "diff_pts": 12.745098039215685,
+          "ci_pts": [
+            3.2138531218239805,
+            22.27634295660739
+          ],
+          "questions": 34
+        }
+      },
+      "feasible": true,
+      "reasons": [],
+      "pareto": false
+    },
+    {
+      "name": "q15awq_pc-on_seqs-32",
+      "params": {
+        "model": "Qwen/Qwen2.5-1.5B-Instruct-AWQ",
+        "prefix_cache": true,
+        "max_num_seqs": 32
+      },
+      "baseline": false,
+      "goodput_rps": 6.390567250066021,
+      "goodput_range": [
+        5.806433509956767,
+        6.609627090393738
+      ],
+      "ttft_p95_ms": 426.26420003362,
+      "ttft_p95_range": [
+        329.4674049655441,
+        443.78415503306314
+      ],
+      "failure_rate": 0.0,
+      "runs": 3,
+      "quality_pct": {
+        "facts": 85.71428571428571,
+        "citations": 12.745098039215685
+      },
+      "quality_vs_baseline": {
+        "facts": {
+          "diff_pts": 11.11111111111111,
+          "ci_pts": [
+            -0.3412921498863799,
+            22.5635143721086
+          ],
+          "questions": 21
+        },
+        "citations": {
+          "diff_pts": 12.745098039215685,
+          "ci_pts": [
+            3.2138531218239805,
+            22.27634295660739
+          ],
+          "questions": 34
+        }
+      },
+      "feasible": true,
+      "reasons": [],
+      "pareto": true
+    },
+    {
+      "name": "q15awq_pc-off_seqs-8",
+      "params": {
+        "model": "Qwen/Qwen2.5-1.5B-Instruct-AWQ",
+        "prefix_cache": false,
+        "max_num_seqs": 8
+      },
+      "baseline": false,
+      "goodput_rps": 3.3330875674512868,
+      "goodput_range": [
+        2.687747357252406,
+        3.39866193495892
+      ],
+      "ttft_p95_ms": 1114.2054100288078,
+      "ttft_p95_range": [
+        949.6911599067971,
+        1142.091935017379
+      ],
+      "failure_rate": 0.0,
+      "runs": 3,
+      "quality_pct": {
+        "facts": 85.71428571428571,
+        "citations": 12.745098039215685
+      },
+      "quality_vs_baseline": {
+        "facts": {
+          "diff_pts": 11.11111111111111,
+          "ci_pts": [
+            -0.3412921498863799,
+            22.5635143721086
+          ],
+          "questions": 21
+        },
+        "citations": {
+          "diff_pts": 12.745098039215685,
+          "ci_pts": [
+            3.2138531218239805,
+            22.27634295660739
+          ],
+          "questions": 34
+        }
+      },
+      "feasible": false,
+      "reasons": [
+        "p95 TTFT 1114 ms > SLO 500 ms"
+      ],
+      "pareto": false
+    },
+    {
+      "name": "q15awq_pc-off_seqs-32",
+      "params": {
+        "model": "Qwen/Qwen2.5-1.5B-Instruct-AWQ",
+        "prefix_cache": false,
+        "max_num_seqs": 32
+      },
+      "baseline": false,
+      "goodput_rps": 3.0135625381983733,
+      "goodput_range": [
+        2.487529747782844,
+        3.3335438139100426
+      ],
+      "ttft_p95_ms": 1095.7239650248084,
+      "ttft_p95_range": [
+        978.004140034318,
+        1151.236780011095
+      ],
+      "failure_rate": 0.0,
+      "runs": 3,
+      "quality_pct": {
+        "facts": 85.71428571428571,
+        "citations": 12.745098039215685
+      },
+      "quality_vs_baseline": {
+        "facts": {
+          "diff_pts": 11.11111111111111,
+          "ci_pts": [
+            -0.3412921498863799,
+            22.5635143721086
+          ],
+          "questions": 21
+        },
+        "citations": {
+          "diff_pts": 12.745098039215685,
+          "ci_pts": [
+            3.2138531218239805,
+            22.27634295660739
+          ],
+          "questions": 34
+        }
+      },
+      "feasible": false,
+      "reasons": [
+        "p95 TTFT 1096 ms > SLO 500 ms"
+      ],
+      "pareto": false
+    }
+  ],
+  "pick": "q05_pc-on_seqs-8",
+  "ties": [
+    "q05_pc-on_seqs-32"
+  ],
+  "recommendation": "keep q05_pc-on_seqs-32: q05_pc-on_seqs-8 has the highest median goodput, but its run range overlaps the baseline's, so the data do not justify a change"
+}
