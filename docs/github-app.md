@@ -79,6 +79,36 @@ live proof that retries never open duplicates. It stops at the first failing ste
 only if every step passed and Guard flagged R1. Commit that directory: it is the evidence
 that the GitHub path works on real GitHub.
 
+## 3a. Verify the live run against GitHub
+
+```bash
+# Optional, for the webhook checks: the receiver with the App's secret, and the App's
+# deliveries forwarded to it byte for byte (the delivery log re-serializes payloads, so only
+# a forwarded delivery proves HMAC on GitHub's own signature):
+uv run poe api                                     # terminal 1 (reads .env)
+pnpm dlx smee-client --url <the smee URL gh-setup printed>     --target http://localhost:8010/api/github/webhook   # terminal 2, before step 3
+uv run python scripts/live_github_verify.py --repo <you>/furnace-demo-f1 [--api http://localhost:8010]
+```
+
+It reads GitHub (never the run's own report) and records each property in
+`bench/results/<date>-live-github/verify.{json,md}`:
+
+| check | passes only if |
+|---|---|
+| `permissions` | the App's permissions and events equal the manifest exactly; the installation covers selected repositories, this one included |
+| `token_scope` | a Scan token and a Guard token each get 403 creating a branch; a Scan token gets 403 creating a check run (a probe branch GitHub accepted is deleted and the check fails) |
+| `attribution` | the Guard check run is on the R1 PR's current head commit, belongs to this App, and its conclusion is what the run recorded |
+| `check_updates` | the check run has a start and a later completion, output title and summary, and (when it failed) an annotation on the changed prompt hunk |
+| `draft_prs` | Forge and repair PRs are drafts from `furnace/*` branches opened by the App; the repair PR targets the R1 branch and is built on the R1 head commit |
+| `branches_intact` | `main` and `r1-request-id` are at the commits recorded before the run |
+| `no_duplicates` | one open Furnace PR per base branch, and both replays returned the same PR |
+| `webhook_real_deliveries` (with `--api`) | every `pull_request` delivery GitHub made since the run started reached the receiver over HMAC (`source=push`) |
+| `webhook_redelivery_noop` (with `--api`) | a GitHub redelivery of the same GUID is answered 2xx and changes no delivery or job row |
+| `webhook_forgery_refused` (with `--api`) | unsigned, wrong-secret and tampered requests get 401; a valid one 202; its replay is reported as a duplicate |
+
+A check whose precondition is missing (no `--api`, no delivery) is "not run", never "ok";
+exit code 0 only if every check that ran passed and no core check was skipped.
+
 ## 3b. The live run, command by command
 
 Prerequisites: Docker Desktop; lab vLLM up
@@ -148,8 +178,9 @@ repository code. Push and poll can run together: the delivery GUID dedupes them.
 | repair only with consent, once per head commit | `packages/furnace/tests/test_github_jobs.py` |
 | delivery-log poller: new deliveries once, no old history | `packages/furnace/tests/test_github_setup.py` |
 
-All of these run against a mock GitHub. The first run against the real API remains the
-open item in the README status table until it has been done and recorded.
+All of these run against a mock GitHub. On real GitHub they are checked by
+`scripts/live_github_verify.py` (section 3a) after `scripts/live_github_run.py`; until both
+have been run and recorded, "works on real GitHub" is not claimed.
 
 ## Notes
 
