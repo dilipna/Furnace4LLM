@@ -1,9 +1,39 @@
-# Furnace: session handoff (updated 2026-10-11 UTC, covers Oct 5-11 work)
+# Furnace: session handoff (updated 2026-10-13 UTC, covers Oct 5-13 work)
 
 Paste this file's path into a new Claude Code session ("read CONTINUE.md and continue"). Approved plan:
 `C:\Users\Dilip\.claude\plans\pasted-content-id-65d9-you-are-streamed-falcon.md`. Memory:
 `C:\Users\Dilip\.claude\projects\c--Users-Dilip-OneDrive-Pictures-saas-reviewer\memory\` (read `laptop-gpu-power-cap.md`).
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
+
+## Oct 12-13 follow-up (user's reconciliation request), newest first
+- **Still owed to the GPU** (laptop on AC, lid open; resumable, kept trials are not rerun):
+  from PowerShell (single quotes, so PowerShell does not expand `$PATH`; keep the window open):
+  `powershell -NoProfile -ExecutionPolicy Bypass -File C:\devurnace\scriptsun_awake.ps1 -Bash 'export PATH=/c/Users/Dilip/.local/bin:$PATH; cd /c/dev/furnace && bash bench/run_remaining_gpu.sh'`
+  = gate validation V1 trials 15-24, V2 restored baseline (12), V3a R1 (6), V3b R2 (6), V3c
+  depth 4 and 8 (6 each), `gate_validation_report.py`, RQ5 under the new gate (3), then the
+  optimizer grid (8 configs). About 2 hours. Then: commit `bench/results/2026-10-12-gate-validation/`
+  and `2026-10-12-optimizer/`, write NOTES.md there (name trial 10 of V1: a 36 s test run
+  overlapped it; editor lint/typecheck ran intermittently during V1), and replace every
+  "in progress" / "not measured yet" in README, case-study, scope.md, demo-90s with the results.
+  **Do not change any threshold after seeing them.**
+- **Still owed to the user**: GitHub App (`uv run furnace gh-setup --name furnace-dev-dilipna`,
+  click Create, install on `furnace-demo-f1` only) and the empty public repo `furnace-demo-f1`;
+  then push `C:\devurnace-demo-f1` (main, r1-request-id), run `scripts/live_github_run.py`
+  and `scripts/live_github_verify.py` (with `--api` and smee forwarding for the webhook checks).
+  Sign-off on scope deviations D1 (F2/TS/VLM deferred) and D2 (no LLM repair): `docs/scope.md`.
+- Gate redesign: frozen in `docs/gate-revision.md` (6e90c99) before code (26fa8eb); dev analysis
+  `bench/results/2026-10-12-gate-revision/`. Geometric-mean TTFT, run = unit, 90% Welch, k=3,
+  10%/25% unchanged; p95 advisory. Graded sizes fixed before validation (9d80db8).
+- Scanner metrics reconciled with denominators (`2026-10-12-reconcile/`): held-out first-scan
+  call sites 4/34 (P 4/4); after fixes 33/34 (not held-out). "10/10 citations" was evidence-link
+  consistency, not finding correctness (finding-level accuracy is unmeasured).
+- Built: optimizer (`furnace/optimizer.py`, `bench/optimize.py`, `docs/optimizer.md`), TTFT-queue
+  correlation (`furnace_bench/correlation.py`, `2026-10-12-correlation/`), live GitHub verifier
+  (`scripts/live_github_verify.py`), keep-awake launcher. Fixed: Linux-only sandbox permission
+  bug found by CI (requirements staged 0700; ad295ec); Clopper-Pearson lower bound.
+- Pushed; Linux CI green on 06b6260 (345 passed). Clean-clone reproduction passed (uv sync,
+  poe check 334 passed, web lint/tsc/build, public scan through API + worker).
+- Both unattended GPU runs died when the laptop slept (Kernel-Power 42, 19:54 UTC Oct 12).
 
 ## Oct 11 session (production hardening, statistics, generalization), newest first
 - **Oct 12 audit** (user asked: pause features, audit). E2E re-verified for real with
