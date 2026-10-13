@@ -7,8 +7,8 @@ export type Stage = {
   key: "base" | "pr" | "repair";
   label: string;
   note: string;
-  p95: number; // median over repeats, ms
-  runs: number[]; // each repeat's p95, ms
+  ms: number; // median over repeats of the gate metric, ms
+  runs: number[]; // each repeat's value, ms
   hit: number | null; // prefix-cache hit rate, 0..1
 };
 
@@ -23,7 +23,9 @@ export function BeforeAfter({
   source,
   n,
   footnote,
+  metric,
 }: {
+  metric: string;
   stages: Stage[];
   source: string;
   n: number;
@@ -51,11 +53,11 @@ export function BeforeAfter({
     schedule();
   };
 
-  const max = Math.max(...stages.flatMap((s) => [s.p95, ...s.runs])) * 1.08;
+  const max = Math.max(...stages.flatMap((s) => [s.ms, ...s.runs])) * 1.08;
   const base = stages.find((s) => s.key === "base");
 
   return (
-    <figure className="rounded-[6px] border border-line bg-bg-1" aria-label="R1 regression: p95 time to first token and prefix-cache hit rate on main, the PR, and Furnace's repair">
+    <figure className="rounded-[6px] border border-line bg-bg-1" aria-label={`R1 regression: ${metric} and prefix-cache hit rate on main, the PR, and Furnace's repair`}>
       <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
         <span className="text-[12px] text-fg-2">
           PR R1 · “request id in the system prompt for debugging”
@@ -72,7 +74,7 @@ export function BeforeAfter({
         {stages.map((s, i) => {
           const shown = step > i;
           const regress = s.key === "pr";
-          const delta = base && s.key !== "base" ? ((s.p95 - base.p95) / base.p95) * 100 : null;
+          const delta = base && s.key !== "base" ? ((s.ms - base.ms) / base.ms) * 100 : null;
           return (
             <div key={s.key} className={`transition-opacity duration-300 ${shown ? "opacity-100" : "opacity-30"}`}>
               <div className="flex items-baseline justify-between gap-3">
@@ -80,7 +82,7 @@ export function BeforeAfter({
                 <span className="num text-[12px] text-fg-1">
                   {shown ? (
                     <>
-                      <span className="text-fg-0">{Math.round(s.p95).toLocaleString()} ms</span>
+                      <span className="text-fg-0">{Math.round(s.ms).toLocaleString()} ms</span>
                       {delta != null && (
                         <span className={regress ? "text-ember" : "text-fg-2"}>
                           {" "}
@@ -97,7 +99,7 @@ export function BeforeAfter({
               <div className="relative mt-1.5 h-2.5 rounded-[2px] bg-bg-3" aria-hidden="true">
                 <div
                   className={`h-full rounded-r-[4px] transition-[width] duration-300 ease-out ${regress ? "bg-ember" : "bg-fg-2"}`}
-                  style={{ width: shown ? `${(s.p95 / max) * 100}%` : "0%" }}
+                  style={{ width: shown ? `${(s.ms / max) * 100}%` : "0%" }}
                 />
                 {shown &&
                   s.runs.map((r, j) => (
@@ -125,7 +127,7 @@ export function BeforeAfter({
 
       {footnote && <p className="border-t border-line px-4 py-2.5 text-[11px] leading-relaxed text-fg-2">{footnote}</p>}
       <figcaption className="border-t border-line px-4 py-2.5 text-[11px] leading-relaxed text-fg-3">
-        p95 time to first token on the F1 support assistant, laptop RTX 3050 Ti (vLLM, Qwen2.5-0.5B). Bar: median of {n}{" "}
+        {metric} (time to first token) on the F1 support assistant, laptop RTX 3050 Ti (vLLM, Qwen2.5-0.5B). Bar: median of {n}{" "}
         repeats; ticks: each repeat. Source{" "}
         <Link href="/guard/r1_dynamic_head" className="text-fg-1 underline decoration-line-strong underline-offset-2 hover:text-fg-0">
           repair timeline

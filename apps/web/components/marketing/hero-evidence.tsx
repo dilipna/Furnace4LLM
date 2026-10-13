@@ -1,5 +1,5 @@
 import { BeforeAfter, type Stage } from "@/components/marketing/before-after";
-import { getRq, latestWith, type Rq5 } from "@/lib/bench";
+import { getRq, latestWith, metricLabel, type Rq5 } from "@/lib/bench";
 
 const REPO = "https://github.com/dilipna/Furnace4LLM/blob/main";
 
@@ -18,6 +18,7 @@ export async function HeroEvidence() {
   );
   if (!att.length) return null;
   const hv = att.map((a) => a.perf.head_vs_base!);
+  const metric = metricLabel(hv[0].metric);
   // The repair bar shows only repairs the gate accepted: a rejected attempt's last candidate is
   // not "Furnace's repair" (2026-10-12: 2 of 3 attempts rejected under the interval rule).
   const ok = att.filter((a) => a.status === "verified");
@@ -42,7 +43,7 @@ export async function HeroEvidence() {
   const footnote =
     firstBlocked.length > 0
       ? `Furnace's first candidate kept the values in the prompt (moved to the end) and was blocked by its own perf gate in ${firstBlocked.length}/${att.length} attempts` +
-        (pcts.length ? ` (+${Math.min(...pcts).toFixed(0)}% to +${Math.max(...pcts).toFixed(0)}% p95 vs main)` : "") +
+        (pcts.length ? ` (+${Math.min(...pcts).toFixed(0)}% to +${Math.max(...pcts).toFixed(0)}% ${metric} vs main)` : "") +
         "."
       : null;
   const stages: Stage[] = [
@@ -50,7 +51,7 @@ export async function HeroEvidence() {
       key: "base",
       label: "main",
       note: "static system prompt",
-      p95: median(hv.map((h) => h.baseline)),
+      ms: median(hv.map((h) => h.baseline)),
       runs: hv.map((h) => h.baseline),
       hit: hits(hv.map((h) => h.prefix_hit_rate?.[0])),
     },
@@ -58,7 +59,7 @@ export async function HeroEvidence() {
       key: "pr",
       label: "PR R1",
       note: "request id + timestamp at the top of the system prompt",
-      p95: median(hv.map((h) => h.value)),
+      ms: median(hv.map((h) => h.value)),
       runs: hv.map((h) => h.value),
       hit: hits(hv.map((h) => h.prefix_hit_rate?.[1])),
     },
@@ -68,12 +69,18 @@ export async function HeroEvidence() {
       key: "repair",
       label: "Furnace repair",
       note: `${toLog ? "values logged, no longer sent in the prompt" : "values moved to the end of the user message"} · verified in ${verified}/${att.length} attempts (only verified shown)`,
-      p95: median(cv.map((c) => c.value)),
+      ms: median(cv.map((c) => c.value)),
       runs: cv.map((c) => c.value),
       hit: hits(cv.map((c) => c.prefix_hit_rate?.[1])),
     });
   }
   return (
-    <BeforeAfter stages={stages} n={att.length} footnote={footnote} source={`${REPO}/bench/results/${campaign}/rq5.md`} />
+    <BeforeAfter
+      stages={stages}
+      metric={metric}
+      n={att.length}
+      footnote={footnote}
+      source={`${REPO}/bench/results/${campaign}/rq5.md`}
+    />
   );
 }
