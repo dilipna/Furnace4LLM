@@ -128,7 +128,10 @@ def manifest(**extra: Any) -> dict[str, Any]:
 
 def write_json(path: Path, obj: Any) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=2, default=str), encoding="utf-8")
+    # write then rename, so a run killed mid-write leaves the previous file, not half of one
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=2, default=str), encoding="utf-8")
+    tmp.replace(path)
     return path
 
 

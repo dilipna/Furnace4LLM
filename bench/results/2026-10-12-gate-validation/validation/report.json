@@ -1,0 +1,130 @@
+{
+  "sets": {
+    "v1_aa": {
+      "set": "v1_aa",
+      "trials": 11,
+      "requested": 24,
+      "errors": 0,
+      "discarded": 0,
+      "affected": [
+        6,
+        9,
+        10
+      ],
+      "affected_included": false,
+      "resumed": [
+        {
+          "after_trial": 2,
+          "at_utc": "2026-10-12T19:42:59Z",
+          "note": "the machine slept or Docker Desktop stopped after trial 2 (about 05:22 UTC); every Furnace process was gone at 19:18 UTC; resumed on AC at 780 MHz"
+        }
+      ],
+      "pass": 7,
+      "inconclusive": 4,
+      "warn": 0,
+      "block": 0,
+      "fail_rate_ci95": [
+        0.0,
+        0.28491415291815436
+      ],
+      "interval_contains_0": [
+        10,
+        11
+      ],
+      "change_median": -0.3,
+      "change_range": [
+        -15.0,
+        5.4
+      ],
+      "old_rule": {
+        "pass": 3,
+        "inconclusive": 8,
+        "warn": 0,
+        "block": 0
+      },
+      "recompute_mismatches": [],
+      "recompute_max_ci_diff_pts": 0.1,
+      "sm_clock_mhz": [
+        780.0,
+        780.0
+      ],
+      "tail_p95": {
+        "n": 11,
+        "ruled_out": 3,
+        "established": 0,
+        "unresolved": 8,
+        "change_median": 1.1,
+        "change_range": [
+          -20.1,
+          7.1
+        ],
+        "width_median": 27.4
+      },
+      "ci_width_median": 13.0
+    }
+  },
+  "sets_including_affected": {
+    "v1_aa": {
+      "set": "v1_aa",
+      "trials": 14,
+      "requested": 24,
+      "errors": 0,
+      "discarded": 0,
+      "affected": [
+        6,
+        9,
+        10
+      ],
+      "affected_included": true,
+      "resumed": [
+        {
+          "after_trial": 2,
+          "at_utc": "2026-10-12T19:42:59Z",
+          "note": "the machine slept or Docker Desktop stopped after trial 2 (about 05:22 UTC); every Furnace process was gone at 19:18 UTC; resumed on AC at 780 MHz"
+        }
+      ],
+      "pass": 10,
+      "inconclusive": 4,
+      "warn": 0,
+      "block": 0,
+      "fail_rate_ci95": [
+        0.0,
+        0.2316357616501165
+      ],
+      "interval_contains_0": [
+        13,
+        14
+      ],
+      "change_median": -0.04999999999999999,
+      "change_range": [
+        -15.0,
+        5.4
+      ],
+      "old_rule": {
+        "pass": 6,
+        "inconclusive": 8,
+        "warn": 0,
+        "block": 0
+      },
+      "recompute_mismatches": [],
+      "recompute_max_ci_diff_pts": 0.1,
+      "sm_clock_mhz": [
+        780.0,
+        780.0
+      ],
+      "tail_p95": {
+        "n": 14,
+        "ruled_out": 5,
+        "established": 0,
+        "unresolved": 9,
+        "change_median": 0.9,
+        "change_range": [
+          -20.1,
+          7.1
+        ],
+        "width_median": 26.45
+      },
+      "ci_width_median": 12.4
+    }
+  }
+}

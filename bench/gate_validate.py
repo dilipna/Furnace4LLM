@@ -1,6 +1,7 @@
 """Fresh validation of the revised perf gate (protocol frozen in docs/gate-revision.md).
 
   uv run python bench/gate_validate.py run  --set v1_aa [--trials 24]
+  uv run python bench/gate_validate.py mark-affected --set v1_aa --trials 9 --reason "..."
   uv run python bench/gate_validate.py calibrate-topk --ks 4,6,8,12
   uv run python bench/gate_validate.py summarize
 
@@ -16,8 +17,19 @@ Sets (trial counts from the protocol):
 
 Rules (declared before running): after every trial AC power is checked; a trial during which
 it was lost is discarded, counted and the run stops. A trial that raises is kept as an
-'error' and counted; three consecutive errors stop the run. No other trial is dropped, and
-no outlier is trimmed. `--smoke` writes under validation_smoke/ and is never counted.
+'error' and counted; three consecutive errors stop the run. No outlier is trimmed.
+`--smoke` writes under validation_smoke/ and is never counted.
+
+Affected trials (rule added 2026-10-13 at the owner's direction, before V1 trial 15; see
+bench/results/2026-10-12-gate-validation/NOTES.md): a trial during which competing compute
+ran on the machine (a test run, lint/format/type check, build, Docker or sandbox job,
+benchmark or analysis script that is not part of the trial), established from a command log
+and never from the trial's result, is marked with `mark-affected`. It stays in the record
+with its result, is left out of the primary tally, and is replaced: `run` continues until
+the set holds the requested number of unaffected trials. Reports also show the tally with
+the affected trials included. Each trial records the machine's CPU busy share while it ran
+(data only; no rule uses it). A JSONL line cut off by a kill is kept aside, never parsed
+into a trial.
 
 Output: bench/results/<date>/validation/<set>.jsonl (one line per trial, written as it
 finishes), <set>.json (manifest + trials), and `summarize` writes validation.md.
@@ -28,10 +40,12 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import platform
 import shutil
 import statistics
 import subprocess
 import tempfile
+import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -115,6 +129,64 @@ def vllm_image() -> str | None:
         return None
 
 
+def _system_times() -> tuple[int, int] | None:
+    """(busy, total) CPU time of the whole machine so far, in 100 ns units (Windows only)."""
+    if platform.system() != "Windows":
+        return None
+    import ctypes
+    from ctypes import wintypes
+
+    idle, kernel, user = wintypes.FILETIME(), wintypes.FILETIME(), wintypes.FILETIME()
+    if not ctypes.windll.kernel32.GetSystemTimes(  # type: ignore[attr-defined]
+        ctypes.byref(idle), ctypes.byref(kernel), ctypes.byref(user)
+    ):
+        return None
+
+    def v(f: Any) -> int:
+        return (f.dwHighDateTime << 32) | f.dwLowDateTime
+
+    total = v(kernel) + v(user)  # kernel time includes idle time
+    return total - v(idle), total
+
+
+class CpuSampler:
+    """The machine's CPU busy share over a trial (mean) and its largest 1 s value. It includes
+    the trial's own work (client, sandbox, the vLLM container), so it is comparable across
+    trials, not by itself a measure of competing work."""
+
+    def __init__(self) -> None:
+        self._stop = threading.Event()
+        self._max = 0.0
+        self._first = _system_times()
+        self._t = threading.Thread(target=self._loop, daemon=True)
+        self.result: dict[str, Any] | None = None
+
+    def _loop(self) -> None:
+        prev = self._first
+        while prev is not None and not self._stop.wait(1.0):
+            cur = _system_times()
+            if cur is None:
+                return
+            if cur[1] > prev[1]:
+                self._max = max(self._max, (cur[0] - prev[0]) / (cur[1] - prev[1]))
+            prev = cur
+
+    def __enter__(self) -> CpuSampler:
+        self._t.start()
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self._stop.set()
+        self._t.join(timeout=5)
+        last = _system_times()
+        if self._first is not None and last is not None and last[1] > self._first[1]:
+            mean = (last[0] - self._first[0]) / (last[1] - self._first[1])
+            self.result = {
+                "busy_mean_pct": round(100 * mean, 1),
+                "busy_max_1s_pct": round(100 * self._max, 1),
+            }
+
+
 def one_trial(name: str, questions: list[str], policy: GatePolicy) -> dict[str, Any]:
     tmp = Path(tempfile.mkdtemp(prefix="gate-val-"))
     try:
@@ -140,10 +212,31 @@ def one_trial(name: str, questions: list[str], policy: GatePolicy) -> dict[str, 
     return {**c, "seconds": round(secs, 1), "sm_clock_mhz": clocks}
 
 
+def read_trials(jsonl: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    """Complete trials from the JSONL, and any line that is not valid JSON (a write cut off
+    by a kill), which is returned separately and never counted as a trial."""
+    rows: list[dict[str, Any]] = []
+    broken: list[str] = []
+    if jsonl.exists():
+        for x in jsonl.read_text(encoding="utf-8").splitlines():
+            if not x.strip():
+                continue
+            try:
+                rows.append(json.loads(x))
+            except json.JSONDecodeError:
+                broken.append(x)
+    return rows, broken
+
+
+def affected_trials(j: dict[str, Any]) -> set[int]:
+    return {int(a["trial"]) for a in j.get("affected", [])}
+
+
 def run(name: str, trials: int, smoke: bool, resume_note: str | None = None) -> None:
-    """Runs `trials` trials of set `name`. If the set's JSONL already holds trials (a run that
-    was killed: the machine slept, Docker stopped), they are kept as they are, numbering
-    continues after them, and the restart is recorded in `resumed` with `resume_note`."""
+    """Runs set `name` until it holds `trials` unaffected trials. If the set's JSONL already
+    holds trials (a run that was killed: the machine slept, Docker stopped), they are kept as
+    they are, numbering continues after them, and the restart is recorded in `resumed` with
+    `resume_note`. A trial cut off by the kill left no row and is simply run again."""
     pw = power_state()
     if pw.get("on_ac") is False:
         raise SystemExit("on battery: plug in AC power (protocol requires AC)")
@@ -151,12 +244,16 @@ def run(name: str, trials: int, smoke: bool, resume_note: str | None = None) -> 
     jsonl = out / f"{name}.jsonl"
     final = out / f"{name}.json"
     policy, questions = GatePolicy(), f1_questions()
-    rows: list[dict[str, Any]] = []
-    if jsonl.exists():
-        rows = [json.loads(x) for x in jsonl.read_text(encoding="utf-8").splitlines() if x.strip()]
+    rows, broken = read_trials(jsonl)
     prior = json.loads(final.read_text(encoding="utf-8")) if final.exists() else {}
     discarded: list[dict[str, Any]] = list(prior.get("discarded", []))
     resumed: list[dict[str, Any]] = list(prior.get("resumed", []))
+    affected: list[dict[str, Any]] = list(prior.get("affected", []))
+    skip = affected_trials(prior)
+    if broken:  # keep the cut-off text, rewrite the JSONL with complete trials only
+        with (out / f"{name}.jsonl.cut").open("a", encoding="utf-8") as f:
+            f.write("\n".join(broken) + "\n")
+        jsonl.write_text("".join(json.dumps(r, default=str) + "\n" for r in rows), encoding="utf-8")
     if rows:
         if not resume_note:
             raise SystemExit(
@@ -168,6 +265,7 @@ def run(name: str, trials: int, smoke: bool, resume_note: str | None = None) -> 
                 "after_trial": len(rows),
                 "at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "note": resume_note,
+                **({"cut_lines": len(broken)} if broken else {}),
             }
         )
     consecutive_errors = 0
@@ -183,21 +281,28 @@ def run(name: str, trials: int, smoke: bool, resume_note: str | None = None) -> 
                 "manifest": manifest(vllm_image=vllm_image()),
                 "policy": policy.__dict__,
                 "trials": rows,
+                "affected": affected,
                 "discarded": discarded,
                 "resumed": resumed,
                 "stopped": stopped,
             },
         )
 
-    for i in range(len(rows), trials):
+    def counted() -> int:
+        return sum(1 for r in rows if r["trial"] not in skip)
+
+    while counted() < trials:
+        i = len(rows)
         started = time.strftime("%H:%M:%S", time.gmtime())
         r: dict[str, Any]
-        try:
-            r = one_trial(name, questions, policy)
-            consecutive_errors = 0
-        except Exception as exc:  # kept and counted, never dropped
-            r = {"verdict": "error", "reason": f"{type(exc).__name__}: {exc}"[:300]}
-            consecutive_errors += 1
+        with CpuSampler() as cpu:
+            try:
+                r = one_trial(name, questions, policy)
+                consecutive_errors = 0
+            except Exception as exc:  # kept and counted, never dropped
+                r = {"verdict": "error", "reason": f"{type(exc).__name__}: {exc}"[:300]}
+                consecutive_errors += 1
+        r["cpu"] = cpu.result
         r["power_after"] = power_state()
         r["trial"], r["started_utc"] = i + 1, started
         if r["power_after"].get("on_ac") is False:
@@ -211,8 +316,9 @@ def run(name: str, trials: int, smoke: bool, resume_note: str | None = None) -> 
         flush()
         ci = r.get("ci_pct")
         print(
-            f"{name} {i + 1}/{trials}: {r.get('baseline')} -> {r.get('value')} ms "
-            f"({r.get('change_pct')}%, interval {ci}, {r['verdict']}) {r.get('seconds')} s",
+            f"{name} {i + 1} ({counted()}/{trials} counted): {r.get('baseline')} -> "
+            f"{r.get('value')} ms ({r.get('change_pct')}%, interval {ci}, {r['verdict']}) "
+            f"{r.get('seconds')} s, cpu {r['cpu']}",
             flush=True,
         )
         if consecutive_errors >= 3:
@@ -220,6 +326,25 @@ def run(name: str, trials: int, smoke: bool, resume_note: str | None = None) -> 
             print(stopped, flush=True)
             break
     flush()
+
+
+def mark_affected(name: str, trial_nos: list[int], reason: str, evidence: str) -> None:
+    """Record trials of a set as affected by competing work. Their results stay; they leave
+    the primary tally and a later `run` replaces them."""
+    final = results_dir("validation") / f"{name}.json"
+    j = json.loads(final.read_text(encoding="utf-8"))
+    have = {t["trial"] for t in j["trials"]}
+    missing = [t for t in trial_nos if t not in have]
+    if missing:
+        raise SystemExit(f"{name} has no trial {missing}")
+    already = affected_trials(j)
+    at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    j.setdefault("affected", []).extend(
+        {"trial": t, "reason": reason, "evidence": evidence, "marked_at_utc": at}
+        for t in trial_nos
+        if t not in already
+    )
+    write_json(final, j)
 
 
 # --------------------------------------------------------------------------- calibration
@@ -310,31 +435,42 @@ def clopper_pearson(k: int, n: int, alpha: float = 0.05) -> tuple[float, float]:
 
 def summarize() -> None:
     d = results_dir("validation")
-    sets = sorted(d.glob("*.json"))
-    sets = [s for s in sets if not s.name.startswith("calibration")]
+    sets = sorted(d.glob("v*.json"))  # not calibration_*.json or report.json
     rows, lines = [], []
-    for s in sets:
-        j = json.loads(s.read_text(encoding="utf-8"))
-        t = j["trials"]
+
+    def row(label: str, t: list[dict[str, Any]], requested: str) -> list[Any]:
         v = [x["verdict"] for x in t]
         n = len(t)
         fail = v.count("warn") + v.count("block")
         lo, hi = clopper_pearson(fail, n) if n else (0, 1)
         ch = [x["change_pct"] for x in t if x.get("change_pct") is not None]
-        rows.append(
-            [
-                j["set"],
-                f"{n}/{j['requested_trials']}",
-                v.count("pass"),
-                v.count("inconclusive"),
-                v.count("warn"),
-                v.count("block"),
-                v.count("error"),
-                f"{fail}/{n} ({lo:.0%}-{hi:.0%})" if n else "–",
-                f"{statistics.median(ch):+.1f}%" if ch else "–",
-                f"{min(ch):+.1f}% to {max(ch):+.1f}%" if ch else "–",
-            ]
-        )
+        return [
+            label,
+            requested,
+            v.count("pass"),
+            v.count("inconclusive"),
+            v.count("warn"),
+            v.count("block"),
+            v.count("error"),
+            f"{fail}/{n} ({lo:.0%}-{hi:.0%})" if n else "–",
+            f"{statistics.median(ch):+.1f}%" if ch else "–",
+            f"{min(ch):+.1f}% to {max(ch):+.1f}%" if ch else "–",
+        ]
+
+    for s in sets:
+        j = json.loads(s.read_text(encoding="utf-8"))
+        skip = affected_trials(j)
+        t = [x for x in j["trials"] if x["trial"] not in skip]
+        rows.append(row(j["set"], t, f"{len(t)}/{j['requested_trials']}"))
+        if skip:
+            rows.append(
+                row(f"{j['set']} incl. affected", j["trials"], f"{len(j['trials'])} (all kept)")
+            )
+        for a in j.get("affected", []):
+            lines.append(
+                f"- {j['set']} trial {a['trial']} affected by competing work, left out of the "
+                f"first row and replaced (result kept): {a['reason']}"
+            )
         for rs in j.get("resumed", []):
             lines.append(
                 f"- {j['set']}: run interrupted after trial {rs['after_trial']}, resumed at "
@@ -344,7 +480,7 @@ def summarize() -> None:
             lines.append(f"- {j['set']} trial {dd['trial']} discarded: {dd['discard_reason']}")
         if j.get("stopped"):
             lines.append(f"- {j['set']}: {j['stopped']}")
-        for x in t:
+        for x in j["trials"]:
             if x["verdict"] == "error":
                 lines.append(f"- {j['set']} trial {x['trial']} error: {x.get('reason')}")
     text = [
@@ -353,7 +489,7 @@ def summarize() -> None:
         md_table(
             [
                 "set",
-                "trials done/planned",
+                "counted trials/planned",
                 "PASS",
                 "INCONCLUSIVE",
                 "WARN",
@@ -366,7 +502,7 @@ def summarize() -> None:
             rows,
         ),
         "",
-        "## Exclusions, discards, errors",
+        "## Affected trials, interruptions, discards, errors",
         "",
         *(lines or ["None recorded."]),
     ]
@@ -385,11 +521,18 @@ def main() -> None:
     c = sub.add_parser("calibrate-topk")
     c.add_argument("--ks", default="4,6,8,12")
     c.add_argument("--runs", type=int, default=3)
+    m = sub.add_parser("mark-affected")
+    m.add_argument("--set", required=True)
+    m.add_argument("--trials", required=True, help="comma-separated trial numbers")
+    m.add_argument("--reason", required=True)
+    m.add_argument("--evidence", required=True, help="where the competing work is recorded")
     sub.add_parser("summarize")
     a = p.parse_args()
     if a.cmd == "run":
         n = a.trials or DEFAULT_TRIALS.get(a.set) or GRADED_TRIALS
         run(a.set, n, a.smoke, a.resume_note)
+    elif a.cmd == "mark-affected":
+        mark_affected(a.set, [int(x) for x in a.trials.split(",")], a.reason, a.evidence)
     elif a.cmd == "calibrate-topk":
         calibrate_topk([int(x) for x in a.ks.split(",")], a.runs)
     else:

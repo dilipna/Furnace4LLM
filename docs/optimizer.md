@@ -59,3 +59,26 @@ record 1.5B-AWQ inventing a plan and contradicting a safety rule, which neither 
 The three performance runs per config are consecutive on one container, not interleaved
 across configs, so slow drift between configs is not controlled. A pick is a recommendation
 for this app on this machine, not a general result.
+
+## Independent confirmation (added 2026-10-13, before any grid result exists)
+
+The grid's selection is one measurement per config: three consecutive runs on one
+container. Before any pick is reported as an improvement, it is rerun independently:
+
+- **What is compared.** The baseline (A) against the selected config (B). If the selection
+  keeps the baseline, B is the feasible config with the next highest median goodput, so
+  "no change" is tested as well. If nothing is feasible, there is nothing to confirm.
+- **How.** Eight fresh container launches, alternating A B B A A B B A (counterbalanced
+  against slow drift); one performance run per launch (W1, c=8, 120 requests after 8
+  warmup, seed 5000 + launch index; the grid used seeds 1234-1236); quality once per side
+  on seeds 10, 11, 12 (the grid used 0, 1, 2). The launch is the unit, so launch-to-launch
+  variation is part of the interval.
+- **Decision** (`furnace.optimizer.confirm`; policy unchanged: 90% two-sided intervals,
+  5-point quality tolerance, failures <= 1%, p95 TTFT <= 500 ms):
+  - *confirmed*: the 90% Welch interval of B/A SLO goodput (log scale) lies above 0, and B
+    meets the quality rule (paired by question) and the failure and SLO limits;
+  - *not confirmed: no improvement*: the interval's upper bound is at or below 0;
+  - *not confirmed: constraints*: goodput higher, but quality, failures or SLO not shown;
+  - *inconclusive*: the interval contains 0 (or a run had zero goodput).
+  The grid's own result is reported as it is either way; the confirmation decides only
+  whether a change is recommended as an improvement.

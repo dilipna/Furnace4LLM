@@ -1,5 +1,13 @@
 import pytest
-from furnace.optimizer import ConfigResult, OptimizerPolicy, paired_diff_ci, select
+from furnace.optimizer import (
+    ConfigResult,
+    OptimizerPolicy,
+    confirm,
+    confirmation_target,
+    paired_diff_ci,
+    select,
+    welch_ratio_ci,
+)
 
 Q = [f"q{i}" for i in range(20)]
 
@@ -85,3 +93,37 @@ def test_pareto_front_marks_dominated_configs():
 def test_baseline_must_have_been_measured():
     with pytest.raises(ValueError):
         select([cfg("base", [], error="failed")], "base")
+
+
+# ------------------------------------------------------------------ independent confirmation
+
+
+def test_confirmation_targets_the_pick_or_the_closest_challenger():
+    sel = select([cfg("base", [5, 5.1, 5.2]), cfg("fast", [8, 8.1, 8.2])], "base")
+    assert confirmation_target(sel, "base")[0] == "fast"
+    sel = select([cfg("base", [9, 9.1, 9.2]), cfg("a", [5, 5.1]), cfg("b", [7, 7.1])], "base")
+    assert confirmation_target(sel, "base")[0] == "b"  # the baseline won: test the runner-up
+    sel = select([cfg("base", [5, 5.1]), cfg("bad", [9, 9.1], fail=0.5)], "base")
+    assert confirmation_target(sel, "base")[0] is None
+
+
+def test_ratio_interval_is_symmetric_on_the_log_scale():
+    ch, lo, hi = welch_ratio_ci([10, 10.5, 9.5, 10], [12, 12.6, 11.4, 12], 0.90)
+    assert ch == pytest.approx(20.0, abs=0.3) and lo < ch < hi
+    assert (1 + lo / 100) * (1 + hi / 100) == pytest.approx((1 + ch / 100) ** 2, rel=1e-9)
+
+
+def test_confirm_outcomes():
+    base = cfg("base", [5.0, 5.1, 4.9, 5.0])
+    assert confirm(base, cfg("c", [8.0, 8.1, 7.9, 8.0]))["outcome"] == "confirmed"
+    assert (
+        confirm(base, cfg("c", [4.0, 4.1, 3.9, 4.0]))["outcome"] == "not confirmed: no improvement"
+    )
+    assert confirm(base, cfg("c", [4.0, 6.5, 5.5, 4.5]))["outcome"] == "inconclusive"
+    worse = cfg("c", [8.0, 8.1, 7.9, 8.0], quality=qual(1.0, flip=6))  # 30 points lower
+    r = confirm(base, worse)
+    assert r["outcome"] == "not confirmed: constraints" and "facts" in r["reasons"][0]
+    slow = cfg("c", [8.0, 8.1, 7.9, 8.0], p95=900.0)
+    assert confirm(base, slow)["outcome"] == "not confirmed: constraints"
+    assert confirm(base, cfg("c", [8.0]))["outcome"] == "inconclusive"
+    assert confirm(base, cfg("c", [0.0, 8.0]))["outcome"] == "inconclusive"

@@ -163,3 +163,14 @@ point (about +30%) and V3a (R1) the large one (about +800%). Only these four siz
 tested; nothing is said about sizes between or beyond them. Sizes near the 10% tolerance
 are expected to come out INCONCLUSIVE; that is a result about the gate's resolution, not
 a failure to be tuned away.
+
+## 8. Addendum during V1 (2026-10-13): affected trials
+
+Validity rule added at the owner's direction after V1 trials 1-14 and before trial 15. It
+changes neither the statistic, the interval, the run count nor any threshold. A trial during
+which competing compute (tests, lint/type checks, builds, Docker/sandbox jobs, benchmarks,
+analysis scripts) ran on the machine, as established from a timestamped command log and never
+from the trial's result, is kept with its result, left out of the primary tally and replaced
+by one extra trial in the same set; the report also shows every figure with it included.
+V1 trials 6, 9 and 10 meet it (all three PASS). Rule, evidence and the audit of trials 1-14:
+`bench/results/2026-10-12-gate-validation/NOTES.md`.
