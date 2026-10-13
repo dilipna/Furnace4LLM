@@ -49,7 +49,9 @@ def main() -> int:
     questions = [q["question"] for q in json.loads((F1 / "docs" / "facts.json").read_text("utf-8"))]
     sys.path.insert(0, str(F1))
     import yaml
-    from app.retriever import retrieve  # the base retriever; R1 does not change retrieval
+
+    # the base retriever (R1 does not change retrieval), importable only from the fixture path
+    from app.retriever import retrieve  # pyright: ignore[reportMissingImports]
 
     cfg = yaml.safe_load((F1 / "config" / "rag.yaml").read_text("utf-8"))["retrieval"]
     base_build = _build_messages(F1)
