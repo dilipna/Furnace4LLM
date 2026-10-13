@@ -106,3 +106,12 @@ Written after the apps were read and before Furnace ran on any of them.
   `bench/tests/test_set6_findings.py`): `not_labeled` categories and `not_labeled_findings`
   rules count on neither side; a workflow label `<kind>:<file>.py` (cli, streamlit, gradio)
   matches a predicted workflow whose key contains the file, as `cli:`/`streamlit:` already did.
+
+## After the result (2026-10-13)
+
+`sec.tool_approval_boundary` produced 28 of the 38 unexpected findings (it flags any
+side-effecting function, including ones no model can call). It is now **experimental**: it
+still runs and its findings are stored, but they are kept out of the default Blueprint list
+and counts and shown apart with that reason (`blueprint/rules.py::EXPERIMENTAL`). The set-6
+numbers above were measured with the frozen scanner (41ca529) and are unchanged; they are not
+re-scored without the rule.

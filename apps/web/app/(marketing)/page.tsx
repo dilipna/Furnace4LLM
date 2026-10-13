@@ -17,7 +17,7 @@ const STAGES = [
   {
     name: "Forge",
     price: "$15 once",
-    body: "Opens a draft pull request that installs only what the Blueprint justified: deterministic checks, a targeted judge, workload and benchmark configs and a CI gate. Each change states its reason and risk.",
+    body: "Opens a draft pull request that installs only what the Blueprint justified: deterministic checks, a judge spec (uncalibrated until you label answers), workload and benchmark configs and a CI gate. Each change states its reason and risk.",
     output: "Draft PR or patch",
   },
   {

@@ -41,6 +41,7 @@ export interface Recommendation {
   evidence_ids: string[];
   node_keys: string[];
   forge_action: string | null;
+  experimental_reason?: string;
 }
 
 export interface AppSpec {
@@ -88,5 +89,7 @@ export interface Blueprint {
   scan: ScanInfo;
   appspec: AppSpec;
   recommendations: Recommendation[];
+  /** Findings of experimental rules: stored, kept out of the default list and counts. */
+  experimental?: Recommendation[];
   evidence: Record<string, Evidence>;
 }

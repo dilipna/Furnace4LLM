@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Recommendations } from "@/components/blueprint/recommendations";
+import { ExperimentalFindings, Recommendations } from "@/components/blueprint/recommendations";
 import { SystemPanel } from "@/components/blueprint/system-panel";
 import { ScanLive, ScanLog } from "@/components/scan/scan-live";
 import { AppHeader } from "@/components/ui/app-header";
@@ -142,7 +142,10 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
         {bp && <ScanLog scanId={scan.id} />}
         {bp && (
           <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_380px]">
-            <Recommendations recs={bp.recommendations} evidence={bp.evidence} />
+            <div>
+              <Recommendations recs={bp.recommendations} evidence={bp.evidence} />
+              <ExperimentalFindings recs={bp.experimental ?? []} evidence={bp.evidence} />
+            </div>
             <aside className="lg:sticky lg:top-6 lg:self-start">
               <SystemPanel spec={bp.appspec} />
             </aside>

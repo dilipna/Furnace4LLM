@@ -60,7 +60,7 @@ export async function BenchStrip() {
     tiles.push({
       label: "prompt-cache regression repairs verified",
       value: `${r1.filter((a) => a.status === "verified").length}/${r1.length}`,
-      note: `RQ5 (${c5}, ${gmean ? "frozen gate: geometric-mean TTFT, 90% run-level interval" : "an earlier p95-based gate rule"}), failing test first, sandbox-validated, full-suite audit`,
+      note: `RQ5: repeated trials of one scenario (fixture F1, regression R1) (${c5}, ${gmean ? "frozen gate: geometric-mean TTFT, 90% run-level interval" : "an earlier p95-based gate rule"}), failing test first, sandbox-validated, full-suite audit`,
     });
   }
   if (!tiles.length) return null;

@@ -28,6 +28,17 @@ def test_scan_finds_the_agent_call_and_its_tools(spec):
     assert tools["send_email"].side_effect.value.value in ("external", "write")
 
 
+def test_approval_boundary_rule_still_runs_but_is_kept_out_of_the_actionable_blueprint():
+    from furnace.blueprint.rules import EXPERIMENTAL, actionable, run_rules
+
+    recs = run_rules(reconstruct(F2))
+    fired = [r for r in recs if r.rule_id == "sec.tool_approval_boundary"]
+    assert any("send_email" in r.title for r in fired)  # still computed and stored
+    assert "sec.tool_approval_boundary" in EXPERIMENTAL
+    assert not [r for r in actionable(recs) if r.rule_id in EXPERIMENTAL]
+    assert len(actionable(recs)) == len(recs) - len(fired)
+
+
 @pytest.fixture(scope="module")
 def base(tmp_path_factory):
     return analyze_tree(materialize(None, tmp_path_factory.mktemp("f2") / "base"))

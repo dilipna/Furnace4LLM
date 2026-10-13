@@ -13,6 +13,7 @@ from collections.abc import AsyncIterator
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from furnace.blueprint.rules import EXPERIMENTAL
 from furnace.db.models import (
     AppSpecRow,
     EvidenceRow,
@@ -290,24 +291,32 @@ async def get_blueprint(scan_id: str, db: DB) -> dict[str, Any]:
         for e in ev_rows
     }
     order = {"P0": 0, "P1": 1, "P2": 2}
+
+    def as_dict(r: RecommendationRow) -> dict[str, Any]:
+        return {
+            "id": str(r.id),
+            "rule_id": r.rule_id,
+            "area": r.area,
+            "title": r.title,
+            "why": r.why,
+            "priority": r.priority,
+            "confidence": r.confidence,
+            "verification_method": r.verification_method,
+            "evidence_ids": [str(x) for x in r.evidence_ids],
+            "node_keys": r.node_keys,
+            "forge_action": r.forge_action,
+        }
+
+    ranked = sorted(recs, key=lambda r: (order.get(r.priority, 9), -r.confidence))
     return {
         "scan": (await get_scan(scan_id, db)).model_dump(),
         "appspec": spec.spec if spec else None,
-        "recommendations": [
-            {
-                "id": str(r.id),
-                "rule_id": r.rule_id,
-                "area": r.area,
-                "title": r.title,
-                "why": r.why,
-                "priority": r.priority,
-                "confidence": r.confidence,
-                "verification_method": r.verification_method,
-                "evidence_ids": [str(x) for x in r.evidence_ids],
-                "node_keys": r.node_keys,
-                "forge_action": r.forge_action,
-            }
-            for r in sorted(recs, key=lambda r: (order.get(r.priority, 9), -r.confidence))
+        # The default, actionable list. Experimental rules are stored and listed apart.
+        "recommendations": [as_dict(r) for r in ranked if r.rule_id not in EXPERIMENTAL],
+        "experimental": [
+            as_dict(r) | {"experimental_reason": EXPERIMENTAL[r.rule_id]}
+            for r in ranked
+            if r.rule_id in EXPERIMENTAL
         ],
         "evidence": evidence,
     }
