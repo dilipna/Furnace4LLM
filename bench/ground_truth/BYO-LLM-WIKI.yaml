@@ -1,0 +1,192 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 6 (docs/scanner-eval-set6.md).
+# Selected by the fixed search procedure (bench/results/2026-10-13-set6/selection.md, #32).
+# Labeled from source at the pinned commit on 2026-10-13 BEFORE Furnace ran on this
+# repository; scanner frozen at 41ca529. Author: the developer agent (Claude), not
+# independently reviewed. Labeling rules: as in audiobook-creator.yaml (set 6 header).
+# Declared before the scan: workflows are not labeled (63 routes and a CLI, most of which
+# reach an LLM through several layers; tracing each by hand was out of scope).
+app: BYO-LLM-WIKI
+split: held-out-6
+repo: https://github.com/Lyra-stellAI/BYO-LLM-WIKI
+commit: 0316fb7d01c0c5be590580ebedc02688a6f27d73
+purpose: Flask personal-wiki app (web UI, JSON API, runner.py CLI) with contextual RAG, a deepagents knowledge-graph agent, memory, LLM-authored skills and MCP; Anthropic, OpenAI and OpenAI-compatible providers through LangChain and the SDKs
+not_labeled: [workflows]
+
+routes:
+  - GET /
+  - GET /api/providers
+  - POST /api/search
+  - POST /api/summarize
+  - POST /api/cache/extract
+  - POST /api/cache/ingest
+  - GET /api/cache/items
+  - GET /api/cache/item/<item_id>
+  - DELETE /api/cache/item/<item_id>
+  - POST /api/cache/to-kg
+  - POST /api/cache/to-vectors
+  - GET /api/kg/stats
+  - GET /api/kg/graph
+  - POST /api/kg/add
+  - POST /api/kg/integrate
+  - DELETE /api/kg/node/<node_id>
+  - POST /api/kg/query
+  - GET /api/agent/status
+  - POST /api/agent/ask
+  - POST /api/agent/maintain
+  - GET /api/memory/stats
+  - GET /api/memory/list
+  - POST /api/memory/recall
+  - POST /api/memory/add
+  - POST /api/memory/feedback
+  - DELETE /api/memory/<mem_id>
+  - GET /api/skill/stats
+  - GET /api/skill/list
+  - GET /api/skill/pending
+  - GET /api/skill/observability
+  - GET /api/skill/changes
+  - POST /api/skill/tracing/init
+  - GET /api/skill/backends
+  - GET /api/skill/runs
+  - GET /api/skill/<skill_id>
+  - POST /api/skill/build
+  - POST /api/skill/graph/build
+  - POST /api/skill/graph/build_async
+  - GET /api/skill/graph/job/<job_id>
+  - POST /api/skill/graph/resume
+  - GET /api/skill/graph/status
+  - POST /api/skill/<skill_id>/eval
+  - POST /api/skill/<skill_id>/review
+  - POST /api/skill/<skill_id>/rebuild
+  - POST /api/skill/<skill_id>/refine
+  - POST /api/skill/<skill_id>/export
+  - DELETE /api/skill/<skill_id>
+  - GET /api/mcp/status
+  - POST /api/mcp/call
+  - POST /api/mcp/write
+  - POST /api/mcp/ingest
+  - GET /api/rag/stats
+  - POST /api/rag/ingest
+  - POST /api/rag/search
+  - POST /api/rag/ask
+  - POST /api/rag/eval
+  - POST /api/rag/crossdoc
+  - POST /api/rag/crossdoc/labels
+  - POST /api/rag/ragas
+  - POST /api/rag/dataset
+  - POST /api/rag/experiment
+  - POST /api/kg/ingest/text
+  - POST /api/kg/ingest/urls
+  - POST /api/kg/ingest/files
+
+llm_calls:
+  # LangChain chat models from providers.build_chat_model (timeout=120, max_retries=2)
+  - {file: agent.py, function: _invoke, api: "deepagents agent.invoke (create_deep_agent over a LangChain chat model)", model: claude-haiku-4-5-20251001, streaming: false, has_timeout: true}
+  - {file: enrich.py, function: _gen, api: langchain BaseChatModel.invoke, model: claude-haiku-4-5-20251001, streaming: false, has_timeout: true}
+  - {file: pipeline.py, function: _gen, api: langchain BaseChatModel.invoke, model: claude-haiku-4-5-20251001, streaming: false, has_timeout: true}
+  - {file: rag.py, function: _gen, api: langchain BaseChatModel.invoke, model: claude-haiku-4-5-20251001, streaming: false, has_timeout: true}
+  - {file: skill_agent.py, function: _gen, api: langchain BaseChatModel.invoke, model: claude-haiku-4-5-20251001, streaming: false, has_timeout: true}
+  - {file: skill_eval.py, function: _gen, api: langchain BaseChatModel.invoke, model: claude-haiku-4-5-20251001, streaming: false, has_timeout: true}
+  - {file: skill_runtime.py, function: run_tool_loop, api: "langchain chat model .bind_tools(...).invoke (tool loop)", model: claude-haiku-4-5-20251001, streaming: false, has_timeout: true}
+  # direct SDK clients, no timeout set
+  - {file: app.py, function: anthropic_summary, api: anthropic.Anthropic.messages.create, model: claude-haiku-4-5-20251001, streaming: false, has_timeout: false}
+  - {file: app.py, function: openai_compatible_summary, api: openai.OpenAI.chat.completions.create, model: gpt-4o-mini, streaming: false, has_timeout: false}
+  - {file: extraction.py, function: extract_kg_llm, api: anthropic.Anthropic.messages.create, model: claude-haiku-4-5-20251001, streaming: false, has_timeout: false}
+  - {file: extraction.py, function: extract_kg_llm, api: openai.OpenAI.chat.completions.create, model: gpt-4o-mini, streaming: false, has_timeout: false}
+  - {file: rag.py, function: _icl_generate, api: anthropic.Anthropic.messages.create, model: claude-haiku-4-5-20251001, streaming: false, has_timeout: false}
+  # Not counted: skill_claude_agent.py runs the Claude Code CLI as a subprocess (not an SDK or HTTP call)
+
+model: claude-haiku-4-5-20251001
+models: [claude-haiku-4-5-20251001, gpt-4o-mini, qwen-plus, deepseek-chat, gemini-3.5-flash, mistral-large-latest]   # per-provider defaults in providers.py
+serving_engine: [anthropic, openai]   # Qwen, DeepSeek, Gemini and Mistral are reached through OpenAI-compatible base URLs
+
+uses_rag: true
+retrievers:
+  - {file: rag.py, function: retrieve, store: hnswlib, top_k: 6}
+
+tools:   # LangChain @tool functions given to the agents, plus the MCP write path
+  - {name: kg_stats, side_effect: none, approval_gate: false}
+  - {name: kg_search, side_effect: none, approval_gate: false}
+  - {name: kg_get_entity, side_effect: none, approval_gate: false}
+  - {name: kg_get_chunk, side_effect: none, approval_gate: false}
+  - {name: kg_neighbors, side_effect: none, approval_gate: false}
+  - {name: kg_list_entities, side_effect: none, approval_gate: false}
+  - {name: kg_list_topics, side_effect: none, approval_gate: false}
+  - {name: kg_upsert_entity, side_effect: write, approval_gate: false}
+  - {name: kg_set_entity_summary, side_effect: write, approval_gate: false}
+  - {name: kg_add_relation, side_effect: write, approval_gate: false}
+  - {name: kg_merge_entities, side_effect: write, approval_gate: false}
+  - {name: kg_upsert_topic, side_effect: write, approval_gate: false}
+  - {name: kg_assign_entity_to_topic, side_effect: write, approval_gate: false}
+  - {name: memory_recall, side_effect: none, approval_gate: false}
+  - {name: memory_write, side_effect: write, approval_gate: false}
+  - {name: skill_recall, side_effect: none, approval_gate: false}
+  - {name: skill_get, side_effect: none, approval_gate: false}
+  - {name: skill_list, side_effect: none, approval_gate: false}
+  - {name: read_context, side_effect: none, approval_gate: false}
+  - {name: check_draft, side_effect: none, approval_gate: false}
+  - {name: list_existing_skills, side_effect: none, approval_gate: false}
+  - {name: recall_memory, side_effect: none, approval_gate: false}
+  - {name: execute_write, side_effect: external, approval_gate: true}    # mcp_tools.py: MCP_ALLOW_WRITES and approved=True
+
+prompts:
+  - agent.py::_BASE_SYSTEM_PROMPT
+  - agent.py::_INGEST_PROMPT
+  - agent.py::_QUERY_PROMPT
+  - agent.py::_LINT_PROMPT
+  - crossdoc.py::_GEN_PROMPT
+  - crossdoc.py::_KEYPOINTS_PROMPT
+  - enrich.py::_TOPIC_PROMPT
+  - extraction.py::ENTITY_PROMPT
+  - rag.py::_RERANK_PROMPT
+  - rag.py::_RAG_PROMPT
+  - rag.py::_ICL_SYSTEM
+  - rag.py::_JUDGE_PROMPT
+  - skill_agent.py::_UNDERSTAND_PROMPT
+  - skill_agent.py::_ANALYZE_PROMPT
+  - skill_agent.py::_CODEACT_PROMPT
+  - skill_agent.py::_CODEACT_TOOLS_SYSTEM
+  - skill_eval.py::_RUBRIC_PROMPT
+  - skill_eval.py::_TRIGGER_PROMPT
+dynamic_head: false
+
+existing_reliability:
+  tests: true
+  tracing: langsmith      # config.traced_anthropic / traced_openai wrap the SDK clients
+  timeouts: true          # LangChain models; the direct SDK clients set none
+  retries: true           # max_retries=2 on every LangChain model; one retry in skill_eval
+  evals: true             # ragas_eval.py, skill_eval.py, rag_experiment.py
+
+contradictions: []
+
+expected_findings:
+  - {rule: rel.llm_timeout, item: app}
+  - {rule: eval.citation_contract, item: app}     # _RAG_PROMPT: "cite them inline as [n]"
+  - {rule: eval.grounding_judge, item: app}
+  - {rule: sec.tool_approval_boundary, item: {file: kg_tools.py, symbol: kg_upsert_entity, line: 116}}
+  - {rule: sec.tool_approval_boundary, item: {file: kg_tools.py, symbol: kg_set_entity_summary, line: 137}}
+  - {rule: sec.tool_approval_boundary, item: {file: kg_tools.py, symbol: kg_add_relation, line: 148}}
+  - {rule: sec.tool_approval_boundary, item: {file: kg_tools.py, symbol: kg_merge_entities, line: 162}}
+  - {rule: sec.tool_approval_boundary, item: {file: kg_tools.py, symbol: kg_upsert_topic, line: 176}}
+  - {rule: sec.tool_approval_boundary, item: {file: kg_tools.py, symbol: kg_assign_entity_to_topic, line: 192}}
+  - {rule: sec.tool_approval_boundary, item: {file: memory_tools.py, symbol: memory_write, line: 42}}
+  - {rule: sec.approval_gate_regression_test, item: {file: mcp_tools.py, symbol: execute_write, line: 122}}
+  - {rule: obs.prompt_versioning, item: {file: agent.py, symbol: _BASE_SYSTEM_PROMPT, line: 48}}
+  - {rule: obs.prompt_versioning, item: {file: agent.py, symbol: _INGEST_PROMPT, line: 85}}
+  - {rule: obs.prompt_versioning, item: {file: agent.py, symbol: _QUERY_PROMPT, line: 113}}
+  - {rule: obs.prompt_versioning, item: {file: agent.py, symbol: _LINT_PROMPT, line: 137}}
+  - {rule: obs.prompt_versioning, item: {file: crossdoc.py, symbol: _GEN_PROMPT, line: 61}}
+  - {rule: obs.prompt_versioning, item: {file: crossdoc.py, symbol: _KEYPOINTS_PROMPT, line: 229}}
+  - {rule: obs.prompt_versioning, item: {file: enrich.py, symbol: _TOPIC_PROMPT, line: 75}}
+  - {rule: obs.prompt_versioning, item: {file: extraction.py, symbol: ENTITY_PROMPT, line: 39}}
+  - {rule: obs.prompt_versioning, item: {file: rag.py, symbol: _RERANK_PROMPT, line: 52}}
+  - {rule: obs.prompt_versioning, item: {file: rag.py, symbol: _RAG_PROMPT, line: 141}}
+  - {rule: obs.prompt_versioning, item: {file: rag.py, symbol: _ICL_SYSTEM, line: 188}}
+  - {rule: obs.prompt_versioning, item: {file: rag.py, symbol: _JUDGE_PROMPT, line: 481}}
+  - {rule: obs.prompt_versioning, item: {file: skill_agent.py, symbol: _UNDERSTAND_PROMPT, line: 215}}
+  - {rule: obs.prompt_versioning, item: {file: skill_agent.py, symbol: _ANALYZE_PROMPT, line: 245}}
+  - {rule: obs.prompt_versioning, item: {file: skill_agent.py, symbol: _CODEACT_PROMPT, line: 298}}
+  - {rule: obs.prompt_versioning, item: {file: skill_agent.py, symbol: _CODEACT_TOOLS_SYSTEM, line: 357}}
+  - {rule: obs.prompt_versioning, item: {file: skill_eval.py, symbol: _RUBRIC_PROMPT, line: 115}}
+  - {rule: obs.prompt_versioning, item: {file: skill_eval.py, symbol: _TRIGGER_PROMPT, line: 264}}
+  - {rule: inf.prefix_stability_guard, item: {file: agent.py, symbol: _BASE_SYSTEM_PROMPT, line: 48}}   # 2,205 static chars, the deep agent's system prompt
+# Not expected: rel.fallback_gateway (explicit retries), eval.regression_suite (Ragas and skill evals), obs.genai_tracing (LangSmith)

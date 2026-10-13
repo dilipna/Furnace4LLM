@@ -1,0 +1,76 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 6 (docs/scanner-eval-set6.md).
+# Selected by the fixed search procedure (bench/results/2026-10-13-set6/selection.md, #6).
+# Labeled from source at the pinned commit on 2026-10-13 BEFORE Furnace ran on this
+# repository; scanner frozen at 41ca529. Author: the developer agent (Claude), not
+# independently reviewed. Labeling rules: as in audiobook-creator.yaml (set 6 header).
+# Declared before the scan (labeling cost, not results): this app has ~67,000 lines in 43
+# files and builds its system messages from user templates, character cards, world state
+# and memory. Labeled: LLM call sites, routes, existing reliability and the app-level
+# findings. Not labeled (scored as nothing, neither TP nor FP): the categories in
+# not_labeled and every per-item finding (prompt versioning, prefix rules, tool approval).
+app: Soul-of-Waifu
+split: held-out-6
+repo: https://github.com/jofizcd/Soul-of-Waifu
+commit: 747048b3b3ad7d321a667630018f7ffc04eb5f6d
+purpose: PyQt desktop roleplay/companion app with a FastAPI web bridge; chats through eleven provider classes (OpenAI, OpenRouter, DeepSeek, Grok, Qwen, Z.ai, local OpenAI-compatible server, Gemini and player2 via the OpenAI provider, Mistral, Anthropic)
+not_labeled: [models, serving_engines, rag, tools, prompts, dynamic_head, workflows, contradictions]
+not_labeled_findings: [sec.tool_approval_boundary, sec.approval_gate_regression_test, eval.citation_contract, eval.grounding_judge, obs.prompt_versioning, inf.prefix_instability, inf.prefix_stability_guard, inf.prefix_caching_disabled, inf.context_budget_gate]
+
+routes:
+  - GET /
+  - GET /api/config
+  - GET /api/avatar_config/{char_name}
+  - GET /api/characters
+  - POST /api/character/switch
+  - GET /api/background
+  - GET /api/history/{char_name}
+  - DELETE /api/messages/{message_id}
+  - PATCH /api/messages/{message_id}
+  - POST /api/messages/{message_id}/regenerate
+  - POST /api/generation/stop
+  - POST /api/voice/stt
+  - GET /api/avatar/{char_name}
+  - WEBSOCKET /ws
+
+llm_calls:   # GeminiProvider and Player2Provider subclass OpenAIProvider and add no call site
+  - {file: app/utils/ai_clients/providers/anthropic_provider.py, function: AnthropicProvider.generate_stream, api: "httpx POST https://api.anthropic.com/v1/messages", streaming: true, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/anthropic_provider.py, function: AnthropicProvider.generate_summary, api: "httpx POST https://api.anthropic.com/v1/messages", has_timeout: true}
+  - {file: app/utils/ai_clients/providers/anthropic_provider.py, function: AnthropicProvider.generate, api: "httpx POST https://api.anthropic.com/v1/messages", streaming: false, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/deepseek_provider.py, function: DeepSeekProvider.generate_stream, api: "openai.AsyncOpenAI.chat.completions.create", streaming: true, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/deepseek_provider.py, function: DeepSeekProvider.generate_summary, api: "openai.AsyncOpenAI.chat.completions.create", has_timeout: true}
+  - {file: app/utils/ai_clients/providers/deepseek_provider.py, function: DeepSeekProvider.generate, api: "openai.AsyncOpenAI.chat.completions.create", streaming: false, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/grok_provider.py, function: GrokProvider.generate_stream, api: "openai.AsyncOpenAI.chat.completions.create", streaming: true, has_timeout: false}
+  - {file: app/utils/ai_clients/providers/grok_provider.py, function: GrokProvider.generate_summary, api: "openai.AsyncOpenAI.chat.completions.create", has_timeout: false}
+  - {file: app/utils/ai_clients/providers/grok_provider.py, function: GrokProvider.generate, api: "openai.AsyncOpenAI.chat.completions.create", streaming: false, has_timeout: false}
+  - {file: app/utils/ai_clients/providers/local_provider.py, function: LocalProvider.generate_stream, api: "openai.AsyncOpenAI.chat.completions.create", streaming: true, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/local_provider.py, function: LocalProvider.generate_summary, api: "openai.AsyncOpenAI.chat.completions.create", has_timeout: true}
+  - {file: app/utils/ai_clients/providers/local_provider.py, function: LocalProvider.generate, api: "openai.AsyncOpenAI.chat.completions.create", streaming: false, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/mistral_provider.py, function: MistralProvider.generate_stream, api: "mistralai.Mistral.chat.stream_async / complete_async", streaming: true, has_timeout: false}
+  - {file: app/utils/ai_clients/providers/mistral_provider.py, function: MistralProvider.generate_summary, api: "mistralai.Mistral.chat.stream_async / complete_async", has_timeout: false}
+  - {file: app/utils/ai_clients/providers/mistral_provider.py, function: MistralProvider.generate, api: "mistralai.Mistral.chat.stream_async / complete_async", streaming: false, has_timeout: false}
+  - {file: app/utils/ai_clients/providers/openai_provider.py, function: OpenAIProvider.generate_stream, api: "openai.AsyncOpenAI.chat.completions.create", streaming: true, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/openai_provider.py, function: OpenAIProvider.generate_summary, api: "openai.AsyncOpenAI.chat.completions.create", has_timeout: true}
+  - {file: app/utils/ai_clients/providers/openai_provider.py, function: OpenAIProvider.generate, api: "openai.AsyncOpenAI.chat.completions.create", streaming: false, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/openrouter_provider.py, function: OpenRouterProvider.generate_stream, api: "openai.AsyncOpenAI.chat.completions.create", streaming: true, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/openrouter_provider.py, function: OpenRouterProvider.generate_summary, api: "openai.AsyncOpenAI.chat.completions.create", has_timeout: true}
+  - {file: app/utils/ai_clients/providers/openrouter_provider.py, function: OpenRouterProvider.generate, api: "openai.AsyncOpenAI.chat.completions.create", streaming: false, has_timeout: true}
+  - {file: app/utils/ai_clients/providers/qwen_provider.py, function: QwenProvider.generate_stream, api: "openai.AsyncOpenAI.chat.completions.create", streaming: true, has_timeout: false}
+  - {file: app/utils/ai_clients/providers/qwen_provider.py, function: QwenProvider.generate_summary, api: "openai.AsyncOpenAI.chat.completions.create", has_timeout: false}
+  - {file: app/utils/ai_clients/providers/qwen_provider.py, function: QwenProvider.generate, api: "openai.AsyncOpenAI.chat.completions.create", streaming: false, has_timeout: false}
+  - {file: app/utils/ai_clients/providers/zai_provider.py, function: ZAIProvider.generate_stream, api: "openai.AsyncOpenAI.chat.completions.create", streaming: true, has_timeout: false}
+  - {file: app/utils/ai_clients/providers/zai_provider.py, function: ZAIProvider.generate_summary, api: "openai.AsyncOpenAI.chat.completions.create", has_timeout: false}
+  - {file: app/utils/ai_clients/providers/zai_provider.py, function: ZAIProvider.generate, api: "openai.AsyncOpenAI.chat.completions.create", streaming: false, has_timeout: false}
+
+existing_reliability:
+  tests: false
+  tracing: none
+  timeouts: true       # five providers set client timeouts; Grok, Qwen, Z.ai and Mistral do not
+  retries: false
+  evals: false
+
+expected_findings:
+  - {rule: rel.llm_timeout, item: app}         # Grok, Qwen, Z.ai and Mistral calls have no timeout
+  - {rule: rel.fallback_gateway, item: app}
+  - {rule: eval.regression_suite, item: app}
+  - {rule: obs.genai_tracing, item: app}
+# Not expected: inf.serving_baseline (the local provider talks to a llama.cpp server, not one of vLLM/SGLang/Ollama/TGI)

@@ -1,0 +1,69 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 6 (docs/scanner-eval-set6.md).
+# Selected by the fixed search procedure (bench/results/2026-10-13-set6/selection.md, #12).
+# Labeled from source at the pinned commit on 2026-10-13 BEFORE Furnace ran on this
+# repository; scanner frozen at 41ca529. Author: the developer agent (Claude), not
+# independently reviewed. Labeling rules: as in audiobook-creator.yaml (set 6 header).
+app: ps-fuzz
+split: held-out-6
+repo: https://github.com/prompt-security/ps-fuzz
+commit: 9c2138a820cc91c0f6d03d84b93c1ca5e0aeeccd
+purpose: CLI (prompt-security-fuzzer) that attacks a target system prompt with LLM-generated jailbreak prompts and scores the target LLM's replies; any LangChain chat-model backend
+
+routes: []
+
+llm_calls:   # every attack reaches the model through ChatSession.say -> ClientLangChain.interact
+  - file: ps_fuzz/chat_clients.py
+    function: ClientLangChain.interact
+    api: langchain BaseChatModel.generate (backend chosen at runtime; default ChatOpenAI)
+    model: gpt-3.5-turbo      # app_config defaults for attack and target
+    streaming: false
+    has_timeout: false
+
+model: gpt-3.5-turbo
+models: [gpt-3.5-turbo]
+serving_engine: openai       # default backend 'open_ai'; any LangChain provider is selectable
+
+uses_rag: false   # attacks/rag_poisoning.py retrieves from a temporary vector store to build an attack on the target, not to ground answers
+retrievers: []
+tools: []
+
+prompts:   # named prompt constants used as user messages to the attack/target models (no system prompt is defined in code; the target's comes from a user file)
+  - ps_fuzz/attacks/aim.py::unethical_task_generation_prompt
+  - ps_fuzz/attacks/aim.py::aim_prompt_template
+  - ps_fuzz/attacks/complimentary_transition.py::complimentary_transition_prompt
+  - ps_fuzz/attacks/dan.py::dan_prompt_template
+  - ps_fuzz/attacks/dynamic_test.py::attack_prompt_gen_template
+  - ps_fuzz/attacks/dynamic_test.py::steal_system_prompt_attack_text
+  - ps_fuzz/attacks/ethical_compliance.py::unethical_task_generation_prompt
+  - ps_fuzz/attacks/self_refine.py::unethical_task_generation_prompt
+  - ps_fuzz/attacks/self_refine.py::self_refine_prompt_template
+  - ps_fuzz/attacks/ucar.py::ucar_task_generation_prompt
+dynamic_head: false
+
+workflows:
+  - cli:ps_fuzz/cli.py
+
+existing_reliability:
+  tests: true
+  tracing: none
+  timeouts: false
+  retries: false
+  evals: false
+
+contradictions: []
+
+expected_findings:
+  - {rule: rel.llm_timeout, item: app}
+  - {rule: rel.fallback_gateway, item: app}
+  - {rule: eval.regression_suite, item: app}
+  - {rule: obs.genai_tracing, item: app}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/aim.py, symbol: unethical_task_generation_prompt, line: 12}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/aim.py, symbol: aim_prompt_template, line: 18}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/complimentary_transition.py, symbol: complimentary_transition_prompt, line: 12}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/dan.py, symbol: dan_prompt_template, line: 12}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/dynamic_test.py, symbol: attack_prompt_gen_template, line: 16}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/dynamic_test.py, symbol: steal_system_prompt_attack_text, line: 34}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/ethical_compliance.py, symbol: unethical_task_generation_prompt, line: 12}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/self_refine.py, symbol: unethical_task_generation_prompt, line: 12}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/self_refine.py, symbol: self_refine_prompt_template, line: 18}}
+  - {rule: obs.prompt_versioning, item: {file: ps_fuzz/attacks/ucar.py, symbol: ucar_task_generation_prompt, line: 12}}

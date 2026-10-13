@@ -1,0 +1,66 @@
+# Hand-written ground truth for FurnaceBench RQ1, held-out SET 6 (docs/scanner-eval-set6.md).
+# Selected by the fixed search procedure (bench/results/2026-10-13-set6/selection.md, #16).
+# Labeled from source at the pinned commit on 2026-10-13 BEFORE Furnace ran on this
+# repository; scanner frozen at 41ca529. Author: the developer agent (Claude), not
+# independently reviewed. Labeling rules: as in audiobook-creator.yaml (set 6 header).
+app: mdflux
+split: held-out-6
+repo: https://github.com/ibrahimqureshae/mdflux
+commit: 00c602534cf3a23174ef48f12d44ba00036d3398
+purpose: Tauri desktop app converting documents to Markdown; its Python sidecar (stdin/stdout JSON) optionally cleans the Markdown with an LLM (local Ollama or OpenAI-compatible server, cloud OpenAI-compatible, or Anthropic) over raw HTTP
+
+routes: []
+
+llm_calls:   # raw httpx requests; each streams and falls back to a non-streamed request
+  - file: app/src-tauri/resources/sidecar/provider.py
+    function: chat_openai_compat
+    also_accept: [_stream_openai, _post_json_async]
+    api: httpx POST {base}/chat/completions (OpenAI-compatible)
+    model: null     # chosen at runtime (first suitable model the server lists)
+    streaming: true
+    has_timeout: true      # httpx.Timeout with an idle read timeout
+  - file: app/src-tauri/resources/sidecar/provider.py
+    function: chat_ollama
+    api: httpx POST {base}/api/chat (Ollama native)
+    model: null
+    streaming: true
+    has_timeout: true
+  - file: app/src-tauri/resources/sidecar/provider.py
+    function: chat_anthropic
+    also_accept: [_post_json_async]
+    api: httpx POST https://api.anthropic.com/v1/messages
+    model: null
+    streaming: true
+    has_timeout: true
+
+model: null
+models: []          # chosen at runtime from the provider's model list
+serving_engine: [ollama, openai, anthropic]
+
+uses_rag: false
+retrievers: []
+tools: []
+
+prompts:
+  - app/src-tauri/resources/sidecar/cleanup.py::_SYSTEM_PROMPT
+dynamic_head: false
+
+workflows:
+  - cli:app/src-tauri/resources/sidecar/main.py     # the sidecar's request loop, driven by the Tauri app
+
+existing_reliability:
+  tests: true
+  tracing: none
+  timeouts: true
+  retries: false     # a request is re-sent without streaming only when the server rejects streaming; no retry on failures
+  evals: false
+
+contradictions: []
+
+expected_findings:
+  - {rule: rel.fallback_gateway, item: app}       # chat_local's Ollama-native -> OpenAI-compatible switch is an API fallback on the same server, not a failover endpoint
+  - {rule: eval.regression_suite, item: app}
+  - {rule: obs.genai_tracing, item: app}
+  - {rule: obs.prompt_versioning, item: {file: app/src-tauri/resources/sidecar/cleanup.py, symbol: _SYSTEM_PROMPT, line: 63}}
+  - {rule: inf.serving_baseline, item: app}       # local mode serves the model with Ollama
+# Not expected: rel.llm_timeout (all three set timeouts); prefix_stability_guard (_SYSTEM_PROMPT is 645 chars)

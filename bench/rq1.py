@@ -121,8 +121,16 @@ def score(spec: AppSpec, gt: dict[str, Any]) -> dict[str, Any]:
     cats: dict[str, Any] = {}
     attrs: list[dict[str, Any]] = []
     calib: list[tuple[float, bool, str]] = []
+    # Categories the label file declares it did not label (decided before the first scan,
+    # e.g. held-out set 6): scored as nothing, so predictions there are neither TP nor FP.
+    skip = set(gt.get("not_labeled") or [])
+    attr_cat = {"rag": "rag", "retriever": "rag", "tool": "tools", "prompt": "dynamic_head",
+                "existing": "existing_reliability"}  # fmt: skip
 
     def setcat(name, truth, pred, eq, show: Callable[[Any], str] = str):
+        if name in skip or (name == "retrievers" and "rag" in skip):
+            cats[name] = {**prf(0, 0, 0), "missed": [], "false_positives": [], "not_labeled": True}
+            return []
         pairs, missed, extra = match(truth, pred, eq)
         cats[name] = {
             **prf(len(pairs), len(pred), len(truth)),
@@ -132,6 +140,8 @@ def score(spec: AppSpec, gt: dict[str, Any]) -> dict[str, Any]:
         return pairs
 
     def attr(name: str, truth: Any, pred: Any, claim=None) -> None:
+        if attr_cat.get(name.split(".", 1)[0]) in skip:
+            return
         ok = _norm(truth) == _norm(pred)
         attrs.append({"attr": name, "truth": truth, "pred": pred, "correct": ok})
         if claim is not None:
@@ -238,7 +248,8 @@ def score(spec: AppSpec, gt: dict[str, Any]) -> dict[str, Any]:
 
     # workflows
     def wf_eq(t: str, p) -> bool:
-        if t.startswith(("cli:", "streamlit:")):
+        # "<kind>:<file>" names a script/app entry point by its file (cli, streamlit, gradio...)
+        if re.match(r"^[a-z]+:[^ ]+\.py$", t):
             return t.split(":", 1)[1] in p.key
         return _norm(t) == _norm(p.name)
 
