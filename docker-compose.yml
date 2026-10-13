@@ -27,6 +27,10 @@ services:
       - --max-model-len=${FURNACE_LAB_MAX_LEN:-4096}
       - --max-num-seqs=${FURNACE_LAB_MAX_SEQS:-32}
     ports: ["8100:8000"]
+    # The model comes from the mounted cache. The container also sits on the internal sandbox
+    # network, and on 2026-10-13 its Hub lookups hung for minutes ("Network is unreachable")
+    # before falling back to the cache; offline mode skips the lookup. Serving is unchanged.
+    environment: ["HF_HUB_OFFLINE=1"]
     volumes: ["${HF_HOME_HOST:-~/.cache/huggingface}:/root/.cache/huggingface"]
     ipc: host
     deploy:
