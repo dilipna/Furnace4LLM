@@ -74,7 +74,7 @@ name (history in git).
 |---|---|---|
 | Experiments finished under the frozen protocol, negative results kept | verified | RQ5 and optimizer as above |
 | Documentation committed | verified | 34aa551 (results), baa02a2 and the final commit (docs, copy) |
-| Required checks on the final commit (`poe check`, web lint/tsc/build) | pending | |
+| Required checks on the final code commit (`poe check`, web lint/tsc/build) | verified | at 61124c6: ruff, format, import contracts 2/2, pyright 0 errors, pytest 389 passed / 2 skipped; web lint, tsc, `next build` ok. Later commits change docs only. Linux CI runs after a push (not pushed yet) |
 | One end-to-end rehearsal (`scripts/rehearse.py`) | verified (local path only) | 2026-10-13 at baa02a2: 6/6 steps, no page errors; Guard flagged R1 (`docs/demo.md` rehearsal record). The GitHub steps are not covered (blocked, E) |
 | Three-minute demo script | verified | `docs/demo-3min.md` |
 | Demo recording | verified (silent, local path) | `docs/demo-video/demo-2026-10-13-1537.webm` (git-ignored); a narrated three-minute take is the owner's |
