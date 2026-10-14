@@ -15,8 +15,7 @@ type Cmp = {
 export type Trial = {
   repeat: number;
   status: string;
-  prDiff: { minus: string[]; plus: string[] } | null;
-  repairDiff: { minus: string[]; plus: string[] } | null;
+  repairDiff: string[] | null;
   strategy: string | null;
   firstRejected: { strategy: string; verdict: string } | null;
   reproOk: boolean;
@@ -30,25 +29,29 @@ export type Trial = {
 const pct = (x: number) => `${x > 0 ? "+" : ""}${x.toFixed(1)}%`;
 const hitPct = (h: number | null | undefined) => (h == null ? "–" : `${Math.round(h * 100)}%`);
 
-function DiffLines({ minus, plus }: { minus: string[]; plus: string[] }) {
+/** A unified diff excerpt: hunk headers muted, context plain, removals red, additions green. */
+function DiffLines({ lines }: { lines: string[] }) {
   return (
     <pre className="num rounded-[3px] border border-line bg-bg-0 py-2 text-[11.5px] leading-[1.6]">
-      {minus.map((l, i) => (
-        <div key={`m${i}`} className="bg-bad/10 py-px pr-3 pl-7 -indent-4 break-all whitespace-pre-wrap text-[#e8a597]">
-          <span aria-hidden="true" className="mr-2 select-none text-bad">
-            −
-          </span>
-          {l.trim()}
-        </div>
-      ))}
-      {plus.map((l, i) => (
-        <div key={`p${i}`} className="bg-ok/10 py-px pr-3 pl-7 -indent-4 break-all whitespace-pre-wrap text-[#b9d3a9]">
-          <span aria-hidden="true" className="mr-2 select-none text-ok">
-            +
-          </span>
-          {l.trim()}
-        </div>
-      ))}
+      {lines.map((l, i) => {
+        const k = l[0];
+        const cls =
+          k === "@"
+            ? "text-fg-3"
+            : k === "-"
+              ? "bg-bad/10 text-[#e8a597]"
+              : k === "+"
+                ? "bg-ok/10 text-[#b9d3a9]"
+                : "text-fg-2";
+        return (
+          <div key={i} className={`py-px pr-3 pl-7 -indent-4 break-all whitespace-pre-wrap ${cls}`}>
+            <span aria-hidden="true" className={`mr-2 select-none ${k === "-" ? "text-bad" : k === "+" ? "text-ok" : "text-fg-3"}`}>
+              {k === "@" ? "" : k === " " ? " " : k === "-" ? "−" : "+"}
+            </span>
+            {k === "@" ? l : l.slice(1)}
+          </div>
+        );
+      })}
     </pre>
   );
 }
@@ -90,7 +93,19 @@ function Step({ n, title, children, last }: { n: number; title: React.ReactNode;
 }
 
 /** One pull request, measured: change → effect → decision → draft repair → human review. */
-export function PrReviewView({ trials, metric, campaign, source }: { trials: Trial[]; metric: string; campaign: string | null; source: string }) {
+export function PrReviewView({
+  trials,
+  prDiff,
+  metric,
+  campaign,
+  source,
+}: {
+  trials: Trial[];
+  prDiff: string[] | null;
+  metric: string;
+  campaign: string | null;
+  source: string;
+}) {
   const [i, setI] = useState(0);
   if (!trials.length) {
     return (
@@ -134,13 +149,13 @@ export function PrReviewView({ trials, metric, campaign, source }: { trials: Tri
       </figcaption>
 
       <div className="px-4 pt-4 sm:px-5">
-        <p className="text-[11px] text-fg-3">Pull request into main · fixture app F1 (support assistant)</p>
+        <p className="text-[11px] text-fg-3">Scripted pull request into main · fixture app F1 (support assistant)</p>
         <p className="mt-1 text-[14px] font-medium text-fg-0">“Add request id and timestamp to the system prompt for debugging”</p>
       </div>
 
       <ol className="px-4 pt-4 sm:px-5">
         <Step n={1} title={<>The change <span className="num text-[11px] font-normal text-fg-3">app/prompts.py · build_messages</span></>}>
-          {t.prDiff ? <DiffLines {...t.prDiff} /> : null}
+          {prDiff ? <DiffLines lines={prDiff} /> : null}
           <p className="text-[12px] text-fg-2">
             Answers stay the same, so output-quality evals pass. But every request now starts with different text,
             so the server can no longer reuse its cached prompt prefix.
@@ -178,7 +193,21 @@ export function PrReviewView({ trials, metric, campaign, source }: { trials: Tri
               values in the prompt). Then <code className="num text-fg-1">{t.strategy}</code>:
             </p>
           )}
-          {t.repairDiff && t.status === "verified" ? <DiffLines minus={t.repairDiff.minus} plus={t.repairDiff.plus} /> : null}
+          {t.repairDiff && t.status === "verified" ? (
+            <details className="group">
+              <summary className="num cursor-pointer list-none text-[12px] text-fg-2 select-none hover:text-fg-0">
+                <span aria-hidden="true" className="mr-1.5 inline-block transition-transform duration-150 group-open:rotate-90">
+                  ▸
+                </span>
+                app/prompts.py <span className="text-ok">+{t.repairDiff.filter((l) => l.startsWith("+")).length}</span>{" "}
+                <span className="text-bad">−{t.repairDiff.filter((l) => l.startsWith("-")).length}</span>
+                <span className="text-fg-3"> · show the repair diff</span>
+              </summary>
+              <div className="mt-2">
+                <DiffLines lines={t.repairDiff} />
+              </div>
+            </details>
+          ) : null}
           {rm && rp && (
             <>
               <Bar k={`r${i}`} label="repair" ms={rm.value} max={max} hit={hitPct(rm.hit?.[1])} tone="base" />

@@ -21,15 +21,15 @@ uv run python scripts/rehearse.py            # optional: the whole part A path i
 ```
 
 Keep the laptop on AC and the lid open (a sleeping laptop stops Docker and every job). Open
-tabs: `http://localhost:3100/`, `/lab`, `/guard/r1_dynamic_head`, `/bench`.
+tabs: `http://localhost:3100/`, `/lab`, `/pilot`, `/guard/r1_dynamic_head`, `/bench`.
 
 ## Part A (local, 5:00)
 
 | time | show | say, and where the number comes from |
 |---|---|---|
-| 0:00 | **Landing**: press Replay on the R1 before/after | "A PR adds a request id to the top of the system prompt 'for debugging'. Nothing breaks functionally, but no two requests share a prompt prefix any more: prefix-cache hit 98% → 0% and time to first token up about 9x." Read the bars off the page; the caption names the metric and links the source (`rq5.md` of the newest campaign). The repair bar shows only repairs the gate accepted, with "verified in k/n attempts". |
-| 0:30 | **Live lab panel** under the hero | vLLM's own counters and the GPU's power, clock and temperature, once a second; nothing moves unless the system moved. |
-| 0:45 | **Scan**: paste `github.com/Azure-Samples/openai-chat-app-quickstart` | The stage log types in with real timings (a few seconds); every Blueprint finding cites file and line. "It reads Python. On apps it had never seen, its first scans found 4 of 34 labeled LLM call sites: precise, not yet broad, and the misses are listed." (`2026-10-12-reconcile/scanner_reconciliation.md`) |
+| 0:00 | **Landing**: the recorded PR panel; click trials 1-3 | "A PR adds a request id to the top of the system prompt 'for debugging'. Nothing breaks functionally, but no two requests share a prompt prefix any more: prefix-cache hit 98% → 0%, geometric-mean time to first token about seven times higher, BLOCK. The repair logs the values instead: about 86% lower than the PR, within +0.9% to +4.2% of main." Every figure is per trial from `2026-10-12-gate-validation/rq5.json`; the diff is generated from the scenario (`scripts/export_pr_diff.py`). Say it is recorded: the panel says so. |
+| 0:30 | **/lab**, the live panel | vLLM's own counters and the GPU's power, clock and temperature, once a second; nothing moves unless the system moved. |
+| 0:45 | **Scan** (on `/pilot`): paste `github.com/Azure-Samples/openai-chat-app-quickstart` | The stage log types in with real timings (a few seconds); every Blueprint finding cites file and line. "It reads Python. On apps it had never seen, on its first scan of five unseen apps it found 32 of 48 labeled LLM call sites, and 39 of its 77 findings were right, so findings are advisory." (`2026-10-13-set6/NOTES.md`) |
 | 1:30 | **Graph**: click the `POST` workflow | The path traces route → handler → system prompt → model → endpoint → vLLM flags. "This graph is how Guard decides which checks a diff can affect." |
 | 1:50 | **/lab → Run it now** (~30 s), and **start step 3:00 in the other tab now** | Each dot is one real request's TTFT against the RQ4 ticks for prefix caching on/off. "Turning prefix caching off raised p95 TTFT by +96% to +433% across all 15 measured cells, same sign in every paired repeat." (`2026-10-06/rq4/rq4.md`) |
 | 2:30 | **Queue correlation** (`2026-10-12-correlation/correlation.md`) | "vLLM only queues when concurrency exceeds max-num-seqs; there, time to first token tracks the queue (rho +0.41 with caching on). Below that there is no queue to blame." |

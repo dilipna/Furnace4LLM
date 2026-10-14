@@ -1,0 +1,25 @@
+{
+  "scenario": "r1_dynamic_head",
+  "title": "R1: request id and timestamp prepended to the system prompt 'for debugging'",
+  "source": "fixtures/scenarios/f1_scenarios.py",
+  "files": [
+    {
+      "path": "app/prompts.py",
+      "lines": [
+        "@@ -1 +1,4 @@",
+        "+import uuid",
+        "+from datetime import UTC, datetime",
+        "+",
+        " from app.retriever import Chunk",
+        "@@ -59,3 +62,6 @@",
+        "     return [",
+        "-        {\"role\": \"system\", \"content\": SYSTEM_PROMPT},",
+        "+        {",
+        "+            \"role\": \"system\",",
+        "+            \"content\": f\"Request {uuid.uuid4().hex[:8]} at {datetime.now(UTC).isoformat()}\\n\" + SYSTEM_PROMPT,",
+        "+        },",
+        "         {\"role\": \"user\", \"content\": f\"CONTEXT:\\n{context}\\n\\nQUESTION: {question}\"},"
+      ]
+    }
+  ]
+}
