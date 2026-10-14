@@ -83,7 +83,8 @@ One GPU, one small model, one workload; the driver picks the clock (780 MHz here
 after one reboot), so only equal-clock results are compared. One repairable regression
 family, rule-based. Python only. The LLM judge is built but uncalibrated (no labels) and
 decides nothing. Labels for held-out sets were written by the developer agent. The GitHub
-App path is tested against a mock GitHub; a live run is claimed only if
-`bench/results/*-live-github/` exists. The production API image passed a local smoke test
+App path ran once on a public repository on 2026-10-14 (attempt 1 failed at Forge on a
+workflow-file permission and is kept; attempt 2 passed every step, verification 10/10:
+[notes](../bench/results/2026-10-14-live-github/NOTES.md)). The production API image passed a local smoke test
 (`scripts/smoke_hosted.py`); it is not deployed. Verification levels are kept apart:
-local (verified), real GitHub (pending), hosted (not deployed).
+local (verified), real GitHub (one live trial, verified), hosted (not deployed).

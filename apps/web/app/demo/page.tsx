@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BenchStrip } from "@/components/marketing/bench-strip";
+import { LiveGithub } from "@/components/marketing/live-github";
 import { PrReview } from "@/components/marketing/pr-review";
 import { AppHeader } from "@/components/ui/app-header";
 import { SiteFooter } from "@/components/ui/site-footer";
@@ -74,6 +75,8 @@ export default function DemoPage() {
             </div>
           </div>
         </section>
+
+        <LiveGithub />
 
         <BenchStrip />
       </main>

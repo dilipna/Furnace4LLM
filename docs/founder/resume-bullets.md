@@ -20,8 +20,8 @@ after it is deployed)
 ## B. Applied AI and forward-deployed engineering
 
 - Built a GitHub check for LLM serving performance end to end (FastAPI, Postgres job queue
-  with leases, Docker sandbox, GitHub App webhooks, check runs, draft PRs); it ran 46% of
-  checks and reached the full suite's verdict on 13/13 scripted PRs.
+  with leases, Docker sandbox, GitHub App webhooks, check runs, draft PRs), verified on a
+  public repository; it ran 46% of checks with the full suite's verdict on 13/13 scripted PRs.
 - Shipped failing-test-first repair for one regression family: a draft PR opens only after
   the new test, the suite and the perf gate pass; verified in 3/3 trials (TTFT 86% below the
   PR, within 4.2% of main); wrote pilot onboarding that states every limit.
@@ -35,7 +35,7 @@ after it is deployed)
 | 193-433% | `bench/results/2026-10-06/rq4/rq4.md` | max-num-seqs 32, every cell, same sign in every paired repeat, laptop RTX 3050 Ti at 780 MHz, Qwen2.5-0.5B |
 | 46%; 13/13 | `bench/results/2026-10-06/rq3.md` | 13 scripted PRs on fixture F1, under the gate of that date (a p95 point rule later found biased); the selection does not depend on the gate, the perf verdicts do |
 | 3/3; 86% below the PR; within 4.2% of main | `bench/results/2026-10-12-gate-validation/rq5.md` | three repeated trials of **one** scenario (fixture F1, regression R1), not a rate over apps; the first strategy was rejected by the same gate; repaired prompts byte-identical to main for 34/34 questions |
-| GitHub App, check runs, draft PRs | `docs/github-app.md`, `docs/security.md` | tested against a mock GitHub with 390+ tests; **the live run on a real repository is pending** (say so if asked, and update this line after `live_run.md` exists) |
+| GitHub App, check runs, draft PRs; verified on a public repository | `bench/results/2026-10-14-live-github/`, `docs/security.md` | 390+ tests against a mock GitHub, then one live run on a public repository: check run on the PR head, draft fix, independent verification 10/10. The first attempt hit a 403 (workflow files need a permission the App does not hold); a good story about least privilege if asked |
 
 ## Do not write
 

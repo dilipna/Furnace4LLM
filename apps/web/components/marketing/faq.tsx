@@ -46,7 +46,7 @@ export function Faq({ s }: { s: Story | null }) {
         It works for Python apps that build prompts in code and call a model you serve (measured on vLLM). It needs a
         runner on a machine with Docker and a GPU. It can repair one regression family: per-request values at the start
         of a prompt. Not yet: TypeScript, latency on hosted APIs, and other repairs, which it refuses rather than guesses.
-        The GitHub App path has passed tests against a mock GitHub; the first run on real GitHub is in progress.
+        The GitHub flow ran end to end once on a public repository (a check run on the right commit, a draft fix, real webhooks); that is one live trial, not a track record.
       </>,
     ],
     [

@@ -60,7 +60,9 @@ latency. Payment is untested; candidate models are below.
 
 ## What is not proven
 
-- **No live GitHub run yet.** The App path is tested against a mock GitHub only.
+- **One live GitHub run.** On 2026-10-14 the whole flow ran on a public repository
+  (check run on the right commit, draft fix, real webhooks; verification 10/10). The first
+  attempt failed at a GitHub permission and was fixed. One run is not a track record.
 - **One fixture, one regression family, one GPU, one small model** (Qwen2.5-0.5B on a laptop
   RTX 3050 Ti at 780 MHz). Nothing has been measured on a production-scale model or server.
 - **Small regressions:** changes sized at +13% to +30% measured +4% to +7% inside the gate

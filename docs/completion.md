@@ -57,8 +57,9 @@ name (history in git).
 
 | criterion | status | what is left |
 |---|---|---|
-| App with the manifest's permissions, installed on `furnace-demo-f1` only | **blocked** | owner: create the public repo and run `furnace gh-setup` (`docs/github-app.md`) |
-| Live Forge PR, Guard check run, repair draft PR; URLs, SHAs, check results, webhook checks | **blocked** | `scripts/live_github_run.py`, `scripts/live_github_verify.py` ready; mock-tested only; not claimed |
+| App with the manifest's permissions, installed on `furnace-demo-f1` only | verified | `bench/results/2026-10-14-live-github/verify.md`: permissions equal the manifest; installation covers that repository only |
+| Live Forge PR, Guard check run, repair draft PR; URLs, SHAs, check results, webhook checks | verified (one live trial) | attempt 2: PRs #1, #2, #3, check run 115692708323 `failure` on 0a637d7, repair -1.6% vs main; verification 10/10 incl. real deliveries, redelivery no-op, forgeries 401. Attempt 1 failed at Forge (403 on a workflow file), kept in `attempt-1/`; fix 40d41a3 |
+| Webhook-triggered Guard job | verified, reused | the real delivery queued one job; the runner ran it and reused the completed check run on that head (no duplicate); a fresh webhook-triggered Guard run on a new head is not shown |
 
 ## F. Deferred by decision
 
