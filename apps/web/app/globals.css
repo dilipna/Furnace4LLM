@@ -200,6 +200,18 @@ body {
   transform-origin: left center;
   animation: bar-fill 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
+/* Hero backdrop: a fine grid that fades out toward the edges, and one low ember glow (heat
+   from below, the product's namesake). Decorative only; both sit behind content. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--line) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--line) 70%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, black 30%, transparent 75%);
+}
+.hero-heat {
+  background: radial-gradient(ellipse 50% 60% at 50% 100%, color-mix(in oklab, var(--ember) 22%, transparent), transparent 70%);
+}
 /* Section rule with tick marks, like a gauge scale. Decorative only. */
 .ticks {
   background-image: repeating-linear-gradient(90deg, var(--line-strong) 0 1px, transparent 1px 12px);

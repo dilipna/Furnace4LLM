@@ -3,7 +3,7 @@
   uv run python scripts/rehearse.py [--base http://localhost:3100] [--repo github.com/o/r]
                                     [--out docs/demo-shots/rehearsal-1] [--skip-gpu]
 
-Steps: landing shows the recorded PR review and /lab's live panel connects -> GitHub scan (from /pilot) to Blueprint -> graph path
+Steps: landing and /demo show the recorded PR, /lab's live panel connects -> GitHub scan (from /pilot) to Blueprint -> graph path
 trace -> /lab "Run it now" (real benchmark on the lab endpoint) -> /guard/r1_dynamic_head
 "Run Guard on this PR" (real Guard run on the runner) -> /bench. Each step is timed from
 the user's action to the moment the result is on screen, and screenshotted. The GitHub
@@ -71,12 +71,22 @@ def main() -> int:
         page.on("pageerror", lambda exc: errors.append(str(exc)))
 
         def landing() -> str:
-            # 2026-10-14 landing: the recorded PR review is the hero; the live lab panel is on /lab.
+            # Landing (abstract hero, recorded), then /demo (the recorded PR, per trial), then
+            # /lab's live panel; the scan box lives on /pilot.
             page.goto(a.base + "/", wait_until="load")
-            page.get_by_text("RECORDED RUN · NOT LIVE").first.wait_for(timeout=20_000)
-            if pace:  # step through the three repeated trials, then back to trial 1
-                for t in ("2", "3", "1"):
+            page.get_by_text("RECORDED RUN").first.wait_for(timeout=20_000)
+            if pace:
+                page.wait_for_timeout(pace * 1500)
+                page.locator("#how").scroll_into_view_if_needed()
+                for t in ("Measure every pull request", "Decide with confidence", "Get a tested fix"):
                     page.get_by_role("tab", name=t).click()
+                    page.wait_for_timeout(pace * 1200)
+            page.goto(a.base + "/demo", wait_until="load")
+            page.get_by_text("RECORDED RUN · NOT LIVE").first.wait_for(timeout=20_000)
+            if pace:
+                page.locator("#walk-h").scroll_into_view_if_needed()
+                for t in ("2", "3", "1"):
+                    page.get_by_role("tab", name=t, exact=True).click()
                     page.wait_for_timeout(pace * 700)
             page.goto(a.base + "/lab", wait_until="load")
             page.get_by_text("Lab endpoint").first.wait_for(timeout=20_000)
@@ -84,7 +94,7 @@ def main() -> int:
             live = page.get_by_text("live · 1 s").count() > 0
             if pace:
                 page.wait_for_timeout(pace * 1500)
-            page.goto(a.base + "/pilot", wait_until="load")  # the scan box lives on /pilot
+            page.goto(a.base + "/pilot", wait_until="load")
             return "lab live" if live else "lab offline (recorded run shown)"
 
         def scan() -> str:

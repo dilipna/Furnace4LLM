@@ -1,18 +1,39 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/ui/wordmark";
 
-const NAV = [
+const NAV: [string, string][] = [
   ["/guard", "Guard"],
   ["/lab", "Inference Lab"],
   ["/evals", "Evaluations"],
   ["/bench", "Evidence"],
-] as const;
+];
+// The landing page speaks to visitors first; the app pages keep the product sections.
+const MARKETING_NAV: [string, string][] = [
+  ["/#how", "How it works"],
+  ["/demo", "Demo"],
+  ["/bench", "Evidence"],
+  ["/#faq", "FAQ"],
+];
 
 // Narrow screens keep the two links a first-time visitor needs; the footer links every page.
-const HIDE: Record<string, string> = { "/lab": "hidden sm:inline", "/evals": "hidden md:inline" };
+const HIDE: Record<string, string> = {
+  "/lab": "hidden sm:inline",
+  "/evals": "hidden md:inline",
+  "/#how": "hidden sm:inline",
+  "/#faq": "hidden md:inline",
+};
 
 /** Shared top bar. `active` is the href of the current section, highlighted in fg-0. */
-export function AppHeader({ active, right }: { active?: string; right?: React.ReactNode }) {
+export function AppHeader({
+  active,
+  right,
+  variant = "app",
+}: {
+  active?: string;
+  right?: React.ReactNode;
+  variant?: "app" | "marketing";
+}) {
+  const nav = variant === "marketing" ? MARKETING_NAV : NAV;
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-bg-0/90 backdrop-blur-sm">
       <div className="mx-auto flex h-14 w-full max-w-[1280px] items-center justify-between gap-4 px-4 sm:px-6">
@@ -21,7 +42,7 @@ export function AppHeader({ active, right }: { active?: string; right?: React.Re
         </Link>
         <nav aria-label="Main" className="flex min-w-0 items-center gap-4 text-[13px] text-fg-2 sm:gap-5">
           <div className="flex min-w-0 items-center gap-4 overflow-x-auto sm:gap-5">
-            {NAV.map(([href, label]) => (
+            {nav.map(([href, label]) => (
               <Link
                 key={href}
                 href={href}
@@ -36,9 +57,10 @@ export function AppHeader({ active, right }: { active?: string; right?: React.Re
           <Link
             href="/pilot"
             aria-current={active === "/pilot" ? "page" : undefined}
-            className="shrink-0 rounded-[3px] border border-ember/70 px-3 py-1.5 text-[12.5px] whitespace-nowrap text-fg-0 transition-colors duration-150 hover:bg-ember hover:text-bg-0"
+            className="shrink-0 rounded-full bg-ember px-4 py-1.5 text-[12.5px] font-medium whitespace-nowrap text-bg-0 transition-colors duration-150 hover:bg-ember-hi"
           >
-            Pilot
+            <span className="sm:hidden">Pilot</span>
+            <span className="hidden sm:inline">Design partners</span>
           </Link>
         </nav>
       </div>
