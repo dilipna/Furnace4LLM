@@ -1,0 +1,195 @@
+{
+  "manifest": {
+    "date": "2026-10-14",
+    "started_at": "2026-10-14T05:20:52+00:00",
+    "git": {
+      "sha": "345665678b8c254ba6352171b8a6913f271cb17d",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 70,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "scripts/live_github_verify.py",
+      "--repo",
+      "dilipna/furnace-demo-f1",
+      "--api",
+      "http://localhost:8010"
+    ]
+  },
+  "repo": "dilipna/furnace-demo-f1",
+  "run": "C:\\dev\\furnace\\bench\\results\\2026-10-14-live-github\\live_run.json",
+  "results": [
+    {
+      "check": "permissions",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "permissions": {
+          "checks": "write",
+          "contents": "write",
+          "metadata": "read",
+          "pull_requests": "write"
+        },
+        "events": [
+          "pull_request"
+        ],
+        "repository_selection": "selected",
+        "repositories": [
+          "dilipna/furnace-demo-f1"
+        ]
+      },
+      "seconds": 1.3
+    },
+    {
+      "check": "token_scope",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "scan_token_create_branch": 403,
+        "scan_token_create_check_run": 403,
+        "guard_token_create_branch": 403
+      },
+      "seconds": 2.5
+    },
+    {
+      "check": "attribution",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "pr_head": "0a637d779689cc6d30a6adcd4409bf83c1c27824",
+        "check_run_head": "0a637d779689cc6d30a6adcd4409bf83c1c27824",
+        "conclusion": "failure",
+        "furnace_check_runs_on_head": 1
+      },
+      "seconds": 1.1
+    },
+    {
+      "check": "check_updates",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "started_at": "2026-10-14T05:11:41Z",
+        "completed_at": "2026-10-14T05:13:16Z",
+        "title": "2 regressions found: prompt_prefix_stable, chat_perf_gate",
+        "annotations": [
+          "app/prompts.py:1 failure",
+          "app/prompts.py:63 failure",
+          "app/prompts.py:1 failure",
+          "app/prompts.py:63 failure"
+        ]
+      },
+      "seconds": 0.4
+    },
+    {
+      "check": "draft_prs",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "pr_1": {
+          "draft": true,
+          "head": "furnace/forge-bb4d918",
+          "base": "main",
+          "by": "furnace-dev-dilipna[bot]",
+          "url": "https://github.com/dilipna/furnace-demo-f1/pull/1"
+        },
+        "pr_3": {
+          "draft": true,
+          "head": "furnace/repair-pr2-0a637d7",
+          "base": "r1-request-id",
+          "by": "furnace-dev-dilipna[bot]",
+          "url": "https://github.com/dilipna/furnace-demo-f1/pull/3"
+        }
+      },
+      "seconds": 2.0
+    },
+    {
+      "check": "branches_intact",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "main": {
+          "before": "bb4d9186d57a05b6bb4ab0b46ab8f9c77a3d10a8",
+          "now": "bb4d9186d57a05b6bb4ab0b46ab8f9c77a3d10a8"
+        },
+        "r1-request-id": {
+          "before": "0a637d779689cc6d30a6adcd4409bf83c1c27824",
+          "now": "0a637d779689cc6d30a6adcd4409bf83c1c27824"
+        }
+      },
+      "seconds": 0.5
+    },
+    {
+      "check": "no_duplicates",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "open_furnace_prs_by_base": {
+          "r1-request-id": [
+            3
+          ],
+          "main": [
+            1
+          ]
+        }
+      },
+      "seconds": 0.2
+    },
+    {
+      "check": "webhook_real_deliveries",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "deliveries": 3,
+        "status_codes": [
+          200
+        ],
+        "outcomes": [
+          "ignored",
+          "queued"
+        ]
+      },
+      "seconds": 1.1
+    },
+    {
+      "check": "webhook_redelivery_noop",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "before": [
+          1,
+          1
+        ],
+        "after": [
+          1,
+          1
+        ],
+        "redelivery_status": [
+          200
+        ]
+      },
+      "seconds": 15.8
+    },
+    {
+      "check": "webhook_forgery_refused",
+      "ok": true,
+      "problems": [],
+      "seen": {
+        "unsigned": 401,
+        "wrong secret": 401,
+        "tampered body": 401,
+        "valid": 202,
+        "valid replay": 202
+      },
+      "seconds": 0.4
+    }
+  ],
+  "verdict": "PASS"
+}

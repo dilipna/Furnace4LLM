@@ -1,0 +1,420 @@
+{
+  "manifest": {
+    "date": "2026-10-14",
+    "started_at": "2026-10-14T05:11:15+00:00",
+    "git": {
+      "sha": "345665678b8c254ba6352171b8a6913f271cb17d",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 60,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "scripts/live_github_run.py",
+      "--repo",
+      "dilipna/furnace-demo-f1"
+    ]
+  },
+  "repo": "dilipna/furnace-demo-f1",
+  "branches_before": {
+    "main": "bb4d9186d57a05b6bb4ab0b46ab8f9c77a3d10a8",
+    "r1-request-id": "0a637d779689cc6d30a6adcd4409bf83c1c27824"
+  },
+  "steps": [
+    {
+      "step": "check",
+      "ok": true,
+      "out": {
+        "slug": "furnace-dev-dilipna",
+        "name": "furnace-dev-dilipna",
+        "permissions": {
+          "checks": "write",
+          "contents": "write",
+          "metadata": "read",
+          "pull_requests": "write"
+        },
+        "events": [
+          "pull_request"
+        ],
+        "installations": [
+          {
+            "id": 171233745,
+            "account": "dilipna"
+          }
+        ]
+      },
+      "seconds": 0.6
+    },
+    {
+      "step": "branches_before",
+      "ok": true,
+      "out": {
+        "main": "bb4d9186d57a05b6bb4ab0b46ab8f9c77a3d10a8",
+        "r1-request-id": "0a637d779689cc6d30a6adcd4409bf83c1c27824"
+      },
+      "seconds": 1.2
+    },
+    {
+      "step": "forge",
+      "ok": true,
+      "out": {
+        "validation": {
+          "ok": true,
+          "prompts_identical": true,
+          "installed_tests": "pass",
+          "existing_tests": "pass",
+          "resolved_findings": [
+            "eval.citation_contract",
+            "eval.grounding_judge",
+            "eval.regression_suite",
+            "inf.context_budget_gate",
+            "inf.prefix_stability_guard",
+            "inf.serving_baseline",
+            "obs.prompt_versioning",
+            "rel.llm_timeout",
+            "sec.approval_gate_regression_test"
+          ],
+          "remaining_findings": [
+            "obs.genai_tracing",
+            "rel.fallback_gateway"
+          ]
+        },
+        "pr": {
+          "number": 1,
+          "url": "https://github.com/dilipna/furnace-demo-f1/pull/1",
+          "state": "open",
+          "commit": "69b739093cdb4a83f83b1017fb1e8edd4b280fd4",
+          "branch": "furnace/forge-bb4d918",
+          "reused": false
+        },
+        "held_back": [
+          ".github/workflows/furnace.yml"
+        ]
+      },
+      "seconds": 20.6
+    },
+    {
+      "step": "r1_pr",
+      "ok": true,
+      "out": {
+        "number": 2,
+        "url": "https://github.com/dilipna/furnace-demo-f1/pull/2",
+        "opened": true
+      },
+      "seconds": 2.2
+    },
+    {
+      "step": "guard",
+      "ok": true,
+      "out": {
+        "check_id": 115692708323,
+        "conclusion": "failure",
+        "title": "2 regressions found: prompt_prefix_stable, chat_perf_gate",
+        "signatures": [
+          "prefix_instability"
+        ]
+      },
+      "seconds": 97.2
+    },
+    {
+      "step": "repair",
+      "ok": true,
+      "out": {
+        "status": "verified",
+        "perf": {
+          "summary": "geometric-mean TTFT base 72.4 | PR 72.4 -> 502.1 ms (+593.5%, 90% interval +565.2% to +623.0%; BLOCK at tolerance 10%) | repair 72.4 -> 71.3 ms (-1.6%, 90% interval -9.1% to +6.6%; PASS at tolerance 10%)",
+          "reasons": [
+            "faster than the PR head: change -85.8% (90% interval -86.9% to -84.6%)",
+            "worst case vs base +6.6% < block threshold 25% (change -1.6%)",
+            "within the 10% noise tolerance of base: shown (whole interval inside)"
+          ],
+          "within_budget": true,
+          "head_vs_base": {
+            "metric": "ttft_gmean_ms",
+            "baseline": 72.4,
+            "value": 502.1,
+            "tolerance_pct": 10.0,
+            "block_pct": 25.0,
+            "confidence": 0.9,
+            "runs": 3,
+            "baseline_runs": [
+              70.7,
+              72.8,
+              73.7
+            ],
+            "value_runs": [
+              487.6,
+              506.7,
+              512.4
+            ],
+            "separated": true,
+            "method": "run-level Welch t interval on mean log TTFT (geometric mean), 90% two-sided",
+            "change_pct": 593.5,
+            "ci_pct": [
+              565.2,
+              623.0
+            ],
+            "verdict": "block",
+            "p95_advisory": {
+              "baseline": 94.8,
+              "value": 899.8,
+              "change_pct": 849.0,
+              "ci_pct": [
+                818.8,
+                880.2
+              ],
+              "note": "reported, not used for the verdict: a p95 over a few dozen requests is too noisy to confirm a 10% tolerance"
+            },
+            "prefix_hit_rate": [
+              0.9798973739812858,
+              0.0
+            ],
+            "goodput_rps": [
+              6.420820985166532,
+              1.3291399705634048
+            ],
+            "failure_rate": [
+              0.0,
+              0.0
+            ]
+          },
+          "candidate_vs_base": {
+            "metric": "ttft_gmean_ms",
+            "baseline": 72.4,
+            "value": 71.3,
+            "tolerance_pct": 10.0,
+            "block_pct": 25.0,
+            "confidence": 0.9,
+            "runs": 3,
+            "baseline_runs": [
+              70.7,
+              72.8,
+              73.7
+            ],
+            "value_runs": [
+              71.5,
+              67.6,
+              74.9
+            ],
+            "separated": false,
+            "method": "run-level Welch t interval on mean log TTFT (geometric mean), 90% two-sided",
+            "change_pct": -1.6,
+            "ci_pct": [
+              -9.1,
+              6.6
+            ],
+            "verdict": "pass",
+            "p95_advisory": {
+              "baseline": 94.8,
+              "value": 94.1,
+              "change_pct": -0.8,
+              "ci_pct": [
+                -17.0,
+                18.7
+              ],
+              "note": "reported, not used for the verdict: a p95 over a few dozen requests is too noisy to confirm a 10% tolerance"
+            },
+            "prefix_hit_rate": [
+              0.9798973739812858,
+              0.979937152525985
+            ],
+            "goodput_rps": [
+              6.420820985166532,
+              6.437913097497047
+            ],
+            "failure_rate": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "pr": {
+          "number": 3,
+          "url": "https://github.com/dilipna/furnace-demo-f1/pull/3",
+          "state": "open",
+          "commit": "38c121081e5147d335a8c5d39f021fd648c7e31a",
+          "branch": "furnace/repair-pr2-0a637d7",
+          "reused": false
+        }
+      },
+      "seconds": 210.0
+    },
+    {
+      "step": "replay_forge",
+      "ok": true,
+      "out": {
+        "validation": {
+          "ok": true,
+          "prompts_identical": true,
+          "installed_tests": "pass",
+          "existing_tests": "pass",
+          "resolved_findings": [
+            "eval.citation_contract",
+            "eval.grounding_judge",
+            "eval.regression_suite",
+            "inf.context_budget_gate",
+            "inf.prefix_stability_guard",
+            "inf.serving_baseline",
+            "obs.prompt_versioning",
+            "rel.llm_timeout",
+            "sec.approval_gate_regression_test"
+          ],
+          "remaining_findings": [
+            "obs.genai_tracing",
+            "rel.fallback_gateway"
+          ]
+        },
+        "pr": {
+          "number": 1,
+          "url": "https://github.com/dilipna/furnace-demo-f1/pull/1",
+          "state": "open",
+          "commit": "69b739093cdb4a83f83b1017fb1e8edd4b280fd4",
+          "branch": "furnace/forge-bb4d918",
+          "reused": true
+        },
+        "held_back": [
+          ".github/workflows/furnace.yml"
+        ]
+      },
+      "seconds": 19.0
+    },
+    {
+      "step": "replay_repair",
+      "ok": true,
+      "out": {
+        "status": "verified",
+        "perf": {
+          "summary": "geometric-mean TTFT base 71.3 | PR 71.3 -> 500.5 ms (+601.7%, 90% interval +571.8% to +632.8%; BLOCK at tolerance 10%) | repair 71.3 -> 70.9 ms (-0.7%, 90% interval -4.5% to +3.4%; PASS at tolerance 10%)",
+          "reasons": [
+            "faster than the PR head: change -85.8% (90% interval -86.4% to -85.3%)",
+            "worst case vs base +3.4% < block threshold 25% (change -0.7%)",
+            "within the 10% noise tolerance of base: shown (whole interval inside)"
+          ],
+          "within_budget": true,
+          "head_vs_base": {
+            "metric": "ttft_gmean_ms",
+            "baseline": 71.3,
+            "value": 500.5,
+            "tolerance_pct": 10.0,
+            "block_pct": 25.0,
+            "confidence": 0.9,
+            "runs": 3,
+            "baseline_runs": [
+              72.7,
+              69.3,
+              72.0
+            ],
+            "value_runs": [
+              495.1,
+              492.0,
+              514.7
+            ],
+            "separated": true,
+            "method": "run-level Welch t interval on mean log TTFT (geometric mean), 90% two-sided",
+            "change_pct": 601.7,
+            "ci_pct": [
+              571.8,
+              632.8
+            ],
+            "verdict": "block",
+            "p95_advisory": {
+              "baseline": 94.1,
+              "value": 920.7,
+              "change_pct": 878.2,
+              "ci_pct": [
+                830.5,
+                928.3
+              ],
+              "note": "reported, not used for the verdict: a p95 over a few dozen requests is too noisy to confirm a 10% tolerance"
+            },
+            "prefix_hit_rate": [
+              0.9804609521505051,
+              0.0
+            ],
+            "goodput_rps": [
+              6.4464763948973856,
+              1.2244259713028365
+            ],
+            "failure_rate": [
+              0.0,
+              0.0
+            ]
+          },
+          "candidate_vs_base": {
+            "metric": "ttft_gmean_ms",
+            "baseline": 71.3,
+            "value": 70.9,
+            "tolerance_pct": 10.0,
+            "block_pct": 25.0,
+            "confidence": 0.9,
+            "runs": 3,
+            "baseline_runs": [
+              72.7,
+              69.3,
+              72.0
+            ],
+            "value_runs": [
+              70.2,
+              71.0,
+              71.5
+            ],
+            "separated": false,
+            "method": "run-level Welch t interval on mean log TTFT (geometric mean), 90% two-sided",
+            "change_pct": -0.7,
+            "ci_pct": [
+              -4.5,
+              3.4
+            ],
+            "verdict": "pass",
+            "p95_advisory": {
+              "baseline": 94.1,
+              "value": 92.1,
+              "change_pct": -2.2,
+              "ci_pct": [
+                -7.2,
+                3.1
+              ],
+              "note": "reported, not used for the verdict: a p95 over a few dozen requests is too noisy to confirm a 10% tolerance"
+            },
+            "prefix_hit_rate": [
+              0.9804609521505051,
+              0.9798973739812858
+            ],
+            "goodput_rps": [
+              6.4464763948973856,
+              6.4519559465240786
+            ],
+            "failure_rate": [
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "pr": {
+          "number": 3,
+          "url": "https://github.com/dilipna/furnace-demo-f1/pull/3",
+          "state": "open",
+          "commit": "38c121081e5147d335a8c5d39f021fd648c7e31a",
+          "branch": "furnace/repair-pr2-0a637d7",
+          "reused": true
+        }
+      },
+      "seconds": 209.6
+    }
+  ],
+  "checks": {
+    "all_steps_ok": true,
+    "guard_flagged_r1": true,
+    "repair_verified": true,
+    "forge_replay_same_pr": true,
+    "repair_replay_same_pr": true
+  },
+  "verdict": "PASS"
+}
