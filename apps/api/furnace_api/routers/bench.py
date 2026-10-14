@@ -38,6 +38,8 @@ RQ_FILES = {
     # the recorded live GitHub run and its independent verification (scripts/live_github_*.py)
     "live_github": "live_run.json",
     "live_verify": "verify.json",
+    # a fresh commit's webhook queuing a new Guard run (scripts/live_webhook_run.py)
+    "live_webhook": "webhook_run.json",
 }
 W1 = "results/2026-10-04-f1-quality/workload-f1-traces-qwen05b.yaml"
 LIVE_GUARD = "results/2026-10-04-guard"

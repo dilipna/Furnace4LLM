@@ -7,6 +7,38 @@ results. GPU work (benchmarks, sandboxed evals, Guard, repair) stays on the lapt
 browser ── Vercel (apps/web, Next.js) ──/api/*──► Render (apps/api, FastAPI + embedded scan worker) ──► Supabase Postgres
 ```
 
+## Recorded-only site: Vercel alone (the first launch, about 10 minutes)
+
+The landing page, `/demo` (with the screen recording), `/bench` and every other evidence page
+need no API, database or runner: with `NEXT_PUBLIC_RECORDED_ONLY=true` the web app answers the
+read-only `/api/bench/*` routes from `apps/web/lib/bench-snapshot.json` (written by
+`scripts/export_bench_snapshot.py` from the API's own route functions; a test fails if it is
+stale) and the Inference Lab reads `apps/web/public/recorded/live-recorded.json`. Nothing under
+`/api` is routed, so no visitor can start anything; live controls say they are unavailable
+(Guard "Live runs off here", Lab "no lab on this site", pilot status "NOT HERE", scan form
+replaced by a notice, labeling queue disabled). Render and Supabase are needed only for hosted
+functionality: public scans, a webhook receiver with a public URL, live status.
+
+1. vercel.com → sign up with GitHub (Hobby, free) → Add New → Project → import
+   `dilipna/Furnace4LLM` (grant Vercel access to that repository only).
+2. **Root Directory: `apps/web`**; framework Next.js and pnpm are detected.
+3. Environment variables (Production): `NEXT_PUBLIC_RECORDED_ONLY` = `true`; optionally
+   `NEXT_PUBLIC_CONTACT_URL` = your `mailto:` or LinkedIn URL (default: the LinkedIn profile).
+   Do **not** set `FURNACE_API_URL`. Both are read at build time: change them, then redeploy.
+4. Deploy, then verify from any machine (laptop runner and local API may be off):
+
+```bash
+uv run python scripts/smoke_hosted.py --web https://<project>.vercel.app     [--contact <NEXT_PUBLIC_CONTACT_URL>] --out bench/results/<date>-hosted/smoke-web.md
+```
+
+It checks every page for its recorded content and recorded-only notices, `/pricing` → `/pilot`,
+the contact link, both recordings (WebM and the H.264 MP4 fallback) answering range requests,
+the poster and recorded telemetry, that `/api/*` and `/healthz` answer 404, and a 404 page.
+Last local run (recorded build, API and runner stopped): 2026-10-14, all 20 checks passed.
+
+When results change, run `uv run python scripts/export_bench_snapshot.py`, commit, push:
+Vercel redeploys from `main`.
+
 ## 0. Repository and a local smoke test of the image
 
 The repository is already on GitHub (`github.com/dilipna/Furnace4LLM`, public); `.env`, keys

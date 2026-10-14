@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { RECORDED_ONLY } from "@/lib/site";
 
 type Mode = "github" | "upload";
 
@@ -22,6 +23,23 @@ const MODES: { id: Mode; label: string; hint: string; placeholder: string }[] = 
 ];
 
 export function EvidenceInput() {
+  return RECORDED_ONLY ? <ScanUnavailable /> : <LiveEvidenceInput />;
+}
+
+// A recorded-only site has no scan service; say so instead of offering a form that cannot work.
+function ScanUnavailable() {
+  return (
+    <div className="w-full max-w-[640px] rounded-[6px] border border-line-strong bg-bg-1 px-4 py-4">
+      <p className="text-[13px] text-fg-0">Scanning is not available on this site.</p>
+      <p className="mt-1 text-[12px] leading-relaxed text-fg-2">
+        This deployment shows recorded results only and runs nothing a visitor submits. In a pilot, the scan runs on a
+        connected runner, and we go through the map together.
+      </p>
+    </div>
+  );
+}
+
+function LiveEvidenceInput() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("github");
   const [value, setValue] = useState("");

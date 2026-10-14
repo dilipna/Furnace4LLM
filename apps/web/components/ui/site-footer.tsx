@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/ui/wordmark";
+import { RECORDED_ONLY } from "@/lib/site";
 
 const REPO = "https://github.com/dilipna/Furnace4LLM";
 
@@ -16,8 +17,11 @@ export function SiteFooter() {
         <div>
           <Wordmark />
           <p className="mt-4 max-w-[300px] text-[12px] leading-relaxed text-fg-3">
-            An early-stage project. Results come from fixture apps on one laptop GPU, plus one live run on a public
-            GitHub repository. Not hosted yet.
+            An early-stage project. Results come from fixture apps on one laptop GPU, plus live runs on a public
+            GitHub repository.{" "}
+            {RECORDED_ONLY
+              ? "This site shows recorded results only; it runs nothing a visitor submits."
+              : "Live features need the API and the GPU runner."}
           </p>
         </div>
         {COLS.map(([title, links]) => (

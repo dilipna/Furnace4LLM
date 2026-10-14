@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { type GEdge, type GNode, GraphView } from "@/components/graph/graph-view";
 import { AppHeader } from "@/components/ui/app-header";
 import { ApiError, apiGet } from "@/lib/api";
+import { RECORDED_ONLY } from "@/lib/site";
 import type { ScanInfo } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +14,7 @@ export default async function GraphPage({ params }: PageProps<"/scans/[id]/graph
   try {
     scan = await apiGet<ScanInfo>(`/api/scans/${id}`);
   } catch (e) {
-    if (e instanceof ApiError && e.status === 404) notFound();
+    if (RECORDED_ONLY || (e instanceof ApiError && e.status === 404)) notFound(); // recorded-only: no scans here
     throw e;
   }
   const g = scan.status === "succeeded" ? await apiGet<{ nodes: GNode[]; edges: GEdge[] }>(`/api/scans/${id}/graph`) : null;

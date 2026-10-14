@@ -59,7 +59,7 @@ name (history in git).
 |---|---|---|
 | App with the manifest's permissions, installed on `furnace-demo-f1` only | verified | `bench/results/2026-10-14-live-github/verify.md`: permissions equal the manifest; installation covers that repository only |
 | Live Forge PR, Guard check run, repair draft PR; URLs, SHAs, check results, webhook checks | verified (one live trial) | attempt 2: PRs #1, #2, #3, check run 115692708323 `failure` on 0a637d7, repair -1.6% vs main; verification 10/10 incl. real deliveries, redelivery no-op, forgeries 401. Attempt 1 failed at Forge (403 on a workflow file), kept in `attempt-1/`; fix 40d41a3 |
-| Webhook-triggered Guard job | verified, reused | the real delivery queued one job; the runner ran it and reused the completed check run on that head (no duplicate); a fresh webhook-triggered Guard run on a new head is not shown |
+| Webhook-triggered Guard job | verified (one fresh run) | 2026-10-14 18:45 UTC, first attempt: new commit 49224d2 on PR #4 → GitHub delivery 61c93440 over HMAC (source push, outcome queued) → job d09d0db6 succeeded on the laptop runner in 103 s → one check run 116037356084 on that exact head, `failure` (+575.4% TTFT, BLOCK); GitHub redeliveries during and after the job changed no rows. Earlier the same day a delivery for an already-checked head reused that check run. Distinct events for one head (e.g. `opened` then `ready_for_review`) are covered by tests only. `bench/results/2026-10-14-live-webhook/` |
 
 ## F. Deferred by decision
 

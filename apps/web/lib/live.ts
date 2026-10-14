@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { RECORDED_ONLY } from "@/lib/site";
 
 /** One sample from GET /api/live/telemetry (vLLM /metrics + NVML on the API host). */
 export type LiveSample = {
@@ -102,9 +103,11 @@ const WINDOW = 90; // samples kept (~1 per second)
 /** Subscribes to the telemetry stream; keeps the last WINDOW samples. */
 export function useTelemetry(): { state: LiveState; samples: LiveSample[] } {
   const [samples, setSamples] = useState<LiveSample[]>([]);
-  const [state, setState] = useState<LiveState>("connecting");
+  // a recorded-only site has no telemetry stream: go straight to the recorded run
+  const [state, setState] = useState<LiveState>(RECORDED_ONLY ? "unreachable" : "connecting");
 
   useEffect(() => {
+    if (RECORDED_ONLY) return;
     const es = new EventSource("/api/live/telemetry");
     es.addEventListener("sample", (ev) => {
       const s = JSON.parse((ev as MessageEvent).data) as LiveSample;
@@ -134,7 +137,8 @@ export function useRecorded(enabled: boolean): Recorded | null | undefined {
   useEffect(() => {
     if (!enabled || rec !== undefined) return;
     let live = true;
-    fetch("/api/live/recorded")
+    // recorded-only: the same response, exported by scripts/export_bench_snapshot.py
+    fetch(RECORDED_ONLY ? "/recorded/live-recorded.json" : "/api/live/recorded")
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => live && setRec(d))
       .catch(() => live && setRec(null));

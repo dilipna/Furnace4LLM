@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { fmt, fromRecorded, fromSample, type Row, useRecorded, useTelemetry } from "@/lib/live";
+import { RECORDED_ONLY } from "@/lib/site";
 
 /* GPU power bands for the heat strip (W). Fixed, so a colour always means the same draw. */
 const HEAT_BANDS = [12, 18, 24, 30, 40];
@@ -126,7 +127,7 @@ export function FurnacePanel({ compact = false }: { compact?: boolean }) {
         ) : live ? (
           <Pill tone="live">live · 1 s</Pill>
         ) : (
-          <Pill tone="off">lab offline · showing recorded run</Pill>
+          <Pill tone="off">{RECORDED_ONLY ? "recorded run · no lab on this site" : "lab offline · showing recorded run"}</Pill>
         )}
       </header>
 

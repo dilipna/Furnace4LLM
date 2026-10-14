@@ -5,6 +5,7 @@ import { LiveGithub } from "@/components/marketing/live-github";
 import { PrReview } from "@/components/marketing/pr-review";
 import { AppHeader } from "@/components/ui/app-header";
 import { SiteFooter } from "@/components/ui/site-footer";
+import { RECORDED_ONLY } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Demo · Furnace",
@@ -15,7 +16,8 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 // Served from apps/web/public/demo/ (published with the site), or a URL set at build time.
-const VIDEO = process.env.NEXT_PUBLIC_DEMO_VIDEO ?? "/demo/furnace-demo.webm";
+const DEFAULT_VIDEO = "/demo/furnace-demo.webm";
+const VIDEO = process.env.NEXT_PUBLIC_DEMO_VIDEO ?? DEFAULT_VIDEO;
 
 export default function DemoPage() {
   return (
@@ -29,11 +31,18 @@ export default function DemoPage() {
           </h1>
           <p className="mt-5 max-w-[640px] text-[16px] leading-relaxed text-fg-2">
             Everything on this page is a recording, not a live run. The numbers come from the stored results of three
-            repeated trials. Live runs happen on the owner’s runner and are shown on the{" "}
-            <Link href="/guard/r1_dynamic_head" className="underline decoration-line-strong underline-offset-2 hover:text-fg-0">
-              Guard page
-            </Link>{" "}
-            when it is connected.
+            repeated trials.{" "}
+            {RECORDED_ONLY ? (
+              "Live runs happen on the owner’s runner; this site is not connected to one, so it shows recordings only."
+            ) : (
+              <>
+                Live runs happen on the owner’s runner and are shown on the{" "}
+                <Link href="/guard/r1_dynamic_head" className="underline decoration-line-strong underline-offset-2 hover:text-fg-0">
+                  Guard page
+                </Link>{" "}
+                when it is connected.
+              </>
+            )}
           </p>
         </section>
 
@@ -42,8 +51,15 @@ export default function DemoPage() {
             Screen recording
           </h2>
           <div className="overflow-hidden rounded-[10px] border border-line-strong bg-bg-1">
-            <video controls preload="metadata" playsInline poster="/demo/poster.png" className="aspect-video w-full bg-bg-0" src={VIDEO}>
-              Your browser cannot play this recording.
+            <video controls preload="metadata" playsInline poster="/demo/poster.png" className="aspect-video w-full bg-bg-0">
+              <source src={VIDEO} type={VIDEO.endsWith(".mp4") ? "video/mp4" : "video/webm"} />
+              {/* H.264 copy of the same recording for browsers without WebM (older iPhones) */}
+              {VIDEO === DEFAULT_VIDEO && <source src="/demo/furnace-demo.mp4" type="video/mp4" />}
+              Your browser cannot play this recording.{" "}
+              <a href="/demo/furnace-demo.mp4" className="underline">
+                Download it (MP4)
+              </a>
+              .
             </video>
             <p className="border-t border-line px-4 py-2.5 text-[11.5px] text-fg-3">
               Silent screen recording of the end-to-end rehearsal, 2026-10-14, on a laptop: the landing and this page, a public GitHub scan, the graph, a live benchmark, and a live Guard run that flags the regression (about two minutes of it is the run itself). Narration follows the{" "}
