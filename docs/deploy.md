@@ -19,22 +19,54 @@ stale) and the Inference Lab reads `apps/web/public/recorded/live-recorded.json`
 replaced by a notice, labeling queue disabled). Render and Supabase are needed only for hosted
 functionality: public scans, a webhook receiver with a public URL, live status.
 
-1. vercel.com → sign up with GitHub (Hobby, free) → Add New → Project → import
-   `dilipna/Furnace4LLM` (grant Vercel access to that repository only).
-2. **Root Directory: `apps/web`**; framework Next.js and pnpm are detected.
-3. Environment variables (Production): `NEXT_PUBLIC_RECORDED_ONLY` = `true`; optionally
-   `NEXT_PUBLIC_CONTACT_URL` = your `mailto:` or LinkedIn URL (default: the LinkedIn profile).
-   Do **not** set `FURNACE_API_URL`. Both are read at build time: change them, then redeploy.
-4. Deploy, then verify from any machine (laptop runner and local API may be off):
+### Plan: decide before connecting (owner)
+
+Do not assume the free Hobby plan fits. Vercel's fair-use guidelines (checked 2026-10-14,
+<https://vercel.com/docs/limits/fair-use-guidelines>) restrict Hobby to "non-commercial
+personal use only"; commercial usage is any deployment "used for the purpose of financial gain
+of anyone involved in any part of the production of the project", with examples including
+"advertising the sale of a product or service". A startup page that recruits design partners
+for a product may meet that definition even though the pilot is free and nothing is sold.
+Options: Pro (paid, per member; **only with the owner's explicit approval**), or ask Vercel
+Support for a determination before using Hobby. No paid plan, add-on (e.g. Password
+Protection) or usage-based billing is activated without the owner's approval.
+
+### Project settings (verified against a clean build of the committed tree)
+
+| setting | value | why |
+|---|---|---|
+| Git repository | `dilipna/Furnace4LLM`, branch `main` (Vercel's GitHub access limited to this repository) | production deploys follow `main` |
+| Root Directory | `apps/web` | the Next.js app; it imports nothing outside this directory |
+| Framework preset | Next.js (detected) | |
+| Install command | default (pnpm, from `apps/web/pnpm-lock.yaml`, lockfile v9; `packageManager` pnpm@10.28.2) | `pnpm install --frozen-lockfile` succeeds from `apps/web` alone |
+| Build command / output | defaults (`next build`, `.next`) | |
+| Node.js version | 22.x or 24.x (Next.js 16 needs >= 20.9) | built locally on Node 24 |
+| Environment variable (Production and Preview) | `NEXT_PUBLIC_RECORDED_ONLY` = `true` | read at build time: set before the first deploy, redeploy after a change |
+| Not set | `FURNACE_API_URL`, `NEXT_PUBLIC_CONTACT_URL` (the LinkedIn default stays), any secret | the site has no API and holds no secrets |
+| Deployment Protection | Standard Protection (the default) | the production domain `<project>.vercel.app` is public; per-deployment and preview URLs require a Vercel login, so share and test only the production domain. Never "All Deployments" |
+
+Evidence during the hosted build: `apps/web/lib/bench-snapshot.json`,
+`apps/web/public/demo/` (WebM, MP4, poster) and `apps/web/public/recorded/` are committed
+inside the root directory, so the build needs no files outside it, no network and no API.
+Checked 2026-10-14 by extracting only `apps/web` from the committed tree (`git archive HEAD
+apps/web`), `pnpm install --frozen-lockfile`, `NEXT_PUBLIC_RECORDED_ONLY=true pnpm build`,
+`pnpm start`, then the smoke test below with the API, runner and vLLM stopped: all checks passed.
+
+### Deploy and verify
+
+1. vercel.com → sign up with GitHub on the plan decided above → Add New → Project → import
+   `dilipna/Furnace4LLM`; apply the settings in the table; Deploy.
+2. From any machine, with the laptop's API, runner and vLLM stopped:
 
 ```bash
-uv run python scripts/smoke_hosted.py --web https://<project>.vercel.app     [--contact <NEXT_PUBLIC_CONTACT_URL>] --out bench/results/<date>-hosted/smoke-web.md
+uv run python scripts/smoke_hosted.py --web https://<project>.vercel.app \
+    --out bench/results/<date>-hosted/smoke-web.md
 ```
 
 It checks every page for its recorded content and recorded-only notices, `/pricing` → `/pilot`,
 the contact link, both recordings (WebM and the H.264 MP4 fallback) answering range requests,
 the poster and recorded telemetry, that `/api/*` and `/healthz` answer 404, and a 404 page.
-Last local run (recorded build, API and runner stopped): 2026-10-14, all 20 checks passed.
+3. Open the production domain in a private window (no Vercel session) on a desktop and a phone.
 
 When results change, run `uv run python scripts/export_bench_snapshot.py`, commit, push:
 Vercel redeploys from `main`.
