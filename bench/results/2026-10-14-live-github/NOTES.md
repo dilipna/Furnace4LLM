@@ -26,12 +26,12 @@ Recorded in `live_run.{json,md}` beside this file, after the fix, same repositor
 |---|---|
 | Forge | draft PR https://github.com/dilipna/furnace-demo-f1/pull/1 (`furnace/forge-bb4d918` → main), 13 files validated in the sandbox; the workflow file is in the PR description, not committed |
 | R1 PR | https://github.com/dilipna/furnace-demo-f1/pull/2 (`r1-request-id` → main, head 0a637d7) |
-| Guard | check run 115692708323 on 0a637d7: **failure**, "2 regressions found: prompt_prefix_stable, chat_perf_gate"; PR +606.2% geometric-mean TTFT (90% interval +592.3 to +620.4), BLOCK; 97 s |
-| Repair | first strategy (`move_dynamic_to_suffix`) rejected: +46.7% (+44.4 to +49.1), BLOCK. Second (`move_dynamic_to_log`) accepted: -0.7% vs main (90% interval -4.5 to +3.4), PR 71.3 → 500.5 ms; draft PR https://github.com/dilipna/furnace-demo-f1/pull/3 (`furnace/repair-pr2-0a637d7` → `r1-request-id`) |
-| Replays | Forge and repair run again on the same commits returned PRs #1 and #3 (`reused=True`) |
+| Guard | check run 115692708323 on 0a637d7: **failure**, "2 regressions found: prompt_prefix_stable, chat_perf_gate". 7 of 8 checks selected. Perf gate: geometric-mean TTFT 72.7 → 501.7 ms (+590.0%, 90% interval +557.4 to +624.3), BLOCK; prefix-cache hit 98% → 0%; p95 advisory +851.8%. Judge SKIP (no key, not a pass); citation check 1/34 vs 0/34 on base (at its floor, says nothing about quality). 97 s |
+| Repair | first strategy (`move_dynamic_to_suffix`) rejected: +36.1% vs main (90% interval +27.8 to +45.1), BLOCK. Second (`move_dynamic_to_log`) accepted: -1.6% vs main (90% interval -9.1 to +6.6), with the PR at +593.5% (72.4 → 502.1 ms) in the same interleaved runs; draft PR https://github.com/dilipna/furnace-demo-f1/pull/3 (`furnace/repair-pr2-0a637d7` → `r1-request-id`). 210 s |
+| Replays | Forge and repair run again on the same commits returned PRs #1 and #3 (`reused=True`). The repair replay re-measured: first strategy +46.7% (+44.4 to +49.1) BLOCK, accepted fix -0.7% (-4.5 to +3.4) |
 
-One live trial on a laptop GPU, not a rate; the repair figures are this trial's own
-interleaved runs. The GPU clock was not pinned for this run (a demonstration, not a
+One live trial (plus its replay) on a laptop GPU, not a rate; each figure comes from its own
+step's interleaved runs (`live_run.json`, steps `guard`, `repair`, `replay_repair`). The GPU clock was not pinned for this run (a demonstration, not a
 measurement campaign).
 
 ## Independent verification (05:20 UTC): **PASS**, 10/10
