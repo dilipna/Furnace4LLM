@@ -1,4 +1,4 @@
-# Claims ledger: every public number, traced (2026-10-13)
+# Claims ledger: every public number, traced (2026-10-13, website rows 2026-10-14)
 
 Rule: a number may appear on the website, in the README, the case study, the demo scripts or
 a resume only if its row here names the dataset, the campaign folder (raw results), the
@@ -18,13 +18,17 @@ Results from different gate versions are never pooled or shown as one figure.
 
 | where | claim | source (campaign / file) | commit, conditions | gate | status |
 |---|---|---|---|---|---|
-| landing tile 1 | LLM call sites found on never-seen apps, a/b | pinned `2026-10-13-set6/rq1.json`, split held-out-6 | scanner 41ca529 (frozen), labels ebd5824 | n/a | **fixed 2026-10-13**: it showed set 3 after the scanner was fixed on set 3 (8/9) as "labeled before the scanner saw them"; figure appears once the set-6 RQ1 run is stored |
-| landing tile 2 | regressions caught 3/3, 46% of checks, 13 PRs | `2026-10-06/rq3.json` | 2026-10-06 commits (map: `bench/results/commit-map.txt`), 780 MHz | G0 | label now names the campaign and gate |
-| landing tile 3 | p95 TTFT with prefix caching off, c=16, seqs 32 | `2026-10-06/rq4` | 780 MHz, AC | n/a (direct benchmark) | label now names campaign and clock |
-| landing tile 4 | prompt-cache repairs verified 3/3 | `2026-10-12-gate-validation/rq5.json` | 6efebfd, 780 MHz, AC | G3 | label says "repeated trials of one scenario (fixture F1, regression R1)" |
-| landing hero | R1 before/after, first candidate rejected | `2026-10-12-gate-validation/rq5.json` | 6efebfd, 780 MHz | G3 | "rejected (blocked or not shown within tolerance)": one of the three was INCONCLUSIVE, not BLOCK |
+| landing hero (PR review, 2026-10-14) | per trial: the PR's line (read from the repair patch), PR vs main, gate verdict, first strategy rejected, repair vs main and **repair vs PR** with 90% intervals, regression test first, judge SKIP shown as not a pass; labeled "recorded run, not live", trial 1/2/3 switch | `2026-10-12-gate-validation/rq5.json` (`perf.head_vs_base`, `candidate_vs_base`, `candidate_vs_head`, `patch`) | 6efebfd, 780 MHz, AC | G3 | replaces the before/after bars, whose repair figure (+3%) was a ratio of medians taken across different trials; every figure is now within one trial's interleaved runs |
+| evidence tile: false alarms 0/36 (PASS 29/36) | V1 + V2 unchanged-code sets | `2026-10-12-gate-validation/validation/report.json` (`sets.v1_aa`, `sets.v2_restored`; affected trials excluded as planned) | 780-828 MHz | G3 | new 2026-10-14 |
+| evidence tile: R1 blocked 6/6 | V3a | same file, `sets.v3a_r1` | as above | G3 | new 2026-10-14 |
+| evidence tile: repairs 3/3 | "repeated trials of one scenario (F1, R1), not a rate over apps or regression types" | `2026-10-12-gate-validation/rq5.json` | 6efebfd | G3 | kept |
+| evidence tile: p95 TTFT with prefix caching off | c=16, seqs 32 | `2026-10-06/rq4` | 780 MHz, AC | n/a | kept |
+| limits tile: small regressions undecided 15/18 | V3b, V3c topk4, topk8; measured range from the set medians | `validation/report.json` | as above | G3 | new: the negative result is on the landing page |
+| limits tiles: call sites 32/48, findings right 39/77 (recall 39/64) | held-out set 6 first scan | pinned `2026-10-13-set6/rq1.json`, `set6/findings.json` | scanner 41ca529, labels ebd5824 | n/a | findings precision added 2026-10-14 |
+| limits tile: live GitHub runs 0 | shown until a `bench/results/<date>-live-github/` campaign exists | campaign list | n/a | n/a | new |
+| RQ3 tile (3/3 caught, 46%, 13 PRs) | removed from the landing page 2026-10-14 (G0-era; still on /guard with a G0 label) | `2026-10-06/rq3.json` | | G0 | /guard now says the gate was later found biased and that every perf verdict in that table depends on it |
 | /lab | RQ4 cells, live run | `2026-10-06/rq4`; live runs are labeled live | 780 MHz | n/a | ok |
-| /guard, /guard/<scenario> | RQ3 selections; RQ5 timeline | newest rq3 (G0) and newest rq5 | as recorded | each page names its metric | ok; pending: gate label on /guard RQ3 table |
+| /guard, /guard/<scenario> | RQ3 selections; RQ5 timeline | newest rq3 (G0) and newest rq5 | as recorded | each page names its metric | ok; /guard RQ3 table labeled with its gate (2026-10-14) |
 | /evals | deterministic checks on seeded failures; human/judge parts | newest rq2 | as recorded | n/a | ok (judge and labels shown as not run) |
 | /bench | every campaign with its corrections | all folders | per folder | per folder | ok |
 
@@ -36,9 +40,9 @@ Results from different gate versions are never pooled or shown as one figure.
 | set 6: call sites 32/48 (32/32 correct); finding precision 39/77, recall 39/64; citations 148/148 | `2026-10-13-set6/` (`rq1.md`, `set6/`, `NOTES.md`) | n/a | in README; reported beside sets 1-5, not pooled |
 | R1 size: p95 TTFT +905% to +1,004%, hit 98% -> 0% | `2026-10-09-gate-warmup-v2/rq5.md` | G1 measurement (a p95 effect size, not a verdict) | ok as labeled (p95, that campaign) |
 | repair 1/3 verified | `2026-10-12-gate-ci/rq5.md` | G2 | ok as labeled; never pooled with G3 |
-| repair 3/3 verified = 3 repeated trials of one scenario (F1, R1); accepted at +4.2% / +0.9% / +1.7% vs main (90% upper bounds 9.5 / 4.1 / 7.2); first strategy rejected 3/3; prompts byte-identical to main 34/34; judge skipped | `2026-10-12-gate-validation/rq5.md`, `rq5/`, `rq5/prompt_identity.md`, `NOTES.md` | G3 | done |
+| repair 3/3 verified = 3 repeated trials of one scenario (F1, R1); accepted at +4.2% / +0.9% / +1.7% vs main (90% upper bounds 9.5 / 4.1 / 7.2, acceptance needs < 25); -85.5% / -85.6% / -86.0% vs the PR (90% intervals -86.2..-84.9 / -86.0..-85.2 / -86.7..-85.2, acceptance needs the upper bound < 0; column added to rq5.md 2026-10-14 from the stored comparisons, no rerun); first strategy rejected 3/3; prompts byte-identical to main 34/34; judge skipped | `2026-10-12-gate-validation/rq5.md`, `rq5/`, `rq5/prompt_identity.md`, `NOTES.md` | G3 | done |
 | optimizer: keep the baseline; confirmation inconclusive (goodput +3.8%, 90% CI -8.8 to +18.2) | `2026-10-12-optimizer/NOTES.md`, `optimizer/{optimizer,confirm}.md` | n/a | done; no improvement claimed |
-| RQ3 46% of checks, 3/3 caught, 13/13 same conclusion | `2026-10-06/rq3.md` | G0 | needs "under the gate of 2026-10-06" next to it |
+| RQ3 46% of checks, 3/3 caught, 13/13 same conclusion | `2026-10-06/rq3.md` | G0 | say "under the gate of 2026-10-06 (later found biased)" wherever it appears |
 | RQ4 +193% to +433% (seqs 32), all 15 cells | `2026-10-06/rq4` | n/a | ok, 780 MHz |
 | A/A: 0 false WARN/BLOCK in 12, max +13.4% | `2026-10-11-gate-ci` | G2 | ok as labeled |
 | gate validation: 63 trials = 60 counted + 3 affected; 0/36 false FAIL, PASS 29/36, INCONCLUSIVE 7/36; R1 BLOCK 6/6; graded sets INCONCLUSIVE 15/18 / PASS 3/18; 780-828 MHz | `2026-10-12-gate-validation/validation/{report,trials}.md`, `NOTES.md` | G3 | done |

@@ -178,6 +178,7 @@ def render(res: dict[str, Any]) -> str:
                 "existing tests",
                 f"PR {label} vs base",
                 f"repair {label} vs base",
+                f"repair {label} vs PR",
                 "repair hit rate",
                 "audit (full suite on repair)",
                 "time (s)",
@@ -194,6 +195,7 @@ def render(res: dict[str, Any]) -> str:
                     _chosen(a).get("existing_tests", "–"),
                     _cmp(a["perf"].get("head_vs_base")),
                     _cmp(a["perf"].get("candidate_vs_base")),
+                    _cmp(a["perf"].get("candidate_vs_head")),
                     _hit(a["perf"].get("candidate_vs_base")),
                     (a.get("audit") or {}).get("conclusion", "–")
                     + (
@@ -205,11 +207,18 @@ def render(res: dict[str, Any]) -> str:
                 ]
                 for a in r1
             ],
-            "rllllllllll",
+            "rlllllllllll",
         ),
         "",
         f"Success: {sum(a['status'] == 'verified' for a in r1)}/{len(r1)} verified repairs; "
         f"{sum(not (a.get('audit') or {}).get('new_failures') and 'audit' in a for a in r1)}/{len(r1)} audits without a FAIL.",
+        "",
+        "Acceptance rule (`perf_gate.accept_repair`): the repair must be faster than the PR "
+        "(upper bound of the 90% interval vs the PR below 0%) and its worst case vs base (upper "
+        "bound vs base) must stay below the 25% block threshold; being inside the 10% tolerance "
+        "of base is reported, not required. These are repeated trials of one scenario (fixture "
+        "F1, regression R1), not a rate over apps or regression types. A SKIP in the audit is "
+        "not a pass: the judge did not run.",
     ]
     for a in r1:
         if len(a["candidates"]) > 1 or any(c.get("verdict") != "pass" for c in a["candidates"]):
@@ -261,7 +270,14 @@ def main() -> None:
     p.add_argument("--repeats", type=int, default=3)
     p.add_argument("--allow-battery", action="store_true", help="run on battery (labeled)")
     p.add_argument("--no-audit", action="store_true")
+    p.add_argument(
+        "--render", metavar="RQ5_JSON", help="re-render rq5.md from a stored rq5.json; no GPU"
+    )
     args = p.parse_args()
+    if args.render:
+        src = Path(args.render)
+        (src.parent / "rq5.md").write_text(render(read_json(src)), encoding="utf-8")
+        return
     out = results_dir("rq5")
     q = f1_questions()
     attempts = []

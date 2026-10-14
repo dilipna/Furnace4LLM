@@ -7,7 +7,7 @@ on:
 
 jobs:
   python:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moves to Ubuntu 26 from 2026-10-19
     services:
       postgres:
         image: postgres:17-alpine
@@ -32,7 +32,7 @@ jobs:
       - run: uv run pytest -q -m "not gpu"
 
   web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moves to Ubuntu 26 from 2026-10-19
     defaults:
       run:
         working-directory: apps/web
@@ -54,7 +54,7 @@ jobs:
   image:
     # The Render deploy builds this image; build it on every push so a broken Dockerfile is
     # caught here (a missing package README once broke it unnoticed).
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moves to Ubuntu 26 from 2026-10-19
     steps:
       - uses: actions/checkout@v4
       - run: docker build -f apps/api/Dockerfile -t furnace-api:ci .

@@ -36,6 +36,18 @@ export default async function GuardPage() {
             only the checks the change can affect. To measure what that costs in missed regressions, the full suite was
             also run on every PR; its failures are the ground truth.
           </p>
+          <p className="mt-3 max-w-[760px] border-l-2 border-warn/60 pl-3 text-[12px] text-fg-2">
+            Recorded under the perf gate in use at the time (a p95 point rule with no warmup). That gate was later found
+            biased and replaced; the current gate&apos;s results are on the{" "}
+            <Link href="/guard/r1_dynamic_head" className="underline decoration-line-strong underline-offset-2 hover:text-fg-0">
+              R1 page
+            </Link>{" "}
+            and in the{" "}
+            <Link href="/bench" className="underline decoration-line-strong underline-offset-2 hover:text-fg-0">
+              corrections
+            </Link>
+            . Which checks were selected does not depend on that gate; every perf verdict in this table does.
+          </p>
         </div>
 
         {s && rq3 && (
@@ -88,7 +100,7 @@ export default async function GuardPage() {
                       <td className={`num pr-4 ${r.missed_fail.length ? "text-bad" : "text-fg-3"}`}>
                         {[...r.missed_fail, ...r.missed_warn.map((w) => `${w} (warn)`)].join(", ") || "none"}
                       </td>
-                      <td className="num text-right">
+                      <td className="num text-right whitespace-nowrap">
                         {Math.round(r.full_seconds)} → {Math.round(r.targeted_seconds)}
                       </td>
                     </tr>

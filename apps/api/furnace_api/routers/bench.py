@@ -31,6 +31,10 @@ RQ_FILES = {
     "rq3": "rq3.json",
     "rq4": "rq4/rq4.json",
     "rq5": "rq5.json",
+    # G3 fresh validation (docs/gate-revision.md): per-set verdict counts, read by the landing page
+    "gate_validation": "validation/report.json",
+    # held-out set 6: Blueprint finding precision / recall against labels committed first
+    "set6_findings": "set6/findings.json",
 }
 W1 = "results/2026-10-04-f1-quality/workload-f1-traces-qwen05b.yaml"
 LIVE_GUARD = "results/2026-10-04-guard"
