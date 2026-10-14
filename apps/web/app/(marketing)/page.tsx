@@ -1,259 +1,209 @@
 import Link from "next/link";
-import { BenchStrip } from "@/components/marketing/bench-strip";
-import { PrReview } from "@/components/marketing/pr-review";
+import { Faq } from "@/components/marketing/faq";
+import { HeroCard } from "@/components/marketing/hero-card";
+import { Steps } from "@/components/marketing/steps";
 import { AppHeader } from "@/components/ui/app-header";
 import { SiteFooter } from "@/components/ui/site-footer";
+import { loadStory } from "@/lib/story";
 
 // Figures are read from bench/results per request, never frozen at build time.
 export const dynamic = "force-dynamic";
 
-// Capabilities as each tool documents them (checked 2026-10-14). Every row says what the
-// tool does and how Furnace's check differs; none says what another tool "cannot" do.
-const GAPS = [
-  {
-    tool: "Eval platforms in CI",
-    examples: [
-      ["promptfoo", "https://www.promptfoo.dev/docs/configuration/expected-outputs/deterministic/"],
-      ["Braintrust", "https://www.braintrust.dev/docs/evaluate/run-in-ci"],
-      ["LangSmith", "https://docs.langchain.com/langsmith/pytest"],
-    ],
-    does: "Score answers on each pull request, and record latency too: promptfoo can fail a test above a per-call latency threshold, and LangSmith reports first-token percentiles.",
-    differs: "Furnace compares two revisions on the same self-hosted server, in interleaved runs, and decides with an interval instead of a fixed threshold. It reads the server's prefix-cache hit rate, points to the prompt-building line, and for one regression family drafts a fix checked by the same gate.",
-  },
-  {
-    tool: "Code benchmarks in CI",
-    examples: [["CodSpeed", "https://codspeed.io/docs"]],
-    does: "Benchmark Python functions on every pull request with stable measurements, and flag slowdowns in the PR.",
-    differs: "Furnace times the model server's response (time to first token on the GPU), outside the app's Python process.",
-  },
-  {
-    tool: "Production monitoring",
-    examples: [],
-    does: "Shows latency, cost and cache hit rates on live traffic.",
-    differs: "Furnace runs before merge, on the PR's own prompts, so nothing has to ship first.",
-  },
-];
+const WORKS_WITH = ["Python", "vLLM", "OpenAI-compatible APIs", "GitHub", "Docker"];
 
-const FLOW: { step: string; body: string; status: "verified" | "mock" }[] = [
-  { step: "Connect", body: "Install a GitHub App on one repository. Each job gets a token scoped to that repository and only the permissions it needs.", status: "mock" },
-  { step: "Baseline", body: "Render main's real prompts with your app's own code, then measure them on your endpoint. Furnace never uses synthetic text.", status: "verified" },
-  { step: "Inspect", body: "Map each changed line to the prompts, models and serving settings it affects, and run only the checks that can change.", status: "verified" },
-  { step: "Gate", body: "Run main and the PR in interleaved runs, then compare time to first token with a 90% interval. The result is PASS, BLOCK or INCONCLUSIVE.", status: "verified" },
-  { step: "Repair", body: "For a supported regression, write a failing test first, try rule-based fixes in order, and keep the first one that passes the tests and the gate.", status: "verified" },
-  { step: "Review", body: "Open the fix as a draft pull request with its evidence attached. A person decides; Furnace never merges.", status: "mock" },
-];
+function Cta({ href, children, primary }: { href: string; children: React.ReactNode; primary?: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`inline-flex h-11 items-center rounded-full px-6 text-[14px] font-medium transition-colors duration-150 ${
+        primary ? "bg-ember text-bg-0 hover:bg-ember-hi" : "border border-line-strong text-fg-0 hover:border-fg-3 hover:bg-bg-2"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
 
-const SUPPORTED = [
-  "Python applications that build prompts in code",
-  "An OpenAI-compatible endpoint you serve (measured on vLLM)",
-  "A machine with Docker and a GPU for the runner",
-  "Repair of one regression family: per-request values at the start of the prompt",
-];
-const NOT_YET = [
-  "TypeScript or other languages (configs and docs are still read)",
-  "Latency on hosted APIs such as OpenAI or Anthropic: not measured yet",
-  "Repairs for other regressions: refused with a reason, never guessed",
-  "Pull requests from forks, whose code would run on your runner",
-];
+export default async function Landing() {
+  const s = await loadStory();
+  const slower = s ? Math.round(s.pr / s.base) : null;
+  const stepData = {
+    prChange: s?.prChange ?? null,
+    prCi: s?.prCi ?? null,
+    repairVsMain: s?.repairVsMain[0] ?? null,
+    repairUpper: s?.repairVsMainUpper[0] ?? null,
+    repairLower: s?.repairVsMainLower[0] ?? null,
+    repairVsPr: s?.repairVsPr[0] ?? null,
+    verified: s?.verified ?? 0,
+    trials: s?.trials ?? 0,
+  };
+  const g = s?.gate;
+  const stats = [
+    g && [`${g.falseAlarms}/${g.n}`, "false alarms on unchanged code"],
+    g && [`${g.blocks}/${g.blockN}`, "cache regressions blocked"],
+    s && [`${s.verified}/${s.trials}`, "fixes verified, one scenario repeated"],
+    g && [`${g.undecided}/${g.gradedN}`, "small slowdowns left undecided"],
+  ].filter(Boolean) as [string, string][];
 
-export default function Landing() {
   return (
     <div className="flex min-h-full flex-col">
-      <AppHeader />
+      <AppHeader variant="marketing" />
 
       <main className="flex-1">
+        {/* Hero */}
         <section className="relative overflow-hidden">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-ember/50 to-transparent" />
-          <div className="mx-auto grid w-full max-w-[1200px] gap-12 px-4 pt-14 pb-20 sm:px-6 lg:grid-cols-12 lg:gap-14 lg:pt-20">
-            <div className="lg:col-span-5 lg:pt-4">
-              <p className="num text-[11.5px] tracking-[0.08em] text-ember uppercase">Performance checks for Python LLM apps</p>
-              <h1 className="mt-5 font-display text-[38px] leading-[1.04] font-semibold tracking-[-0.025em] text-fg-0 sm:text-[52px]">
-                Catch the pull request that makes your LLM app slow.
-              </h1>
-              <p className="mt-6 text-[16px] leading-relaxed text-fg-1">
-                Furnace benchmarks each pull request on your own model server. It blocks changes that break prompt
-                caching or raise time to first token, and drafts a fix it has already tested. Your team reviews and
-                merges.
-              </p>
-              <p className="mt-4 text-[14px] leading-relaxed text-fg-2">
-                Built for small teams that serve their own models with vLLM. For them, one harmless-looking prompt edit
-                can multiply latency and GPU cost while every answer check still passes.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link
-                  href="/pilot"
-                  className="inline-flex h-10 items-center rounded-[3px] bg-ember px-5 text-[14px] font-medium text-bg-0 transition-colors duration-150 hover:bg-ember-hi"
-                >
-                  Set up a pilot
-                </Link>
-                <Link
-                  href="/guard/r1_dynamic_head"
-                  className="inline-flex h-10 items-center rounded-[3px] border border-line-strong px-5 text-[14px] text-fg-0 transition-colors duration-150 hover:border-fg-3 hover:bg-bg-2"
-                >
-                  Inspect the full recorded run
-                </Link>
-              </div>
-              <ul className="num mt-8 space-y-1.5 text-[12px] text-fg-3">
-                <li>Python · OpenAI-compatible endpoint (measured on vLLM)</li>
-                <li>Runner on your GPU machine · your code stays on it</li>
-                <li>GitHub check runs and draft pull requests</li>
-              </ul>
-            </div>
-            <div className="lg:col-span-7">
-              <PrReview />
-            </div>
-          </div>
-        </section>
-
-        <section id="why" aria-labelledby="why-h" className="border-t border-line bg-bg-1">
-          <div className="mx-auto w-full max-w-[1200px] px-4 py-16 sm:px-6">
-            <p className="num text-[11.5px] tracking-[0.08em] text-ember uppercase">Why it slips through</p>
-            <h2 id="why-h" className="mt-3 max-w-[760px] font-display text-[28px] leading-tight font-semibold tracking-[-0.015em]">
-              The answers don’t change, so answer checks pass. Latency still goes up.
-            </h2>
-            <p className="mt-4 max-w-[720px] text-[14px] leading-relaxed text-fg-2">
-              Model servers such as vLLM reuse work across requests that begin with the same text. Put a request id, a
-              timestamp or a user name at the top of the prompt, and that reuse is gone. The answers do not change, so
-              the tests that look at answers stay green.
-            </p>
-            <div className="mt-10 overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse text-left text-[13px]">
-                <thead>
-                  <tr className="border-b border-line-strong text-[11.5px] tracking-wide text-fg-3 uppercase">
-                    <th className="py-3 pr-6 font-normal">What teams use today</th>
-                    <th className="py-3 pr-6 font-normal">What it does (from its docs)</th>
-                    <th className="py-3 font-normal">How Furnace’s check differs</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {GAPS.map((g) => (
-                    <tr key={g.tool} className="border-b border-line align-top">
-                      <td className="py-4 pr-6">
-                        <div className="text-fg-0">{g.tool}</div>
-                        {g.examples.length > 0 && (
-                          <div className="mt-1 text-[12px] text-fg-3">
-                            e.g.{" "}
-                            {g.examples.map(([n, u], j) => (
-                              <span key={n}>
-                                <a href={u} className="underline decoration-line-strong underline-offset-2 hover:text-fg-1">
-                                  {n}
-                                </a>
-                                {j < g.examples.length - 1 ? ", " : ""}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-4 pr-6 text-fg-1">{g.does}</td>
-                      <td className="py-4 text-fg-1">{g.differs}</td>
-                    </tr>
-                  ))}
-                  <tr className="align-top">
-                    <td className="py-4 pr-6 font-medium text-ember">Furnace</td>
-                    <td className="py-4 pr-6 text-fg-0">
-                      One narrow workflow: Python apps on a model you serve (measured on vLLM), a before-merge
-                      latency gate, and a tested repair for per-request values at the start of a prompt.
-                    </td>
-                    <td className="py-4 text-fg-1">
-                      It does not judge answer quality; keep an eval tool for that. Teams can build parts of this with
-                      the tools above. Furnace packages it for this one case.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-3 text-[11px] text-fg-3">
-              Other tools are described from their public documentation (checked October 14, 2026); each links to its
-              source.
-            </p>
-          </div>
-        </section>
-
-        <section id="how" aria-labelledby="how-h" className="border-t border-line">
-          <div className="mx-auto w-full max-w-[1200px] px-4 py-16 sm:px-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p className="num text-[11.5px] tracking-[0.08em] text-ember uppercase">How it works</p>
-                <h2 id="how-h" className="mt-3 font-display text-[28px] font-semibold tracking-[-0.015em]">
-                  From connected repository to a reviewed fix
-                </h2>
-              </div>
-              <p className="flex flex-wrap items-center gap-4 text-[12px] text-fg-3">
-                <span className="inline-flex items-center gap-1.5">
-                  <span aria-hidden="true" className="h-2 w-2 rounded-full bg-ok" /> verified on the fixture apps
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span aria-hidden="true" className="h-2 w-2 rounded-full border border-dashed border-fg-2" /> tested against a mock GitHub only
-                </span>
-              </p>
-            </div>
-            <div className="ticks mt-8" aria-hidden="true" />
-            <ol className="grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-              {FLOW.map((f, i) => (
-                <li key={f.step} className="bg-bg-0 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="num text-[12px] text-fg-3">{String(i + 1).padStart(2, "0")}</span>
-                    <span
-                      role="img"
-                      aria-label={f.status === "verified" ? "verified on the fixture apps" : "tested against a mock GitHub only"}
-                      className={`h-2 w-2 rounded-full ${f.status === "verified" ? "bg-ok" : "border border-dashed border-fg-2"}`}
-                    />
-                  </div>
-                  <h3 className="mt-4 font-display text-[18px] font-semibold">{f.step}</h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-fg-2">{f.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <BenchStrip />
-
-        <section aria-labelledby="scope-h" className="border-t border-line bg-bg-1">
-          <div className="mx-auto grid w-full max-w-[1200px] gap-10 px-4 py-16 sm:px-6 md:grid-cols-2">
-            <div>
-              <h2 id="scope-h" className="font-display text-[20px] font-semibold">Works today</h2>
-              <ul className="mt-5 space-y-3 text-[14px] text-fg-1">
-                {SUPPORTED.map((s) => (
-                  <li key={s} className="flex gap-3">
-                    <span aria-hidden="true" className="text-ok">✓</span>
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h2 className="font-display text-[20px] font-semibold">Not yet</h2>
-              <ul className="mt-5 space-y-3 text-[14px] text-fg-2">
-                {NOT_YET.map((s) => (
-                  <li key={s} className="flex gap-3">
-                    <span aria-hidden="true" className="text-fg-3">○</span>
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="pilot-h" className="border-t border-line">
-          <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 py-16 sm:px-6 md:flex-row md:items-center md:justify-between">
-            <div className="max-w-[640px]">
-              <h2 id="pilot-h" className="font-display text-[28px] font-semibold tracking-[-0.015em]">
-                Looking for design partners
-              </h2>
-              <p className="mt-3 text-[14px] leading-relaxed text-fg-2">
-                If you serve a Python LLM app on your own GPUs, we will set Furnace up with you on one repository in a
-                single working session. You keep the setup and the results. In return, we ask for an honest account of
-                what was useful and what was not.
-              </p>
-            </div>
+          <div aria-hidden="true" className="hero-grid pointer-events-none absolute inset-0" />
+          <div aria-hidden="true" className="hero-heat pointer-events-none absolute inset-x-0 bottom-0 h-[520px]" />
+          <div className="relative mx-auto w-full max-w-[1100px] px-4 pt-16 pb-20 text-center sm:px-6 sm:pt-24">
             <Link
               href="/pilot"
-              className="inline-flex h-10 shrink-0 items-center self-start rounded-[3px] bg-ember px-5 text-[14px] font-medium text-bg-0 transition-colors duration-150 hover:bg-ember-hi md:self-auto"
+              className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-bg-1/80 px-3.5 py-1.5 text-[12.5px] text-fg-1 hover:border-fg-3"
             >
-              See what a pilot involves
+              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-ember" />
+              Early access: looking for design partners
+              <span aria-hidden="true" className="text-fg-3">
+                →
+              </span>
             </Link>
+            <h1 className="mx-auto mt-7 max-w-[900px] font-display text-[42px] leading-[1.02] font-semibold tracking-[-0.035em] text-fg-0 sm:text-[68px]">
+              Ship prompt changes without slowing down your AI.
+            </h1>
+            <p className="mx-auto mt-6 max-w-[620px] text-[17px] leading-relaxed text-fg-1">
+              Furnace tests every pull request on your own model server, blocks the ones that make responses slower, and
+              drafts a tested fix. Your team just reviews it.
+            </p>
+            <div className="mt-9 flex flex-wrap justify-center gap-3">
+              <Cta href="/pilot" primary>
+                Become a design partner
+              </Cta>
+              <Cta href="/demo">See it catch one</Cta>
+            </div>
+            <div className="mt-16">
+              <HeroCard s={s} />
+            </div>
+          </div>
+        </section>
+
+        {/* Works with */}
+        <section aria-label="Works with" className="border-y border-line bg-bg-1/60">
+          <div className="mx-auto flex w-full max-w-[1100px] flex-wrap items-center justify-center gap-x-10 gap-y-3 px-4 py-6 sm:px-6">
+            <span className="text-[11.5px] tracking-[0.08em] text-fg-3 uppercase">Works with</span>
+            {WORKS_WITH.map((w) => (
+              <span key={w} className="num text-[14px] text-fg-2">
+                {w}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* Problem */}
+        <section className="mx-auto w-full max-w-[1100px] px-4 py-24 text-center sm:px-6">
+          <p className="num text-[11.5px] tracking-[0.1em] text-ember uppercase">The problem</p>
+          <h2 className="mx-auto mt-4 max-w-[760px] font-display text-[34px] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-[48px]">
+            One small change. {slower ? `${slower}× slower.` : "Much slower."}
+          </h2>
+          <p className="mx-auto mt-5 max-w-[620px] text-[16px] leading-relaxed text-fg-2">
+            A request ID added to the top of a prompt. The answers didn’t change, so every answer check passed. But the
+            model server could no longer reuse its cached work, so every request waited longer.
+          </p>
+          {s && (
+            <div className="mx-auto mt-14 grid max-w-[760px] gap-px overflow-hidden rounded-[10px] border border-line bg-line sm:grid-cols-2">
+              <div className="bg-bg-0 px-6 py-8">
+                <p className="font-display text-[44px] font-semibold tracking-[-0.03em] text-fg-0">
+                  {s.hitBase != null ? Math.round(s.hitBase * 100) : "–"}% <span className="text-fg-3">→</span>{" "}
+                  <span className="text-ember">{s.hitPr != null ? Math.round(s.hitPr * 100) : "–"}%</span>
+                </p>
+                <p className="mt-1 text-[14px] text-fg-2">of the prompt reused from the server’s cache</p>
+              </div>
+              <div className="bg-bg-0 px-6 py-8">
+                <p className="font-display text-[44px] font-semibold tracking-[-0.03em] text-fg-0">
+                  {s.base.toFixed(0)} <span className="text-fg-3">→</span> <span className="text-ember">{s.pr.toFixed(0)}</span>
+                  <span className="text-[22px] text-fg-2"> ms</span>
+                </p>
+                <p className="mt-1 text-[14px] text-fg-2">time to first token (geometric mean)</p>
+              </div>
+            </div>
+          )}
+          {s && (
+            <p className="mt-4 text-[11.5px] text-fg-3">
+              Recorded on a fixture app, laptop RTX 3050 Ti, vLLM, Qwen2.5-0.5B (trial 1 of {s.trials}).
+            </p>
+          )}
+        </section>
+
+        {/* How it works */}
+        <section id="how" className="border-t border-line bg-bg-1/40">
+          <div className="mx-auto w-full max-w-[1100px] px-4 py-24 sm:px-6">
+            <p className="num text-[11.5px] tracking-[0.1em] text-ember uppercase">How it works</p>
+            <h2 className="mt-4 max-w-[640px] font-display text-[34px] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-[44px]">
+              A performance check for every pull request.
+            </h2>
+            <div className="mt-14">
+              <Steps d={stepData} />
+            </div>
+          </div>
+        </section>
+
+        {/* Evidence */}
+        {stats.length > 0 && (
+          <section className="border-t border-line">
+            <div className="mx-auto w-full max-w-[1100px] px-4 py-24 sm:px-6">
+              <div className="flex flex-wrap items-end justify-between gap-6">
+                <div>
+                  <p className="num text-[11.5px] tracking-[0.1em] text-ember uppercase">Evidence</p>
+                  <h2 className="mt-4 max-w-[620px] font-display text-[34px] leading-[1.08] font-semibold tracking-[-0.025em] sm:text-[44px]">
+                    Measured, including the misses.
+                  </h2>
+                </div>
+                <Link href="/bench" className="text-[14px] text-fg-2 hover:text-fg-0">
+                  Every result and correction →
+                </Link>
+              </div>
+              <div className="mt-14 grid gap-px overflow-hidden rounded-[10px] border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
+                {stats.map(([v, l], j) => (
+                  <div key={l} className="bg-bg-0 px-6 py-8">
+                    <p className={`font-display text-[44px] font-semibold tracking-[-0.03em] ${j === stats.length - 1 && g ? "text-fg-2" : "text-fg-0"}`}>{v}</p>
+                    <p className="mt-1 text-[14px] text-fg-2">{l}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 max-w-[760px] text-[12px] leading-relaxed text-fg-3">
+                Two fixture apps, one laptop GPU, one small model. Every figure is read from a result file in the repository.
+                The GitHub App has passed tests against a mock GitHub; its first run on real GitHub is in progress.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* FAQ */}
+        <section id="faq" className="border-t border-line">
+          <div className="mx-auto grid w-full max-w-[1100px] gap-10 px-4 py-24 sm:px-6 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <p className="num text-[11.5px] tracking-[0.1em] text-ember uppercase">FAQ</p>
+              <h2 className="mt-4 font-display text-[34px] leading-[1.08] font-semibold tracking-[-0.025em]">Straight answers.</h2>
+            </div>
+            <div className="lg:col-span-8">
+              <Faq s={s} />
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="relative overflow-hidden border-t border-line">
+          <div aria-hidden="true" className="hero-heat pointer-events-none absolute inset-x-0 bottom-0 h-[360px]" />
+          <div className="relative mx-auto w-full max-w-[1100px] px-4 py-28 text-center sm:px-6">
+            <h2 className="mx-auto max-w-[760px] font-display text-[36px] leading-[1.06] font-semibold tracking-[-0.03em] sm:text-[52px]">
+              Serve your own models? Let’s test one repository together.
+            </h2>
+            <p className="mx-auto mt-5 max-w-[520px] text-[16px] text-fg-2">
+              A free pilot, set up with you in one session. You keep everything it finds.
+            </p>
+            <div className="mt-9 flex flex-wrap justify-center gap-3">
+              <Cta href="/pilot" primary>
+                Become a design partner
+              </Cta>
+              <Cta href="/demo">See it catch one</Cta>
+            </div>
           </div>
         </section>
       </main>
