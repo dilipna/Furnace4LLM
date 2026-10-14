@@ -94,15 +94,58 @@ image): the panels show the recorded RQ4 run, labeled, and Guard runs need the l
 4. Deploy. The browser only talks to the Vercel origin; `/api/*` is rewritten to Render
    (`apps/web/next.config.ts`), so no CORS configuration is needed.
 
-## 4. Verify (each was checked against the local image on 2026-10-10)
+## 4. Verify (one command)
 
-- Landing page loads: hero before/after, "lab offline · showing recorded run", FurnaceBench strip.
-- Paste `https://github.com/peterw/llamav2-chat` into the scan box → live log → Blueprint
-  (Replicate call, engine replicate). A renamed repo (`vercel/ai-chatbot`) still scans.
-- `/lab`: "Lab GPU offline" button with the reason; `/guard/r1_dynamic_head`: "Runner offline";
-  `/bench`: the corrections box above the 2026-10-06 report; `/evals`: labeling disabled.
-- API: `curl https://furnace-api-XXXX.onrender.com/api/live/telemetry` prints `event: disabled`;
-  `POST /api/public/scans` with `{"kind":"fixture",...}` is 404 (dev only).
+```bash
+uv run python scripts/smoke_hosted.py --api https://furnace-api-XXXX.onrender.com     --web https://furnace-XXXX.vercel.app --scan github.com/peterw/llamav2-chat     --out bench/results/<date>-hosted/smoke.md
+```
+
+It waits up to two minutes for a sleeping API, then checks: health and database; runner list
+without host details; live lab and visitor runs off; refusals (Guard run 403, fixture scan 404,
+labels 403); recorded results present; the web pages (`/`, `/pilot`, `/guard/r1_dynamic_head`,
+`/bench`) and the `/api` rewrite; one public scan end to end. Exit 0 only if every check
+passed. Commit the `--out` file; only then say "deployed and verified". Last run: against the
+production image locally, 2026-10-14 at 0b776b5, all checks passed (no hosted run yet).
+
+## Environment variables, complete
+
+Secrets go only into the Render dashboard or the runner's `.env` (git-ignored). The web app
+has **no secrets**: every `NEXT_PUBLIC_*` value is visible to anyone.
+
+| service | variable | value | secret |
+|---|---|---|---|
+| API (Render) | `FURNACE_ENV` | `prod` (refuses dev secrets and writable labels) | no |
+| | `FURNACE_DATABASE_URL` | Supabase session-pooler URI, `postgresql+asyncpg://` | **yes** |
+| | `FURNACE_MASTER_KEY` | 32 random bytes, base64 | **yes** |
+| | `FURNACE_SESSION_SECRET` | long random string | **yes** |
+| | `FURNACE_WEB_ORIGIN` | the Vercel URL | no |
+| | `FURNACE_GITHUB_WEBHOOK_SECRET` | only if GitHub delivers webhooks to this API | **yes** |
+| | `FURNACE_GITHUB_ALLOWED_REPOS` | e.g. `dilipna/furnace-demo-f1` | no |
+| | set in the image | `FURNACE_LIVE_LAB=false`, `FURNACE_PUBLIC_RUNS=false`, `FURNACE_LABELS_WRITABLE=false`, `FURNACE_EMBEDDED_WORKER=true`, `FURNACE_BENCH_DIR=/app/bench` | no |
+| Web (Vercel) | `FURNACE_API_URL` | the Render URL; server-side only, fixed at build | no |
+| | `NEXT_PUBLIC_CONTACT_URL` | where "Ask about a pilot" goes (default: LinkedIn) | no, public |
+| | `NEXT_PUBLIC_DEMO_VIDEO` | optional; default `/demo/furnace-demo.webm`, shipped with the site | no, public |
+| Runner (your GPU machine) | `FURNACE_DATABASE_URL` | the same Supabase URI as the API | **yes** |
+| | `FURNACE_GITHUB_APP_ID`, `FURNACE_GITHUB_PRIVATE_KEY_PATH`, `FURNACE_GITHUB_WEBHOOK_SECRET` | written by `furnace gh-setup`; the key file is in `~/.furnace/` | **yes** (key, secret) |
+| | `FURNACE_GUARD_SUITE_PATH`, `FURNACE_GUARD_QUESTIONS_PATH`, `FURNACE_GUARD_MAX_PROMPT_TOKENS` | Guard's configuration (`docs/pilot.md`) | no |
+| | `FURNACE_LAB_BASE_URL`, `FURNACE_LAB_MODEL` | the model endpoint to measure (default `http://localhost:8100/v1`, `lab`) | no |
+| | `FURNACE_GUARD_AUTO_REPAIR` | `true` only with the owner's consent to draft repair PRs | no |
+
+## The runner (stays on your machine)
+
+Requirements: Docker (the sandbox), an NVIDIA GPU with the vLLM container
+(`docker compose --profile gpu up -d vllm`), on AC power (benchmarks refuse to run on
+battery), outbound access to GitHub and to the database. Start: `uv run poe runner`. It
+registers in `runners`, heartbeats, and claims `runner`-queue jobs; the hosted API only
+enqueues. With `FURNACE_PUBLIC_RUNS=false` on the API, visitors cannot start runs on it;
+only GitHub events (and the owner's CLI) create work for it.
+
+## GitHub webhooks to the hosted API
+
+Point the App's webhook at `https://<api>/api/github/webhook` (GitHub → the App's settings →
+Webhook URL), set `FURNACE_GITHUB_WEBHOOK_SECRET` on Render to the value in the runner's
+`.env`, and redeploy. Without it the endpoint answers 503 and the runner can still read
+events with `uv run poe gh-poll` (no public URL needed).
 
 ## Updating results
 
