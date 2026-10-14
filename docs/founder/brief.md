@@ -51,7 +51,7 @@ latency. Payment is untested; candidate models are below.
 | Repair works for one supported scenario | 3/3 repeated trials of one scenario (fixture F1, regression R1): the regression test fails on the PR and passes on main; the repair is -85.5 to -86.0% vs the PR and +0.9 to +4.2% vs main (90% upper bounds at most +9.5%); it sends byte-identical prompts to main for 34/34 questions; the first strategy was rejected by the same gate (`rq5.md`, `rq5/prompt_identity.md`) |
 | Targeted checks | ran 46% of checks with the same conclusion as the full suite on 13/13 scripted PRs, under the gate of 2026-10-06 (later found biased) (`2026-10-06/rq3.md`) |
 | Prefix caching matters on a real workload | caching off raised p95 TTFT by +193% to +433% at max-num-seqs 32 (`2026-10-06/rq4/rq4.md`) |
-| Engineering | FastAPI + Postgres job queue (leases, fencing, timeouts), Docker sandbox with no network, GitHub App with check runs and idempotent draft PRs, webhook HMAC and dedupe; 390 tests on Windows and 391 in Linux CI |
+| Engineering | FastAPI + Postgres job queue (leases, fencing, timeouts), Docker sandbox with no network, GitHub App with check runs and idempotent draft PRs, webhook HMAC and dedupe; 393 tests pass in Linux CI containers (`scripts/ci_linux.sh`, 2026-10-14) |
 
 ## What is not proven
 

@@ -32,6 +32,25 @@ cd apps/web && FURNACE_API_URL=http://localhost:8020 pnpm build && pnpm exec nex
 Then open http://localhost:3200: it is what visitors will see (recorded lab run, "Lab GPU
 offline", "Runner offline", corrections on /bench). Remove with `docker rm -f furnace-deploytest`.
 
+### Local production-mode check, 2026-10-14 (commit 5806c30)
+
+Image built from the committed tree (`git archive HEAD | docker build -f apps/api/Dockerfile -`),
+run with `FURNACE_ENV=prod` against an empty database:
+
+| probe | result |
+|---|---|
+| `GET /healthz` | `{"ok":true,"db":true}`: migrations ran on start |
+| `GET /api/runners` | ids `runner-N`, capabilities limited to gpu/docker (no hostname, OS build or driver) |
+| `GET /api/live/telemetry` | `event: disabled` |
+| `GET /api/bench/campaigns` | baked-in results, including `gate_validation` and `set6_findings` |
+| `POST /api/public/scans` kind `fixture` | 404 (dev only) |
+| `POST /api/labels` | 403 "labeling is disabled on this deployment" |
+| `POST /api/github/webhook` without a configured secret | 503 "webhooks are not configured" |
+| `POST /api/public/scans` kind `github` (`peterw/llamav2-chat`) | 201, scan succeeded through the embedded worker |
+
+Not checked here: the Vercel build against this API (same web code as the local production
+build), Supabase's pooler, Render's sleep behavior. Nothing is deployed.
+
 ## 1. Supabase (database)
 
 1. supabase.com → New project (free). Pick a strong database password; region near you.

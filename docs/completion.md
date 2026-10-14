@@ -74,8 +74,11 @@ name (history in git).
 |---|---|---|
 | Experiments finished under the frozen protocol, negative results kept | verified | RQ5 and optimizer as above |
 | Documentation committed | verified | 34aa551 (results), baa02a2 and the final commit (docs, copy) |
-| Required checks on the final code commit (`poe check`, web lint/tsc/build) | verified | at 61124c6: ruff, format, import contracts 2/2, pyright 0 errors, pytest 389 passed / 2 skipped; web lint, tsc, `next build` ok. Later commits change docs only. Linux CI runs after a push (not pushed yet) |
-| One end-to-end rehearsal (`scripts/rehearse.py`) | verified (local path only) | 2026-10-13 at baa02a2: 6/6 steps, no page errors; Guard flagged R1 (`docs/demo.md` rehearsal record). The GitHub steps are not covered (blocked, E) |
+| Required checks on the final code commit (`poe check`, web lint/tsc/build) | verified | 2026-10-14 at 5806c30: `scripts/ci_linux.sh` ran all three CI jobs in Linux containers on the committed tree (non-root runner user, sandbox tests included): ruff, format, import contracts, pyright 0 errors, pytest 393 passed; web lint, tsc, `next build`; API image builds and imports. Windows `poe check` 390 passed / 2 skipped. (The CI failure e-mail of 2026-10-14 is run 38297848766 on d31e087, 2026-10-12, fixed by ad295ec; every later pushed run is green.) Not pushed yet: GitHub CI runs after the owner pushes |
+| One end-to-end rehearsal (`scripts/rehearse.py`) | verified (local path only) | 2026-10-14 at 5806c30 on the new landing: 6/6 steps, no page errors; lab live, Run it now 80/80, Guard flagged R1 (FAILURE) in 101 s (`docs/demo-shots/rehearsal-2026-10-14/timings.json`). The GitHub steps are not covered (blocked, E) |
 | Three-minute demo script | verified | `docs/demo-3min.md` |
-| Demo recording | verified (silent, local path) | `docs/demo-video/demo-2026-10-13-1537.webm` (git-ignored); a narrated three-minute take is the owner's |
+| Demo recording | verified (silent, local path) | `docs/demo-video/demo-2026-10-13-2357.webm` (local time; the 2026-10-14 UTC rehearsal; git-ignored); a narrated three-minute take is the owner's |
 | Case study | verified | `docs/case-study.md` |
+| Landing, pilot onboarding, status vocabulary (2026-10-14) | verified locally | desktop 1440 and phone 390 px: no console errors, no horizontal overflow (`scripts/demo_shots.py`, `docs/demo-shots/`); every landing figure read from a result file (`docs/claims.md`) |
+| Hosted API in production mode | verified locally, **not deployed** | `docs/deploy.md` "Local production-mode check, 2026-10-14" |
+| Founder brief, pitch outline, validation plan, resume bullets | written | `docs/founder/` |
