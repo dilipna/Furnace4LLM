@@ -47,5 +47,14 @@ through the smee relay (outcomes: ignored, queued); a GitHub redelivery changed 
 unsigned, wrong-secret and tampered requests got 401.
 
 The Guard runner was stopped during the run so the webhook-triggered job would not compete
-for the GPU with the run's own Guard; that job was queued (outcome "queued") and is reported
-separately below if it is run.
+for the GPU with the run's own Guard; that job was queued (outcome "queued").
+
+## The webhook-queued job, run afterwards (05:2x UTC)
+
+The real `pull_request` delivery had queued one `guard.pr` job (6e6731cc) for PR #2's head
+0a637d7. With the runner started (Guard settings in its `.env`), it claimed the job and
+**succeeded**: it found Furnace's completed check run 115692708323 on that head commit and
+reused it (`reused: true`, conclusion failure) instead of opening a second one. So the event
+path GitHub delivery → HMAC → job → runner is shown; a fresh Guard run triggered by a webhook
+is not (the head had already been checked). `signatures: []` in the reused result, so no
+repair job was enqueued (repair consent was also off).
