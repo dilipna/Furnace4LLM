@@ -112,3 +112,13 @@ def test_a_running_job_without_heartbeat_does_not_block_new_runs(client):
     _run(dead_run())
     r = client.post("/api/guard/runs", json={"scenario": "r1_dynamic_head"})
     assert r.status_code == 201, r.text
+
+
+def test_a_public_deployment_refuses_visitor_runs_even_with_a_runner_online(client, monkeypatch):
+    from furnace.settings import get_settings
+
+    _run(_reset(True))
+    monkeypatch.setattr(get_settings(), "public_runs", False)
+    r = client.post("/api/guard/runs", json={"scenario": "r1_dynamic_head"})
+    assert r.status_code == 403 and "recorded" in r.json()["detail"]
+    assert client.get("/api/live/status").json()["public_runs"] is False

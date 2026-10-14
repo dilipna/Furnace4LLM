@@ -389,16 +389,8 @@ class Planner:
             risk="Data-only.",
             rec=r,
         )
-        slo = (self.workload.get("slo") or {}).get("ttft_p95_ms") or 500
-        self.write(
-            "furnace.yaml",
-            T.fill(T.FURNACE_YAML, SLO_TTFT=int(slo)),
-            change=ChangeType.add_file,
-            reason="Tells Furnace Guard which harness, evals, benchmarks and regression budget apply to this repository.",
-            target="Guard configuration",
-            risk="Configuration only.",
-            rec=r,
-        )
+        # No furnace.yaml: Guard is configured on the runner (FURNACE_GUARD_* settings,
+        # docs/pilot.md). Forge used to add one that nothing read (removed 2026-10-14).
 
     def ci(self) -> None:
         if not any(p.startswith("tests/furnace/") for p in self.result.files):

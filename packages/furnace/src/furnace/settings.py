@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # Live views: stream the lab endpoint's /metrics (+ NVML on this host) and allow small
     # on-demand benchmark runs against it. Off on hosted deployments without a lab endpoint.
     live_lab: bool = True
+    # Anonymous visitors may start fixture Guard runs ("Run Guard on this PR"). Off on a public
+    # hosted deployment, so a runner connected to its database only runs the owner's jobs.
+    public_runs: bool = True
     # What webhook-triggered Guard runs use on the runner (see docs/github-app.md).
     guard_suite_path: Path | None = None
     guard_questions_path: Path | None = None

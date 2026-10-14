@@ -158,6 +158,7 @@ async def status() -> dict[str, Any]:
     s = get_settings()
     return {
         "live_lab": s.live_lab,
+        "public_runs": s.public_runs,
         "active_run": _ACTIVE.id if _ACTIVE and _ACTIVE.status == "running" else None,
     }
 

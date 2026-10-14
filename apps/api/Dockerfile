@@ -27,6 +27,6 @@ RUN useradd --create-home --uid 10001 furnace && mkdir -p /app/.data && chown -R
 USER furnace
 
 ENV FURNACE_BENCH_DIR=/app/bench FURNACE_EMBEDDED_WORKER=true FURNACE_LABELS_WRITABLE=false \
-    FURNACE_LIVE_LAB=false
+    FURNACE_LIVE_LAB=false FURNACE_PUBLIC_RUNS=false
 EXPOSE 8010
 CMD ["sh", "-c", "uv run --no-sync alembic -c packages/furnace/src/furnace/db/alembic.ini upgrade head && uv run --no-sync uvicorn furnace_api.main:app --host 0.0.0.0 --port ${PORT:-8010} --proxy-headers"]

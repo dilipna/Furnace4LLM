@@ -217,8 +217,10 @@ export default function PilotPage() {
           <div className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-6">
             <h2 id="cfg-h" className="font-display text-[24px] font-semibold tracking-[-0.01em]">Configuration</h2>
             <p className="mt-2 max-w-[720px] text-[13px] text-fg-2">
-              In this release, Guard is configured on the runner with these settings. The furnace.yaml file that Forge
-              adds to a repository records what Forge validated; Guard does not read it yet.
+              Guard is configured on the runner machine, in its .env file. These settings are the whole
+              configuration; nothing is read from your repository except the code under test. The perf gate itself is
+              fixed: geometric-mean TTFT, 3 interleaved runs per revision, a 90% interval, PASS at or below +10%, BLOCK
+              above +25%.
             </p>
             <div className="mt-6 overflow-x-auto">
               <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">

@@ -19,3 +19,10 @@ services:
         sync: false # any long random string
       - key: FURNACE_WEB_ORIGIN
         sync: false # https://<your-vercel-app>.vercel.app
+      # Optional, only when GitHub delivers webhooks here (docs/deploy.md, "GitHub webhooks"):
+      - key: FURNACE_GITHUB_WEBHOOK_SECRET
+        sync: false # the App's webhook secret, from .env after `furnace gh-setup`
+      - key: FURNACE_GITHUB_ALLOWED_REPOS
+        sync: false # e.g. dilipna/furnace-demo-f1
+# Set in the image, not here: FURNACE_LIVE_LAB=false, FURNACE_PUBLIC_RUNS=false,
+# FURNACE_LABELS_WRITABLE=false, FURNACE_EMBEDDED_WORKER=true (apps/api/Dockerfile).

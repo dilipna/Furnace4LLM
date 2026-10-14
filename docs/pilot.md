@@ -57,12 +57,12 @@ a written summary that lists what was inconclusive and what Furnace could not se
 | `FURNACE_GUARD_AUTO_REPAIR` | default `false` | consent for draft repair PRs |
 | `FURNACE_GITHUB_APP_ID`, `FURNACE_GITHUB_PRIVATE_KEY_PATH`, `FURNACE_GITHUB_WEBHOOK_SECRET` | written by `gh-setup` | the key file lives in `~/.furnace/`, never in the repository |
 
-`furnace.yaml`, which Forge adds to a repository, records what Forge validated. **Guard does
-not read it in this release**; the settings above decide. (Until 2026-10-14 its header said
-Guard read it and named p95 as the gate metric; both were wrong and are corrected in
-`forge/templates.py`.) The gate itself is fixed, not configurable: geometric-mean TTFT per
-run, 3 interleaved runs per revision, 90% Welch interval, PASS at or below +10%, BLOCK above
-+25% (`docs/gate-revision.md`; validated at these values only).
+These settings are the whole configuration; Guard reads nothing from the repository except
+the code under test. (Until 2026-10-14 Forge also added a `furnace.yaml` that claimed Guard
+read it and named p95 as the gate metric. Nothing read it, so Forge no longer writes it.) The
+gate itself is fixed, not configurable: geometric-mean TTFT per run, 3 interleaved runs per
+revision, 90% Welch interval, PASS at or below +10%, BLOCK above +25%
+(`docs/gate-revision.md`; validated at these values only).
 
 ## Results and what they mean
 
