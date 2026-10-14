@@ -26,6 +26,8 @@ Results from different gate versions are never pooled or shown as one figure.
 | limits tile: small regressions undecided 15/18 | V3b, V3c topk4, topk8; measured range from the set medians | `validation/report.json` | as above | G3 | new: the negative result is on the landing page |
 | limits tiles: call sites 32/48, findings right 39/77 (recall 39/64) | held-out set 6 first scan | pinned `2026-10-13-set6/rq1.json`, `set6/findings.json` | scanner 41ca529, labels ebd5824 | n/a | findings precision added 2026-10-14 |
 | limits tile: live GitHub runs 0 | shown until a `bench/results/<date>-live-github/` campaign exists | campaign list | n/a | n/a | new |
+| /pilot text: "39 of its 77 findings were right" on five unseen apps | static text (the page is prerendered) | `2026-10-13-set6/set6/findings.json` `pooled` | scanner 41ca529 | n/a | frozen held-out result; findings judged by the developer agent, not independently reviewed |
+| landing "How it works": Connect and Review marked "tested against a mock GitHub only" | until the live run is recorded | `docs/completion.md` E | | | update the two markers after `live_run.md` and `verify.md` pass |
 | RQ3 tile (3/3 caught, 46%, 13 PRs) | removed from the landing page 2026-10-14 (G0-era; still on /guard with a G0 label) | `2026-10-06/rq3.json` | | G0 | /guard now says the gate was later found biased and that every perf verdict in that table depends on it |
 | /lab | RQ4 cells, live run | `2026-10-06/rq4`; live runs are labeled live | 780 MHz | n/a | ok |
 | /guard, /guard/<scenario> | RQ3 selections; RQ5 timeline | newest rq3 (G0) and newest rq5 | as recorded | each page names its metric | ok; /guard RQ3 table labeled with its gate (2026-10-14) |

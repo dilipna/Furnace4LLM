@@ -1,9 +1,30 @@
-# Furnace: session handoff (updated 2026-10-13 UTC, covers Oct 5-13 work)
+# Furnace: session handoff (updated 2026-10-14 UTC, covers Oct 5-14 work)
 
 Paste this file's path into a new Claude Code session ("read CONTINUE.md and continue"). Approved plan:
 `C:\Users\user\.claude\plans\pasted-content-id-65d9-you-are-streamed-falcon.md`. Memory:
 `C:\Users\user\.claude\projects\c--Users-user-OneDrive-Pictures-saas-reviewer\memory\` (read `laptop-gpu-power-cap.md`).
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
+
+## 2026-10-14 session (product focus, landing, pilot, founder docs), newest first
+- **Focus narrowed:** Furnace = a pre-merge serving-performance check for Python LLM apps on
+  self-hosted models (Guard is the product; Scan = onboarding map, findings advisory; Forge =
+  setup). Landing rebuilt around the recorded R1 pull request per trial (real diff generated
+  from the scenario by `scripts/export_pr_diff.py`, drift-tested); `/pilot` onboarding with
+  live API/runner status; `/pricing` redirects there. Founder docs in `docs/founder/`.
+- **Correctness fixes:** rq5.md now shows repair vs PR (-85.5/-85.6/-86.0%, re-rendered from
+  stored data with `bench/rq5.py --render`); Forge's `furnace.yaml` falsely said Guard reads it
+  and named p95 (fixed); old hero's +3% mixed medians across trials (removed); /guard RQ3 table
+  labeled with its G0 gate; `/api/runners` hides host details in prod.
+- **CI:** the CI failure e-mail was run 38297848766 on d31e087 (2026-10-12), fixed by ad295ec.
+  New rule: run `bash scripts/ci_linux.sh` (all three CI jobs in Linux containers, non-root,
+  on HEAD as committed) before every push. Passed at 5806c30. Runners pinned to ubuntu-24.04.
+- **Verified:** rehearsal 6/6 on the new landing (`docs/demo-shots/rehearsal-2026-10-14/`);
+  API image in production mode (`docs/deploy.md`). Nothing pushed or deployed this session.
+- **Still blocked on the owner:** GitHub App + public `furnace-demo-f1` (live run), push
+  approval, hosting accounts, `NEXT_PUBLIC_CONTACT_URL` for the pilot button (defaults to
+  the LinkedIn profile).
+- Windows gotcha: killing the API reloader leaves `multiprocessing` `spawn_main` children
+  holding :8010 with old code; stop them too.
 
 ## Release state (2026-10-13 evening): bounded portfolio release
 - Final acceptance checklist: `docs/completion.md` (verified / failed / inconclusive / deferred / blocked).

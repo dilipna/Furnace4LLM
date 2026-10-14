@@ -59,6 +59,13 @@ tabs: `http://localhost:3100/`, `/lab`, `/pilot`, `/guard/r1_dynamic_head`, `/be
 
 ## Rehearsal record
 
+**2026-10-14 (UTC), at commit 5806c30**, on the redesigned landing (vLLM, runner, API and the
+production web build running): every step passed, no page errors. Landing (recorded PR
+panel) then /lab live panel 12.7 s, GitHub scan to Blueprint 5.7 s, graph trace 1.7 s, Run it
+now 32.1 s (80/80 requests), Guard run on R1 101.4 s (FAILURE: `prompt_prefix_stable` and the
+perf gate), /bench 0.2 s. Screenshots `docs/demo-shots/rehearsal-2026-10-14/`; silent
+recording `docs/demo-video/demo-2026-10-13-2357.webm` (local time; git-ignored).
+
 **2026-10-13, at commit baa02a2** (after `poe demo-up`; pre-flight all OK except the GitHub
 App, which does not exist yet): every step passed, no page errors. Landing + live panel
 8.9 s, GitHub scan to Blueprint 5.1 s, graph trace 1.6 s, Run it now 32.1 s (80/80
