@@ -7,6 +7,7 @@ import furnace
 from fastapi import APIRouter, Depends
 from furnace.db.models import Runner
 from furnace.jobs import queue
+from furnace.settings import get_settings
 from pydantic import BaseModel
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,19 +38,27 @@ async def healthz(db: DB) -> Health:
     return Health(ok=db_ok, version=furnace.__version__, db=db_ok)
 
 
+# Shown to anonymous visitors of a hosted deploy: enough to say what a runner can do, not the
+# machine's hostname, OS build or driver version.
+PUBLIC_CAPABILITIES = ("gpu", "docker")
+
+
 @router.get("/api/runners", response_model=list[RunnerOut])
 async def runners(db: DB) -> list[RunnerOut]:
     cutoff = datetime.now(UTC) - timedelta(seconds=90)
     rows = (await db.execute(select(Runner).order_by(Runner.last_seen.desc()))).scalars()
+    public = get_settings().env == "prod"
     return [
         RunnerOut(
-            id=r.id,
+            id=f"runner-{i + 1}" if public else r.id,
             queues=list(r.queues),
-            capabilities=r.capabilities,
+            capabilities={k: v for k, v in r.capabilities.items() if k in PUBLIC_CAPABILITIES}
+            if public
+            else r.capabilities,
             last_seen=r.last_seen,
             online=r.last_seen >= cutoff,
         )
-        for r in rows
+        for i, r in enumerate(rows)
     ]
 
 

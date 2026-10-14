@@ -26,7 +26,7 @@ name (history in git).
 | criterion | status | evidence |
 |---|---|---|
 | Regression test fails on PR, passes on base, before any fix | verified 3/3 | `2026-10-12-gate-validation/rq5.md` |
-| Repair accepted by the frozen gate (F1, R1; 3 repeated trials of one scenario) | verified 3/3 | +4.2% / +0.9% / +1.7% vs main, 90% upper bounds 9.5 / 4.1 / 7.2; measured at 6efebfd, 780 MHz, AC |
+| Repair accepted by the frozen gate (F1, R1; 3 repeated trials of one scenario) | verified 3/3 | faster than the PR: -85.5% / -85.6% / -86.0% (90% upper bounds -84.9 / -85.2 / -85.2, rule: below 0); bounded against main: +4.2% / +0.9% / +1.7%, 90% upper bounds 9.5 / 4.1 / 7.2 (rule: below 25; inside the 10% tolerance in all three); measured at 6efebfd, 780 MHz, AC. The vs-PR column was added to `rq5.md` on 2026-10-14 from the comparisons the loop stored when it decided (no rerun) |
 | First strategy rejected, kept in the record | verified | INCONCLUSIVE once, BLOCK +37.8% and +39.6% |
 | Repaired prompts equal the base revision's | verified | 34/34 questions byte-identical in each attempt (`rq5/prompt_identity.md`) |
 | Moved value is diagnostic and not sensitive (this scenario) | verified | random 8-hex id + UTC time; the repair PR now warns that logged values are not inspected (`NOTES.md`) |

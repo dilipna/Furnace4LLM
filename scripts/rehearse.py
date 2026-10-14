@@ -3,7 +3,7 @@
   uv run python scripts/rehearse.py [--base http://localhost:3100] [--repo github.com/o/r]
                                     [--out docs/demo-shots/rehearsal-1] [--skip-gpu]
 
-Steps: landing loads and its live panel connects -> GitHub scan to Blueprint -> graph path
+Steps: landing shows the recorded PR review and /lab's live panel connects -> GitHub scan (from /pilot) to Blueprint -> graph path
 trace -> /lab "Run it now" (real benchmark on the lab endpoint) -> /guard/r1_dynamic_head
 "Run Guard on this PR" (real Guard run on the runner) -> /bench. Each step is timed from
 the user's action to the moment the result is on screen, and screenshotted. The GitHub
@@ -71,16 +71,20 @@ def main() -> int:
         page.on("pageerror", lambda exc: errors.append(str(exc)))
 
         def landing() -> str:
+            # 2026-10-14 landing: the recorded PR review is the hero; the live lab panel is on /lab.
             page.goto(a.base + "/", wait_until="load")
+            page.get_by_text("RECORDED RUN · NOT LIVE").first.wait_for(timeout=20_000)
+            if pace:  # step through the three repeated trials, then back to trial 1
+                for t in ("2", "3", "1"):
+                    page.get_by_role("tab", name=t).click()
+                    page.wait_for_timeout(pace * 700)
+            page.goto(a.base + "/lab", wait_until="load")
             page.get_by_text("Lab endpoint").first.wait_for(timeout=20_000)
             page.locator("text=/live · 1 s|lab offline/").first.wait_for(timeout=20_000)
             live = page.get_by_text("live · 1 s").count() > 0
-            if pace:  # the hero replays, then the live panel, then back to the scan box
-                page.wait_for_timeout(3000)
-                page.locator("#lab-now").scroll_into_view_if_needed()
+            if pace:
                 page.wait_for_timeout(pace * 1500)
-                page.evaluate("window.scrollTo({top: 0, behavior: 'smooth'})")
-                page.wait_for_timeout(800)
+            page.goto(a.base + "/pilot", wait_until="load")  # the scan box lives on /pilot
             return "lab live" if live else "lab offline (recorded run shown)"
 
         def scan() -> str:

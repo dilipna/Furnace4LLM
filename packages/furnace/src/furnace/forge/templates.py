@@ -203,27 +203,29 @@ jobs:
       - run: python -m pytest -q tests/furnace
 """
 
-FURNACE_YAML = """# Installed by Furnace Forge. Read by Furnace Guard on every pull request.
+FURNACE_YAML = """# Installed by Furnace Forge: a record of the setup Forge validated for this repository.
+# Guard does not read this file in this release. The runner's settings decide what Guard
+# runs (FURNACE_GUARD_SUITE_PATH, FURNACE_GUARD_QUESTIONS_PATH, FURNACE_GUARD_MAX_PROMPT_TOKENS;
+# see docs/pilot.md in the Furnace repository). Edit those, not this file.
 version: 1
 harness: furnace_harness.py::render
 slo:
-  ttft_p95_ms: __SLO_TTFT__
+  ttft_p95_ms: __SLO_TTFT__     # serving target for benchmarks and reports, not the PR gate
   max_failure_rate: 0.01
-policy:
-  perf_regression:
-    metric: ttft_p95_ms
-    warn_pct: 10
-    block_pct: 25
-  quality:
-    citation_required: {min_pass_rate_delta: -0.05}
+perf_gate:                      # Guard's gate as it decides today (fixed, not configurable)
+  metric: geometric-mean TTFT per run (p95 reported, advisory)
+  interval: 90% run-level Welch t, 3 interleaved runs per revision
+  tolerance_pct: 10             # PASS only if the whole interval is at or below +10%
+  block_pct: 25
 evals:
   dataset: evals/datasets/questions.jsonl
   runner: evals/run_evals.py
-  judges: [evals/judges/ungrounded_answer.yaml]
+  judges: [evals/judges/ungrounded_answer.yaml]   # uncalibrated; Guard reports it as SKIP
 benchmarks:
   workloads: benchmarks/workloads.yaml
   endpoint_env: LLM_BASE_URL
 """
+
 
 PROMPT_FILE = """---
 id: __ID__
