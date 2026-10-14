@@ -233,6 +233,35 @@ async def guard_pr(
 # ---------------------------------------------------------------------------------- Forge
 
 
+# GitHub needs a separate `workflows` permission to create or change files under
+# .github/workflows/ (found on the first live run, 2026-10-14: POST /git/trees -> 403).
+# Furnace does not request it: an App that can rewrite CI can run code with the repository's
+# secrets. A draft PR therefore carries those files in its description for a person to add.
+WORKFLOWS_DIR = ".github/workflows/"
+
+
+def split_workflow_files(files: dict[str, str]) -> tuple[dict[str, str], dict[str, str]]:
+    """(files the App may commit, workflow files held back for the reviewer to add)."""
+    held = {p: c for p, c in files.items() if p.startswith(WORKFLOWS_DIR)}
+    return {p: c for p, c in files.items() if p not in held}, held
+
+
+def workflow_note(held: dict[str, str]) -> str:
+    lines = [
+        "",
+        "### Add this yourself: the CI workflow",
+        "",
+        "Not committed: the Furnace App does not have permission to change files in "
+        "`.github/workflows/` (GitHub's separate `workflows` permission, which would let it "
+        "change what your CI runs). To run the installed tests on every pull request, add "
+        "this file in a commit of your own:",
+        "",
+    ]
+    for path, content in sorted(held.items()):
+        lines += [f"`{path}`", "", "```yaml", content.rstrip(), "```", ""]
+    return "\n".join(lines)
+
+
 def forge_pr_body(plan: ForgePlan, v: ForgeValidation, skipped: list[dict[str, str]]) -> str:
     rows = [
         f"| `{c.path}` | {c.change_type.value} | {c.reason} | {c.target} | {c.risk} |"
@@ -307,12 +336,15 @@ async def forge_pr(
             out["reason"] = "dry run (pass --open-pr to open a draft pull request)"
             return out
         writer = await _token(app, full_name, PR_PERMISSIONS)
+        files, held = split_workflow_files(result.files)
+        out["held_back"] = sorted(held)
         out["pr"] = await writer.open_draft_pr(
             base_branch=branch,
             new_branch=f"furnace/forge-{sha[:7]}",
-            files=result.files,
+            files=files,
             title="Furnace Forge: evals, tracing hooks and benchmark configs",
-            body=forge_pr_body(result.plan, v, result.skipped),
+            body=forge_pr_body(result.plan, v, result.skipped)
+            + (workflow_note(held) if held else ""),
             commit_message="Furnace Forge: install the reliability layer justified by the Blueprint",
             base_sha=sha,
         )

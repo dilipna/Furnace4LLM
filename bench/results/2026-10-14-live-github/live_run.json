@@ -1,0 +1,80 @@
+{
+  "manifest": {
+    "date": "2026-10-14",
+    "started_at": "2026-10-14T05:08:24+00:00",
+    "git": {
+      "sha": "eb5f8a4047a1ad0ebf6750217d2d2ba917c169c4",
+      "dirty": true
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 58,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "scripts/live_github_run.py",
+      "--repo",
+      "dilipna/furnace-demo-f1"
+    ]
+  },
+  "repo": "dilipna/furnace-demo-f1",
+  "branches_before": {
+    "main": "bb4d9186d57a05b6bb4ab0b46ab8f9c77a3d10a8",
+    "r1-request-id": "0a637d779689cc6d30a6adcd4409bf83c1c27824"
+  },
+  "steps": [
+    {
+      "step": "check",
+      "ok": true,
+      "out": {
+        "slug": "furnace-dev-dilipna",
+        "name": "furnace-dev-dilipna",
+        "permissions": {
+          "checks": "write",
+          "contents": "write",
+          "metadata": "read",
+          "pull_requests": "write"
+        },
+        "events": [
+          "pull_request"
+        ],
+        "installations": [
+          {
+            "id": 171233745,
+            "account": "dilipna"
+          }
+        ]
+      },
+      "seconds": 0.7
+    },
+    {
+      "step": "branches_before",
+      "ok": true,
+      "out": {
+        "main": "bb4d9186d57a05b6bb4ab0b46ab8f9c77a3d10a8",
+        "r1-request-id": "0a637d779689cc6d30a6adcd4409bf83c1c27824"
+      },
+      "seconds": 1.3
+    },
+    {
+      "step": "forge",
+      "ok": false,
+      "error": "GitHubError: POST /git/trees: 403 {\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/git/trees#create-a-tree\",\"status\":\"403\"}",
+      "trace": "Traceback (most recent call last):\n  File \"C:\\dev\\furnace\\scripts\\live_github_run.py\", line 166, in step\n    out = await coro_fn()\n          ^^^^^^^^^^^^^^^\n  File \"C:\\dev\\furnace\\scripts\\live_github_run.py\", line 179, in forge_once\n    out = await flows.forge_pr(\n          ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\dev\\furnace\\packages\\furnace\\src\\furnace\\github\\flows.py\", line 310, in forge_pr\n    out[\"pr\"] = await writer.open_draft_pr(\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\dev\\furnace\\packages\\furnace\\src\\furnace\\github\\client.py\", line 243, in open_draft_pr\n    tree = await self._req(\n           ^^^^^^^^^^^^^^^^\n  File \"C:\\dev\\furnace\\packages\\furnace\\src\\furnace\\github\\client.py\", line 177, in _req\n    raise GitHubError(f\"{method} {path}: {r.status_code} {r.text[:300]}\")\nfurnace.github.client.GitHubError: POST /git/trees: 403 {\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/git/trees#create-a-tree\",\"status\":\"403\"}\n",
+      "seconds": 20.9
+    }
+  ],
+  "checks": {
+    "all_steps_ok": false,
+    "guard_flagged_r1": false,
+    "repair_verified": false,
+    "forge_replay_same_pr": false,
+    "repair_replay_same_pr": true
+  },
+  "verdict": "INCOMPLETE: all_steps_ok, guard_flagged_r1, repair_verified, forge_replay_same_pr"
+}
