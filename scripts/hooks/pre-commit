@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Fast lint gate: the same ruff checks CI runs. Installed with `git config core.hooksPath scripts/hooks`.
+set -euo pipefail
+export PATH="$HOME/.local/bin:$PATH"
+uv run --quiet ruff check .
+uv run --quiet ruff format --check .

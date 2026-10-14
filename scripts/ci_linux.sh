@@ -94,3 +94,5 @@ for job in $JOBS; do
   echo "== $job: ok"
 done
 echo "CI (Linux) passed at $SHA: $JOBS"
+# the pre-push hook (scripts/hooks/pre-push) allows only commits recorded here, after all jobs
+if [ "$JOBS" = "python web image" ]; then git rev-parse HEAD >> "$(git rev-parse --git-dir)/ci-linux-passed"; fi
