@@ -5,6 +5,20 @@ Paste this file's path into a new Claude Code session ("read CONTINUE.md and con
 `C:\Users\Dilip\.claude\projects\c--Users-Dilip-OneDrive-Pictures-saas-reviewer\memory\` (read `laptop-gpu-power-cap.md`).
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
+## 2026-10-14 (evening): fresh-commit webhook run, recorded-only site for Vercel
+- **Webhook gap closed** (`scripts/live_webhook_run.py`, `bench/results/2026-10-14-live-webhook/`):
+  new commit 49224d2 on PR #4 → signed delivery over HMAC → job d09d0db6 → runner → one check
+  run 116037356084 on that exact head (`failure`, +575.4%); redeliveries during/after: no rows
+  changed. First and only attempt.
+- **Recorded-only web mode** (`NEXT_PUBLIC_RECORDED_ONLY=true`, `apps/web/lib/site.ts`): bench
+  routes from `apps/web/lib/bench-snapshot.json` (`scripts/export_bench_snapshot.py`, drift
+  test `apps/api/tests/test_bench_snapshot.py`: rerun the exporter after any bench result
+  change), lab telemetry from `public/recorded/`, no `/api` rewrites, every live control shows
+  an unavailable state. MP4 fallback for the recording. `scripts/smoke_hosted.py --web <url>`
+  (no `--api`) checks such a site. Deploy = Vercel alone (`docs/deploy.md` first section);
+  waiting on the owner's Vercel account (`docs/owner-actions.md` #1).
+- Resume: two final bullets in `docs/founder/resume-bullets.md` (-1.6% never as an improvement).
+
 ## 2026-10-14 (later): live GitHub run done, investor-facing site, hooks
 - **Live GitHub run on `dilipna/furnace-demo-f1`** (App `furnace-dev-dilipna`, key in
   `~/.furnace/`, settings in `.env`): attempt 1 failed at Forge (403: `.github/workflows/`

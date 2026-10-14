@@ -5,6 +5,7 @@ import { SystemPanel } from "@/components/blueprint/system-panel";
 import { ScanLive, ScanLog } from "@/components/scan/scan-live";
 import { AppHeader } from "@/components/ui/app-header";
 import { ApiError, apiGet } from "@/lib/api";
+import { RECORDED_ONLY } from "@/lib/site";
 import type { Blueprint, ScanInfo } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -82,7 +83,7 @@ export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
   try {
     scan = await apiGet<ScanInfo>(`/api/scans/${id}`);
   } catch (e) {
-    if (e instanceof ApiError && e.status === 404) notFound();
+    if (RECORDED_ONLY || (e instanceof ApiError && e.status === 404)) notFound(); // recorded-only: no scans here
     throw e;
   }
   const bp = scan.status === "succeeded" ? await apiGet<Blueprint>(`/api/scans/${id}/blueprint`) : null;

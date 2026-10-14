@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { RECORDED_ONLY } from "@/lib/site";
 
 type RunnerRow = { id: string; queues: string[]; capabilities: Record<string, unknown>; last_seen: string; online: boolean };
 type State =
@@ -16,8 +17,38 @@ const ago = (iso: string) => {
   return `${Math.round(s / 86400)} days ago`;
 };
 
-/** Live availability of the control API and the Guard runner, with what to do when one is down. */
+/** Live availability of the control API and the Guard runner, or, on a recorded-only site, that neither is connected. */
 export function RunnerStatus() {
+  return RECORDED_ONLY ? <RecordedStatus /> : <LiveRunnerStatus />;
+}
+
+function RecordedStatus() {
+  const rows = [
+    ["Control API", "Not deployed on this site. Every page shows recorded results."],
+    ["Guard runner", "Not connected to this site. Live Guard runs happen on the runner machine during a pilot."],
+  ];
+  return (
+    <div className="rounded-[6px] border border-line-strong bg-bg-1">
+      <div className="border-b border-line px-4 py-2.5">
+        <span className="text-[12px] text-fg-2">System status: recorded-only site</span>
+      </div>
+      <ul className="divide-y divide-line">
+        {rows.map(([name, detail]) => (
+          <li key={name} className="px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full border border-dashed border-fg-3" />
+              <span className="text-[13px] text-fg-0">{name}</span>
+              <span className="num ml-auto text-[11.5px] text-fg-2">NOT HERE</span>
+            </div>
+            <p className="mt-1 pl-5 text-[12px] text-fg-2">{detail}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function LiveRunnerStatus() {
   const [st, setSt] = useState<State>({ kind: "loading" });
   const check = useCallback(() => {
     fetch("/api/runners", { cache: "no-store" })

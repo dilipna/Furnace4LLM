@@ -3,6 +3,7 @@ import { getRq, latestWith } from "@/lib/bench";
 type Step = { step: string; ok: boolean; seconds?: number; out?: Record<string, unknown> };
 type LiveRun = { repo: string; manifest: { started_at: string }; steps: Step[]; verdict: string };
 type Verify = { verdict: string; results: { check: string; ok: boolean }[] };
+type Webhook = { ok: boolean; steps: { step: string; ok: boolean; out?: Record<string, unknown> }[] };
 type Cmp = { change_pct: number; ci_pct?: [number, number] };
 
 const pct = (x: number) => `${x > 0 ? "+" : ""}${x.toFixed(1)}%`;
@@ -16,6 +17,11 @@ export async function LiveGithub() {
     getRq<Verify>(campaign, "live_verify").catch(() => null),
   ]);
   if (!run) return null;
+  // the fresh-commit webhook run, recorded separately (newest campaign that has one)
+  const whCampaign = await latestWith("live_webhook").catch(() => null);
+  const wh = whCampaign ? await getRq<Webhook>(whCampaign, "live_webhook").catch(() => null) : null;
+  const whStep = (n: string) => wh?.steps.find((s) => s.step === n && s.ok)?.out;
+  const whCheck = whStep("check") as { url?: string; conclusion?: string; head_sha?: string } | undefined;
   const step = (n: string) => run.steps.find((s) => s.step === n);
   const pr = (n: string) => (step(n)?.out?.pr as { url?: string } | undefined)?.url ?? (step(n)?.out?.url as string | undefined);
   const guard = step("guard")?.out as { check_id?: number; conclusion?: string; title?: string } | undefined;
@@ -37,6 +43,13 @@ export async function LiveGithub() {
       pr("repair"),
     ],
   ];
+  if (wh?.ok && whCheck) {
+    rows.push([
+      "Webhook",
+      `a new commit (${whCheck.head_sha?.slice(0, 7)}) on a fresh PR: GitHub’s signed event queued a new Guard run, whose check landed on that exact commit (${whCheck.conclusion}); redeliveries of the event changed nothing`,
+      whCheck.url,
+    ]);
+  }
   return (
     <section aria-labelledby="gh-h" className="border-t border-line">
       <div className="mx-auto grid w-full max-w-[1100px] gap-10 px-4 py-16 sm:px-6 lg:grid-cols-12">

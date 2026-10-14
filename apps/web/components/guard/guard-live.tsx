@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Verdict } from "@/components/guard/verdict";
+import { RECORDED_ONLY } from "@/lib/site";
 
 type GNode = { key: string; kind: string; label: string };
 type GEdge = { src: string; dst: string; kind: string };
@@ -245,8 +246,9 @@ export function GuardLive({ scenario }: { scenario: string }) {
   // Live runs need the laptop runner (Docker sandbox + lab GPU); hosted deployments have none,
   // and a public deployment turns visitor-started runs off even when a runner is connected.
   const [runnerOnline, setRunnerOnline] = useState<boolean | null>(null);
-  const [publicRuns, setPublicRuns] = useState<boolean | null>(null);
+  const [publicRuns, setPublicRuns] = useState<boolean | null>(RECORDED_ONLY ? false : null);
   useEffect(() => {
+    if (RECORDED_ONLY) return; // no API on this site: live runs are off, nothing to ask
     let alive = true;
     fetch("/api/live/status")
       .then((r) => (r.ok ? r.json() : null))
@@ -265,6 +267,7 @@ export function GuardLive({ scenario }: { scenario: string }) {
   }, []);
 
   useEffect(() => {
+    if (RECORDED_ONLY) return;
     let alive = true;
     fetch(`/api/guard/runs/latest?scenario=${scenario}`)
       .then((r) => (r.ok ? r.json() : null))

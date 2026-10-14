@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RECORDED_ONLY } from "@/lib/site";
 
 type Req = { idx: number; level: number; ok: boolean; error: string | null; ttft_ms: number | null; t: number; slo_ok: boolean | null };
 type LevelSummary = {
@@ -85,8 +86,9 @@ export function RunNow({
   }, []);
 
   // Hosted deployments have no lab GPU: say so up front instead of refusing on click.
-  const [labEnabled, setLabEnabled] = useState<boolean | null>(null);
+  const [labEnabled, setLabEnabled] = useState<boolean | null>(RECORDED_ONLY ? false : null);
   useEffect(() => {
+    if (RECORDED_ONLY) return; // no API on this site
     let alive = true;
     fetch("/api/live/status")
       .then((r) => (r.ok ? r.json() : null))
@@ -99,6 +101,7 @@ export function RunNow({
 
   // Pick up a run already in progress (or the last one) so a refresh never loses it.
   useEffect(() => {
+    if (RECORDED_ONLY) return;
     let alive = true;
     fetch("/api/live/bench/latest")
       .then((r) => (r.ok ? r.json() : null))

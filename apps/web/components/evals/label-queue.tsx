@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { RECORDED_ONLY } from "@/lib/site";
 
 type Item = {
   id: string;
@@ -23,10 +24,13 @@ export function LabelQueue() {
   const [q, setQ] = useState<Queue | null>(null);
   const [i, setI] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, Partial<Label>>>({});
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState<string>(
+    RECORDED_ONLY ? "The labeling queue needs the API, which this recorded-only site does not have." : "",
+  );
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
+    if (RECORDED_ONLY) return;
     fetch("/api/labels/queue")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((data: Queue) => {
