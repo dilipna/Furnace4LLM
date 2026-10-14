@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Refuse to push a commit that has not passed `bash scripts/ci_linux.sh` (all CI jobs in Linux).
+# ci_linux.sh records each passing SHA in .git/ci-linux-passed.
+set -euo pipefail
+stamp="$(git rev-parse --git-dir)/ci-linux-passed"
+zero=0000000000000000000000000000000000000000
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  if ! grep -qx "$local_sha" "$stamp" 2>/dev/null; then
+    echo "pre-push: $local_sha has not passed scripts/ci_linux.sh; run it on that commit first." >&2
+    exit 1
+  fi
+done

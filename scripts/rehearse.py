@@ -78,7 +78,11 @@ def main() -> int:
             if pace:
                 page.wait_for_timeout(pace * 1500)
                 page.locator("#how").scroll_into_view_if_needed()
-                for t in ("Measure every pull request", "Decide with confidence", "Get a tested fix"):
+                for t in (
+                    "Measure every pull request",
+                    "Decide with confidence",
+                    "Get a tested fix",
+                ):
                     page.get_by_role("tab", name=t).click()
                     page.wait_for_timeout(pace * 1200)
             page.goto(a.base + "/demo", wait_until="load")
