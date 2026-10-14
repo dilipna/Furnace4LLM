@@ -1,6 +1,6 @@
 # Case study: catching and repairing a prompt-cache regression, and proving the fix
 
-Furnace is a bounded portfolio release: a tool that reads an existing **Python** LLM app,
+Furnace is an early-stage tool and a bounded portfolio release. It reads an existing **Python** LLM app,
 finds where its inference reliability depends on code (Scan), and on each pull request runs
 only the checks the diff can affect, including a serving-performance gate (Guard). For one
 supported regression family it writes a failing test first and proposes a rule-based repair
@@ -45,13 +45,14 @@ affected by other work on the machine, kept and replaced), all on AC at 780-828 
 
 The loop writes a regression test that must fail on the PR and pass on main, then tries two
 deterministic strategies in order and accepts one only if the gate shows it faster than the
-PR with 95% confidence and bounded below +25% against main.
+PR (the upper bound of its 90% interval below 0%, a 95% one-sided limit) and bounded below +25% against main.
 
 Under the frozen gate: **3 of 3 repeated verification trials of this one scenario**
 (fixture F1, regression R1) verified ([rq5.md](../bench/results/2026-10-12-gate-validation/rq5.md)).
 The first strategy (keep the values, move them to the end of the prompt) was rejected every
 time (INCONCLUSIVE once, BLOCK at +38% and +40%). The second (log the values instead of
-sending them) passed at +4.2%, +0.9% and +1.7% vs main, restored the 98% cache hit, and
+sending them) passed at +4.2%, +0.9% and +1.7% vs main (90% upper bounds +9.5%, +4.1%, +7.2%)
+and -85.5%, -85.6%, -86.0% vs the PR, restored the 98% cache hit, and
 renders byte-identical prompts to main for 34/34 questions
 ([prompt_identity.md](../bench/results/2026-10-12-gate-validation/rq5/prompt_identity.md)). The logged values are a
 random id and a timestamp; the repair PR tells the reviewer that Furnace does not inspect
@@ -83,4 +84,6 @@ after one reboot), so only equal-clock results are compared. One repairable regr
 family, rule-based. Python only. The LLM judge is built but uncalibrated (no labels) and
 decides nothing. Labels for held-out sets were written by the developer agent. The GitHub
 App path is tested against a mock GitHub; a live run is claimed only if
-`bench/results/*-live-github/` exists. No hosted deployment in this release.
+`bench/results/*-live-github/` exists. The production API image passed a local smoke test
+(`scripts/smoke_hosted.py`); it is not deployed. Verification levels are kept apart:
+local (verified), real GitHub (pending), hosted (not deployed).

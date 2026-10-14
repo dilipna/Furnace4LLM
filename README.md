@@ -2,13 +2,16 @@
 
 [![ci](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml/badge.svg)](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml)
 
-**Catch the pull request that makes your LLM app slow.**
+**Ship prompt changes without slowing down your AI.**
 
-Furnace benchmarks each pull request of a Python LLM application on the team's own model
-server. It blocks changes that break prompt caching or raise time to first token, and it
-drafts a fix it has already tested, for a person to review. It is built for small teams that
-serve their own models (measured on vLLM), where a harmless-looking prompt edit can multiply
-latency and GPU cost without failing a single test or quality eval.
+Furnace tests each pull request of a Python LLM application on the team's own model server.
+It blocks changes that make responses slower (for example, a prompt edit that stops the
+server reusing its prompt cache) and drafts a fix it has already tested, for a person to
+review. It is built for small teams that serve their own models (measured on vLLM). Eval
+platforms such as promptfoo or LangSmith also record latency; Furnace is a narrower,
+packaged workflow: both revisions' real prompts, interleaved on the same server, an interval
+decision, the server's cache hit rate, the responsible line, and a fix checked by the same
+gate.
 
 The workflow: **connect** a repository through a GitHub App → **baseline** main's real
 prompts on the team's endpoint → **inspect** a PR and select only the checks it can affect →
@@ -21,10 +24,17 @@ sandbox and gate) → **review**: a draft PR that a human merges or closes.
   graph Guard uses). Its findings are advisory: on five unseen apps 39 of 77 were right.
 - **Forge** sets the checks up as a draft PR, sandbox-validated first.
 
-Status: works end to end on two fixture apps on one laptop GPU. The GitHub App path is tested
-against a mock GitHub; **the live run on a real repository is pending**. There is no hosted
-deployment yet. Pilot setup and limits: **[docs/pilot.md](docs/pilot.md)**; founder
-materials: **[docs/founder/](docs/founder/brief.md)**.
+## Verification status (2026-10-14)
+
+| level | status | evidence |
+|---|---|---|
+| Local, end to end on fixture apps | **verified** | browser rehearsals 6/6 (`docs/demo-shots/rehearsal-2026-10-14b/timings.json`): scan, graph, live benchmark 80/80, live Guard run flags R1; screen recording `apps/web/public/demo/furnace-demo.webm` |
+| Real GitHub (App, webhook, check run, draft repair PR) | **not yet**: passed tests against a mock GitHub; demo repository `dilipna/furnace-demo-f1` is populated; the App is being created | `scripts/live_github_run.py`, `scripts/live_github_verify.py` write `bench/results/<date>-live-github/` |
+| Hosted deployment | **not deployed**; the production API image passed `scripts/smoke_hosted.py` locally | `docs/deploy.md` |
+| Production readiness | **no** (no accounts or organizations, no per-tenant isolation) | `docs/pilot.md` |
+
+Pilot setup and limits: **[docs/pilot.md](docs/pilot.md)** · founder materials:
+**[docs/founder/](docs/founder/brief.md)**.
 
 Every number in this repository comes from a documented command; negative results and
 corrections are reported. See **[FurnaceBench](docs/furnacebench.md)**, the reports in
