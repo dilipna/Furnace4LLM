@@ -9,8 +9,10 @@
 # Faithful to the GitHub runner where it matters: Linux, Python 3.12 via uv, Postgres 17,
 # a NON-root user (uid 1001, like the runner) that reaches Docker through the socket's group,
 # and HEAD exactly as committed (git archive), so uncommitted files cannot make it pass.
-# The sandbox tests bind-mount temp directories, so the job's work tree lives at a path inside
-# the Docker VM that the job container and the daemon both see.
+# The sandbox tests bind-mount temp directories, so the python job's work tree lives at a path
+# inside the Docker VM that the job container and the daemon both see (the VM's /tmp, a small
+# tmpfs: a killed run's leftovers are removed by `docker run --rm -v /tmp:/t alpine rm -rf
+# /t/furnace-ci-*`).
 set -euo pipefail
 export MSYS_NO_PATHCONV=1  # Git Bash on Windows would rewrite /var/run/docker.sock and /tmp paths
 
@@ -68,7 +70,9 @@ run_python() {
 
 run_web() {
   echo "== web job at $SHA"
-  docker run --rm -v "$VMDIR:$VMDIR" -w "$VMDIR/src/apps/web" node:24-bookworm bash -euo pipefail -c '
+  # Its own filesystem, not the shared VM path: node_modules does not fit the VM's small /tmp.
+  git archive HEAD apps/web | docker run --rm -i node:24-bookworm bash -euo pipefail -c '
+    mkdir -p /src && tar -x -C /src && cd /src/apps/web
     corepack enable >/dev/null
     pnpm install --frozen-lockfile
     pnpm lint
