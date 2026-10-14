@@ -146,7 +146,7 @@ const STEPS = [
     n: "01",
     title: "Connect a repository",
     body: "Install a GitHub App on one repository. Your code and model stay on your machine.",
-    bullets: ["Least-privilege, per-job tokens", "Runner on your own GPU box", "Live GitHub run: in progress"],
+    bullets: ["Least-privilege, per-job tokens", "Runner on your own GPU box", "Shown on a public GitHub repository"],
   },
   {
     n: "02",

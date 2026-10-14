@@ -32,7 +32,8 @@ add market sizes, traction or quotes that have not happened.
 
 5. **Evidence so far.** 0/36 false alarms on unchanged code; the known regression blocked
    6/6; repair verified in 3/3 repeated trials of one scenario; and the limits, stated: small
-   regressions left undecided 15/18, one fixture, one GPU, no live GitHub run yet.
+   regressions left undecided 15/18, one fixture, one GPU. One live run on a public GitHub
+   repository (check run, draft fix, verification 10/10).
 
 6. **Customer and first use.** A small team on self-hosted vLLM. First session: baseline, one
    real PR checked, a repair if one applies. Still to validate (slide 9).

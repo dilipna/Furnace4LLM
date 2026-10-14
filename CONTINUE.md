@@ -5,6 +5,22 @@ Paste this file's path into a new Claude Code session ("read CONTINUE.md and con
 `C:\Users\user\.claude\projects\c--Users-user-OneDrive-Pictures-saas-reviewer\memory\` (read `laptop-gpu-power-cap.md`).
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
+## 2026-10-14 (later): live GitHub run done, investor-facing site, hooks
+- **Live GitHub run on `dilipna/furnace-demo-f1`** (App `furnace-dev-dilipna`, key in
+  `~/.furnace/`, settings in `.env`): attempt 1 failed at Forge (403: `.github/workflows/`
+  needs the `workflows` permission; fixed by holding workflow files back, 40d41a3, kept in
+  `attempt-1/`); attempt 2 PASS (PRs #1-#3, check run failure on 0a637d7, repair -1.6% vs
+  main); `live_github_verify.py --api` PASS 10/10 with smee forwarding. Notes:
+  `bench/results/2026-10-14-live-github/NOTES.md` (figures per step from `live_run.json`).
+- **Site redesigned** for investors (centered hero, check-run card, 01-04 steps, evidence with
+  misses, FAQ, `/demo` with walkthrough, real-GitHub links and the screen recording shipped in
+  `apps/web/public/demo/`). `FURNACE_PUBLIC_RUNS=false` in the API image.
+- **Hooks** (`git config core.hooksPath scripts/hooks`): pre-commit runs ruff check/format;
+  pre-push refuses SHAs not recorded in `.git/ci-linux-passed` by `scripts/ci_linux.sh`.
+- Deploy: `docs/deploy.md` has the complete env table and `scripts/smoke_hosted.py`
+  (passed against the prod image locally). Not deployed: needs the owner's accounts.
+- Owner's list: `docs/owner-actions.md`.
+
 ## 2026-10-14 session (product focus, landing, pilot, founder docs), newest first
 - **Focus narrowed:** Furnace = a pre-merge serving-performance check for Python LLM apps on
   self-hosted models (Guard is the product; Scan = onboarding map, findings advisory; Forge =

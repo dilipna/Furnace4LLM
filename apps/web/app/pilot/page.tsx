@@ -56,7 +56,7 @@ const STEPS: { title: string; who: string; body: string; cmd?: string }[] = [
   {
     title: "Run Guard on a pull request",
     who: "Furnace",
-    body: "On each push to a pull request, Guard posts a check run on its head commit: PASS, FAIL or INCONCLUSIVE, with the interval and the evidence. Tested against a mock GitHub; the first live run is pending.",
+    body: "On each push to a pull request, Guard posts a check run on its head commit: PASS, FAIL or INCONCLUSIVE, with the interval and the evidence. Shown once on a public repository (2026-10-14); see the Demo page.",
     cmd: "uv run poe gh-poll        # or a webhook to a hosted API\nuv run furnace gh-guard your-org/your-repo <PR> --suite $FURNACE_GUARD_SUITE_PATH",
   },
   {

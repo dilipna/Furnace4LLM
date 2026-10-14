@@ -35,6 +35,9 @@ RQ_FILES = {
     "gate_validation": "validation/report.json",
     # held-out set 6: Blueprint finding precision / recall against labels committed first
     "set6_findings": "set6/findings.json",
+    # the recorded live GitHub run and its independent verification (scripts/live_github_*.py)
+    "live_github": "live_run.json",
+    "live_verify": "verify.json",
 }
 W1 = "results/2026-10-04-f1-quality/workload-f1-traces-qwen05b.yaml"
 LIVE_GUARD = "results/2026-10-04-guard"

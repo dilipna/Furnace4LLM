@@ -2,9 +2,10 @@
 
 This is the operational guide behind the `/pilot` page. It says what a pilot needs, how setup
 works, and what to do when something is down. Status of the pieces as of 2026-10-14:
-everything below runs locally on the fixture apps; the GitHub App path is tested against a
-mock GitHub only (no live run is recorded yet, `docs/completion.md` section E); there is no
-hosted control plane (`docs/deploy.md` is ready but not deployed).
+everything below runs locally on the fixture apps; the GitHub App path ran once on a public
+repository (`bench/results/2026-10-14-live-github/NOTES.md`; verification 10/10); there is no hosted control plane
+(`docs/deploy.md` is ready but not deployed). Forge leaves `.github/workflows/` files to the
+reviewer: the App does not request GitHub's `workflows` permission.
 
 ## Who it fits
 

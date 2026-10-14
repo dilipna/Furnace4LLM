@@ -2,9 +2,8 @@
 
 For a founder conversation, a design-partner call, a technical interviewer, or a narrated
 recording. Part A works with only the laptop (`uv run poe demo-up`, then
-`uv run python scripts/preflight.py --load`). Part B replaces 1:20-1:50 with real GitHub
-**only if** `bench/results/*-live-github/live_run.md` and `verify.md` exist and passed;
-otherwise say "the GitHub path has passed tests against a mock GitHub; the live run is next".
+`uv run python scripts/preflight.py --load`). Part B replaces 1:20-1:50 with the recorded real-GitHub run (it exists and passed:
+`bench/results/2026-10-14-live-github/`).
 Say "measured on a laptop RTX 3050 Ti" for every latency. No laptop? Use the hosted site or the
 recording on `/demo` and skip 1:20 (the live run). The longer script with fallbacks is
 `docs/demo.md`.
@@ -25,10 +24,14 @@ this PR** about 2 minutes before 1:20), `/pilot`.
 
 ## Part B (only after a recorded, passing live GitHub run)
 
-Replace 1:20-1:50 with the demo repository on GitHub: the R1 pull request's **Furnace Guard**
-check run on its head commit, then the draft repair PR into the R1 branch. Read the URLs and
-commit SHAs from `bench/results/<date>-live-github/live_run.md`, and say whether that live
-run verified the repair or refused it, as recorded.
+Replace 1:20-1:50 with the demo repository on GitHub, or the "On real GitHub" section of
+`/demo`: https://github.com/dilipna/furnace-demo-f1/pull/2 (the regression; open the
+**Furnace Guard** check: failure, annotations on `app/prompts.py`), then
+https://github.com/dilipna/furnace-demo-f1/pull/3 (the draft fix into the PR's branch). Say:
+"This ran on real GitHub on October 14. The check landed on the PR's exact commit; the fix
+measured 1.6% faster than main and was opened as a draft; an independent check of GitHub
+passed 10 of 10. The first attempt failed because GitHub requires a special permission to
+write CI files. I chose not to request it, so Furnace leaves that file for the reviewer."
 
 ## Sources for every number
 

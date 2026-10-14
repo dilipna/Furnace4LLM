@@ -16,8 +16,8 @@ export function SiteFooter() {
         <div>
           <Wordmark />
           <p className="mt-4 max-w-[300px] text-[12px] leading-relaxed text-fg-3">
-            An early-stage project. Results come from fixture apps on one laptop GPU; the live GitHub run and the hosted
-            pilot are not done yet.
+            An early-stage project. Results come from fixture apps on one laptop GPU, plus one live run on a public
+            GitHub repository. Not hosted yet.
           </p>
         </div>
         {COLS.map(([title, links]) => (

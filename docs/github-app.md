@@ -183,8 +183,11 @@ repository code. Push and poll can run together: the delivery GUID dedupes them.
 | delivery-log poller: new deliveries once, no old history | `packages/furnace/tests/test_github_setup.py` |
 
 All of these run against a mock GitHub. On real GitHub they are checked by
-`scripts/live_github_verify.py` (section 3a) after `scripts/live_github_run.py`; until both
-have been run and recorded, "works on real GitHub" is not claimed.
+`scripts/live_github_verify.py` (section 3a) after `scripts/live_github_run.py`. Done on
+2026-10-14 on `dilipna/furnace-demo-f1`: attempt 1 stopped at Forge (403 on
+`.github/workflows/`, which needs a permission the App does not request; fixed by holding
+workflow files back), attempt 2 passed every step and the verification passed 10/10
+(`bench/results/2026-10-14-live-github/NOTES.md`).
 
 ## Notes
 

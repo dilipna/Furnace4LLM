@@ -78,7 +78,13 @@ export default async function Landing() {
               </Cta>
               <Cta href="/demo">See it catch one</Cta>
             </div>
-            <div className="mt-16">
+            <p className="mt-5 text-[12.5px] text-fg-3">
+              Shown end to end on a public GitHub repository:{" "}
+              <Link href="/demo#gh-h" className="underline decoration-line-strong underline-offset-2 hover:text-fg-1">
+                the check run and the draft fix
+              </Link>
+            </p>
+            <div className="mt-12">
               <HeroCard s={s} />
             </div>
           </div>
@@ -169,7 +175,7 @@ export default async function Landing() {
               </div>
               <p className="mt-4 max-w-[760px] text-[12px] leading-relaxed text-fg-3">
                 Two fixture apps, one laptop GPU, one small model. Every figure is read from a result file in the repository.
-                The GitHub App has passed tests against a mock GitHub; its first run on real GitHub is in progress.
+                The GitHub flow (check run, draft fix, independent verification) was shown once on a public repository; see the Demo page.
               </p>
             </div>
           </section>
