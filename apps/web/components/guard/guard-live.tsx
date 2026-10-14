@@ -242,10 +242,16 @@ export function GuardLive({ scenario }: { scenario: string }) {
     });
   }, []);
 
-  // Live runs need the laptop runner (Docker sandbox + lab GPU); hosted deployments have none.
+  // Live runs need the laptop runner (Docker sandbox + lab GPU); hosted deployments have none,
+  // and a public deployment turns visitor-started runs off even when a runner is connected.
   const [runnerOnline, setRunnerOnline] = useState<boolean | null>(null);
+  const [publicRuns, setPublicRuns] = useState<boolean | null>(null);
   useEffect(() => {
     let alive = true;
+    fetch("/api/live/status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((st: { public_runs?: boolean } | null) => alive && st && setPublicRuns(st.public_runs !== false))
+      .catch(() => {});
     fetch("/api/runners")
       .then((r) => (r.ok ? r.json() : null))
       .then(
@@ -312,6 +318,8 @@ export function GuardLive({ scenario }: { scenario: string }) {
                 {job.created_at ? new Date(job.created_at).toLocaleString() : ""} · job {job.job_id.slice(0, 8)}
                 {job.status === "failed" && job.error ? <span className="text-bad"> · failed: {job.error.slice(0, 120)}</span> : null}
               </>
+            ) : publicRuns === false ? (
+              "Live runs are turned off on this public site. The results below are recorded; live runs happen on the owner's runner."
             ) : runnerOnline === false ? (
               "The Guard runner (the laptop: Docker sandbox plus the lab GPU) is offline, so live runs are unavailable here. The recorded results are below."
             ) : (
@@ -321,10 +329,18 @@ export function GuardLive({ scenario }: { scenario: string }) {
         </div>
         <button
           onClick={start}
-          disabled={busy || running || (runnerOnline === false && !running)}
+          disabled={busy || running || ((runnerOnline === false || publicRuns === false) && !running)}
           className="rounded-[3px] border border-line-strong px-3 py-1.5 text-[13px] text-fg-0 transition-colors duration-150 hover:bg-bg-3 disabled:cursor-not-allowed disabled:text-fg-3"
         >
-          {running ? "Running…" : busy ? "Starting…" : runnerOnline === false ? "Runner offline" : "Run Guard on this PR"}
+          {running
+            ? "Running…"
+            : busy
+              ? "Starting…"
+              : publicRuns === false
+                ? "Live runs off here"
+                : runnerOnline === false
+                  ? "Runner offline"
+                  : "Run Guard on this PR"}
         </button>
       </header>
       {msg && <p className="border-b border-line px-4 py-2 text-[12px] text-warn">{msg}</p>}

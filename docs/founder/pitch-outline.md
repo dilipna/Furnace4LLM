@@ -5,9 +5,11 @@ thinking. It is ten slides at most. The ask at this stage is introductions and d
 partners, not money (see "the ask"). Every figure comes from `docs/founder/brief.md`; do not
 add market sizes, traction or quotes that have not happened.
 
-1. **Problem.** Teams that serve their own models ship prompt and config changes every week.
+1. **Problem.** Teams that serve their own models change prompts and serving config often
+   (how often is a hypothesis the interviews test).
    Some of them silently remove the server's prompt-cache reuse or raise time to first token.
-   Answers don't change, so tests and quality evals pass, and the cost shows up in production.
+   Answers don't change, so answer-quality checks pass, and the cost shows up in production
+   unless someone benchmarks the server before merge.
    *Show:* the landing panel's diff and the 98% → 0% cache hit.
 
 2. **Why now (argued, not measured).** More teams self-host open-weight models; serving
@@ -20,12 +22,13 @@ add market sizes, traction or quotes that have not happened.
    interval, and drafts a tested fix for a supported regression. A human merges.
    *Show:* the three-minute demo.
 
-4. **How it's different (honestly).** Quality-eval CI (promptfoo, Braintrust, LangSmith)
-   scores answers. Code-benchmark CI (CodSpeed) times Python functions. Monitoring sees
-   production. Furnace measures the model server before merge, and it complements those
-   tools rather than replacing them. There is no moat yet. The candidates are the
-   measurement method (validated on fixtures) and data from pilots about which regressions
-   happen.
+4. **How it's different (honestly).** Eval platforms (promptfoo, Braintrust, LangSmith)
+   score answers and also record latency; promptfoo can assert a per-call latency threshold.
+   Code-benchmark CI (CodSpeed) times Python functions. Monitoring sees production. Furnace
+   is one packaged workflow: both revisions' real prompts, interleaved on the team's own
+   server, an interval decision, prefix-cache hit rate, the responsible line, and a fix
+   checked by the same gate. It complements eval tools. There is no moat yet; the candidates
+   are the validated measurement method and pilot data on which regressions happen.
 
 5. **Evidence so far.** 0/36 false alarms on unchanged code; the known regression blocked
    6/6; repair verified in 3/3 repeated trials of one scenario; and the limits, stated: small

@@ -7,28 +7,30 @@ import { SiteFooter } from "@/components/ui/site-footer";
 // Figures are read from bench/results per request, never frozen at build time.
 export const dynamic = "force-dynamic";
 
+// Capabilities as each tool documents them (checked 2026-10-14). Every row says what the
+// tool does and how Furnace's check differs; none says what another tool "cannot" do.
 const GAPS = [
   {
-    tool: "Output-quality evals in CI",
+    tool: "Eval platforms in CI",
     examples: [
-      ["promptfoo", "https://promptfoo.dev/docs/integrations/github-action"],
+      ["promptfoo", "https://www.promptfoo.dev/docs/configuration/expected-outputs/deterministic/"],
       ["Braintrust", "https://www.braintrust.dev/docs/evaluate/run-in-ci"],
       ["LangSmith", "https://docs.langchain.com/langsmith/pytest"],
     ],
-    does: "Score the model's answers on each pull request against your datasets and thresholds.",
-    leaves: "Serving latency and prompt-cache reuse on your own model server. In the run above, the answers did not change.",
+    does: "Score answers on each pull request, and record latency too: promptfoo can fail a test above a per-call latency threshold, and LangSmith reports first-token percentiles.",
+    differs: "Furnace compares two revisions on the same self-hosted server, in interleaved runs, and decides with an interval instead of a fixed threshold. It reads the server's prefix-cache hit rate, points to the prompt-building line, and for one regression family drafts a fix checked by the same gate.",
   },
   {
     tool: "Code benchmarks in CI",
     examples: [["CodSpeed", "https://codspeed.io/docs"]],
-    does: "Measure Python functions on every pull request with stable CPU instrumentation.",
-    leaves: "Time spent inside the GPU model server, which is where this regression happens.",
+    does: "Benchmark Python functions on every pull request with stable measurements, and flag slowdowns in the PR.",
+    differs: "Furnace times the model server's response (time to first token on the GPU), outside the app's Python process.",
   },
   {
     tool: "Production monitoring",
     examples: [],
-    does: "Shows latency, cost and cache hit rates once traffic arrives.",
-    leaves: "Catching the change before merge, and finding the line that caused it.",
+    does: "Shows latency, cost and cache hit rates on live traffic.",
+    differs: "Furnace runs before merge, on the PR's own prompts, so nothing has to ship first.",
   },
 ];
 
@@ -75,7 +77,7 @@ export default function Landing() {
               </p>
               <p className="mt-4 text-[14px] leading-relaxed text-fg-2">
                 Built for small teams that serve their own models with vLLM. For them, one harmless-looking prompt edit
-                can multiply latency and GPU cost without failing a single test.
+                can multiply latency and GPU cost while every answer check still passes.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
@@ -107,7 +109,7 @@ export default function Landing() {
           <div className="mx-auto w-full max-w-[1200px] px-4 py-16 sm:px-6">
             <p className="num text-[11.5px] tracking-[0.08em] text-ember uppercase">Why it slips through</p>
             <h2 id="why-h" className="mt-3 max-w-[760px] font-display text-[28px] leading-tight font-semibold tracking-[-0.015em]">
-              Every existing check passes. Latency still goes up, and you find out from your users.
+              The answers don’t change, so answer checks pass. Latency still goes up.
             </h2>
             <p className="mt-4 max-w-[720px] text-[14px] leading-relaxed text-fg-2">
               Model servers such as vLLM reuse work across requests that begin with the same text. Put a request id, a
@@ -119,8 +121,8 @@ export default function Landing() {
                 <thead>
                   <tr className="border-b border-line-strong text-[11.5px] tracking-wide text-fg-3 uppercase">
                     <th className="py-3 pr-6 font-normal">What teams use today</th>
-                    <th className="py-3 pr-6 font-normal">What it does well</th>
-                    <th className="py-3 font-normal">What it leaves to you</th>
+                    <th className="py-3 pr-6 font-normal">What it does (from its docs)</th>
+                    <th className="py-3 font-normal">How Furnace’s check differs</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -143,21 +145,27 @@ export default function Landing() {
                         )}
                       </td>
                       <td className="py-4 pr-6 text-fg-1">{g.does}</td>
-                      <td className="py-4 text-fg-1">{g.leaves}</td>
+                      <td className="py-4 text-fg-1">{g.differs}</td>
                     </tr>
                   ))}
                   <tr className="align-top">
                     <td className="py-4 pr-6 font-medium text-ember">Furnace</td>
                     <td className="py-4 pr-6 text-fg-0">
-                      Measures the PR’s own prompts on your server before merge, decides with an interval, and drafts a
-                      tested fix for one supported regression family.
+                      One narrow workflow: Python apps on a model you serve (measured on vLLM), a before-merge
+                      latency gate, and a tested repair for per-request values at the start of a prompt.
                     </td>
-                    <td className="py-4 text-fg-1">Answer quality: keep your eval tool for that. Furnace sits beside it.</td>
+                    <td className="py-4 text-fg-1">
+                      It does not judge answer quality; keep an eval tool for that. Teams can build parts of this with
+                      the tools above. Furnace packages it for this one case.
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <p className="mt-3 text-[11px] text-fg-3">Other tools are described from their public documentation (October 2026).</p>
+            <p className="mt-3 text-[11px] text-fg-3">
+              Other tools are described from their public documentation (checked October 14, 2026); each links to its
+              source.
+            </p>
           </div>
         </section>
 

@@ -18,8 +18,9 @@ fine-tuned model. Latency and GPU spend are numbers someone on the team watches.
 
 **Why they would care:** model servers reuse work across requests that start with the same
 text. A pull request that puts a request id, a timestamp or a user name at the top of the
-prompt removes that reuse. The answers do not change, so tests and quality evals pass, and
-the regression shows up in production as latency and GPU cost. On the fixture app, one such
+prompt removes that reuse. The answers do not change, so answer-quality checks pass, and unless
+someone benchmarks the server before merge, the regression shows up in production as
+latency and GPU cost. On the fixture app, one such
 line took the prefix-cache hit rate from 98% to 0% and raised geometric-mean time to first
 token by about 600% (`bench/results/2026-10-12-gate-validation/rq5.md`).
 
@@ -27,11 +28,15 @@ token by about 600% (`bench/results/2026-10-12-gate-validation/rq5.md`).
 serving change; moving from a hosted API to self-hosting; or a latency commitment to their
 own customer. (Hypothesis: we do not yet know how often this happens.)
 
-**What they do today:** quality-eval tools (promptfoo, Braintrust, LangSmith) gate PRs on
-answer scores; code benchmark tools (CodSpeed) gate on CPU time of Python functions;
-monitoring shows latency after deploy. Checking serving performance before merge means
-someone runs a benchmark by hand on main and on the branch, compares noisy numbers, and
-works out which line broke caching. Furnace automates exactly that, and only that.
+**What they do today:** eval platforms (promptfoo, Braintrust, LangSmith) score answers on
+each PR and also record latency (promptfoo can fail a test above a per-call latency
+threshold; LangSmith reports first-token percentiles). Code-benchmark CI (CodSpeed) times
+Python functions. Monitoring shows latency and cache hit rates after deploy. What we have not
+seen packaged is the specific workflow: render both revisions' prompts with the app's own
+code, run them interleaved on the team's own server, decide with an interval rather than a
+fixed threshold, read the server's prefix-cache hit rate, point to the line, and draft a fix
+checked by the same gate. Teams can assemble parts of this themselves; Furnace packages it
+for one case (Python, self-hosted, one regression family).
 
 **First session:** in about two hours on one repository, the team gets main's baseline on
 their endpoint, one recent PR checked by the gate with its interval, a draft fix if a

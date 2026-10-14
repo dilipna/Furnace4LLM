@@ -88,6 +88,11 @@ async def _active(db: AsyncSession) -> Job | None:
 
 @router.post("/runs", status_code=201)
 async def start_run(body: GuardRunIn, request: Request, db: DB) -> dict[str, Any]:
+    if not get_settings().public_runs:
+        raise HTTPException(
+            403,
+            "Live Guard runs are turned off on this public deployment; the results shown are recorded.",
+        )
     if not _known_scenario(body.scenario):
         raise HTTPException(404, "unknown scenario")
     active = await _active(db)
