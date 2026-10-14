@@ -1,0 +1,167 @@
+{
+  "manifest": {
+    "date": "2026-10-14",
+    "started_at": "2026-10-14T18:45:01+00:00",
+    "git": {
+      "sha": "eeb419a4708dd12b966c0f551e1d09880e4c2985",
+      "dirty": false
+    },
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "driver": "592.82",
+    "memory_mb": 4096,
+    "power": {
+      "on_ac": true,
+      "battery_pct": 100,
+      "gpu_enforced_power_limit_w": 80.0
+    },
+    "argv": [
+      "scripts/live_webhook_run.py",
+      "--repo",
+      "dilipna/furnace-demo-f1"
+    ],
+    "repo": "dilipna/furnace-demo-f1",
+    "from_branch": "r1-request-id"
+  },
+  "steps": [
+    {
+      "step": "commit",
+      "ok": true,
+      "out": {
+        "branch": "webhook-recheck-20261014-1845",
+        "parent": "0a637d779689cc6d30a6adcd4409bf83c1c27824",
+        "head_sha": "49224d282d101806e2f43873a7f22ca15a839e8a"
+      },
+      "seconds": 4.0
+    },
+    {
+      "step": "pr",
+      "ok": true,
+      "out": {
+        "number": 4,
+        "url": "https://github.com/dilipna/furnace-demo-f1/pull/4",
+        "draft": false
+      },
+      "seconds": 3.2
+    },
+    {
+      "step": "delivery",
+      "ok": true,
+      "out": {
+        "guid": "61c93440-c7ff-11f1-8f9e-466f538a0d5c",
+        "github_status_code": 200,
+        "delivered_at": "2026-10-14T18:45:11.023Z",
+        "source": "push",
+        "outcome": "queued",
+        "job_id": "d09d0db6-8ae5-491a-af9e-1d97a56deafb"
+      },
+      "seconds": 4.2
+    },
+    {
+      "step": "redeliver_active",
+      "ok": true,
+      "out": {
+        "when": "while the job was active",
+        "job_status_at_redelivery": "running",
+        "redelivery_status_code": 200,
+        "rows_before": {
+          "delivery_rows": 1,
+          "jobs_for_head": 1,
+          "guard_jobs": 2
+        },
+        "rows_after": {
+          "delivery_rows": 1,
+          "jobs_for_head": 1,
+          "guard_jobs": 2
+        }
+      },
+      "seconds": 5.8
+    },
+    {
+      "step": "job",
+      "ok": true,
+      "out": {
+        "job_id": "d09d0db6-8ae5-491a-af9e-1d97a56deafb",
+        "status": "succeeded",
+        "states_seen": [
+          "running",
+          "succeeded"
+        ],
+        "attempts": 1,
+        "locked_by": "BrahmaVishnuShiva-runner",
+        "created_at": "2026-10-14T18:45:11.304463+00:00",
+        "finished_at": "2026-10-14T18:46:54.193515+00:00",
+        "seconds": 102.889052,
+        "error": null,
+        "result": {
+          "title": "2 regressions found: prompt_prefix_stable, chat_perf_gate",
+          "repair": {
+            "reason": "FURNACE_GUARD_AUTO_REPAIR is off",
+            "enqueued": false
+          },
+          "check_id": 116037356084,
+          "conclusion": "failure",
+          "signatures": [
+            "prefix_instability"
+          ]
+        }
+      },
+      "seconds": 95.2
+    },
+    {
+      "step": "check",
+      "ok": true,
+      "out": {
+        "check_run_id": 116037356084,
+        "url": "https://github.com/dilipna/furnace-demo-f1/runs/116037356084",
+        "head_sha": "49224d282d101806e2f43873a7f22ca15a839e8a",
+        "app": "furnace-dev-dilipna",
+        "conclusion": "failure",
+        "title": "2 regressions found: prompt_prefix_stable, chat_perf_gate",
+        "started_at": "2026-10-14T18:45:15Z",
+        "completed_at": "2026-10-14T18:46:53Z",
+        "annotations": 4
+      },
+      "seconds": 1.4
+    },
+    {
+      "step": "redeliver_done",
+      "ok": true,
+      "out": {
+        "when": "after the job completed",
+        "job_status_at_redelivery": "succeeded",
+        "redelivery_status_code": 200,
+        "rows_before": {
+          "delivery_rows": 1,
+          "jobs_for_head": 1,
+          "guard_jobs": 2
+        },
+        "rows_after": {
+          "delivery_rows": 1,
+          "jobs_for_head": 1,
+          "guard_jobs": 2
+        }
+      },
+      "seconds": 6.0
+    },
+    {
+      "step": "check_after_redelivery",
+      "ok": true,
+      "out": {
+        "check_run_id": 116037356084,
+        "url": "https://github.com/dilipna/furnace-demo-f1/runs/116037356084",
+        "head_sha": "49224d282d101806e2f43873a7f22ca15a839e8a",
+        "app": "furnace-dev-dilipna",
+        "conclusion": "failure",
+        "title": "2 regressions found: prompt_prefix_stable, chat_perf_gate",
+        "started_at": "2026-10-14T18:45:15Z",
+        "completed_at": "2026-10-14T18:46:53Z",
+        "annotations": 4
+      },
+      "seconds": 1.3
+    }
+  ],
+  "ok": true,
+  "finished_at": "2026-10-14T18:47:04+00:00"
+}
