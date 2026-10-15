@@ -6,7 +6,7 @@ installed on that repository only; pushes approved; live GitHub run done 2026-10
 
 | # | action | exact steps | unlocks |
 |---|---|---|---|
-| 1 | Cloudflare (free), recorded site only | sign in or create a free account at <https://dash.cloudflare.com/login> (no payment method needed for Pages Free), then approve the Wrangler sign-in link Claude gives you in the browser. Never paste passwords or tokens into chat. No paid plan, domain or Workers plan | the public recorded site on `*.pages.dev`; Claude deploys and runs `scripts/smoke_hosted.py --web` plus the desktop/mobile pass |
+| 1 | Cloudflare (free), recorded site | **done 2026-10-15**: https://furnace-5h6.pages.dev on Pages Free, account "Ubdg0312@gmail.com's Account" (Wrangler grant: account read, user read, Pages write). Open: decide how to make the recording play on iPhones (see `bench/results/2026-10-15-hosted/README.md`) | — |
 | 2 | Pilot contact | kept: your LinkedIn profile (the default; no variable to set) | — |
 | 3 | AWS (optional) | only if you have an account with credits: tell Claude, and it prepares an EC2 GPU runner guide (`g4dn.xlarge`, started only for demos) | live runs without the laptop |
 | 4 | Narrated recording (optional) | record yourself over `/demo` following `docs/demo-3min.md` (3 minutes); the silent recording is already on the site | a talk-track video for investors |

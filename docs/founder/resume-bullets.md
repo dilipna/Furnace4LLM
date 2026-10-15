@@ -5,22 +5,23 @@ Two final bullets, written to match the style of the current resume
 denominators). Every number traces to `docs/claims.md`. Furnace is a solo project with no
 users or customers yet; nothing here implies otherwise.
 
-Project line: **Furnace** | github.com/dilipna/Furnace4LLM (add the site URL only
-after it is deployed)
+Project line: **Furnace** | github.com/dilipna/Furnace4LLM | furnace-5h6.pages.dev
 
-## Final bullets (2026-10-14)
+## Final bullets (2026-10-15)
 
-- Built Furnace, a pre-merge latency check for LLM apps served on vLLM: replays each pull
+- Built Furnace, a pre-merge latency check for LLM apps served on vLLM: it replays each pull
   request's real prompts interleaved with main on one GPU and decides on geometric-mean TTFT
   with a 90% interval; froze the rule before validating it (0/36 false alarms on unchanged
-  code, prompt-cache regression blocked 6/6).
-- Shipped it as a GitHub App (FastAPI, Postgres job queue with leases, Docker sandbox,
-  HMAC-verified webhooks), verified on a public repository: a new commit's webhook queued a
-  check that blocked a +575% TTFT regression on that exact commit (redeliveries changed
-  nothing); on the original regression PR, its drafted fix passed the repair acceptance
-  criteria with latency back close to baseline.
+  code, prompt-cache regression blocked 6/6). Recorded product demonstration:
+  furnace-5h6.pages.dev.
+- Built its GitHub App integration (FastAPI, Postgres job queue with leases, Docker sandbox,
+  HMAC-verified webhooks), verified on a public repository using a local GPU runner: a new
+  commit's webhook queued a check that blocked a +575% TTFT regression on that exact commit
+  (redeliveries deduplicated), and the drafted fix passed the repair acceptance criteria with
+  latency close to baseline.
 
-These replace the earlier A/B variants.
+These replace the earlier variants. The website is a recorded demonstration (no live runs);
+the GitHub integration was verified with the runner on the laptop, not a hosted service.
 
 ## Sources and what to say if asked
 
