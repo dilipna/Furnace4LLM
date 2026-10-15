@@ -1,5 +1,9 @@
-// A recorded-only deployment (NEXT_PUBLIC_RECORDED_ONLY=true, e.g. the web app on Vercel with no
-// API service): evidence pages read the build-time snapshot of the bench results
-// (lib/bench-snapshot.json, scripts/export_bench_snapshot.py), and every live control says it is
-// unavailable here instead of calling an API that does not exist.
+// A recorded-only deployment (NEXT_PUBLIC_RECORDED_ONLY=true): a static export (next.config.ts,
+// `out/`) hosted anywhere static files are served, with no API service. Evidence pages read the
+// build-time snapshot of the bench results (lib/bench-snapshot.json,
+// scripts/export_bench_snapshot.py), and every live control says it is unavailable here instead
+// of calling an API that does not exist.
 export const RECORDED_ONLY = process.env.NEXT_PUBLIC_RECORDED_ONLY === "true";
+
+/** A committed result file on GitHub (recorded-only links where the live site has a query route). */
+export const REPO_BLOB = "https://github.com/dilipna/Furnace4LLM/blob/main";

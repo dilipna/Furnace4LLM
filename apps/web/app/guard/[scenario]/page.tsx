@@ -6,8 +6,8 @@ import { Verdict } from "@/components/guard/verdict";
 import { AppHeader } from "@/components/ui/app-header";
 import { apiGet } from "@/lib/api";
 import { type GateCompare, getRq, latestWith, metricLabel, type RepairAttempt, type Rq3, type Rq5 } from "@/lib/bench";
-
-export const dynamic = "force-dynamic";
+import { dynamicUnlessRecorded } from "@/lib/render";
+import { RECORDED_ONLY, REPO_BLOB } from "@/lib/site";
 
 function perfRow(name: string, c: GateCompare | undefined) {
   if (!c) return null;
@@ -139,7 +139,18 @@ function Attempt({ a, open }: { a: RepairAttempt; open: boolean }) {
   );
 }
 
+// Static export: one page per recorded scenario (RQ3 PRs and RQ5 repair attempts). Live
+// deployments render any scenario on request.
+export async function generateStaticParams(): Promise<{ scenario: string }[]> {
+  if (!RECORDED_ONLY) return [];
+  const [c3, c5] = await Promise.all([latestWith("rq3"), latestWith("rq5")]);
+  const [rq3, rq5] = await Promise.all([c3 ? getRq<Rq3>(c3, "rq3") : null, c5 ? getRq<Rq5>(c5, "rq5") : null]);
+  const names = new Set([...(rq3?.scenarios ?? []).map((x) => x.scenario), ...(rq5?.attempts ?? []).map((a) => a.scenario)]);
+  return [...names].sort().map((scenario) => ({ scenario }));
+}
+
 export default async function GuardScenario({ params }: PageProps<"/guard/[scenario]">) {
+  await dynamicUnlessRecorded();
   const { scenario } = await params;
   const [c3, c5] = await Promise.all([latestWith("rq3"), latestWith("rq5")]);
   const [rq3, rq5] = await Promise.all([c3 ? getRq<Rq3>(c3, "rq3") : null, c5 ? getRq<Rq5>(c5, "rq5") : null]);
@@ -197,9 +208,15 @@ export default async function GuardScenario({ params }: PageProps<"/guard/[scena
                 <>
                   {" "}
                   Its perf-gate figures predate the gate&apos;s warmup fix; see the{" "}
-                  <Link href={`/bench?c=${c3}`} className="text-fg-1 underline decoration-line-strong underline-offset-2">
-                    corrections
-                  </Link>
+                  {RECORDED_ONLY ? (
+                    <a href={`${REPO_BLOB}/bench/results/${c3}/CORRECTIONS.md`} className="text-fg-1 underline decoration-line-strong underline-offset-2">
+                      corrections
+                    </a>
+                  ) : (
+                    <Link href={`/bench?c=${c3}`} className="text-fg-1 underline decoration-line-strong underline-offset-2">
+                      corrections
+                    </Link>
+                  )}
                   ; the re-measured numbers are in the repair timeline below.
                 </>
               )}

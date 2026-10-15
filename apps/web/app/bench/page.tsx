@@ -2,14 +2,17 @@ import { AppHeader } from "@/components/ui/app-header";
 import { Markdown } from "@/components/ui/markdown";
 import { apiGet } from "@/lib/api";
 import { type Campaign, campaigns } from "@/lib/bench";
-
-export const dynamic = "force-dynamic";
+import { dynamicUnlessRecorded } from "@/lib/render";
+import { RECORDED_ONLY, REPO_BLOB } from "@/lib/site";
 
 export default async function BenchPage({ searchParams }: PageProps<"/bench">) {
-  const sp = await searchParams;
+  await dynamicUnlessRecorded();
+  // a static export has no query string at build time: it shows the newest report, and the
+  // other campaigns link to their committed REPORT.md
+  const sp = RECORDED_ONLY ? {} : await searchParams;
   const all = await campaigns();
   const list = all.filter((c) => c.has_report);
-  const wanted = typeof sp.c === "string" ? sp.c : undefined;
+  const wanted = "c" in sp && typeof sp.c === "string" ? sp.c : undefined;
   const chosen: Campaign | undefined = list.find((c) => c.name === wanted) ?? list[0];
   const data = chosen
     ? await apiGet<{ report_md: string | null; notes_md: string | null; corrections_md?: string | null }>(
@@ -43,7 +46,7 @@ export default async function BenchPage({ searchParams }: PageProps<"/bench">) {
               {list.map((c) => (
                 <a
                   key={c.name}
-                  href={`/bench?c=${c.name}`}
+                  href={RECORDED_ONLY && c.name !== chosen?.name ? `${REPO_BLOB}/bench/results/${c.name}/REPORT.md` : `/bench?c=${c.name}`}
                   aria-current={c.name === chosen?.name ? "page" : undefined}
                   className={`num rounded-[3px] border px-2 py-1 ${c.name === chosen?.name ? "border-line-strong text-fg-0" : "border-line text-fg-2"}`}
                 >

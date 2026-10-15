@@ -4,8 +4,7 @@ import { type Reference, RunNow } from "@/components/live/run-now";
 import { AppHeader } from "@/components/ui/app-header";
 import { apiGet } from "@/lib/api";
 import { type Agg, getRq, latestWith, type Rq4, type Workload } from "@/lib/bench";
-
-export const dynamic = "force-dynamic";
+import { dynamicUnlessRecorded } from "@/lib/render";
 
 const n0 = (v: number | null | undefined) => (v == null ? "–" : Math.round(v).toLocaleString());
 const pct = (v: number | null | undefined, d = 1) => (v == null ? "–" : `${(v * 100).toFixed(d)}%`);
@@ -25,6 +24,7 @@ function Fact({ label, value, note }: { label: string; value: string; note?: str
 }
 
 export default async function LabPage() {
+  await dynamicUnlessRecorded();
   const campaign = await latestWith("rq4");
   const [rq4, wl, notes] = await Promise.all([
     campaign ? getRq<Rq4>(campaign, "rq4") : null,

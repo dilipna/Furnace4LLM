@@ -1,8 +1,7 @@
 import { LabelQueue } from "@/components/evals/label-queue";
 import { AppHeader } from "@/components/ui/app-header";
 import { getRq, latestWith } from "@/lib/bench";
-
-export const dynamic = "force-dynamic";
+import { dynamicUnlessRecorded } from "@/lib/render";
 
 type Rq2 = {
   seeded: {
@@ -17,6 +16,7 @@ type Rq2 = {
 const f3 = (v: number | null | undefined) => (v == null ? "–" : v.toFixed(3));
 
 export default async function EvalsPage() {
+  await dynamicUnlessRecorded();
   const campaign = await latestWith("rq2");
   const rq2 = campaign ? await getRq<Rq2>(campaign, "rq2") : null;
   const h = rq2?.human;

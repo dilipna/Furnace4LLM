@@ -5,9 +5,7 @@ import { Steps } from "@/components/marketing/steps";
 import { AppHeader } from "@/components/ui/app-header";
 import { SiteFooter } from "@/components/ui/site-footer";
 import { loadStory } from "@/lib/story";
-
-// Figures are read from bench/results per request, never frozen at build time.
-export const dynamic = "force-dynamic";
+import { dynamicUnlessRecorded } from "@/lib/render";
 
 const WORKS_WITH = ["Python", "vLLM", "OpenAI-compatible APIs", "GitHub", "Docker"];
 
@@ -25,6 +23,7 @@ function Cta({ href, children, primary }: { href: string; children: React.ReactN
 }
 
 export default async function Landing() {
+  await dynamicUnlessRecorded();
   const s = await loadStory();
   const slower = s ? Math.round(s.pr / s.base) : null;
   const stepData = {

@@ -5,10 +5,9 @@ import { SystemPanel } from "@/components/blueprint/system-panel";
 import { ScanLive, ScanLog } from "@/components/scan/scan-live";
 import { AppHeader } from "@/components/ui/app-header";
 import { ApiError, apiGet } from "@/lib/api";
+import { dynamicUnlessRecorded } from "@/lib/render";
 import { RECORDED_ONLY } from "@/lib/site";
 import type { Blueprint, ScanInfo } from "@/lib/types";
-
-export const dynamic = "force-dynamic";
 
 // Source languages Furnace does not analyze yet (configs and docs are read for every repo).
 const UNANALYZED = ["typescript", "javascript", "go", "java", "rust", "csharp", "ruby", "php", "kotlin", "swift"];
@@ -77,7 +76,14 @@ function Stat({ label, value }: { label: string; value: unknown }) {
   );
 }
 
+// Scans exist only behind the API. A static export must still generate one path: a placeholder
+// that renders the 404 page (the page calls notFound() on a recorded-only site).
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return RECORDED_ONLY ? [{ id: "none" }] : [];
+}
+
 export default async function ScanPage({ params }: PageProps<"/scans/[id]">) {
+  await dynamicUnlessRecorded();
   const { id } = await params;
   let scan: ScanInfo;
   try {

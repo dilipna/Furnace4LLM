@@ -3,8 +3,7 @@ import { Verdict } from "@/components/guard/verdict";
 import { AppHeader } from "@/components/ui/app-header";
 import { apiGet } from "@/lib/api";
 import { getRq, latestWith, type LiveGuard, type Rq3 } from "@/lib/bench";
-
-export const dynamic = "force-dynamic";
+import { dynamicUnlessRecorded } from "@/lib/render";
 
 function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
@@ -17,6 +16,7 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
 }
 
 export default async function GuardPage() {
+  await dynamicUnlessRecorded();
   const campaign = await latestWith("rq3");
   const [rq3, live] = await Promise.all([
     campaign ? getRq<Rq3>(campaign, "rq3") : null,
