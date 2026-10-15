@@ -1,7 +1,8 @@
-// After `next build` with output: "export" (recorded-only site): Next.js 16 writes per-segment
-// prefetch files nested (bench/__next.bench/__PAGE__.txt), while its client router requests them
-// dot-joined (bench/__next.bench.__PAGE__.txt). A static host then answers 404 and every link
-// falls back to a full page load. Write each nested file also under the requested name.
+// After `next build` with output: "export" (recorded-only site): on Windows, Next.js 16.3 writes
+// per-segment prefetch files nested (bench/__next.bench/__PAGE__.txt) while its client router
+// requests them dot-joined (bench/__next.bench.__PAGE__.txt), so a static host answers 404 and
+// every link falls back to a full page load. On Linux the files are already flat and this step
+// writes nothing. Write each nested file also under the requested name.
 import { copyFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
