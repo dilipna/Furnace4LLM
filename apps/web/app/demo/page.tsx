@@ -5,6 +5,7 @@ import { LiveGithub } from "@/components/marketing/live-github";
 import { PrReview } from "@/components/marketing/pr-review";
 import { AppHeader } from "@/components/ui/app-header";
 import { SiteFooter } from "@/components/ui/site-footer";
+import { dynamicUnlessRecorded } from "@/lib/render";
 import { RECORDED_ONLY } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -12,14 +13,12 @@ export const metadata: Metadata = {
   description: "One pull request through Furnace, recorded: the change, its measured effect, the decision and a tested fix.",
 };
 
-// Figures are read from bench/results per request.
-export const dynamic = "force-dynamic";
-
 // Served from apps/web/public/demo/ (published with the site), or a URL set at build time.
 const DEFAULT_VIDEO = "/demo/furnace-demo.webm";
 const VIDEO = process.env.NEXT_PUBLIC_DEMO_VIDEO ?? DEFAULT_VIDEO;
 
-export default function DemoPage() {
+export default async function DemoPage() {
+  await dynamicUnlessRecorded();
   return (
     <div className="flex min-h-full flex-col">
       <AppHeader variant="marketing" active="/demo" />

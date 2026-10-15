@@ -246,7 +246,7 @@ def recorded_site(web: str, check: Any, contact: str) -> None:
         )
     s, final, _, html = get(web + "/pricing")
     # a static page's redirect() is served as a meta refresh plus a client-side redirect
-    moved = final.rstrip("/").endswith("/pilot") or 'content="1;url=/pilot' in html
+    moved = final.split("#")[0].rstrip("/").endswith("/pilot") or 'content="1;url=/pilot' in html
     check("/pricing redirects to /pilot", s == 200 and moved, final)
     s, _, _, html = get(web + "/pilot")
     check("pilot contact link", f'href="{contact}"' in html, contact)

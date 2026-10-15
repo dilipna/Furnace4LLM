@@ -3,12 +3,18 @@ import { notFound } from "next/navigation";
 import { type GEdge, type GNode, GraphView } from "@/components/graph/graph-view";
 import { AppHeader } from "@/components/ui/app-header";
 import { ApiError, apiGet } from "@/lib/api";
+import { dynamicUnlessRecorded } from "@/lib/render";
 import { RECORDED_ONLY } from "@/lib/site";
 import type { ScanInfo } from "@/lib/types";
 
-export const dynamic = "force-dynamic";
+// Scans exist only behind the API. A static export must still generate one path: a placeholder
+// that renders the 404 page (the page calls notFound() on a recorded-only site).
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return RECORDED_ONLY ? [{ id: "none" }] : [];
+}
 
 export default async function GraphPage({ params }: PageProps<"/scans/[id]/graph">) {
+  await dynamicUnlessRecorded();
   const { id } = await params;
   let scan: ScanInfo;
   try {

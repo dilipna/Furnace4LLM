@@ -7,11 +7,15 @@ results. GPU work (benchmarks, sandboxed evals, Guard, repair) stays on the lapt
 browser ── Vercel (apps/web, Next.js) ──/api/*──► Render (apps/api, FastAPI + embedded scan worker) ──► Supabase Postgres
 ```
 
-## Recorded-only site: Vercel alone (the first launch, about 10 minutes)
+## Recorded-only site: Cloudflare Pages Free ($0, static export)
+
+Hosting budget: **$0**. No paid plan, trial, payment method, purchased domain, paid storage or
+paid Workers plan. The site is plain static files on the free `*.pages.dev` address.
+
 
 The landing page, `/demo` (with the screen recording), `/bench` and every other evidence page
-need no API, database or runner: with `NEXT_PUBLIC_RECORDED_ONLY=true` the web app answers the
-read-only `/api/bench/*` routes from `apps/web/lib/bench-snapshot.json` (written by
+need no API, database or runner: with `NEXT_PUBLIC_RECORDED_ONLY=true` the web app is a static
+export (`apps/web/out/`) that answers the read-only `/api/bench/*` routes at build time from `apps/web/lib/bench-snapshot.json` (written by
 `scripts/export_bench_snapshot.py` from the API's own route functions; a test fails if it is
 stale) and the Inference Lab reads `apps/web/public/recorded/live-recorded.json`. Nothing under
 `/api` is routed, so no visitor can start anything; live controls say they are unavailable
@@ -19,57 +23,64 @@ stale) and the Inference Lab reads `apps/web/public/recorded/live-recorded.json`
 replaced by a notice, labeling queue disabled). Render and Supabase are needed only for hosted
 functionality: public scans, a webhook receiver with a public URL, live status.
 
-### Plan: decide before connecting (owner)
+### Why Cloudflare Pages Free (terms checked 2026-10-14)
 
-Do not assume the free Hobby plan fits. Vercel's fair-use guidelines (checked 2026-10-14,
-<https://vercel.com/docs/limits/fair-use-guidelines>) restrict Hobby to "non-commercial
-personal use only"; commercial usage is any deployment "used for the purpose of financial gain
-of anyone involved in any part of the production of the project", with examples including
-"advertising the sale of a product or service". A startup page that recruits design partners
-for a product may meet that definition even though the pilot is free and nothing is sold.
-Options: Pro (paid, per member; **only with the owner's explicit approval**), or ask Vercel
-Support for a determination before using Hobby. No paid plan, add-on (e.g. Password
-Protection) or usage-based billing is activated without the owner's approval.
+- Plan limits (<https://developers.cloudflare.com/pages/platform/limits/>): 25 MiB per file,
+  20,000 files per site, 500 builds a month, 2,000 static redirects; no bandwidth or request
+  cap is listed for static assets. This export: 193 files, about 23 MB; the largest file is the
+  WebM recording at 12.95 MiB (the MP4 is 3.28 MiB). No Pages Functions are used, so nothing
+  counts against the Workers quota.
+- Commercial use: Cloudflare's terms do not limit free plans to personal or non-commercial use
+  (unlike Vercel Hobby, whose fair-use guidelines do).
+- Video: the general CDN terms require serving "video and other large files" through Paid
+  Services "(e.g., the Developer Platform, Images, and Stream)"; Pages is part of the Developer
+  Platform, whose terms add no video restriction. Two short silent recordings (17 MB together)
+  are served from Pages assets. If Cloudflare ever objects, drop the WebM (the MP4 plays
+  everywhere) or link the recording elsewhere; nothing else depends on it.
 
-### Project settings (verified against a clean build of the committed tree)
+### Static export: what changed for it
 
-| setting | value | why |
-|---|---|---|
-| Git repository | `dilipna/Furnace4LLM`, branch `main` (Vercel's GitHub access limited to this repository) | production deploys follow `main` |
-| Root Directory | `apps/web` | the Next.js app; it imports nothing outside this directory |
-| Framework preset | Next.js (detected) | |
-| Install command | default (pnpm, from `apps/web/pnpm-lock.yaml`, lockfile v9; `packageManager` pnpm@10.28.2) | `pnpm install --frozen-lockfile` succeeds from `apps/web` alone |
-| Build command / output | defaults (`next build`, `.next`) | |
-| Node.js version | 22.x or 24.x (Next.js 16 needs >= 20.9) | built locally on Node 24 |
-| Environment variable (Production and Preview) | `NEXT_PUBLIC_RECORDED_ONLY` = `true` | read at build time: set before the first deploy, redeploy after a change |
-| Not set | `FURNACE_API_URL`, `NEXT_PUBLIC_CONTACT_URL` (the LinkedIn default stays), any secret | the site has no API and holds no secrets |
-| Deployment Protection | Standard Protection (the default) | the production domain `<project>.vercel.app` is public; per-deployment and preview URLs require a Vercel login, so share and test only the production domain. Never "All Deployments" |
+- `next.config.ts`: recorded-only builds use `output: "export"` and unoptimized images (the app
+  uses no `next/image`); no rewrites. Live builds are unchanged and still render per request
+  (`lib/render.ts`, `connection()` only when not recorded-only).
+- Dynamic routes: `/guard/[scenario]` is generated for every recorded scenario; `/scans/[id]`
+  only exists behind the API, so the export generates one placeholder that renders the 404 page.
+- `/bench?c=...`: a static page has no query string at build time; it shows the newest report
+  and the other campaigns link to their committed `REPORT.md` on GitHub.
+- Redirects: `public/_redirects` gives `/pricing` → `/pilot#terms-h` (302) on Cloudflare; the
+  page also redirects in the browser on any other static host.
+- 404: the export's `404.html` is served by Pages with status 404 for unknown paths, `/api/*`
+  and `/healthz`.
+- `scripts/export-segment-aliases.mjs` (run by `pnpm build:static`): Next.js 16 writes
+  per-segment prefetch files nested but its client router requests them dot-joined; without the
+  aliases every link logs a 404 and falls back to a full page load.
 
-Evidence during the hosted build: `apps/web/lib/bench-snapshot.json`,
-`apps/web/public/demo/` (WebM, MP4, poster) and `apps/web/public/recorded/` are committed
-inside the root directory, so the build needs no files outside it, no network and no API.
-Checked 2026-10-14 by extracting only `apps/web` from the committed tree (`git archive HEAD
-apps/web`), `pnpm install --frozen-lockfile`, `NEXT_PUBLIC_RECORDED_ONLY=true pnpm build`,
-`pnpm start`, then the smoke test below with the API, runner and vLLM stopped: all checks passed.
-
-### Deploy and verify
-
-1. vercel.com → sign up with GitHub on the plan decided above → Add New → Project → import
-   `dilipna/Furnace4LLM`; apply the settings in the table; Deploy.
-2. From any machine, with the laptop's API, runner and vLLM stopped:
+### Build, check locally, deploy
 
 ```bash
-uv run python scripts/smoke_hosted.py --web https://<project>.vercel.app \
-    --out bench/results/<date>-hosted/smoke-web.md
+cd apps/web
+NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static          # -> out/
+npx wrangler@4.151.0 pages dev out --port 8788             # Cloudflare's routing, locally
+uv run python scripts/smoke_hosted.py --web http://127.0.0.1:8788   # from the repo root
+npx wrangler@4.151.0 login                                 # owner signs in (browser OAuth)
+npx wrangler@4.151.0 pages project create furnace --production-branch main
+npx wrangler@4.151.0 pages deploy out --project-name furnace --branch main --commit-hash "$(git rev-parse HEAD)" --commit-message "recorded-only site"
 ```
 
-It checks every page for its recorded content and recorded-only notices, `/pricing` → `/pilot`,
-the contact link, both recordings (WebM and the H.264 MP4 fallback) answering range requests,
-the poster and recorded telemetry, that `/api/*` and `/healthz` answer 404, and a 404 page.
-3. Open the production domain in a private window (no Vercel session) on a desktop and a phone.
+Then, with the laptop's API, runner and vLLM stopped, run the smoke test against
+`https://<project>.pages.dev` (`--out bench/results/<date>-hosted/smoke-web.md`) and open it in a
+private window on a desktop and a phone. `wrangler pages dev` does not answer byte-range
+requests (it returns 200), so the recording's 206 check is only meaningful on the real edge.
+Contact link: the LinkedIn default (`NEXT_PUBLIC_CONTACT_URL` unset).
 
-When results change, run `uv run python scripts/export_bench_snapshot.py`, commit, push:
-Vercel redeploys from `main`.
+When results change, run `uv run python scripts/export_bench_snapshot.py`, commit, rebuild and
+redeploy.
+
+### Vercel (not used: $0 budget)
+
+Vercel Hobby is limited to non-commercial personal use
+(<https://vercel.com/docs/limits/fair-use-guidelines>) and Pro is paid ($20/month); neither is
+used. The same static `out/` would deploy there unchanged if that ever changes.
 
 ## 0. Repository and a local smoke test of the image
 

@@ -1,0 +1,3 @@
+# Cloudflare Pages (recorded-only static export): real HTTP redirects. Other hosts ignore this
+# file; the /pricing page itself also redirects in the browser.
+/pricing /pilot#terms-h 302
