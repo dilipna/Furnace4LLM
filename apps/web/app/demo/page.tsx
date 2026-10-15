@@ -51,9 +51,10 @@ export default async function DemoPage() {
           </h2>
           <div className="overflow-hidden rounded-[10px] border border-line-strong bg-bg-1">
             <video controls preload="metadata" playsInline poster="/demo/poster.png" className="aspect-video w-full bg-bg-0">
-              <source src={VIDEO} type={VIDEO.endsWith(".mp4") ? "video/mp4" : "video/webm"} />
-              {/* H.264 copy of the same recording for browsers without WebM (older iPhones) */}
+              {/* H.264 copy first: every browser plays it, and WebKit (Safari) plays it where its WebM
+                  support failed in testing; the original WebM stays as the fallback */}
               {VIDEO === DEFAULT_VIDEO && <source src="/demo/furnace-demo.mp4" type="video/mp4" />}
+              <source src={VIDEO} type={VIDEO.endsWith(".mp4") ? "video/mp4" : "video/webm"} />
               Your browser cannot play this recording.{" "}
               <a href="/demo/furnace-demo.mp4" className="underline">
                 Download it (MP4)

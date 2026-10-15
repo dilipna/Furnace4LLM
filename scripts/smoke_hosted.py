@@ -6,7 +6,7 @@
 
 Without --api, the web deployment is checked as a recorded-only site (NEXT_PUBLIC_RECORDED_ONLY,
 no API, no runner): every page renders its recorded results, the recording streams (range
-requests), live controls say they are unavailable, nothing under /api answers, and the pilot
+requests, byte for byte against the committed files), live controls say they are unavailable, nothing under /api answers, and the pilot
 contact link is present.
 
 With --api, checks what docs/deploy.md promises a public deployment does and refuses. It only reads,
@@ -18,13 +18,17 @@ about a minute, so the health check waits up to --wake seconds.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
+
+DEMO = Path(__file__).resolve().parents[1] / "apps" / "web" / "public" / "demo"
 
 # Cloudflare answers 403 to Python's default "Python-urllib" User-Agent; identify the tool instead.
 UA = {"User-Agent": "Mozilla/5.0 (compatible; furnace-smoke/1.0)"}
@@ -220,6 +224,88 @@ def get(url: str, headers: dict[str, str] | None = None) -> tuple[int, str, dict
         return e.code, url, {k.lower(): v for k, v in e.headers.items()}, ""
 
 
+def fetch(
+    url: str, headers: dict[str, str], method: str = "GET"
+) -> tuple[int, dict[str, str], bytes]:
+    """(status, lower-cased headers, body bytes) without raising on 4xx/5xx."""
+    req = urllib.request.Request(url, headers={**UA, **headers}, method=method)  # noqa: S310
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:  # noqa: S310
+            return r.status, {k.lower(): v for k, v in r.headers.items()}, r.read()
+    except urllib.error.HTTPError as e:
+        return e.code, {k.lower(): v for k, v in e.headers.items()}, e.read()
+
+
+def video_ranges(web: str, check: Any) -> None:
+    """Byte ranges on both recordings, compared byte for byte with the committed files, and
+    the Function's marker header present only on the video paths."""
+    for name, kind in (("furnace-demo.webm", "video/webm"), ("furnace-demo.mp4", "video/mp4")):
+        data = (DEMO / name).read_bytes()
+        n = len(data)
+        url = f"{web}/demo/{name}"
+
+        s, h, b = fetch(url, {})
+        check(
+            f"{name}: full GET",
+            s == 200
+            and len(b) == n
+            and hashlib.sha256(b).digest() == hashlib.sha256(data).digest()
+            and h.get("content-length") == str(n)
+            and h.get("accept-ranges") == "bytes"
+            and h.get("content-type", "").startswith(kind)
+            and h.get("x-furnace-range") == "function",
+            f"{s} len {len(b)}/{n} type {h.get('content-type')} accept-ranges {h.get('accept-ranges')}",
+        )
+        cases = [
+            ("bytes=0-1", 0, 1),
+            ("bytes=100-199", 100, 199),
+            ("bytes=1000000-1000999", 1000000, 1000999),
+            (f"bytes={n - 10}-", n - 10, n - 1),
+            ("bytes=-100", n - 100, n - 1),
+            (f"bytes=0-{n * 2}", 0, n - 1),
+        ]
+        for rng, a, z in cases:
+            s, h, b = fetch(url, {"Range": rng})
+            want = data[a : z + 1]
+            check(
+                f"{name}: {rng} -> 206",
+                s == 206
+                and b == want
+                and h.get("content-range") == f"bytes {a}-{z}/{n}"
+                and h.get("content-length") == str(z - a + 1)
+                and h.get("content-type", "").startswith(kind),
+                f"{s} {h.get('content-range')} len {len(b)} (want {len(want)})",
+            )
+        s, h, b = fetch(url, {"Range": f"bytes={n}-"})
+        check(
+            f"{name}: bytes={n}- -> 416",
+            s == 416 and h.get("content-range") == f"bytes */{n}",
+            f"{s} {h.get('content-range')}",
+        )
+        for label, hdrs in (
+            ("multiple ranges", {"Range": "bytes=0-1,5-9"}),
+            ("malformed range", {"Range": "bytes=abc"}),
+            ("stale If-Range", {"Range": "bytes=0-1", "If-Range": '"not-the-etag"'}),
+        ):
+            s, h, b = fetch(url, hdrs)
+            check(
+                f"{name}: {label} -> 200 whole file", s == 200 and len(b) == n, f"{s} len {len(b)}"
+            )
+        s, h, b = fetch(url, {"Range": "bytes=0-1"}, method="HEAD")
+        check(
+            f"{name}: HEAD with Range",
+            s == 206 and not b and h.get("content-range") == f"bytes 0-1/{n}",
+            f"{s} {h.get('content-range')} body {len(b)}",
+        )
+    for path in ("/demo", "/demo/poster.png", "/", "/demo/__next._full.txt"):
+        s, h, _ = fetch(web + path, {})
+        check(
+            f"{path} is static (no Function)",
+            s == 200 and "x-furnace-range" not in h,
+            f"{s} x-furnace-range={h.get('x-furnace-range')}",
+        )
+
+
 def recorded_site(web: str, check: Any, contact: str) -> None:
     pages = (
         ("/", ["RECORDED RUN", "/demo"]),
@@ -254,16 +340,7 @@ def recorded_site(web: str, check: Any, contact: str) -> None:
     check("/pricing redirects to /pilot", s == 200 and moved, final)
     s, _, _, html = get(web + "/pilot")
     check("pilot contact link", f'href="{contact}"' in html, contact)
-    for path, kind in (
-        ("/demo/furnace-demo.webm", "video/webm"),
-        ("/demo/furnace-demo.mp4", "video/mp4"),
-    ):
-        s, _, h, _ = get(web + path, {"Range": "bytes=0-1023"})
-        check(
-            f"recording {path} streams",
-            s == 206 and h.get("content-type", "").startswith(kind) and "content-range" in h,
-            f"{s} {h.get('content-type')} {h.get('content-range')}",
-        )
+    video_ranges(web, check)
     s, _, h, _ = get(web + "/demo/poster.png")
     check("video poster", s == 200 and h.get("content-type") == "image/png", f"{s}")
     s, _, _, body = get(web + "/recorded/live-recorded.json")

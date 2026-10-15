@@ -77,7 +77,9 @@ run_web() {
     pnpm install --frozen-lockfile
     pnpm lint
     pnpm exec next typegen && pnpm exec tsc --noEmit
-    pnpm build'
+    pnpm build
+    node --test cloudflare/range.test.mjs
+    NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static'
 }
 
 run_image() {
