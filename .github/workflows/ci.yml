@@ -50,6 +50,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm exec next typegen && pnpm exec tsc --noEmit
       - run: pnpm build
+      # the public recorded-only site: static export + the Pages Function's range parser
+      - run: node --test cloudflare/range.test.mjs
+      - run: NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static
 
   image:
     # The Render deploy builds this image; build it on every push so a broken Dockerfile is
