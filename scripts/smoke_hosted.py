@@ -26,10 +26,13 @@ import urllib.request
 from datetime import UTC, datetime
 from typing import Any
 
+# Cloudflare answers 403 to Python's default "Python-urllib" User-Agent; identify the tool instead.
+UA = {"User-Agent": "Mozilla/5.0 (compatible; furnace-smoke/1.0)"}
+
 
 def call(method: str, url: str, body: dict | None = None, timeout: float = 30) -> tuple[int, Any]:
     data = json.dumps(body).encode() if body is not None else None
-    req = urllib.request.Request(url, data=data, method=method)  # noqa: S310 - http(s) only, checked in main()
+    req = urllib.request.Request(url, data=data, method=method, headers=UA)  # noqa: S310 - http(s) only, checked in main()
     if data is not None:
         req.add_header("content-type", "application/json")
     try:
@@ -146,7 +149,8 @@ def main() -> int:
             ("/bench", ""),
         ):
             try:
-                with urllib.request.urlopen(web + path, timeout=90) as r:  # noqa: S310
+                req = urllib.request.Request(web + path, headers=UA)  # noqa: S310
+                with urllib.request.urlopen(req, timeout=90) as r:  # noqa: S310
                     html = r.read().decode("utf-8", "replace")
                     ok = r.status == 200 and must.lower() in html.lower()
                     check(
@@ -205,7 +209,7 @@ def report(a: argparse.Namespace, rows: list[tuple[str, bool, str]], target: str
 
 def get(url: str, headers: dict[str, str] | None = None) -> tuple[int, str, dict[str, str], str]:
     """(status, final URL, headers, body) without raising on 4xx/5xx; media bodies are skipped."""
-    req = urllib.request.Request(url, headers=headers or {})  # noqa: S310 - operator's URL
+    req = urllib.request.Request(url, headers={**UA, **(headers or {})})  # noqa: S310 - operator's URL
     try:
         with urllib.request.urlopen(req, timeout=90) as r:  # noqa: S310
             hdrs = {k.lower(): v for k, v in r.headers.items()}

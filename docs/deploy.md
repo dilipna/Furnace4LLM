@@ -55,6 +55,23 @@ functionality: public scans, a webhook receiver with a public URL, live status.
   per-segment prefetch files nested but its client router requests them dot-joined; without the
   aliases every link logs a 404 and falls back to a full page load.
 
+### Deployed
+
+**https://furnace-5h6.pages.dev**, commit 08868cf, 2026-10-15
+(`bench/results/2026-10-15-hosted/`): smoke test 18 of 20, browser pass clean on desktop and
+phone-sized Chromium. Open limitation: Pages answers `Range` requests for the recordings with
+200 (full file), and Safari needs 206 for media, so the recording may not play on iPhones or
+in Safari.
+
+Notes from the first deployment:
+- Wrangler 4.151's `pages project create` now hands off to a Workers flow that auto-detects
+  Next.js and wants its own build; do not use it. Create the classic project with the API
+  (`POST /accounts/<id>/pages/projects` with `{"name": "furnace", "production_branch": "main"}`),
+  then `wrangler pages deploy out`.
+- `wrangler login --device --scopes account:read user:read pages:write` worked; the default
+  localhost-callback login timed out twice on this laptop.
+- Cloudflare answers 403 to Python's default `Python-urllib` User-Agent; the smoke test sends its own.
+
 ### Build, check locally, deploy
 
 ```bash
@@ -62,8 +79,8 @@ cd apps/web
 NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static          # -> out/
 npx wrangler@4.151.0 pages dev out --port 8788             # Cloudflare's routing, locally
 uv run python scripts/smoke_hosted.py --web http://127.0.0.1:8788   # from the repo root
-npx wrangler@4.151.0 login                                 # owner signs in (browser OAuth)
-npx wrangler@4.151.0 pages project create furnace --production-branch main
+npx wrangler@4.151.0 login --device --scopes account:read user:read pages:write   # owner approves
+# project: created once through the API (see "Deployed" above), not `pages project create`
 npx wrangler@4.151.0 pages deploy out --project-name furnace --branch main --commit-hash "$(git rev-parse HEAD)" --commit-message "recorded-only site"
 ```
 
