@@ -5,15 +5,16 @@ Paste this file's path into a new Claude Code session ("read CONTINUE.md and con
 `C:\Users\user\.claude\projects\c--Users-user-OneDrive-Pictures-saas-reviewer\memory\` (read `laptop-gpu-power-cap.md`).
 Deadlines: feature freeze **Oct 15**, pitch **Oct 17**. No fabricated numbers; negative results are reported.
 
-## 2026-10-15: recorded site live on Cloudflare Pages Free ($0); feature work stopped
-- https://furnace-5h6.pages.dev, commit 08868cf (static export, `pnpm build:static`); results in
-  `bench/results/2026-10-15-hosted/`. Smoke 18/20: Pages serves the recordings without byte
-  ranges (Safari/iOS may not play them); owner decision pending on the fix.
+## 2026-10-15: RELEASE FINAL. Recorded site live on Cloudflare Pages Free ($0); feature work stopped
+- https://furnace-5h6.pages.dev, deployed commit fcdfb18 (Linux-built static export plus a Pages
+  Function for video byte ranges, invoked only for the two recordings). Results and exact service
+  inventory: `bench/results/2026-10-15-hosted/README.md` (smoke 46/46; Chromium, WebKit and Firefox
+  engines clean; video plays and seeks; NOT tested on a real iPhone/Safari).
 - Hosting budget is $0: never upgrade, trial, add payment or enable billable services.
   Vercel not used (Hobby is non-commercial; Pro is paid).
-- Redeploy: rebuild from a clean `git archive`, `wrangler pages deploy out --project-name furnace
-  --branch main` (see docs/deploy.md; do not use `pages project create`).
-- Next milestone: showing Furnace to prospective users (not new features).
+- Redeploy: docs/deploy.md ("Build, check locally, deploy" and "Deployed" notes: API-created
+  project, deploy from apps/web/cloudflare, the Windows Wrangler junction workaround).
+- Next milestone: showing Furnace to prospective users (docs/founder/validation-plan.md), not features.
 
 ## 2026-10-14 (evening): fresh-commit webhook run, recorded-only site for Vercel
 - **Webhook gap closed** (`scripts/live_webhook_run.py`, `bench/results/2026-10-14-live-webhook/`):
