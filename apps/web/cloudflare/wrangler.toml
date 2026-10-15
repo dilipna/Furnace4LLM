@@ -1,0 +1,6 @@
+# Cloudflare Pages project for the recorded-only site (docs/deploy.md). Deploy from this folder:
+#   wrangler pages deploy ../out --project-name furnace --branch main
+# Only the two demo recordings invoke the Function in functions/ (public/_routes.json).
+name = "furnace"
+pages_build_output_dir = "../out"
+compatibility_date = "2026-09-01"

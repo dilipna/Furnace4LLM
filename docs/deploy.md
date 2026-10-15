@@ -47,6 +47,18 @@ functionality: public scans, a webhook receiver with a public URL, live status.
   only exists behind the API, so the export generates one placeholder that renders the 404 page.
 - `/bench?c=...`: a static page has no query string at build time; it shows the newest report
   and the other campaigns link to their committed `REPORT.md` on GitHub.
+- Video byte ranges: Pages serves static assets with 200 and the whole file even for `Range`
+  requests ([Serving Pages](https://developers.cloudflare.com/pages/configuration/serving-pages/));
+  `_headers` cannot change that, and Safari/WebKit needs 206 for media. A Pages Function,
+  `apps/web/cloudflare/functions/demo/[file].js`, answers ranges for the two recordings only:
+  `public/_routes.json` limits invocation to `/demo/furnace-demo.webm` and `.mp4`, so every page,
+  the poster and all other files stay static. Single ranges get 206 with exact bytes,
+  `Content-Range` and `Content-Length`; unsatisfiable ones 416 (`bytes */size`); invalid,
+  multi-range or stale `If-Range` requests the whole file (200); HEAD the same headers. The
+  parser has unit tests (`node --test cloudflare/range.test.mjs`, in CI). Functions use the
+  free plan's daily request allowance (100,000); nothing billable is enabled.
+- `/demo` lists the H.264 MP4 first and the WebM second: Playwright's WebKit played and seeked
+  the MP4 but hung on the WebM.
 - Redirects: `public/_redirects` gives `/pricing` → `/pilot#terms-h` (302) on Cloudflare; the
   page also redirects in the browser on any other static host.
 - 404: the export's `404.html` is served by Pages with status 404 for unknown paths, `/api/*`
@@ -57,11 +69,10 @@ functionality: public scans, a webhook receiver with a public URL, live status.
 
 ### Deployed
 
-**https://furnace-5h6.pages.dev**, commit 08868cf, 2026-10-15
-(`bench/results/2026-10-15-hosted/`): smoke test 18 of 20, browser pass clean on desktop and
-phone-sized Chromium. Open limitation: Pages answers `Range` requests for the recordings with
-200 (full file), and Safari needs 206 for media, so the recording may not play on iPhones or
-in Safari.
+**https://furnace-5h6.pages.dev** (`bench/results/2026-10-15-hosted/README.md` has the deployed
+commit and every result): hosted smoke test 46 of 46 including byte-exact ranges; Chromium and
+Playwright WebKit page sweeps clean; the recording plays and seeks in Playwright WebKit. Not
+tested on a real iPhone or in Safari.
 
 Notes from the first deployment:
 - Wrangler 4.151's `pages project create` now hands off to a Workers flow that auto-detects
@@ -71,23 +82,30 @@ Notes from the first deployment:
 - `wrangler login --device --scopes account:read user:read pages:write` worked; the default
   localhost-callback login timed out twice on this laptop.
 - Cloudflare answers 403 to Python's default `Python-urllib` User-Agent; the smoke test sends its own.
+- With a Function, Wrangler 4.151 on Windows creates `%USERPROFILE%\.wrangler` while bundling,
+  then reads its login from there (none) and stops ("Run wrangler whoami"). Workaround used: a
+  junction `mklink /J %USERPROFILE%\.wrangler %APPDATA%\xdg.config\.wrangler` for the deploy,
+  removed afterwards (`rmdir`), so both paths point at the one stored login.
+- Build the export in Linux (as CI does) or on Windows with `pnpm build:static` (its alias step
+  fixes the Windows-only prefetch file names).
 
 ### Build, check locally, deploy
 
 ```bash
 cd apps/web
 NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static          # -> out/
-npx wrangler@4.151.0 pages dev out --port 8788             # Cloudflare's routing, locally
+node --test cloudflare/range.test.mjs                      # range parser
+cd cloudflare                                              # wrangler.toml and functions/ live here
+npx wrangler@4.151.0 pages dev ../out --port 8788          # Cloudflare's routing + the Function, locally
 uv run python scripts/smoke_hosted.py --web http://127.0.0.1:8788   # from the repo root
 npx wrangler@4.151.0 login --device --scopes account:read user:read pages:write   # owner approves
 # project: created once through the API (see "Deployed" above), not `pages project create`
-npx wrangler@4.151.0 pages deploy out --project-name furnace --branch main --commit-hash "$(git rev-parse HEAD)" --commit-message "recorded-only site"
+npx wrangler@4.151.0 pages deploy ../out --project-name furnace --branch main --commit-hash "$(git rev-parse HEAD)" --commit-message "recorded-only site"
 ```
 
 Then, with the laptop's API, runner and vLLM stopped, run the smoke test against
 `https://<project>.pages.dev` (`--out bench/results/<date>-hosted/smoke-web.md`) and open it in a
-private window on a desktop and a phone. `wrangler pages dev` does not answer byte-range
-requests (it returns 200), so the recording's 206 check is only meaningful on the real edge.
+private window on a desktop and a phone.
 Contact link: the LinkedIn default (`NEXT_PUBLIC_CONTACT_URL` unset).
 
 When results change, run `uv run python scripts/export_bench_snapshot.py`, commit, rebuild and
