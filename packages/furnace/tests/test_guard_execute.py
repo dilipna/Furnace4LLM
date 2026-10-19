@@ -80,6 +80,42 @@ def test_perf_gate_that_measured_nothing_is_an_error_not_a_crash(tmp_path, monke
     assert r.verdict == "error" and "measured nothing" in r.detail
 
 
+@pytest.mark.parametrize(("samples", "repeats"), [(19, 3), (34, 2)])
+def test_incomplete_benchmark_produces_neutral_check(tmp_path, monkeypatch, samples, repeats):
+    def result():
+        return SimpleNamespace(
+            samples=lambda name: [100.0] * samples,
+            metric=lambda name: {
+                "ttft_p95_ms": 100.0,
+                "failure_rate": 0.0,
+                "prefix_hit_rate": 0.9,
+                "goodput_rps": 5.0,
+            }[name],
+            report=SimpleNamespace(model_dump=lambda **kw: {}),
+        )
+
+    monkeypatch.setattr(execute, "_endpoint_down", lambda t: None)
+    monkeypatch.setattr(
+        execute,
+        "run_gate",
+        lambda *a, **k: {
+            "base": [result() for _ in range(repeats)],
+            "pr_head": [result() for _ in range(repeats)],
+        },
+    )
+    results = run_items([item("bench:chat_perf_gate", "benchmark")], ctx(tmp_path, TARGET))
+    assert results[0].metrics["verdict"] == "inconclusive"
+    assert "INCONCLUSIVE" in results[0].detail
+    assert (
+        "p95 TTFT" in results[0].detail
+        if samples < 20
+        else "geometric-mean TTFT" in results[0].detail
+    )
+    conclusion = execute.verdict(results)
+    assert conclusion == "neutral"
+    assert check_run(_impact(), results, conclusion)["conclusion"] == "neutral"
+
+
 def test_run_items_reports_start_and_done_events(tmp_path, monkeypatch):
     monkeypatch.setitem(execute.EXECUTORS, "unit", lambda i, c: ItemResult(i.key, "pass", "ok"))
     events: list[dict] = []
