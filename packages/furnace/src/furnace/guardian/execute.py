@@ -24,7 +24,7 @@ from furnace_bench.schema import BenchTarget
 from furnace.forge.harness import HARNESS_FILE, HarnessError, write_harness
 from furnace.forge.planner import approval_test_source
 from furnace.guardian.impact import ImpactResult, SuiteItem
-from furnace.guardian.perf_gate import GatePolicy, compare, describe, run_gate
+from furnace.guardian.perf_gate import GatePolicy, compare, describe, metric_label, run_gate
 from furnace.guardian.repair.regression import (
     min_shared_prefix,
     render_in_sandbox,
@@ -366,7 +366,8 @@ def _bench(item: SuiteItem, ctx: GuardContext) -> ItemResult:
     return ItemResult(
         item.key,
         verdict,
-        f"geometric-mean TTFT {describe(c)}; {c['runs']} runs each, {sep}{hit_txt}{_p95_txt(c)}",
+        f"{metric_label(c.get('metric'))} {describe(c)}; "
+        f"{len(res['base'])} base / {len(res['pr_head'])} head runs, {sep}{hit_txt}{_p95_txt(c)}",
         {
             **c,
             "reports": {k: [v.report.model_dump(mode="json") for v in vs] for k, vs in res.items()},
