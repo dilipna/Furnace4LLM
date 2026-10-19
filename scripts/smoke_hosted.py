@@ -310,6 +310,15 @@ def recorded_site(web: str, check: Any, contact: str) -> None:
     pages = (
         ("/", ["RECORDED RESULTS", "PROMPT / CACHE INSPECTOR", "/demo"]),
         (
+            "/prefix-check",
+            [
+                "Check your prompt prefix",
+                "Private by design",
+                "Compare prefixes",
+                "does not run GPU benchmarks",
+            ],
+        ),
+        (
             "/demo",
             [
                 "Demo · recorded",

@@ -15,6 +15,14 @@ export function Faq({ s }: { s: Story | null }) {
   const g = s?.gate;
   const items: [string, React.ReactNode][] = [
     [
+      "Can I try it without a GPU?",
+      <>
+        Yes. The <A href="/prefix-check">browser prefix checker</A> compares your rendered base and head prompts locally,
+        without uploading them. Start with the synthetic regression and repair examples. It checks shared text structure;
+        it does not call a model, measure latency, or detect whether server caching is enabled.
+      </>,
+    ],
+    [
       "Doesn’t my eval tool already measure latency?",
       <>
         Often, yes. <A href="https://www.promptfoo.dev/docs/configuration/expected-outputs/deterministic/">promptfoo</A> can

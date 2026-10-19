@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/ui/wordmark";
 
 const NAV: [string, string][] = [
+  ["/prefix-check", "Prefix checker"],
   ["/guard", "Guard"],
   ["/lab", "Inference Lab"],
   ["/evals", "Evaluations"],
@@ -17,6 +18,8 @@ const MARKETING_NAV: [string, string][] = [
 
 // Narrow screens keep the two links a first-time visitor needs; the footer links every page.
 const HIDE: Record<string, string> = {
+  "/guard": "hidden sm:inline",
+  "/bench": "hidden sm:inline",
   "/lab": "hidden sm:inline",
   "/evals": "hidden md:inline",
   "/#how": "hidden sm:inline",
