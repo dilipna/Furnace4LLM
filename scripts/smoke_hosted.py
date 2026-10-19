@@ -147,7 +147,7 @@ def main() -> int:
     if a.web:
         web = a.web.rstrip("/")
         for path, must in (
-            ("/", "RECORDED RUN"),
+            ("/", "RECORDED RESULTS"),
             ("/pilot", "Design-partner pilot"),
             ("/guard/r1_dynamic_head", "r1_dynamic_head"),
             ("/bench", ""),
@@ -308,7 +308,7 @@ def video_ranges(web: str, check: Any) -> None:
 
 def recorded_site(web: str, check: Any, contact: str) -> None:
     pages = (
-        ("/", ["RECORDED RUN", "/demo"]),
+        ("/", ["RECORDED RESULTS", "PROMPT / CACHE INSPECTOR", "/demo"]),
         (
             "/demo",
             [
