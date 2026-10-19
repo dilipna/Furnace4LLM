@@ -23,9 +23,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import tempfile
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
@@ -159,7 +160,7 @@ def _median(xs: list[float]) -> float:
 
 MIN_SAMPLES_PER_RUN = 20  # below this a run's TTFT summary is not meaningful
 METHOD_WELCH = "run-level Welch t interval on mean log TTFT (geometric mean), {pct}% two-sided"
-METHOD_POINT = "point estimate only (no per-request samples); legacy p95 thresholds"
+METHOD_POINT = "p95 summary for diagnostics only; insufficient samples for an interval decision"
 LEGACY_METRIC = "ttft_p95_ms"
 
 
@@ -183,14 +184,14 @@ def _failure_rate(rs: Sequence[MetricSource]) -> float | None:
 def _run_logs(rs: Sequence[MetricSource], percentile: float | None = None) -> list[float] | None:
     """One number per run: the mean of log TTFT, or the log of its `percentile`-th percentile.
 
-    None if any run lacks per-request samples. A run is the unit of analysis; its requests
+    None if any run lacks enough finite, positive per-request samples. A run is the unit of analysis; its requests
     are not independent (closed-loop waves share a scheduler step) so they are never
     resampled, only summarized."""
     out: list[float] = []
     for r in rs:
         get = getattr(r, "samples", None)
         xs = np.asarray(get("ttft_ms") if get else [], dtype=float)
-        if xs.size < MIN_SAMPLES_PER_RUN or not np.all(xs > 0):
+        if xs.ndim != 1 or xs.size < MIN_SAMPLES_PER_RUN or not np.all(np.isfinite(xs) & (xs > 0)):
             return None
         out.append(
             float(np.log(xs).mean())
@@ -292,27 +293,30 @@ def _compare_welch(
 def _compare_point(
     baseline: Sequence[MetricSource], other: Sequence[MetricSource], policy: GatePolicy
 ) -> dict[str, Any]:
-    """Summaries only (no per-request samples): the earlier point rule on p95, labeled."""
-    bs = [v for v in (r.metric(LEGACY_METRIC) for r in baseline) if v is not None]
-    os_ = [v for v in (r.metric(LEGACY_METRIC) for r in other) if v is not None]
-    if not bs or not os_:
-        return {"verdict": "error", "reason": f"{LEGACY_METRIC} not measured"}
+    """Keep finite p95 summaries for diagnosis, never as a substitute gate decision."""
+    try:
+        bs = [r.metric(LEGACY_METRIC) for r in baseline]
+        os_ = [r.metric(LEGACY_METRIC) for r in other]
+    except (KeyError, IndexError, ValueError):
+        return {"verdict": "error", "reason": f"{LEGACY_METRIC} not measured or invalid"}
+    if not bs or not os_ or any(v is None or not math.isfinite(v) or v <= 0 for v in bs + os_):
+        return {"verdict": "error", "reason": f"{LEGACY_METRIC} not measured or invalid"}
+    # The check above rejects missing values instead of silently dropping incomplete runs.
+    bs, os_ = [float(v) for v in bs if v is not None], [float(v) for v in os_ if v is not None]
     b, o = _median(bs), _median(os_)
     change = (o - b) / b * 100
     separated = min(os_) > max(bs)
-    if change > policy.block_pct:
-        verdict = "block" if separated or len(bs) == 1 else "warn"
-    elif change > policy.warn_pct:
-        verdict = "warn"
-    else:
-        verdict = "pass"
     return {
         "metric": LEGACY_METRIC,
         "baseline": round(b, 1),
         "value": round(o, 1),
         "change_pct": round(change, 1),
         "ci_pct": None,
-        "verdict": verdict,
+        "verdict": "inconclusive",
+        "reason": (
+            f"every run needs at least {MIN_SAMPLES_PER_RUN} finite, positive TTFT samples; "
+            "p95 summaries cannot establish an interval decision"
+        ),
         "method": METHOD_POINT,
         "tolerance_pct": policy.warn_pct,
         "block_pct": policy.block_pct,
@@ -337,14 +341,14 @@ def compare(
       inconclusive  the interval straddles the tolerance, or fewer than `min_runs` runs per
                     side: the data support neither answer, and it is never reported as a pass.
     The p95 is reported (`p95_advisory`) with its own interval but does not decide.
-    Without samples (summaries only) the earlier point rule on p95 is used and labeled."""
+    Missing, invalid or undersized samples never fall back to a passing point rule.
+    Finite p95 summaries are diagnostic only (INCONCLUSIVE); unavailable or invalid
+    summaries are ERROR. The failure-rate block still takes precedence."""
     b_logs, o_logs = _run_logs(baseline), _run_logs(other)
     if b_logs is not None and o_logs is not None:
         out = _compare_welch(baseline, other, b_logs, o_logs, policy)
     else:
         out = _compare_point(baseline, other, policy)
-        if out["verdict"] == "error":
-            return out
 
     # Latency is measured over successful requests only, so a revision whose requests fail
     # (context overflow, server errors) could look faster. More failures than the baseline
@@ -376,7 +380,7 @@ def metric_label(metric: str | None) -> str:
 
 def describe(c: dict[str, Any]) -> str:
     """One line for logs, check runs and PR bodies."""
-    if c.get("verdict") == "error":
+    if c.get("verdict") == "error" or "baseline" not in c:
         return f"not measured: {c.get('reason')}"
     ci = c.get("ci_pct")
     conf = round(c.get("confidence", 0.95) * 100)
@@ -401,15 +405,30 @@ def accept_repair(
     against the base revision (the interval's upper bound) stays below block_pct (it is not
     a new regression of blocking size). Whether it is within the noise tolerance of base is reported, not assumed:
     staying inside a tolerance band is not evidence of an improvement."""
-    if "error" in (head_vs_base.get("verdict"), cand_vs_base.get("verdict")):
+    if "error" in (
+        head_vs_base.get("verdict"),
+        cand_vs_base.get("verdict"),
+        cand_vs_head.get("verdict"),
+    ):
         return False, ["the benchmark measured nothing; a candidate is never accepted unmeasured"]
-    if cand_vs_base.get("reason") and cand_vs_base.get("verdict") == "block":
-        return False, [f"candidate blocked: {cand_vs_base['reason']}"]
+    for comparison in (cand_vs_base, cand_vs_head):
+        if comparison.get("verdict") == "block":
+            return False, [f"candidate blocked: {comparison.get('reason', 'benchmark regression')}"]
     ci_h, ci_b = cand_vs_head.get("ci_pct"), cand_vs_base.get("ci_pct")
-    if ci_h is None or ci_b is None:  # summaries only: the earlier rule, labeled
-        ok = cand_vs_base["verdict"] in ("pass", "warn")
-        return ok, [
-            f"point rule (no per-request samples): candidate vs base {describe(cand_vs_base)}"
+    if (
+        ci_h is None
+        or ci_b is None
+        or not all(
+            isinstance(ci, (list, tuple))
+            and len(ci) == 2
+            and all(isinstance(x, (int, float)) and math.isfinite(x) for x in ci)
+            and ci[0] <= ci[1]
+            for ci in (ci_h, ci_b)
+        )
+    ):
+        return False, [
+            "valid intervals against both base and PR head are required; "
+            "summary-only or incomplete evidence cannot authorize a repair"
         ]
     reasons = []
     fixes = ci_h[1] < 0
@@ -430,7 +449,9 @@ def accept_repair(
     return fixes and bounded, reasons
 
 
-def repair_perf_check(res: dict[str, list[VariantResult]], policy: GatePolicy) -> dict[str, Any]:
+def repair_perf_check(
+    res: Mapping[str, Sequence[MetricSource]], policy: GatePolicy
+) -> dict[str, Any]:
     """Gate a repair from one interleaved run of base, PR head and candidate."""
     hv = compare(res["base"], res["pr_head"], policy)
     cv = compare(res["base"], res["candidate"], policy)
