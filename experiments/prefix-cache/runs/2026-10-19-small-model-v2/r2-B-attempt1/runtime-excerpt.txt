@@ -1,0 +1,4 @@
+(EngineCore pid=56) WARNING 10-19 05:20:40 [buffer_utils.py:47] Pinned memory is not available on this platform; falling back to device memory for UVA buffers.
+(EngineCore pid=56) INFO 10-19 05:21:13 [gpu_worker.py:640] Available KV cache memory: 1.62 GiB
+(EngineCore pid=56) INFO 10-19 05:21:13 [kv_cache_utils.py:2395] GPU KV cache size: 141,552 tokens, Maximum concurrency for 4,096 tokens per request: 34.56x
+(EngineCore pid=56) WARNING 10-19 05:21:45 [jit_monitor.py:141] Triton kernel JIT compilation during inference: _gumbel_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.

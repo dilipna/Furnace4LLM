@@ -1,0 +1,14 @@
+{
+  "repeat": 1,
+  "condition": "A",
+  "attempt": 1,
+  "status": "failed",
+  "path": "runs/2026-10-19-small-model/r1-A-attempt1",
+  "started_utc": "2026-10-19T05:01:32.228581+00:00",
+  "gpu_before": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 592.82, 4096, 99, 210, 10.49, [N/A]",
+  "ac_before": true,
+  "error": "RuntimeError: runbook has 1281 tokens; need 1450\u20131500",
+  "logged_cache_percentages": [],
+  "gpu_after": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 592.82, 4096, 2787, 210, 10.40, [N/A]",
+  "ac_after": true
+}

@@ -60,15 +60,17 @@ export function Faq({ s }: { s: Story | null }) {
     [
       "Is anyone using it?",
       <>
-        Not yet. Furnace is an early prototype, verified on two fixture apps on one laptop GPU. We are looking for a few
-        design partners who serve their own models to try it on one repository, for free.
+        No external users or customer deployments are claimed. Furnace is an independent prototype, verified on
+        fixture apps on one laptop GPU, with a recorded end-to-end run on a public GitHub repository.
       </>,
     ],
     [
-      "How would it make money?",
+      "Can I verify the evidence without a GPU?",
       <>
-        This is untested. The leading idea is a per-repository subscription for the hosted control plane, with the runner
-        on the customer’s own hardware. The pilots exist partly to learn whether teams would pay, and for what.
+        Yes. From a clone, Python 3.12 alone can run <code>python experiments/prefix-cache/review.py</code> to check
+        saved timings, cache counters and published tables. The Forge-test rehearsal also runs on CPU. Repeating the
+        serving measurements requires the documented model, Docker and GPU setup. These checks establish internal
+        consistency, not independent authentication of where a measurement originated.
       </>,
     ],
   ];
