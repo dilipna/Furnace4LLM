@@ -22,21 +22,21 @@ def runs(*xs):
     return [_R(x) for x in xs]
 
 
-def test_block_requires_separated_runs():
+def test_summary_only_comparisons_are_diagnostic_not_decisions():
     pol = GatePolicy()
     c = compare(runs(600, 620, 610), runs(1500, 1480, 1520), pol)
-    assert c["verdict"] == "block" and c["separated"]
+    assert c["verdict"] == "inconclusive" and c["separated"]
     noisy = compare(runs(300, 600, 450), runs(420, 900, 500), pol)  # +11% median, overlapping
-    assert noisy["verdict"] == "warn" and not noisy["separated"]
+    assert noisy["verdict"] == "inconclusive" and not noisy["separated"]
     big_overlap = compare(
         runs(300, 900, 400), runs(800, 350, 700), pol
     )  # +75% median but overlapping
-    assert big_overlap["verdict"] == "warn"
-    assert compare(runs(500, 510), runs(505, 495), pol)["verdict"] == "pass"
+    assert big_overlap["verdict"] == "inconclusive"
+    assert compare(runs(500, 510), runs(505, 495), pol)["verdict"] == "inconclusive"
 
 
-def test_single_run_can_still_block():
-    assert compare(runs(500), runs(700), GatePolicy())["verdict"] == "block"
+def test_single_summary_cannot_establish_a_latency_regression():
+    assert compare(runs(500), runs(700), GatePolicy())["verdict"] == "inconclusive"
 
 
 def test_conclusion_mapping():
@@ -53,6 +53,7 @@ import numpy as np  # noqa: E402
 from furnace.guardian.perf_gate import (  # noqa: E402
     METHOD_POINT,
     accept_repair,
+    repair_perf_check,
     run_order,
     welch_change_ci,
 )
@@ -108,7 +109,7 @@ def test_noise_that_straddles_the_tolerance_is_inconclusive_not_pass():
     assert lo <= 10 < hi and c["verdict"] == "inconclusive"
 
 
-def test_summaries_without_samples_use_the_labeled_point_rule():
+def test_summaries_without_samples_are_labeled_diagnostic_only():
     c = compare(runs(600, 620, 610), runs(1500, 1480, 1520), GatePolicy())
     assert c["method"] == METHOD_POINT and c["ci_pct"] is None
 
@@ -226,3 +227,105 @@ def test_a_faster_revision_whose_requests_fail_is_blocked_not_passed():
     # one transient failure in a hundred is within the allowance
     one_off = [_F(r.xs, 0.01) for r in sruns(seed=3, n=200, spread=0.03)]
     assert compare(base, one_off, GatePolicy())["verdict"] == "pass"
+
+
+@pytest.mark.parametrize("n", [1, 19])
+def test_insufficient_samples_cannot_fall_back_to_a_pass(n):
+    c = compare(sruns(n=n), sruns(n=n), GatePolicy())
+    assert c["verdict"] == "inconclusive"
+    assert c["ci_pct"] is None
+    assert "20" in c["reason"]
+
+
+@pytest.mark.parametrize("bad", [0.0, -1.0, float("nan"), float("inf")])
+def test_invalid_sample_cannot_fall_back_to_a_pass(bad):
+    base, head = sruns(), sruns()
+    head[1].xs[0] = bad
+    c = compare(base, head, GatePolicy())
+    assert c["verdict"] in ("inconclusive", "error")
+    assert c.get("ci_pct") is None
+
+
+def test_one_incomplete_run_invalidates_the_comparison():
+    base, head = sruns(), sruns()
+    head[1] = _S([80.0] * 19)
+    assert compare(base, head, GatePolicy())["verdict"] == "inconclusive"
+
+
+def test_summary_only_repair_is_rejected_even_when_within_point_budget():
+    pol = GatePolicy()
+    ok, why = accept_repair(
+        compare(runs(100), runs(110), pol),
+        compare(runs(100), runs(120), pol),
+        compare(runs(110), runs(120), pol),
+        pol,
+    )
+    assert not ok
+    assert any("interval" in reason for reason in why)
+
+
+@pytest.mark.parametrize("missing", ["base", "head"])
+def test_repair_requires_both_candidate_intervals(missing):
+    base, head = _cmp(0, -1, 1), _cmp(-50, -60, -40)
+    (base if missing == "base" else head)["ci_pct"] = None
+    ok, _ = accept_repair(_cmp(100, 90, 110, "block"), base, head, GatePolicy())
+    assert not ok
+
+
+@pytest.mark.parametrize("ci", [[-2, float("inf")], [float("nan"), -1], [1, -1], []])
+def test_repair_rejects_invalid_intervals(ci):
+    head = _cmp(-50, -60, -40)
+    head["ci_pct"] = ci
+    ok, _ = accept_repair(_cmp(100, 90, 110, "block"), _cmp(0, -1, 1), head, GatePolicy())
+    assert not ok
+
+
+def test_repair_rejects_error_in_candidate_vs_head():
+    head = _cmp(-50, -60, -40, "error")
+    ok, _ = accept_repair(_cmp(100, 90, 110, "block"), _cmp(0, -1, 1), head, GatePolicy())
+    assert not ok
+
+
+def test_failure_increase_still_blocks_with_insufficient_timing_samples():
+    base = [_F([100.0] * 19, 0.0)]
+    head = [_F([80.0] * 19, 0.2)]
+    c = compare(base, head, GatePolicy())
+    assert c["verdict"] == "block"
+    assert "20% of requests failed" in c["reason"]
+
+
+@pytest.mark.parametrize("summary", [None, 0.0, -1.0, float("nan"), float("inf")])
+def test_missing_or_invalid_summary_is_not_dropped(summary):
+    c = compare(runs(100, 100, 100), runs(100, summary, 100), GatePolicy())
+    assert c["verdict"] == "error"
+
+
+def test_all_failed_requests_block_even_without_latency_summary():
+    c = compare([_F([100.0] * 34, 0.0)], [_F([], 1.0)], GatePolicy())
+    assert c["verdict"] == "block"
+    assert "100% of requests failed" in c["reason"]
+
+
+def test_empty_samples_are_reported_without_percentile_crash():
+    c = compare(sruns(n=0), sruns(n=0), GatePolicy())
+    assert c["verdict"] == "error"
+
+
+def test_minimum_valid_sample_count_still_uses_interval():
+    c = compare(sruns(n=20, spread=0.01), sruns(n=20, spread=0.01), GatePolicy())
+    assert c["verdict"] == "pass" and c["ci_pct"] is not None
+
+
+@pytest.mark.parametrize(("n", "k", "accepted"), [(19, 3, False), (34, 2, False), (34, 3, True)])
+def test_repair_decision_path_requires_complete_evidence(n, k, accepted):
+    # Exercise comparison, acceptance and summary generation together; no endpoint or GPU.
+    result = repair_perf_check(
+        {
+            "base": sruns(n=n, k=k, spread=0.01),
+            "pr_head": sruns(scale=2, n=n, k=k, spread=0.01),
+            "candidate": sruns(n=n, k=k, spread=0.01),
+        },
+        GatePolicy(),
+    )
+    assert result["within_budget"] is accepted
+    assert result["summary"] and result["reasons"]
