@@ -5,7 +5,7 @@ import { RECORDED_ONLY } from "@/lib/site";
 const REPO = "https://github.com/dilipna/Furnace4LLM";
 
 const COLS: [string, [string, string][]][] = [
-  ["Product", [["/pilot", "Pilot setup"], ["/guard", "Guard runs"], ["/lab", "Inference Lab"]]],
+  ["Product", [["/prefix-check", "Prefix checker"], ["/pilot", "Pilot setup"], ["/guard", "Guard runs"], ["/lab", "Inference Lab"]]],
   ["Evidence", [["/bench", "FurnaceBench"], ["/evals", "Evaluations"], [`${REPO}/blob/main/docs/claims.md`, "Claims ledger"], [`${REPO}/blob/main/docs/completion.md`, "Acceptance checklist"]]],
   ["Source", [[REPO, "GitHub repository"], [`${REPO}/blob/main/docs/security.md`, "Security controls"], [`${REPO}/blob/main/docs/architecture.md`, "Architecture"]]],
 ];
@@ -20,7 +20,7 @@ export function SiteFooter() {
             An early-stage project. Results come from fixture apps on one laptop GPU, plus live runs on a public
             GitHub repository.{" "}
             {RECORDED_ONLY
-              ? "This site shows recorded results only; it runs nothing a visitor submits."
+              ? "Benchmarks are recorded. The prefix checker compares your prompts locally in your browser; no prompts are uploaded."
               : "Live features need the API and the GPU runner."}
           </p>
         </div>
