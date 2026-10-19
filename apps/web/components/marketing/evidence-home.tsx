@@ -39,7 +39,7 @@ export default async function EvidenceHome() {
         <section className={s.hero} aria-labelledby="hero-title">
           <div>
             <p className={s.eyebrow}>
-              <span className={s.signal} /> OPEN-SOURCE INFERENCE ENGINEERING
+              <span className={s.signal} /> PUBLIC INFERENCE ENGINEERING
             </p>
             <h1 id="hero-title">
               Ship the prompt.
