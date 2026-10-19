@@ -24,6 +24,10 @@ sandbox and gate) → **review**: a draft PR that a human merges or closes.
   graph Guard uses). Its findings are advisory: on five unseen apps 39 of 77 were right.
 - **Forge** sets the checks up as a draft PR, sandbox-validated first.
 
+**Gate evidence requirements:** missing or undersized timing samples cannot produce a
+passing latency verdict, and repairs require valid intervals against both the PR head
+and baseline. See the [correction and reproducible checks](docs/gate-evidence-requirements.md).
+
 ## Verification status (2026-10-14)
 
 | level | status | evidence |
