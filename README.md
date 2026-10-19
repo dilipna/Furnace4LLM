@@ -2,6 +2,11 @@
 
 [![ci](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml/badge.svg)](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml)
 
+**Try it without setup:** [browser prompt-prefix checker](https://furnace-5h6.pages.dev/prefix-check).
+Load a synthetic regression or repair, or paste your own rendered base/head JSONL snapshots.
+Comparison stays in browser memory; no account, upload, model call, or GPU is required.
+This checks shared text structure, not latency or answer quality. [Format and limits](docs/prefix-checker.md).
+
 **Review the evidence without a GPU:** [engineering walkthrough](docs/engineering-review.md) ·
 [portable experiment report](experiments/prefix-cache/review.html) ·
 [raw measurements](experiments/prefix-cache/results.md).

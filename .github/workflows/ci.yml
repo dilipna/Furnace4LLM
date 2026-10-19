@@ -52,6 +52,7 @@ jobs:
       - run: pnpm build
       # the public recorded-only site: static export + the Pages Function's range parser
       - run: node --test cloudflare/range.test.mjs
+      - run: node --test lib/prefix-check.test.mjs
       - run: NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static
 
   image:
