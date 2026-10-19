@@ -1,0 +1,130 @@
+{
+  "kind": "offline structural replay, not a latency measurement",
+  "campaign": "2026-10-19-small-model-v2",
+  "template": "packages/furnace/src/furnace/forge/templates.py",
+  "template_sha256": "49dac4e1683fa2e8398fc77111f4d2aeb7c3e9f6edda1fdfcac93a2c3bd896b0",
+  "all_expected_outcomes": true,
+  "results": [
+    {
+      "repeat": 1,
+      "condition": "A",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8839,
+      "required_chars": 7955,
+      "exit_code": 0
+    },
+    {
+      "repeat": 1,
+      "condition": "B",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8839,
+      "required_chars": 7955,
+      "exit_code": 0
+    },
+    {
+      "repeat": 1,
+      "condition": "C",
+      "expected": "FAIL",
+      "base_shared_chars": 8839,
+      "status": "FAIL",
+      "shared_chars": 15,
+      "required_chars": 7955,
+      "exit_code": 1
+    },
+    {
+      "repeat": 1,
+      "condition": "D",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8831,
+      "required_chars": 7955,
+      "exit_code": 0
+    },
+    {
+      "repeat": 2,
+      "condition": "A",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8839,
+      "required_chars": 7955,
+      "exit_code": 0
+    },
+    {
+      "repeat": 2,
+      "condition": "B",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8839,
+      "required_chars": 7955,
+      "exit_code": 0
+    },
+    {
+      "repeat": 2,
+      "condition": "C",
+      "expected": "FAIL",
+      "base_shared_chars": 8839,
+      "status": "FAIL",
+      "shared_chars": 15,
+      "required_chars": 7955,
+      "exit_code": 1
+    },
+    {
+      "repeat": 2,
+      "condition": "D",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8831,
+      "required_chars": 7955,
+      "exit_code": 0
+    },
+    {
+      "repeat": 3,
+      "condition": "A",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8839,
+      "required_chars": 7955,
+      "exit_code": 0
+    },
+    {
+      "repeat": 3,
+      "condition": "B",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8839,
+      "required_chars": 7955,
+      "exit_code": 0
+    },
+    {
+      "repeat": 3,
+      "condition": "C",
+      "expected": "FAIL",
+      "base_shared_chars": 8839,
+      "status": "FAIL",
+      "shared_chars": 15,
+      "required_chars": 7955,
+      "exit_code": 1
+    },
+    {
+      "repeat": 3,
+      "condition": "D",
+      "expected": "PASS",
+      "base_shared_chars": 8839,
+      "status": "PASS",
+      "shared_chars": 8831,
+      "required_chars": 7955,
+      "exit_code": 0
+    }
+  ],
+  "boundary": "B passes structurally despite disabled caching; this test does not measure latency or actual KV cache reuse."
+}

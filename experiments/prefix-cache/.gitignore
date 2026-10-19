@@ -1,0 +1,11 @@
+__pycache__/
+.cache/
+*.log
+*.webm
+*.mp4
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.onnx
+*.bin

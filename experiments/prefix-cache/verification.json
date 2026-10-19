@@ -1,0 +1,9 @@
+{
+  "campaign": "2026-10-19-small-model-v2",
+  "verified_runs": 12,
+  "verified_measured_requests": 720,
+  "source_hashes_match": true,
+  "paired_workloads_match": true,
+  "throughput_recomputed_from_raw_records": true,
+  "ttft_percentiles_recomputed_from_raw_records": true
+}

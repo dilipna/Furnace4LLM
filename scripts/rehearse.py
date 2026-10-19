@@ -71,20 +71,17 @@ def main() -> int:
         page.on("pageerror", lambda exc: errors.append(str(exc)))
 
         def landing() -> str:
-            # Landing (abstract hero, recorded), then /demo (the recorded PR, per trial), then
+            # Landing (recorded prompt-layout comparison), then /demo (the recorded PR), then
             # /lab's live panel; the scan box lives on /pilot.
             page.goto(a.base + "/", wait_until="load")
-            page.get_by_text("RECORDED RUN").first.wait_for(timeout=20_000)
+            page.get_by_text("PROMPT / CACHE INSPECTOR").wait_for(timeout=20_000)
+            page.get_by_role("button", name=re.compile("Metadata last")).click()
+            page.get_by_text("Shared prefix preserved").wait_for(timeout=5_000)
+            page.get_by_role("button", name=re.compile("Metadata first")).click()
+            page.get_by_text("Shared prefix interrupted").wait_for(timeout=5_000)
             if pace:
                 page.wait_for_timeout(pace * 1500)
                 page.locator("#how").scroll_into_view_if_needed()
-                for t in (
-                    "Measure every pull request",
-                    "Decide with confidence",
-                    "Get a tested fix",
-                ):
-                    page.get_by_role("tab", name=t).click()
-                    page.wait_for_timeout(pace * 1200)
             page.goto(a.base + "/demo", wait_until="load")
             page.get_by_text("RECORDED RUN · NOT LIVE").first.wait_for(timeout=20_000)
             if pace:

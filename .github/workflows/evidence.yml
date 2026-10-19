@@ -1,0 +1,30 @@
+name: evidence
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  saved-measurements:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      # Standard library only: no GPU, model download, Docker, API key or inference.
+      - run: python experiments/prefix-cache/review.py --html experiments/prefix-cache/review.html
+      - run: python scripts/export_prefix_study.py --check
+      - run: python experiments/prefix-cache/rehearse_guard.py --json guard-replay.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prefix-cache-evidence-review
+          path: |
+            experiments/prefix-cache/review.html
+            guard-replay.json
+          if-no-files-found: error

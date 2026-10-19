@@ -21,9 +21,9 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Furnace: catch the pull request that makes your LLM app slow",
+  title: "Furnace — LLM inference regression testing",
   description:
-    "Furnace benchmarks each pull request of a Python LLM app on your own model server, blocks changes that break prompt caching or raise time to first token, and drafts a tested fix for review.",
+    "Open-source performance checks for Python LLM applications. Explore measured vLLM prefix-cache behavior, a recorded regression-to-repair workflow, and reproducible evidence.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

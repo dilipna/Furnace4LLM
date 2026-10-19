@@ -1,0 +1,160 @@
+{
+  "schema_version": "furnace.bench/v1",
+  "run_id": "2c40ade456a8",
+  "target": {
+    "adapter": "vllm",
+    "base_url": "http://127.0.0.1:8115/v1",
+    "model": "lab",
+    "api_key_env": null,
+    "metrics_url": "http://127.0.0.1:8115/metrics",
+    "server_flags": {
+      "common": [
+        "--model",
+        "Qwen/Qwen2.5-0.5B-Instruct",
+        "--revision",
+        "7ae557604adf67be50417f59c2c2f167def9a775",
+        "--served-model-name",
+        "lab",
+        "--gpu-memory-utilization",
+        "0.70",
+        "--max-model-len",
+        "4096",
+        "--max-num-seqs",
+        "8",
+        "--block-size",
+        "16",
+        "--seed",
+        "7"
+      ],
+      "image": "vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90",
+      "cache": true
+    },
+    "label": "D-warmup"
+  },
+  "plan": {
+    "concurrency_levels": [
+      1.0
+    ],
+    "requests_per_level": 4,
+    "warmup_requests": 0,
+    "cooldown_s": 0.0,
+    "arrival": "closed_loop",
+    "gamma_shape": null,
+    "length_mode": "fixed",
+    "prompt_mode": "replay",
+    "replay_path": "experiments/prefix-cache/runs/2026-10-19-small-model-v2/r1-D-attempt1/warmup.jsonl",
+    "stream": true,
+    "seed": 7,
+    "ttft_timeout_s": 60.0,
+    "total_timeout_s": 300.0,
+    "repeats": 1,
+    "slo": {
+      "ttft_p95_ms": null,
+      "tpot_p95_ms": null,
+      "e2e_p95_ms": null,
+      "max_failure_rate": 0.01
+    },
+    "telemetry_interval_s": 0.25
+  },
+  "workload_name": "synthetic-ops-runbook",
+  "workload_synthetic": true,
+  "env": {
+    "furnace_bench_version": "0.1.0",
+    "furnace_git_sha": "157736bb81fcccb3851c9310a679a214c30be0e0",
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "gpu_driver": "592.82",
+    "engine": "vllm",
+    "engine_version": "0.30.0",
+    "image_digest": null,
+    "model_revision": "Qwen/Qwen2.5-0.5B-Instruct",
+    "started_at": "2026-10-19T05:18:45.908801+00:00",
+    "hostname_hash": "057b2234a714"
+  },
+  "levels": [
+    {
+      "level": 1.0,
+      "repeat": 0,
+      "n": 4,
+      "n_ok": 4,
+      "window_s": 1.8675125999725424,
+      "ttft_ms": {
+        "p50": 42.74309999891557,
+        "p90": 364.7438199899626,
+        "p95": 433.72080999251904,
+        "p99": 488.90240199456446,
+        "mean": 157.03539999958593,
+        "p50_ci": null,
+        "p95_ci": null,
+        "p99_ci": null
+      },
+      "tpot_ms": {
+        "p50": 9.992716128885325,
+        "p90": 10.114673225607183,
+        "p95": 10.129954354676059,
+        "p99": 10.142179257931158,
+        "mean": 9.993880644962642,
+        "p50_ci": null,
+        "p95_ci": null,
+        "p99_ci": null
+      },
+      "e2e_ms": {
+        "p50": 354.3276499840431,
+        "p90": 674.8374499904459,
+        "p95": 742.8697249939431,
+        "p99": 797.2955449967411,
+        "mean": 466.84569999342784,
+        "p50_ci": null,
+        "p95_ci": null,
+        "p99_ci": null
+      },
+      "inter_chunk_ms": {
+        "p50": 9.875499999999999,
+        "p90": 11.3518,
+        "p95": 11.7332,
+        "p99": 13.09347,
+        "mean": 9.991298387096773,
+        "p50_ci": null,
+        "p95_ci": null,
+        "p99_ci": null
+      },
+      "tokens_per_chunk": 1.0,
+      "request_throughput_rps": 2.1418864858308377,
+      "input_tok_s": 3409.8832854426937,
+      "output_tok_s": 68.54036754658681,
+      "total_tok_s": 3478.4236529892805,
+      "failure_rate": 0.0,
+      "timeout_rate": 0.0,
+      "errors": {},
+      "slo_goodput_rps": null,
+      "goodput_ratio": null,
+      "telemetry": {
+        "running_mean": 0.7142857142857143,
+        "running_max": 1.0,
+        "waiting_mean": 0.0,
+        "waiting_max": 0.0,
+        "kv_cache_usage_mean": 0.008155421336520126,
+        "kv_cache_usage_max": 0.011530635315396776,
+        "gpu_util_pct_mean": 76.0,
+        "gpu_util_pct_max": 84.0,
+        "gpu_mem_used_mb_mean": 3884.6227678571427,
+        "gpu_mem_used_mb_max": 3884.640625,
+        "gpu_power_w_mean": 20.47657142857143,
+        "gpu_power_w_max": 32.048,
+        "gpu_temp_c_mean": 54.857142857142854,
+        "gpu_temp_c_max": 56.0,
+        "gpu_sm_clock_mhz_mean": 619.1428571428571,
+        "gpu_sm_clock_mhz_max": 787.0,
+        "prefix_cache_hit_rate": 0.7085427135678392,
+        "prefix_cache_queries_delta": 6368.0
+      },
+      "not_exposed": []
+    }
+  ],
+  "notes": [
+    "Prompt lengths calibrated with the server tokenizer (1.000 words/token).",
+    "Workload 'synthetic-ops-runbook' is SYNTHETIC (source: synthetic).",
+    "GPU telemetry from NVML on the benchmark host: NVIDIA GeForce RTX 3050 Ti Laptop GPU. Valid only if the endpoint is served from this host."
+  ]
+}
