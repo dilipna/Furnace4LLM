@@ -27,8 +27,8 @@ export default async function EvidenceHome() {
           <Wordmark size={17} />
         </Link>
         <nav aria-label="Main" className={s.nav}>
+          <Link href="/prefix-check">Prefix checker</Link>
           <a href="#experiment">Experiment</a>
-          <a href="#how">How it works</a>
           <Link href="/bench">Evidence</Link>
           <a href={REPO} className={s.sourceLink}>
             GitHub <Arrow />
@@ -52,12 +52,12 @@ export default async function EvidenceHome() {
               somewhere to stop.
             </p>
             <div className={s.actions}>
-              <Link href="/demo" className={s.primary}>
+              <Link href="/prefix-check" className={s.primary}>
+                Try the prefix checker <Arrow />
+              </Link>
+              <Link href="/demo" className={s.secondary}>
                 Watch the recorded demo <Arrow />
               </Link>
-              <a href="#experiment" className={s.secondary}>
-                Explore the measurements ↓
-              </a>
             </div>
             <p className={s.heroNote}>
               Built by <a href="https://github.com/dilipna">Dilip Nallamasa</a>{" "}
@@ -388,11 +388,12 @@ export default async function EvidenceHome() {
           <p>
             Independent inference engineering by Dilip Nallamasa.
             <br />
-            This site presents recorded evidence. It does not run visitor
-            workloads.
+            Explore recorded benchmarks or check your prompt prefixes locally
+            in your browser.
           </p>
         </div>
         <nav aria-label="Footer">
+          <Link href="/prefix-check">Prefix checker</Link>
           <Link href="/lab">Inference Lab</Link>
           <Link href="/guard">Guard</Link>
           <a href={`${REPO}/blob/main/docs/claims.md`}>

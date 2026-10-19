@@ -71,7 +71,7 @@ run_python() {
 run_web() {
   echo "== web job at $SHA"
   # Its own filesystem, not the shared VM path: node_modules does not fit the VM's small /tmp.
-  git archive HEAD apps/web | docker run --rm -i node:24-bookworm bash -euo pipefail -c '
+  git archive HEAD apps/web experiments/prefix-cache | docker run --rm -i node:24-bookworm bash -euo pipefail -c '
     mkdir -p /src && tar -x -C /src && cd /src/apps/web
     corepack enable >/dev/null
     pnpm install --frozen-lockfile
@@ -79,6 +79,7 @@ run_web() {
     pnpm exec next typegen && pnpm exec tsc --noEmit
     pnpm build
     node --test cloudflare/range.test.mjs
+    node --test lib/prefix-check.test.mjs
     NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static'
 }
 
