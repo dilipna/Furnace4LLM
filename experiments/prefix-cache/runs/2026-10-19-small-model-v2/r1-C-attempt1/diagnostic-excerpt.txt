@@ -1,0 +1,44 @@
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366] EngineCore failed to start.
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366] Traceback (most recent call last):
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 1328, in run_engine_core
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 178, in sync_wrapper
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     return func(*args, **kwargs)
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 1085, in __init__
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     super().__init__(
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 134, in __init__
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     self.model_executor = executor_class(vllm_config)
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 178, in sync_wrapper
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     return func(*args, **kwargs)
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 110, in __init__
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     self._init_executor()
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 69, in _init_executor
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     self.driver_worker.init_device()
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 355, in init_device
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     self.worker.init_device()  # type: ignore
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     ^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 178, in sync_wrapper
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     return func(*args, **kwargs)
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 451, in init_device
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     self.init_snapshot = init_snapshot = MemorySnapshot(device=self.device)
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<string>", line 13, in __init__
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 128, in __post_init__
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     self.measure()
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 142, in measure
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     self.free_memory, self.total_memory = torch.accelerator.get_memory_info(device)
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]   File "<container-path>", line 252, in get_memory_info
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]     return torch._C._accelerator_getMemoryInfo(device_index)
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366] torch.AcceleratorError: CUDA error: CUDA-capable device(s) is/are busy or unavailable
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366] Search for `cudaErrorDevicesUnavailable' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366] For more detailed error information, run with CUDA_LOG_FILE=stderr
+(EngineCore pid=56) ERROR 10-19 05:15:08 [core.py:1366] 
+(EngineCore pid=56) torch.AcceleratorError: CUDA error: CUDA-capable device(s) is/are busy or unavailable
+(APIServer pid=1) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}

@@ -1,0 +1,36 @@
+{
+  "repeat": 1,
+  "condition": "A",
+  "attempt": 1,
+  "status": "success",
+  "path": "runs/2026-10-19-small-model-v2/r1-A-attempt1",
+  "started_utc": "2026-10-19T05:05:30.118688+00:00",
+  "gpu_before": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 592.82, 4096, 70, 210, 10.16, [N/A]",
+  "ac_before": true,
+  "ttft_p50_ms": 34.917699988000095,
+  "ttft_p95_ms": 151.49904495337415,
+  "output_tok_s": 25.912351597578873,
+  "completion_tokens": 1920,
+  "window_s": 74.09593810001388,
+  "cache": {
+    "hits": 90240.0,
+    "queries": 91959.0,
+    "rate": 0.9813068867647539
+  },
+  "n_ok": 60,
+  "logged_cache_percentages": [
+    49.3,
+    74.0,
+    84.4,
+    90.1,
+    91.7,
+    93.6,
+    94.6,
+    95.1,
+    95.5,
+    96.6,
+    96.6
+  ],
+  "gpu_after": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 592.82, 4096, 2943, 210, 10.70, [N/A]",
+  "ac_after": true
+}

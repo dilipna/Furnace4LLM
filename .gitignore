@@ -10,6 +10,7 @@ dist/
 build/
 # node
 node_modules/
+.pnpm-store/
 .next/
 out/
 *.tsbuildinfo

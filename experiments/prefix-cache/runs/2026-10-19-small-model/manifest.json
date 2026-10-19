@@ -1,0 +1,56 @@
+{
+  "campaign": "2026-10-19-small-model",
+  "started_utc": "2026-10-19T05:01:32.118792+00:00",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "image": "vllm/vllm-openai@sha256:8a69ffad015f138d7170c4ddc429e230a3bc1c1719f67e14324749df200a4b90",
+  "flags": [
+    "--model",
+    "Qwen/Qwen2.5-0.5B-Instruct",
+    "--revision",
+    "7ae557604adf67be50417f59c2c2f167def9a775",
+    "--served-model-name",
+    "lab",
+    "--gpu-memory-utilization",
+    "0.70",
+    "--max-model-len",
+    "4096",
+    "--max-num-seqs",
+    "8",
+    "--block-size",
+    "16",
+    "--seed",
+    "7"
+  ],
+  "protocol_sha256": "715be595a644dbf8e8262919e913c2b19878b264adf113481779a0be408b2187",
+  "driver_sha256": "67bf6b77aaf7a1be74fb3d66028db285ee15da491f6f87da41135bbe541db5a5",
+  "git_sha": "157736bb81fcccb3851c9310a679a214c30be0e0",
+  "gpu_before": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 592.82, 4096, 99, 210, 10.49, [N/A]",
+  "ac_before": true,
+  "requests": 60,
+  "warmup": 4,
+  "repeats": 3,
+  "order": [
+    "ABCD",
+    "BCDA",
+    "CDAB"
+  ],
+  "attempts": [
+    {
+      "repeat": 1,
+      "condition": "A",
+      "attempt": 1,
+      "status": "failed",
+      "path": "runs/2026-10-19-small-model/r1-A-attempt1",
+      "started_utc": "2026-10-19T05:01:32.228581+00:00",
+      "gpu_before": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 592.82, 4096, 99, 210, 10.49, [N/A]",
+      "ac_before": true,
+      "error": "RuntimeError: runbook has 1281 tokens; need 1450\u20131500",
+      "logged_cache_percentages": [],
+      "gpu_after": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 592.82, 4096, 2787, 210, 10.40, [N/A]",
+      "ac_after": true
+    }
+  ],
+  "status": "stopped_before_measurement",
+  "interrupted_retry": "Attempt 2 interrupted during startup to correct insufficient runbook source; owned container removed."
+}

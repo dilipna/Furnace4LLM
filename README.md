@@ -2,6 +2,23 @@
 
 [![ci](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml/badge.svg)](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml)
 
+**Review the evidence without a GPU:** [engineering walkthrough](docs/engineering-review.md) ·
+[portable experiment report](experiments/prefix-cache/review.html) ·
+[raw measurements](experiments/prefix-cache/results.md).
+From a clone, Python 3.12 alone can check all 720 saved requests and the published tables:
+
+```bash
+python experiments/prefix-cache/review.py
+```
+
+This verifies saved evidence; it does not rerun inference. The separate `evidence` workflow
+performs the same check on pull requests and uploads a freshly generated HTML report.
+
+To see the existing Forge prefix test reject the recorded metadata-first prompts and
+accept metadata-last, run `python experiments/prefix-cache/rehearse_guard.py`.
+This CPU-only [regression-test rehearsal](experiments/prefix-cache/guard-demo.md) also shows
+its boundary: a text-only test cannot detect a server with caching disabled.
+
 **Ship prompt changes without slowing down your AI.**
 
 Furnace tests each pull request of a Python LLM application on the team's own model server.
@@ -23,6 +40,25 @@ sandbox and gate) → **review**: a draft PR that a human merges or closes.
 - **Scan** maps an app's call sites, prompts, models and serving settings from source (the
   graph Guard uses). Its findings are advisory: on five unseen apps 39 of 77 were right.
 - **Forge** sets the checks up as a draft PR, sandbox-validated first.
+
+## Experiment: preserve the shared prefix before request metadata
+
+On Qwen2.5-0.5B / RTX 3050 Ti 4 GB, metadata-last recorded 43.27 ms versus 234.45 ms median run p50 TTFT (81.5% lower) and restored 94.00% cached-token reuse.
+Four conditions × three fresh-server runs × 60 measured requests: **720 successful measured requests**, plus excluded warmups; one startup failure recovered on an identical retry.
+Independent synthetic experiment, concurrency one, fixed 32-token outputs; [method, limits and failures](experiments/prefix-cache/writeup.md) · [every run and raw evidence](experiments/prefix-cache/results.md) · [reproduce](experiments/prefix-cache/README.md).
+
+| Condition | TTFT p50 (ms) | TTFT p95 (ms) | Completion tok/s | Cache hit (metrics delta) |
+|---|---:|---:|---:|---|
+| A: Stable, cache on | 34.92 | 39.69 | 88.89 | 98.13% |
+| B: Stable, cache off | 208.74 | 220.77 | 61.14 | N/A (disabled) |
+| C: Metadata first | 234.45 | 246.39 | 56.61 | 0.00% |
+| D: Metadata last | 43.27 | 49.20 | 86.27 | 94.00% |
+
+Values are medians of three run-level statistics; cache reuse is a token-counter ratio.
+The lower chart panel retains the full run range, including a 3072.90 ms cache-off p95.
+
+![Prefix caching and prompt-layout measurements](experiments/prefix-cache/ttft-comparison.png)
+
 
 ## Verification status (2026-10-14)
 
