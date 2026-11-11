@@ -1,5 +1,11 @@
 # Pilot guide: Furnace on one design partner's repository
 
+For a first external developer, use the [supervised pilot package](pilot/README.md),
+[discovery checklist](pilot/discovery.md) and [blank evidence record](pilot/evidence-template.md).
+These are preparation materials; no customer outcomes are implied. The current repair
+contract distinguishes `functional_only` offline proposals from measured `verified`
+repairs; see [acceptance and compatibility](repair-verification.md).
+
 This is the operational guide behind the `/pilot` page. It says what a pilot needs, how setup
 works, and what to do when something is down. Status of the pieces as of 2026-10-14:
 everything below runs locally on the fixture apps; the GitHub App path ran once on a public
