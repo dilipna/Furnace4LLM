@@ -7,6 +7,7 @@ from typing import Any
 
 from furnace.guardian.execute import ItemResult
 from furnace.guardian.impact import ImpactResult
+from furnace.guardian.perf_gate import GatePolicy, verified_repair_performance
 
 ICON = {"pass": "PASS", "fail": "FAIL", "warn": "WARN", "skip": "SKIP", "error": "ERROR"}
 GROUPS = [
@@ -164,14 +165,21 @@ def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_pa
     return "\n".join(
         [
             "## Furnace Guard repair (draft, human review required)",
+            (
+                "**Verification: functional tests passed; performance verified by the interval gate.**"
+                if verified_repair_performance(perf, GatePolicy())
+                else "**Performance UNVERIFIED. Latency improvement not measured or not established; "
+                "this proposal is not a performance-verified repair.**"
+            ),
             "",
             f"**Failure mode:** `{attempt.failure_mode_key}` (a supported regression signature)",
             "",
             "### 1. What changed in the pull request",
             *changed,
             "",
-            "### 2. Why it is slower",
-            WHY.get(attempt.failure_mode_key, "See the failure mode above."),
+            "### 2. Why latency may change",
+            "Mechanism hypothesis (latency must be established by measurement): "
+            + WHY.get(attempt.failure_mode_key, "See the failure mode above."),
             "",
             "### 3. Evidence",
             f"- `{test_path}` was written before any fix and calibrated on the base revision; "
@@ -188,7 +196,7 @@ def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_pa
             explanation,
             "",
             "### 5. Candidates rejected before this one",
-            *(rejected or ["- none: the first candidate passed"]),
+            *(rejected or ["- none: the first candidate met the verification level stated above"]),
             "",
             "### 6. Tests (sandboxed, no network)",
             "- new regression test: "
@@ -202,11 +210,15 @@ def repair_pr_body(attempt: Any, perf: dict[str, Any], explanation: str, test_pa
             *(reasons or ["- (no perf gate run)"]),
             "",
             "### 8. What remains uncertain",
-            f"- {runs or '?'} runs per revision"
-            + (f" of {n_req} measured requests each" if n_req else "")
-            + "; the interval is a Welch t interval across runs (the run is the unit; requests "
-            "within a run are dependent), 90% two-sided, on the geometric-mean TTFT. The p95 "
-            "is not used for the decision.",
+            (
+                f"- {runs} runs per revision"
+                + (f" of {n_req} measured requests each" if n_req else "")
+                + "; the interval is a Welch t interval across runs (the run is the unit; requests "
+                "within a run are dependent), 90% two-sided, on the geometric-mean TTFT. The p95 "
+                "is not used for the decision."
+                if runs
+                else "- Performance not measured: no latency improvement is established."
+            ),
             "- One model and one endpoint (the lab vLLM); the effect on other hardware, models "
             "or traffic mixes was not measured here.",
             "- Functional equivalence is only as strong as the existing tests plus the new "

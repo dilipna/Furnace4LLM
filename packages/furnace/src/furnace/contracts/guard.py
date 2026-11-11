@@ -84,6 +84,7 @@ class RepairStatus(StrEnum):
     localizing = "localizing"
     generating = "generating"
     validating = "validating"
+    functional_only = "functional_only"  # sandbox tests passed; performance not measured
     verified = "verified"
     rejected = "rejected"  # no candidate passed validation
     pr_opened = "pr_opened"

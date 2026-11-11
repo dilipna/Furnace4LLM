@@ -114,7 +114,7 @@ docker = pytest.mark.skipif(shutil.which("docker") is None, reason="docker not a
 
 
 @docker
-def test_repair_loop_writes_failing_test_first_and_verifies(tmp_path):
+def test_repair_loop_writes_failing_test_first_and_validates_functional_only(tmp_path):
     from furnace.guardian.repair.loop import repair_prefix_instability
 
     base = materialize(None, tmp_path / "base")
@@ -126,7 +126,8 @@ def test_repair_loop_writes_failing_test_first_and_verifies(tmp_path):
     )
     a = out.attempt
     assert a.repro is not None and a.repro.head_fails and a.repro.base_passes
-    assert a.status == RepairStatus.verified
+    assert a.status == RepairStatus.functional_only
+    assert out.functional_passed and out.perf == {}
     files = {line[6:] for line in out.patch.splitlines() if line.startswith("+++ b/")}
     assert files == {"app/prompts.py", "furnace_harness.py", out.test_path}
 
@@ -154,10 +155,12 @@ def test_repair_loop_tries_the_next_strategy_when_the_perf_gate_rejects(tmp_path
     calls: list[str] = []
 
     def perf_check(b, h, cand):  # stub gate: the suffix variant is over budget, the log one is not
+        from test_repair_verification import evidence
+
         src = (cand / "app" / "prompts.py").read_text(encoding="utf-8")
         logged = "logging.getLogger" in src
         calls.append("log" if logged else "suffix")
-        return {"within_budget": logged, "summary": "ok" if logged else "+45% p95, block"}
+        return evidence() | {"within_budget": logged, "summary": "ok" if logged else "blocked"}
 
     out = repair_prefix_instability(
         base, head, impact, questions=["q1", "q2", "q3"], change_label="r1", perf_check=perf_check

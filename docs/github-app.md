@@ -1,5 +1,12 @@
 # GitHub App setup and the live run (about 10 minutes)
 
+Repair output now separates functional validation and performance verification.
+`gh-repair --no-endpoint` can create only a `functional_only` draft proposal, prominently
+marked performance UNVERIFIED, with separate JSON verification fields. A measured
+`verified` repair requires complete finite interval evidence and passing sandbox tests;
+skipped, missing, failed or invalid required evidence opens nothing. Existing historical
+live-run records below are unchanged. See [the contract](repair-verification.md).
+
 Furnace talks to GitHub only through a GitHub App. Every job mints a token scoped to one
 repository and only the permissions that job needs; Furnace opens **draft** pull requests
 and check runs, never merges, and never pushes to a default branch.

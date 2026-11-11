@@ -43,6 +43,12 @@ Each control below names the test that checks it; anything without a test says s
 
 ## Not built yet (known gaps)
 
+Repair verification is separate from write consent: `--open-pr` cannot turn missing
+required performance evidence into a verified repair. An explicitly offline proposal
+is labeled performance UNVERIFIED in JSON, its title and body. Automatic repair always
+supplies an endpoint and cannot use this offline proposal path. See
+[the verification contract](repair-verification.md) and its boundary tests.
+
 - User authentication, organizations and Postgres row-level security; the hosted API serves
   public scans and read-only results only. Cross-org access tests come with auth.
 - BYOK key storage (encrypted at rest): no provider keys are stored by the service today.

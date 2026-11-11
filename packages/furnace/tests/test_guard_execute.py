@@ -255,7 +255,7 @@ def test_repair_pr_body_reports_both_revisions():
     assert "| This repair | 579 ms | 648 ms | +11.8 % | – | 81% | WARN |" in body
     assert "fails on the PR head: **True**" in body
     assert "Furnace never merges" in body
-    for section in ("What changed", "Why it is slower", "Evidence", "Candidates rejected",
+    for section in ("What changed", "Why latency may change", "Evidence", "Candidates rejected",
                     "What remains uncertain", "What needs your decision"):  # fmt: skip
         assert section in body
     perf["head_vs_base"]["ci_pct"] = [120.0, 190.5]

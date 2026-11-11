@@ -40,7 +40,12 @@ from furnace.github.client import (
 from furnace.guardian.execute import GuardContext, prepare, run_items, selected_items, verdict
 from furnace.guardian.impact import SuiteItem, analyze_impact, analyze_tree
 from furnace.guardian.live import impact_event
-from furnace.guardian.perf_gate import GatePolicy, repair_perf_check, run_gate
+from furnace.guardian.perf_gate import (
+    GatePolicy,
+    repair_perf_check,
+    run_gate,
+    verified_repair_performance,
+)
 from furnace.guardian.repair.loop import repair_prefix_instability
 from furnace.guardian.repair.regression import min_shared_prefix, render_in_sandbox
 from furnace.guardian.repair.signatures import supported_signatures
@@ -408,7 +413,8 @@ async def repair_pr(
     expected_installation: int | None = None,
 ) -> dict[str, Any]:
     """Failing-test-first repair of a prefix-instability regression in PR `number`. Opens a
-    draft PR into the PR's branch only when the repair is verified and `open_pr` is set.
+    draft PR into the PR's branch only with explicit consent. No endpoint means a
+    functional-only proposal, visibly performance unverified, never a verified repair.
     Re-running on the same PR head returns the draft PR the first run opened."""
     repo = await _token(app, full_name, GUARD_PERMISSIONS, expected_installation)
     pr = await _pull(repo, number)
@@ -452,14 +458,30 @@ async def repair_pr(
 
         outcome = await asyncio.to_thread(run)
         status = outcome.attempt.status.value
+        measured = target is not None and verified_repair_performance(outcome.perf, policy)
+        functional = outcome.functional_passed
         out: dict[str, Any] = {
             "status": status,
             "logs": outcome.logs,
             "perf": outcome.perf,
             "pr": None,
+            "verification": {
+                "functional": "passed" if functional else "not_passed",
+                "performance": "passed"
+                if measured
+                else ("unverified" if target is None else "not_verified"),
+            },
         }
-        if status != "verified" or not outcome.files:
-            out["reason"] = "no verified repair; nothing opened"
+        offline = target is None and status == "functional_only"
+        if (
+            not functional
+            or outcome.attempt.selected is None
+            or not outcome.files
+            or not (offline or (status == "verified" and measured))
+        ):
+            if status == "verified":
+                out["status"] = "rejected"
+            out["reason"] = "required verification did not pass; nothing opened"
             return out
         if not open_pr:
             out["reason"] = "dry run (pass --open-pr to open a draft pull request)"
@@ -472,9 +494,14 @@ async def repair_pr(
         writer = await _token(app, full_name, PR_PERMISSIONS)
         out["pr"] = await writer.open_draft_pr(
             base_branch=pr["head_ref"],
-            new_branch=f"furnace/repair-pr{number}-{pr['head_sha'][:7]}",
+            # Do not reuse legacy drafts whose reviewer text predates this contract.
+            new_branch=f"furnace/{'proposal' if offline else 'repair'}-v2-pr{number}-{pr['head_sha'][:7]}",
             files=outcome.files,
-            title=f"Furnace repair for #{number}: keep the prompt prefix stable",
+            title=(
+                f"Furnace proposal for #{number}: performance UNVERIFIED"
+                if offline
+                else f"Furnace verified repair for #{number}: keep the prompt prefix stable"
+            ),
             body=repair_pr_body(outcome.attempt, outcome.perf, explanation, outcome.test_path),
             commit_message=f"Furnace repair for #{number}: regression test first, then the fix",
             base_sha=pr["head_sha"],
