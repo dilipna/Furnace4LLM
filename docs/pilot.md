@@ -84,7 +84,8 @@ revision, 90% Welch interval, PASS at or below +10%, BLOCK above +25%
 | `/pilot` shows Control API DOWN | API not running, or a free hosted instance asleep | local: `uv run poe api`; hosted: wait about a minute, then check the service logs |
 | Guard runner DOWN, "last seen …" | the runner process stopped or the machine slept | start Docker, then `uv run poe runner`; queued jobs wait and are claimed on start |
 | A job stays queued | no runner on the `runner` queue | as above; `GET /api/runners` lists runners and their queues |
-| A Guard run ends neutral with an error | timeout, endpoint down, or a cancelled job | the check run says why; a dead endpoint is an ERROR, never a PASS |
+| A Guard attempt ends `action_required` | exception, timeout, or cancellation | the check says why; a queued retry executes the checks again with a new check run. After the attempt budget is exhausted, resolve the cause and rerun `gh-guard` explicitly |
+| A Guard run ends neutral | inconclusive measurement, warning, or a reported check error | inspect the check details; neutral is not a measured PASS. Completed neutral verdicts are reused by event jobs; use `gh-guard` for a deliberate rerun |
 | Perf gate INCONCLUSIVE | the interval straddles the tolerance | rerun on a quiet machine; do not loosen the gate (its validation holds only at 10% / 25%) |
 | GPU benchmarks refuse to start | laptop on battery | plug in; results on battery are not comparable |
 | On Windows, API changes do not show | an orphaned `multiprocessing` child still holds :8010 | stop the stray `spawn_main` python processes, then start the API again |

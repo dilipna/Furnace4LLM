@@ -25,6 +25,8 @@ class FakeGitHub:
     def __init__(self, head_repo="o/r", check_runs=None):
         self.calls: list[tuple[str, str, dict]] = []
         self.head_repo = head_repo
+        self.base_sha = "b" * 40
+        self.fail_interrupted_update = False
         self.check_runs = check_runs or []  # existing "Furnace Guard" runs on the head
 
     def __call__(self, req: httpx.Request) -> httpx.Response:
@@ -39,19 +41,25 @@ class FakeGitHub:
             return httpx.Response(200, json={"check_runs": self.check_runs})
         if p == "/app/installations/77/access_tokens":
             return httpx.Response(201, json={"token": "t-scoped"})
-        if p == "/repos/o/r/pulls/5":
+        if p in ("/repos/o/r/pulls/5", "/repos/o/r/pulls/6"):
             return httpx.Response(
                 200,
                 json={
                     "number": 5,
                     "title": "add request id",
-                    "base": {"ref": "main", "sha": "b" * 40},
+                    "base": {"ref": "main", "sha": self.base_sha},
                     "head": {"ref": "feat", "sha": "h" * 40, "repo": {"full_name": self.head_repo}},
                 },
             )
         if p == "/repos/o/r/check-runs" and req.method == "POST":
-            return httpx.Response(201, json={"id": 991})
-        if p == "/repos/o/r/check-runs/991" and req.method == "PATCH":
+            check_id = 990 + sum(m == "POST" and path == p for m, path, _ in self.calls)
+            self.check_runs.insert(0, {"id": check_id, **body})
+            return httpx.Response(201, json={"id": check_id})
+        if p.startswith("/repos/o/r/check-runs/") and req.method == "PATCH":
+            if self.fail_interrupted_update and body.get("conclusion") == "action_required":
+                return httpx.Response(503, json={"message": "GitHub unavailable during cleanup"})
+            check_id = int(p.rsplit("/", 1)[1])
+            next(cr for cr in self.check_runs if cr["id"] == check_id).update(body)
             return httpx.Response(200, json={})
         return httpx.Response(404, json={"message": f"unexpected {req.method} {p}"})
 
@@ -74,6 +82,9 @@ def stub_work(monkeypatch, tmp_path):
 
 
 SUITE = [SuiteItem("unit:tests/test_x.py", "unit", ["component:*"], {"code"}, always=True)]
+IDENTITY = flows.guard_identity(
+    "o/r", 5, {"base_sha": "b" * 40, "head_sha": "h" * 40}, SUITE, None, ["q"], None
+)
 
 
 async def test_guard_pr_reports_a_check_run(stub_work):
@@ -131,7 +142,10 @@ async def test_guard_pr_crash_still_completes_the_check(stub_work):
     with pytest.raises(RuntimeError):
         await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
     done = next(b for m, p, b in fake.calls if m == "PATCH")
-    assert done["conclusion"] == "neutral" and "sandbox unavailable" in done["output"]["summary"]
+    assert (
+        done["conclusion"] == "action_required"
+        and "sandbox unavailable" in done["output"]["summary"]
+    )
 
 
 def _writes(fake):
@@ -142,26 +156,225 @@ def _passing(items, ctx, progress, on_event=None):
     return [ItemResult(items[0].key, "pass", "ok")]
 
 
-async def test_guard_pr_returns_a_completed_check_instead_of_running_again(stub_work):
+@pytest.mark.parametrize("recovered_verdict", ["pass", "fail"])
+@pytest.mark.parametrize("cancelled", [False, True])
+async def test_guard_retry_executes_checks_after_an_incomplete_attempt(
+    stub_work, cancelled, recovered_verdict
+):
+    """Exercise the persisted GitHub state across a failed attempt and its retry."""
+    import asyncio
+
+    calls = 0
+
+    def run(items, ctx, progress, on_event=None):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            if cancelled:
+                raise asyncio.CancelledError()
+            raise RuntimeError("sandbox unavailable")
+        return [ItemResult(items[0].key, recovered_verdict, "recovered")]
+
+    stub_work.setattr(flows, "run_items", run)
+    fake = FakeGitHub()
+    error = asyncio.CancelledError if cancelled else RuntimeError
+    with pytest.raises(error):
+        await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+
+    out = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+    assert calls == 2  # before the fix: 1; the retry just returned the neutral error
+    assert out["conclusion"] == ("success" if recovered_verdict == "pass" else "failure")
+    assert not out.get("reused")
+    assert fake.check_runs[1]["conclusion"] == "action_required"
+    assert len(fake.check_runs) == 2  # retain the failed attempt's diagnostic record
+    again = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+    assert again["reused"] and again["check_id"] == out["check_id"]
+    assert calls == 2 and len(fake.check_runs) == 2
+
+
+@pytest.mark.parametrize(
+    "status,conclusion",
+    [
+        ("completed", "neutral"),
+        ("completed", "success"),
+        ("in_progress", None),
+    ],
+)
+async def test_guard_reevaluates_unidentified_legacy_check_once(stub_work, status, conclusion):
+    calls = 0
+
+    def run(*args):
+        nonlocal calls
+        calls += 1
+        return _passing(*args)
+
+    stub_work.setattr(flows, "run_items", run)
+    fake = FakeGitHub(
+        check_runs=[
+            {
+                "id": 55,
+                "status": status,
+                "conclusion": conclusion,
+                "output": {"title": "Furnace Guard could not complete"},
+            }
+        ]
+    )
+    out = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+    assert out["conclusion"] == "success" and not out.get("reused")
+    again = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+    assert again["reused"] and again["check_id"] == out["check_id"]
+    assert calls == 1 and len(fake.check_runs) == 2
+
+
+@pytest.mark.db
+@pytest.mark.parametrize("recovers", [False, True])
+@pytest.mark.parametrize("failure_mode", ["error", "timeout"])
+@pytest.mark.parametrize("cleanup_fails", [False, True])
+async def test_worker_retries_guard_and_honors_attempt_limit(
+    clean_jobs, stub_work, recovers, failure_mode, cleanup_fails
+):
+    """Real queue -> worker -> GitHub handler -> flow, with only GitHub/work mocked."""
+    from datetime import UTC, datetime
+
+    from furnace.db.models import Job
+    from furnace.db.session import session_scope
+    from furnace.github import jobs as gh_jobs
+    from furnace.jobs import queue, worker
+    from sqlalchemy import update
+
+    fake = FakeGitHub()
+    fake.fail_interrupted_update = cleanup_fails
+    stub_work.setattr(gh_jobs, "_runner_config", lambda: (_app(fake), SUITE, ["q"]))
+    calls = 0
+    fetches = 0
+    original_fetch = flows.fetch_revision
+
+    async def fetch(*args):
+        import asyncio
+
+        nonlocal fetches
+        fetches += 1
+        if failure_mode == "timeout" and (fetches == 1 or not recovers):
+            await asyncio.sleep(30)  # cancelled by the worker's real per-job timeout
+        return await original_fetch(*args)
+
+    stub_work.setattr(flows, "fetch_revision", fetch)
+
+    def run(items, ctx, progress, on_event=None):
+        nonlocal calls
+        calls += 1
+        if failure_mode == "error" and (calls == 1 or not recovers):
+            raise RuntimeError("sandbox unavailable")
+        return _passing(items, ctx, progress, on_event)
+
+    stub_work.setattr(flows, "run_items", run)
+    async with session_scope() as s:
+        job = await queue.enqueue(
+            s,
+            queue="runner",
+            kind="guard.pr",
+            max_attempts=2,
+            payload={"repo": "o/r", "number": 5, "head_sha": "h" * 40, "installation_id": 77},
+        )
+        job.timeout_s = 1 if failure_mode == "timeout" else 30
+        job_id = job.id
+    assert await worker.run_one("retry-test", ["runner"])
+    async with session_scope() as s:
+        first = await s.get(Job, job_id)
+        assert first is not None and first.status == "queued" and first.attempts == 1
+        assert first.error is not None
+        assert first.result is None
+        assert ("timed out" if failure_mode == "timeout" else "sandbox unavailable") in first.error
+        # The backoff itself is tested by test_jobs_queue; make the retry due now.
+        await s.execute(update(Job).where(Job.id == job_id).values(run_after=datetime.now(UTC)))
+    assert await worker.run_one("retry-test", ["runner"])
+    async with session_scope() as s:
+        final = await s.get(Job, job_id)
+        assert final is not None and final.attempts == 2
+        assert final.status == ("succeeded" if recovers else "failed")
+        if recovers:
+            assert final.result is not None
+            assert final.result["conclusion"] == "success"
+        else:
+            assert final.result is None
+    assert calls == (2 if failure_mode == "error" else int(recovers))
+    assert len(fake.check_runs) == (1 if cleanup_fails else 2)
+    assert fake.check_runs[0].get("conclusion") == (
+        "success" if recovers else (None if cleanup_fails else "action_required")
+    )
+    assert not await worker.run_one("retry-test", ["runner"])
+
+
+@pytest.mark.parametrize("conclusion", ["success", "failure", "neutral"])
+async def test_guard_pr_returns_a_completed_check_instead_of_running_again(stub_work, conclusion):
     """A retried job or a second event for the same head commit must not post a second
     check run (or spend two minutes of GPU on the same answer)."""
     stub_work.setattr(flows, "run_items", lambda *a, **k: pytest.fail("checks must not run"))
     done = {
         "id": 55,
+        "external_id": IDENTITY,
         "status": "completed",
-        "conclusion": "failure",
+        "conclusion": conclusion,
         "output": {"title": "p95 +900%"},
     }
     fake = FakeGitHub(check_runs=[done])
     out = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
-    assert out["reused"] and out["check_id"] == 55 and out["conclusion"] == "failure"
+    assert out["reused"] and out["check_id"] == 55 and out["conclusion"] == conclusion
     assert _writes(fake) == [("POST", "/app/installations/77/access_tokens")]
+
+
+@pytest.mark.parametrize("change", ["base", "pr", "suite", "questions", "target", "budget"])
+async def test_completed_check_is_reused_only_for_same_evaluation(stub_work, change):
+    from furnace_bench.schema import BenchTarget
+
+    calls = 0
+
+    def run(*args):
+        nonlocal calls
+        calls += 1
+        return _passing(*args)
+
+    stub_work.setattr(flows, "run_items", run)
+    fake = FakeGitHub()
+    kwargs: dict = {"suite": SUITE, "target": None, "questions": ["q"]}
+    first = await flows.guard_pr(_app(fake), "o/r", 5, **kwargs)
+    number = 5
+    if change == "base":
+        fake.base_sha = "a" * 40
+    elif change == "pr":
+        number = 6
+    elif change == "suite":
+        kwargs["suite"] = [SuiteItem("unit:other", "unit", [], set(), always=True)]
+    elif change == "questions":
+        kwargs["questions"] = ["different"]
+    elif change == "target":
+        kwargs["target"] = BenchTarget(base_url="http://localhost:8100/v1", model="other")
+    else:
+        kwargs["max_prompt_tokens"] = 4096
+    second = await flows.guard_pr(_app(fake), "o/r", number, **kwargs)
+    assert calls == 2 and second["check_id"] != first["check_id"]
+    again = await flows.guard_pr(_app(fake), "o/r", number, **kwargs)
+    assert again["reused"] and again["check_id"] == second["check_id"] and calls == 2
+    # Returning to the first identity must find it behind a newer, unrelated check.
+    fake.base_sha = "b" * 40
+    original = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
+    assert original["reused"] and original["check_id"] == first["check_id"]
+    assert calls == 2 and len(fake.check_runs) == 2
 
 
 async def test_guard_pr_takes_over_an_abandoned_check_and_reruns_on_request(stub_work):
     stub_work.setattr(flows, "run_items", _passing)
     # an attempt that died left its check run in progress: the retry finishes *that* run
-    fake = FakeGitHub(check_runs=[{"id": 991, "status": "in_progress", "conclusion": None}])
+    fake = FakeGitHub(
+        check_runs=[
+            {
+                "id": 991,
+                "status": "in_progress",
+                "conclusion": None,
+                "external_id": IDENTITY,
+            }
+        ]
+    )
     out = await flows.guard_pr(_app(fake), "o/r", 5, suite=SUITE, target=None, questions=["q"])
     assert out["check_id"] == 991 and out["conclusion"] == "success"
     assert ("POST", "/repos/o/r/check-runs") not in _writes(fake)
@@ -215,7 +428,7 @@ async def test_guard_pr_cancelled_mid_run_still_completes_the_check(stub_work):
     with pytest.raises(asyncio.CancelledError):
         await task
     done = next(b for m, p, b in fake.calls if m == "PATCH")
-    assert done["conclusion"] == "neutral" and "cancelled" in done["output"]["summary"]
+    assert done["conclusion"] == "action_required" and "cancelled" in done["output"]["summary"]
 
 
 @pytest.mark.adversarial

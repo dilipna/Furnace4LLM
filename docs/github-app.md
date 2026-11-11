@@ -176,7 +176,7 @@ repository code. Push and poll can run together: the delivery GUID dedupes them.
 | one active Guard job per PR head commit | `test_two_events_for_the_same_head_commit_share_one_job` |
 | malformed or oversized signed payloads: rejected, nothing written | `test_malformed_signed_events_are_rejected_without_side_effects` |
 | no second PR on retry; a closed PR is not reopened; a crash between branch and PR resumes | `packages/furnace/tests/test_github.py` |
-| check run reused per head commit, closed on cancellation | `packages/furnace/tests/test_github_flows.py` |
+| completed verdict reused only for the same evaluation identity; interruption closes as `action_required` and the queue retry executes checks again with a fresh check; attempts remain bounded | `packages/furnace/tests/test_github_flows.py` (mock GitHub, real Postgres queue and worker) |
 | no action under a different installation than the event's | `test_guard_pr_refuses_to_act_under_another_installation` |
 | a stale worker cannot overwrite the job's outcome; a lost lease cancels the run | `packages/furnace/tests/test_jobs_queue.py` |
 | repair only with consent, once per head commit | `packages/furnace/tests/test_github_jobs.py` |
