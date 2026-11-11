@@ -58,6 +58,10 @@ def bad_evidence(kind):
         return p | {"status": "skipped"}
     if kind == "error_full":
         return p | {"error": "measurement did not run"}
+    if kind == "blocked_head":
+        p["candidate_vs_head"]["verdict"] = "block"
+    if kind == "blocked_base":
+        p["candidate_vs_base"]["verdict"] = "block"
     if kind == "skipped":
         return {"within_budget": True, "status": "skipped"}
     if kind == "failed":
@@ -83,6 +87,8 @@ def bad_evidence(kind):
 
 
 BAD = [
+    "blocked_head",
+    "blocked_base",
     "skipped_full",
     "error_full",
     "missing",
@@ -283,6 +289,14 @@ def test_tolerance_inconclusive_can_still_meet_the_existing_repair_bounds(repair
     p["candidate_vs_base"].update(change_pct=3, ci_pct=[-6, 12], verdict="inconclusive")
     out = run_loop(repair_env, lambda *a: p)
     assert out.attempt.status.value == "verified" and out.files
+
+
+def test_rounding_at_noise_tolerance_does_not_change_repair_acceptance():
+    p = evidence()
+    # The unrounded upper bound could be 10.04%, while the stored bound is 10.0%.
+    # INCONCLUSIVE vs +10% still satisfies the separate repair bound of <25%.
+    p["candidate_vs_base"].update(change_pct=3, ci_pct=[-6, 10.0], verdict="inconclusive")
+    assert verified_repair_performance(p, GatePolicy())
 
 
 @pytest.mark.parametrize("kind", ["verdict", "samples", "metadata"])

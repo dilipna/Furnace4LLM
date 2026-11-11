@@ -39,3 +39,8 @@ JSON has separate `verification.functional` (`passed` / `not_passed`) and
 pass may be reported even when performance rejects every candidate; `rejected` still
 opens nothing. A selected passing functional candidate and files are required at the
 write boundary. `verified` is reserved for valid required performance evidence.
+
+A blocking candidate comparison cannot be overridden by a passing-looking latency
+interval or `within_budget=True`. The PR head may legitimately be blocked. Candidate-vs-base
+PASS/WARN/INCONCLUSIVE labels are not recomputed from rounded intervals, preserving the
+original repair rule at the separate +10% tolerance boundary.

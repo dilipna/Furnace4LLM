@@ -440,7 +440,7 @@ def verified_repair_performance(perf: Any, policy: GatePolicy) -> bool:
         return False
     comparisons = [perf.get(k) for k in ("head_vs_base", "candidate_vs_base", "candidate_vs_head")]
     valid: list[dict[str, Any]] = []
-    for c in comparisons:
+    for index, c in enumerate(comparisons):
         if not isinstance(c, dict) or not _repair_comparison_valid(c):
             return False
         if (
@@ -459,6 +459,13 @@ def verified_repair_performance(perf: Any, policy: GatePolicy) -> bool:
             if not all(_finite(x) and x > 0 for x in xs):
                 return False
         if len(c["value_runs"]) != runs or "baseline" not in c or "value" not in c:
+            return False
+        # Candidate evidence cannot contradict its own gate verdict. In particular,
+        # failure-rate BLOCKs must not be hidden behind otherwise favorable latency.
+        # The PR head may legitimately be blocked; it is the revision being repaired.
+        # Do not reclassify the base comparison from its rounded interval: its
+        # original PASS/WARN/INCONCLUSIVE may differ at the +10% rounding boundary.
+        if (index == 1 and c["verdict"] == "block") or (index == 2 and c["verdict"] != "pass"):
             return False
         valid.append(c)
     return accept_repair(valid[0], valid[1], valid[2], policy)[0]
