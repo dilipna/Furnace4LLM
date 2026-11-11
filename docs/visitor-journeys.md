@@ -43,13 +43,13 @@ Screenshots are delivered separately in the local handoff's `screenshots/` direc
 
 ## Outcome source of truth
 
-- `packages/furnace/src/furnace/forge/loop.py`, GitHub flows and `docs/repair-verification.md`:
+- `packages/furnace/src/furnace/guardian/repair/loop.py`, GitHub flows and `docs/repair-verification.md`:
   functional-only tests do not verify performance. Complete current evidence plus
   unchanged interval/run rules is required for measured verified; human review remains.
 - `guardian/perf_gate.py::_verdict`: upper <=10 PASS; lower >10 and point >25 BLOCK;
   smaller certain regressions WARN; crossing tolerance INCONCLUSIVE. Validity/failure
   guards can also block or refuse measurement; inspect reasons, not just a label.
-- `github/flows.py` and `worker.py`: interrupted checks require action and do not become
+- `github/flows.py` and `jobs/worker.py`: interrupted checks require action and do not become
   reusable successful jobs; queued retries respect their attempt limit and identity.
 - `guardian/execute.py`: skipped checks are not measured passes. A GitHub success
   conclusion can aggregate executed checks without proving skipped answer-quality checks.

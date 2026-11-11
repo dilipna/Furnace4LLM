@@ -239,7 +239,7 @@ export default async function EvidenceHome() {
               [
                 "03",
                 "Test a supported repair",
-                "Write the failing regression test first. A rule-based fix must pass the sandbox and gate before a human reviews it.",
+                "Write the failing regression test first. Measured repairs must pass sandbox tests and performance rules. Offline proposals remain performance-unverified. A person reviews either draft.",
                 "DRAFT FIX → HUMAN REVIEW",
               ],
             ].map(([number, title, text, foot]) => (
