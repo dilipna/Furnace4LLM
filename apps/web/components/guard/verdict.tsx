@@ -40,6 +40,7 @@ export const VERDICT_MEANING: [string, string][] = [
   ["pass", "This check passed. For the performance gate, the entire 90% interval is at or below +10%. Next: inspect other checks and skips; this is not proof of answer quality."],
   ["fail", "An executed check failed. Next: inspect its evidence and fix the cause before proceeding."],
   ["block", "Regression detected: the estimate exceeds +25% and the entire 90% interval exceeds +10%. Next: investigate or test a supported repair."],
+  ["warn", "A slowdown is measured above the +10% tolerance but does not meet the blocking rule. Next: inspect the evidence and investigate before accepting it."],
   ["inconclusive", "Performance was measured, but uncertainty crosses the +10% tolerance. Next: inspect the workload and collect more representative measurements. This is not a pass."],
   ["action_required", "Evaluation was interrupted by an error or timeout. Next: inspect logs and restore the prerequisite. Queued jobs retry up to their attempt limit; then need intervention. No completed performance result is implied."],
   ["skip", "Deliberately not measured or tested, with a reason such as no judge key. Next: supply the prerequisite if needed. A skip is not a pass."],

@@ -50,7 +50,7 @@ export default async function DemoPage() {
         <section aria-labelledby="sequence-h" className="mx-auto w-full max-w-[1100px] px-4 pb-10 sm:px-6">
           <p className="max-w-[800px] text-base leading-relaxed text-fg-2">A pull request proposes a code change for review before it is merged. Here, a request ID and timestamp were added before a shared prompt. That changing beginning stopped the model server reusing its prefix cache: saved work for identical prompt beginnings. Users waited longer for the first response token (latency).</p>
           <h2 id="sequence-h" className="mt-8 font-display text-2xl font-semibold">The recorded result, without the video</h2>
-          <ol className="mt-5 grid gap-3 sm:grid-cols-5" aria-label="Recorded evaluation sequence">
+          <ol className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Recorded evaluation sequence">
             {[
               ["Change", "A different ID starts every prompt, preventing reuse of the shared beginning."],
               ["Compare", "Furnace measures the original and proposed versions on the same model server."],

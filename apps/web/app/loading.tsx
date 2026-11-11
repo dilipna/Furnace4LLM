@@ -1,7 +1,7 @@
 import { RECORDED_ONLY } from "@/lib/site";
 import { AppHeader } from "@/components/ui/app-header";
 
-/** Streamed while a page waits for the results API (a sleeping free-tier API takes about a minute). */
+/** Navigation fallback; recorded builds must not imply a live evaluation or API request. */
 export default function Loading() {
   return (
     <div className="flex min-h-full flex-col">
