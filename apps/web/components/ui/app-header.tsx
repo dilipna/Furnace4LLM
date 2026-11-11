@@ -62,8 +62,8 @@ export function AppHeader({
             aria-current={active === "/pilot" ? "page" : undefined}
             className="shrink-0 rounded-full bg-ember px-4 py-1.5 text-[12.5px] font-medium whitespace-nowrap text-bg-0 transition-colors duration-150 hover:bg-ember-hi"
           >
-            <span className="sm:hidden">Pilot</span>
-            <span className="hidden sm:inline">Design partners</span>
+            <span className="sm:hidden">App fit</span>
+            <span className="hidden sm:inline">Check app fit</span>
           </Link>
         </nav>
       </div>

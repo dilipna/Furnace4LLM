@@ -27,8 +27,8 @@ export default async function EvidenceHome() {
           <Wordmark size={17} />
         </Link>
         <nav aria-label="Main" className={s.nav}>
-          <Link href="/prefix-check">Prefix checker</Link>
-          <a href="#experiment">Experiment</a>
+          <Link href="/demo">Recorded demo</Link>
+          <Link href="/pilot">App fit & setup</Link>
           <Link href="/bench">Evidence</Link>
           <a href={REPO} className={s.sourceLink}>
             GitHub <Arrow />
@@ -42,26 +42,28 @@ export default async function EvidenceHome() {
               <span className={s.signal} /> PUBLIC INFERENCE ENGINEERING
             </p>
             <h1 id="hero-title">
-              Ship the prompt.
+              Will this change
               <br />
-              <span>Keep the speed.</span>
+              <span>slow your AI app?</span>
             </h1>
             <p className={s.intro}>
-              A small prompt edit can erase your cache advantage. Furnace checks
-              Python LLM applications before merge, so latency regressions have
-              somewhere to stop.
+              Furnace helps Python developers check whether a code or prompt change
+              makes their AI app slower before merging it. It compares the proposed
+              change with the original on a team-controlled model server, reports
+              the evidence, and can draft a supported fix for human review.
             </p>
             <div className={s.actions}>
-              <Link href="/prefix-check" className={s.primary}>
-                Try the prefix checker <Arrow />
-              </Link>
-              <Link href="/demo" className={s.secondary}>
+              <Link href="/demo" className={s.primary}>
                 Watch the recorded demo <Arrow />
+              </Link>
+              <Link href="/pilot" className={s.secondary}>
+                Check whether your app fits <Arrow />
               </Link>
             </div>
             <p className={s.heroNote}>
-              Built by <a href="https://github.com/dilipna">Dilip Nallamasa</a>{" "}
-              · Independent project
+              Available here: recorded evidence and a browser-local{" "}
+              <Link href="/prefix-check">prompt checker</Link>. No live evaluations run
+              on this website. TTFT means the wait for the first response token. Measured on vLLM; early-stage, no customer results claimed.
             </p>
           </div>
           <PrefixWorkbench />
@@ -93,9 +95,10 @@ export default async function EvidenceHome() {
               </h2>
             </div>
             <p>
-              A timestamp at the beginning breaks the shared prefix. Move it to
-              the end, and the reusable work returns. Four conditions isolate
-              the effect.
+              A prefix cache reuses work for the identical beginning of a prompt.
+              A changing timestamp at the beginning prevents that reuse. In this
+              recorded workload, moving it to the end reduced the wait for the
+              first response token (time to first token, or TTFT). Four conditions isolate the effect.
             </p>
           </div>
           <div className={s.studyGrid}>
@@ -394,8 +397,8 @@ export default async function EvidenceHome() {
         </div>
         <nav aria-label="Footer">
           <Link href="/prefix-check">Prefix checker</Link>
-          <Link href="/lab">Inference Lab</Link>
-          <Link href="/guard">Guard</Link>
+          <Link href="/pilot">App fit & setup</Link>
+          <a href={`${REPO}/blob/main/docs/architecture.md`}>Architecture <Arrow /></a>
           <a href={`${REPO}/blob/main/docs/claims.md`}>
             Claims ledger <Arrow />
           </a>

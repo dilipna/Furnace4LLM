@@ -1,291 +1,114 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { VERDICT_MEANING, Verdict } from "@/components/guard/verdict";
-import { EvidenceInput } from "@/components/marketing/evidence-input";
-import { RunnerStatus } from "@/components/pilot/runner-status";
+import { OutcomeGuide } from "@/components/marketing/outcome-guide";
 import { AppHeader } from "@/components/ui/app-header";
 import { SiteFooter } from "@/components/ui/site-footer";
 
 export const metadata: Metadata = {
-  title: "Pilot setup · Furnace",
-  description: "What a Furnace design-partner pilot needs, what it delivers in the first session, and how setup works.",
+  title: "App fit & first evaluation · Furnace",
+  description: "Check Python/vLLM compatibility, prerequisites, permissions and the path to one supervised evaluation.",
 };
-
 const REPO = "https://github.com/dilipna/Furnace4LLM/blob/main";
-const CONTACT = process.env.NEXT_PUBLIC_CONTACT_URL || "https://www.linkedin.com/in/dilip-n-ab1091417/";
-
-const FIT: [boolean, string, string][] = [
-  [true, "A Python application that builds its prompts in code", "Scan reads Python with the standard ast module. Other languages are not analyzed."],
-  [true, "A model you serve behind an OpenAI-compatible endpoint", "Measured on vLLM. SGLang and Ollama adapters exist but have never been run."],
-  [true, "One machine with Docker and an NVIDIA GPU for the runner", "Dependencies install in one container step; your tests then run with no network, as a non-root user, with a time limit."],
-  [true, "A GitHub repository you can install an App on", "One repository per pilot; you choose which."],
-  [false, "Latency on a hosted API (OpenAI, Anthropic, Groq)", "Not measured yet. Prompt-prefix stability matters there too, but Furnace has no evidence for it."],
+const LINK = "underline underline-offset-4";
+const FIT = [
+  ["Python prompt-building code", "Furnace must be able to slice the handler without importing arbitrary app code on the host. Some handlers are refused. JavaScript/TypeScript extraction is not supported."],
+  ["A team-controlled model server", "The measured path is vLLM with an OpenAI-compatible endpoint and prefix caching. It may run on a remote GPU accessible to your runner. Hosted-provider latency and other server adapters are not validated configurations."],
+  ["Git, Python 3.12, uv and Docker", "Use Linux Docker or Docker Desktop. The runner needs enough resources to install the app’s requirements and run tests in disposable containers. GPU inference needs a model server; offline structural proposals do not."],
+  ["One authorized GitHub repository", "Choose a disposable test repository or a reviewed same-repository pull request. You need permission to install a GitHub App on it. Fork PR execution is refused."],
 ];
-
-const FIRST_SESSION = [
-  ["Baseline", "main's rendered prompts measured on your endpoint: geometric-mean and p95 time to first token, prefix-cache hit rate, with the GPU clock recorded."],
-  ["A real pull request, checked", "One recent PR replayed through Guard: which checks it could affect, which ran, and the gate's verdict with its interval."],
-  ["A repair, only if one applies", "If a PR puts per-request values at the start of a prompt, a draft fix that passed the tests and the gate. Otherwise you get a clear statement that nothing supported was found."],
-  ["A written summary", "What was measured, what was inconclusive, and what Furnace could not see in your app."],
-];
-
-const STEPS: { title: string; who: string; body: string; cmd?: string }[] = [
-  {
-    title: "Fit check (15 minutes)",
-    who: "together",
-    body: "We confirm the items above, and you pick the repository, the endpoint and one recent pull request that changed prompts or serving settings.",
-  },
-  {
-    title: "Install the GitHub App on one repository",
-    who: "you",
-    body: "Created from a manifest that you review before clicking Create. Permissions: read code, write only to new furnace/* branches, open draft PRs, report check runs. No organization permissions.",
-    cmd: "uv run furnace gh-setup --name furnace-<your-org>\nuv run furnace gh-check",
-  },
-  {
-    title: "Start the runner on your GPU machine",
-    who: "you, with us on a call",
-    body: "The runner pulls jobs from the queue. Your code and keys stay on that machine.",
-    cmd: "docker compose up -d postgres\nuv run poe migrate\nuv run poe runner",
-  },
-  {
-    title: "Describe your app to Guard",
-    who: "we write it, you review it",
-    body: "A suite file that ties your checks to the parts of the app they cover, plus a questions file with real user inputs for the benchmark. This is the setup work Furnace cannot yet do on its own.",
-    cmd: "FURNACE_GUARD_SUITE_PATH=path/to/suite.py\nFURNACE_GUARD_QUESTIONS_PATH=path/to/questions.json\nFURNACE_GITHUB_ALLOWED_REPOS=your-org/your-repo",
-  },
-  {
-    title: "Run Guard on a pull request",
-    who: "Furnace",
-    body: "On each push to a pull request, Guard posts a check run on its head commit: PASS, FAIL or INCONCLUSIVE, with the interval and the evidence. Shown once on a public repository (2026-10-14); see the Demo page.",
-    cmd: "uv run poe gh-poll        # or a webhook to a hosted API\nuv run furnace gh-guard your-org/your-repo <PR> --suite $FURNACE_GUARD_SUITE_PATH",
-  },
-  {
-    title: "Allow draft repairs (optional)",
-    who: "you decide",
-    body: "Off by default. When on, a supported regression gets a draft PR into the pull request's branch. It is never merged and never pushed to main.",
-    cmd: "FURNACE_GUARD_AUTO_REPAIR=true",
-  },
-];
-
-const CONFIG: [string, string, string][] = [
-  ["FURNACE_GUARD_SUITE_PATH", "required", "Python file listing your checks and the graph nodes each one covers"],
-  ["FURNACE_GUARD_QUESTIONS_PATH", "required", "Real inputs used to render prompts for the perf gate"],
-  ["FURNACE_GUARD_MAX_PROMPT_TOKENS", "optional", "Context budget the context check enforces"],
-  ["FURNACE_GITHUB_ALLOWED_REPOS", "recommended", "Repositories the runner will act on; events from anything else are refused"],
-  ["FURNACE_GUARD_AUTO_REPAIR", "default false", "Your consent for draft repair PRs"],
-  ["FURNACE_GITHUB_APP_ID, …_PRIVATE_KEY_PATH, …_WEBHOOK_SECRET", "written by gh-setup", "Kept in .env and ~/.furnace on the runner; never printed or uploaded"],
-];
-
-const DATA = [
-  ["Your code", "Downloaded by the runner with a token scoped to that one repository, and copied into a disposable container. Dependencies install with network access (their install scripts run there, away from your secrets); your code then runs with no network, read-only, with all capabilities dropped."],
-  ["Your prompts and answers", "Sent only to your own endpoint. The database keeps results, logs, diffs and the short code excerpts cited as evidence, not a copy of the repository."],
-  ["Secrets", "Model keys and the App's private key stay on the runner machine. Error messages are scrubbed of credentials."],
-  ["Webhooks", "Accepted only with a valid HMAC signature. Each delivery is processed once, payloads are capped at 5 MB, and pull requests from forks are refused."],
-];
-
-function Code({ children }: { children: string }) {
-  return (
-    <pre className="num mt-3 rounded-[3px] border border-line bg-bg-0 px-3 py-2.5 text-[12px] leading-relaxed break-all whitespace-pre-wrap text-fg-1">
-      {children}
-    </pre>
-  );
+function Command({ children }: { children: string }) {
+  return <pre className="my-4 overflow-x-auto rounded border border-line-strong bg-bg-1 p-4 text-[13px] leading-relaxed"><code>{children}</code></pre>;
 }
-
+function Step({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="border-t border-line py-8"><h3 className="font-display text-2xl font-semibold">{title}</h3><div className="mt-4 space-y-4 text-sm leading-relaxed text-fg-2">{children}</div></section>;
+}
 export default function PilotPage() {
   return (
     <div className="flex min-h-full flex-col">
-      <AppHeader active="/pilot" />
-      <main className="flex-1">
-        <section className="border-b border-line">
-          <div className="mx-auto grid w-full max-w-[1200px] gap-10 px-4 pt-14 pb-14 sm:px-6 lg:grid-cols-12">
-            <div className="lg:col-span-7">
-              <p className="num text-[11.5px] tracking-[0.08em] text-ember uppercase">Design-partner pilot</p>
-              <h1 className="mt-4 font-display text-[36px] leading-[1.08] font-semibold tracking-[-0.02em] sm:text-[44px]">
-                Furnace on one of your repositories, set up with you.
-              </h1>
-              <p className="mt-5 max-w-[620px] text-[15px] leading-relaxed text-fg-1">
-                The pilot is free. It takes one working session of about two hours, plus a follow-up a week later to see
-                what Guard caught on your real pull requests. Setup is hands-on: Furnace does not yet configure an
-                arbitrary app by itself, and this page lists exactly what it needs.
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <a
-                  href={CONTACT}
-                  className="inline-flex h-10 items-center rounded-[3px] bg-ember px-5 text-[14px] font-medium text-bg-0 transition-colors duration-150 hover:bg-ember-hi"
-                >
-                  Ask about a pilot
-                </a>
-                <Link
-                  href="/guard/r1_dynamic_head"
-                  className="inline-flex h-10 items-center rounded-[3px] border border-line-strong px-5 text-[14px] text-fg-0 transition-colors duration-150 hover:bg-bg-2"
-                >
-                  See a recorded run first
-                </Link>
-              </div>
-            </div>
-            <div className="lg:col-span-5">
-              <RunnerStatus />
-              <p className="mt-3 text-[12px] leading-relaxed text-fg-3">
-                This deployment’s own runner. During a pilot, the runner is a machine of yours, and this panel shows yours.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="fit-h" className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-6">
-          <h2 id="fit-h" className="font-display text-[24px] font-semibold tracking-[-0.01em]">Is it a fit?</h2>
-          <ul className="mt-6 divide-y divide-line border-y border-line">
-            {FIT.map(([ok, t, d]) => (
-              <li key={t} className="grid gap-1 py-4 sm:grid-cols-[28px_1fr_1.2fr] sm:gap-4">
-                <span aria-hidden="true" className={ok ? "text-ok" : "text-fg-3"}>
-                  {ok ? "✓" : "○"}
-                </span>
-                <span className={`text-[14px] ${ok ? "text-fg-0" : "text-fg-2"}`}>
-                  <span className="sr-only">{ok ? "Needed: " : "Not supported: "}</span>
-                  {t}
-                </span>
-                <span className="text-[13px] text-fg-2">{d}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section aria-labelledby="scan-h" className="border-t border-line">
-          <div className="mx-auto grid w-full max-w-[1200px] gap-8 px-4 py-14 sm:px-6 lg:grid-cols-12">
-            <div className="lg:col-span-5">
-              <h2 id="scan-h" className="font-display text-[24px] font-semibold tracking-[-0.01em]">
-                Before the call: see what Furnace reads
-              </h2>
-              <p className="mt-3 text-[13px] leading-relaxed text-fg-2">
-                Scan a public repository, or upload a zip, to get the map Furnace starts from: LLM call sites, prompts,
-                models, serving settings and routes, each tied to a file and line. Nothing is executed during a scan.
-              </p>
-              <p className="mt-3 text-[13px] leading-relaxed text-fg-2">
-                Treat the findings as a starting point. On five apps the scanner had never seen, 39 of its 77 findings were
-                right. In the pilot, we check the findings together before Guard relies on any of them.
-              </p>
-            </div>
-            <div className="lg:col-span-7 lg:pt-2">
-              <EvidenceInput />
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="get-h" className="border-y border-line bg-bg-1">
-          <div className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-6">
-            <h2 id="get-h" className="font-display text-[24px] font-semibold tracking-[-0.01em]">What you leave the first session with</h2>
-            <div className="mt-8 grid gap-px border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
-              {FIRST_SESSION.map(([t, d]) => (
-                <div key={t} className="bg-bg-1 p-5">
-                  <h3 className="text-[14px] font-medium text-fg-0">{t}</h3>
-                  <p className="mt-2 text-[13px] leading-relaxed text-fg-2">{d}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="steps-h" className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-6">
-          <h2 id="steps-h" className="font-display text-[24px] font-semibold tracking-[-0.01em]">Setup, step by step</h2>
-          <p className="mt-2 max-w-[700px] text-[13px] text-fg-2">
-            The commands are the real ones. Full detail is in the{" "}
-            <a className="underline decoration-line-strong underline-offset-2 hover:text-fg-0" href={`${REPO}/docs/pilot.md`}>
-              pilot guide
-            </a>{" "}
-            and the{" "}
-            <a className="underline decoration-line-strong underline-offset-2 hover:text-fg-0" href={`${REPO}/docs/github-app.md`}>
-              GitHub App guide
-            </a>
-            .
-          </p>
-          <ol className="mt-8 space-y-0">
-            {STEPS.map((s, i) => (
-              <li key={s.title} className="grid gap-3 border-t border-line py-6 md:grid-cols-[48px_1fr_1.1fr] md:gap-6">
-                <span className="num text-[13px] text-ember">{String(i + 1).padStart(2, "0")}</span>
-                <div>
-                  <h3 className="text-[15px] font-medium text-fg-0">{s.title}</h3>
-                  <p className="num mt-1 text-[11.5px] text-fg-3">{s.who}</p>
-                  <p className="mt-2 text-[13px] leading-relaxed text-fg-2">{s.body}</p>
-                </div>
-                <div className="min-w-0">{s.cmd && <Code>{s.cmd}</Code>}</div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section aria-labelledby="cfg-h" className="border-t border-line bg-bg-1">
-          <div className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-6">
-            <h2 id="cfg-h" className="font-display text-[24px] font-semibold tracking-[-0.01em]">Configuration</h2>
-            <p className="mt-2 max-w-[720px] text-[13px] text-fg-2">
-              Guard is configured on the runner machine, in its .env file. These settings are the whole
-              configuration; nothing is read from your repository except the code under test. The perf gate itself is
-              fixed: geometric-mean TTFT, 3 interleaved runs per revision, a 90% interval, PASS at or below +10%, BLOCK
-              above +25%.
-            </p>
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
-                <tbody>
-                  {CONFIG.map(([k, req, d]) => (
-                    <tr key={k} className="border-b border-line align-top">
-                      <td className="num py-3 pr-6 text-[12px] text-fg-0">{k}</td>
-                      <td className="py-3 pr-6 text-[12px] whitespace-nowrap text-fg-3">{req}</td>
-                      <td className="py-3 text-fg-2">{d}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <section aria-labelledby="verdict-h" className="mx-auto grid w-full max-w-[1200px] gap-12 px-4 py-14 sm:px-6 lg:grid-cols-2">
-          <div>
-            <h2 id="verdict-h" className="font-display text-[24px] font-semibold tracking-[-0.01em]">What each result means</h2>
-            <p className="mt-2 text-[13px] text-fg-2">Every check reports one of these. A skipped check is never counted as passed.</p>
-            <dl className="mt-6 space-y-3">
-              {VERDICT_MEANING.map(([v, d]) => (
-                <div key={v} className="grid grid-cols-[120px_1fr] items-baseline gap-4">
-                  <dt>
-                    <Verdict v={v} />
-                  </dt>
-                  <dd className="text-[13px] text-fg-1">{d}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-          <div>
-            <h2 className="font-display text-[24px] font-semibold tracking-[-0.01em]">Where your data goes</h2>
-            <dl className="mt-6 space-y-4">
-              {DATA.map(([t, d]) => (
-                <div key={t}>
-                  <dt className="text-[13px] font-medium text-fg-0">{t}</dt>
-                  <dd className="mt-1 text-[13px] leading-relaxed text-fg-2">{d}</dd>
-                </div>
-              ))}
-            </dl>
-            <a className="mt-5 inline-block text-[13px] text-fg-2 underline decoration-line-strong underline-offset-2 hover:text-fg-0" href={`${REPO}/docs/security.md`}>
-              Security controls and their tests →
-            </a>
-          </div>
-        </section>
-
-        <section aria-labelledby="terms-h" className="border-t border-line bg-bg-1">
-          <div className="mx-auto w-full max-w-[1200px] px-4 py-14 sm:px-6">
-            <h2 id="terms-h" className="font-display text-[24px] font-semibold tracking-[-0.01em]">Pilot terms</h2>
-            <ul className="mt-6 grid gap-6 text-[13px] text-fg-1 md:grid-cols-3">
-              <li>
-                <span className="font-medium text-fg-0">Free.</span> There is no billing, and nothing to cancel.
-              </li>
-              <li>
-                <span className="font-medium text-fg-0">What we ask:</span> a 30-minute follow-up and permission to describe
-                the result without naming you, unless you agree to be named.
-              </li>
-              <li>
-                <span className="font-medium text-fg-0">Pricing later:</span> not set. The pilots exist partly to learn
-                whether teams would pay, and for what.
-              </li>
+      <AppHeader variant="marketing" active="/pilot" />
+      <a href="#main" className="sr-only focus:not-sr-only focus:p-4">Skip to content</a>
+      <main id="main" className="flex-1">
+        <div className="mx-auto w-full max-w-[1100px] px-4 pt-12 sm:px-6">
+          <p className="num text-xs tracking-widest text-ember uppercase">App fit · supervised first evaluation</p>
+          <h1 className="mt-4 max-w-[850px] font-display text-4xl leading-tight font-semibold sm:text-5xl">Can Furnace check your Python AI app?</h1>
+          <p className="mt-5 max-w-[800px] text-lg leading-relaxed text-fg-2">Start with one repository, one representative workload and one evaluation. Furnace compares a proposed code change with its original version before you merge. Supported repairs become drafts for your review.</p>
+          <p className="mt-5 rounded border border-line-strong p-4 text-sm leading-relaxed text-fg-2">This website shows recorded evidence and a <Link className={LINK} href="/prefix-check">browser-local prompt checker</Link>. It cannot run your jobs or connect to your model server. The CLI and runner are source-available; no production readiness, customer adoption or setup-time guarantee is claimed.</p>
+          <nav aria-label="Setup sections" className="my-6 flex flex-wrap gap-5 text-sm"><a className={LINK} href="#fit">1. Check fit</a><a className={LINK} href="#execution">2. Understand execution</a><a className={LINK} href="#first">3. First evaluation</a><a className={LINK} href="#outcomes-h">4. Read outcomes</a><a className={LINK} href="#recovery">5. Recover & stop</a></nav>
+          <section id="fit" className="scroll-mt-20 py-8" aria-labelledby="fit-h">
+            <h2 id="fit-h" className="font-display text-3xl font-semibold">Check prerequisites before installing</h2>
+            <dl className="mt-6 grid gap-4 sm:grid-cols-2">{FIT.map(([title, text]) => <div key={title} className="rounded border border-line-strong p-5"><dt className="font-semibold">{title}</dt><dd className="mt-3 text-sm leading-relaxed text-fg-2">{text}</dd></div>)}</dl>
+            <p className="mt-5 text-sm text-fg-2">Also needed: reviewed local suite Python, representative sanitized input questions, and app tests installable from requirements files. General repair and proof of unchanged answers are outside scope. <Link className={LINK} href="/demo">See the recorded workflow first.</Link></p>
+          </section>
+          <section id="execution" className="scroll-mt-20 py-8" aria-labelledby="execution-h">
+            <h2 id="execution-h" className="font-display text-3xl font-semibold">Where execution and data go</h2>
+            <ul className="mt-5 space-y-3 text-sm leading-relaxed text-fg-2">
+              <li><strong className="text-fg-0">Website:</strong> hosted static recordings. Your prompt-checker text stays in your browser; no evaluation service runs here.</li>
+              <li><strong className="text-fg-0">CLI / runner:</strong> your trusted machine downloads source and orchestrates checks. Suite Python and its imports execute on this host: review them first.</li>
+              <li><strong className="text-fg-0">Docker sandbox:</strong> app tests execute in disposable copies, as a non-root user with limits and no test-time network. Dependency installation has network access and can run install scripts. A read-only container root does not make the disposable repository copy immutable.</li>
+              <li><strong className="text-fg-0">Model server:</strong> your chosen endpoint receives rendered prompts for measured evaluations. Logs and results may contain prompts, source excerpts or diagnostics. Review them before sharing; redaction is not a comprehensive secret-removal guarantee.</li>
+              <li><strong className="text-fg-0">API and PostgreSQL:</strong> optional self-hosted event/queue components after the direct CLI path works. Neither the website, a public API nor a database is needed for the first CLI evaluation.</li>
             </ul>
-          </div>
+            <p className="mt-5 text-sm"><a className={LINK} href={`${REPO}/docs/architecture.md`}>Architecture</a> · <a className={LINK} href={`${REPO}/docs/security.md`}>Security boundaries</a> · <a className={LINK} href={`${REPO}/packages/furnace/src/furnace/cli.py`}>CLI source</a></p>
+          </section>
+          <section id="first" className="scroll-mt-20 pt-8" aria-labelledby="first-h">
+            <h2 id="first-h" className="font-display text-3xl font-semibold">Your first evaluation</h2>
+            <p className="my-5 text-sm leading-relaxed text-fg-2">Commands below use PowerShell from the repository root. Replace OWNER/REPO, PR and endpoint/model placeholders. Help commands were checked locally; this full onboarding has not been executed with a new developer in a clean environment.</p>
+            <Step title="1. Get the code and validate local tools">
+              <Command>{`git clone https://github.com/dilipna/Furnace4LLM.git
+cd Furnace4LLM
+uv sync --frozen
+uv run furnace gh-guard --help
+uv run furnace gh-repair --help
+docker version`}</Command>
+              <p>Success: dependencies resolve, CLI help displays the suite/questions options, and Docker reports both client and server. Do not continue to remote writes until these work.</p>
+            </Step>
+            <Step title="2. Review access, then configure one repository">
+              <p>The GitHub App requests repository contents and pull-request write access, checks write access and metadata read access; it requests no organization permissions. Tokens for source reads and check/PR writes are scoped separately. The implementation restricts generated branches to furnace/*; that is an application rule, not a GitHub permission limiting all writes to that prefix.</p>
+              <p>Only with the repository owner’s consent, review the manifest and install the App on that repository:</p>
+              <Command>{`uv run furnace gh-setup --name furnace-pilot-UNIQUE
+uv run furnace gh-check`}</Command>
+              <p>Keep the private key outside the checkout. App setup records its ID, key path and webhook secret in private configuration. Do not paste these into issues. For private repositories, choose an approved webhook transport; the default public smee channel is not private transport.</p>
+              <p>In the runner’s private .env, set the following configuration (these are file entries, not PowerShell commands). No paid judge is needed:</p>
+              <Command>{`FURNACE_GITHUB_ALLOWED_REPOS=OWNER/REPO
+FURNACE_GUARD_AUTO_REPAIR=false
+FURNACE_LAB_BASE_URL=http://YOUR-MODEL-SERVER:8000/v1
+FURNACE_LAB_MODEL=YOUR-SERVED-MODEL-ID`}</Command>
+              <p>Success: gh-check returns App information. Confirm its installation includes the intended repository. It does not establish model-server performance or workload fit.</p>
+            </Step>
+            <Step title="3. Prepare trusted checks and representative questions">
+              <p>Create pilot_suite.py on the trusted runner. Review its imports; this is host-executed Python. Replace the test target if your repository uses a different one:</p>
+              <Command>{`from furnace.guardian.impact import SuiteItem
+
+SUITE = [
+    SuiteItem("unit:tests", "unit", [], set(), always=True),
+    SuiteItem("check:prompt_prefix_stable", "check", [], set(), always=True),
+    SuiteItem("bench:chat_perf_gate", "benchmark", [], set(), always=True),
+]`}</Command>
+              <p>Create pilot_questions.json as a JSON list of representative sanitized strings. For example, [&quot;How do I reset my password?&quot;] is valid syntax, not a validated workload for your app. This initial suite selects every listed check; no graph-targeting savings are claimed.</p>
+            </Step>
+            <Step title="4. Validate the sandbox, then measure the change">
+              <Command>{`uv run furnace gh-forge OWNER/REPO --questions pilot_questions.json
+uv run furnace gh-guard OWNER/REPO PR --suite pilot_suite.py --questions pilot_questions.json`}</Command>
+              <p>Forge without --open-pr is a sandbox-validated dry run. Guard writes a GitHub check and loads your model server: obtain consent before running it. Success is a completed report on the intended base/head with evidence for each executed check. Record revision IDs, suite/question hashes, server/model configuration and timestamps; an interrupted attempt is not a successful evaluation.</p>
+              <p>If slicing refuses the handler or test installation fails, use recovery below. Do not import untrusted app code on the host to bypass a refusal.</p>
+            </Step>
+            <Step title="5. Inspect a supported repair, if one applies">
+              <Command>{`uv run furnace gh-repair OWNER/REPO PR --suite pilot_suite.py --questions pilot_questions.json`}</Command>
+              <p>Without --open-pr this is a dry run. With no endpoint, --no-endpoint can produce a functional-only proposal: <strong className="text-fg-0">Functionally tested; performance unverified</strong>. Review its behavior changes. Adding --open-pr is separate consent to create a draft; Furnace never merges.</p>
+              <p><a className={LINK} href={`${REPO}/docs/pilot/README.md`}>Full supervised runbook, optional event mode and evidence to retain</a></p>
+            </Step>
+          </section>
+        </div>
+        <OutcomeGuide />
+        <section id="recovery" aria-labelledby="recovery-h" className="mx-auto w-full max-w-[1100px] scroll-mt-20 px-4 py-12 sm:px-6">
+          <h2 id="recovery-h" className="font-display text-3xl font-semibold">Recover, stop or remove the integration</h2>
+          <dl className="mt-6 space-y-5 text-sm leading-relaxed text-fg-2">
+            <div><dt className="font-semibold text-fg-0">uv or Docker fails</dt><dd>Install the prerequisites first; run uv sync --frozen again and confirm Docker’s daemon is running. Inspect the actual error. Dependency installation interrupted? Do not assume its existing cache is complete; inspect the dedicated dependency volume and remove only that pilot-owned volume before retrying. Do not prune Docker globally.</dd></div>
+            <div><dt className="font-semibold text-fg-0">Authentication or repository access fails</dt><dd>Run gh-check, verify the App installation includes this repository, key path exists, and the allowlist matches OWNER/REPO. Reauthorize through the owner; never paste the key or secret into logs or website inputs.</dd></div>
+            <div><dt className="font-semibold text-fg-0">Endpoint or slicing fails; measurements are inconclusive</dt><dd>Confirm the configured /v1 endpoint is reachable from the runner and the model ID matches the served model. Inspect Docker and slicing diagnostics. For uncertain measurements, review representative inputs and server load before collecting more data. Preserve failed or unfavorable results; do not lower thresholds.</dd></div>
+            <div><dt className="font-semibold text-fg-0">Stop and uninstall</dt><dd>Stop pilot-owned CLI, poller and runner processes (Ctrl+C in their terminals). Uninstall or restrict the GitHub App, and revoke its private key if appropriate. Remove pilot .env, key, snapshots and logs under your retention policy. Stop the database only if dedicated to this pilot; inspect names before deleting any pilot-owned volumes. No Docker-wide pruning or shared-volume deletion.</dd></div>
+          </dl>
+          <p className="mt-6 text-sm text-fg-2">Do not install yet if fit is unclear. Inspect the <a className={LINK} href={`${REPO}/docs/pilot/discovery.md`}>discovery checklist</a>, <a className={LINK} href={`${REPO}/docs/engineering-review.md`}>engineering review</a> and <Link className={LINK} href="/bench">recorded evidence with limits</Link>. A supervised pilot is proposed; no participant results are claimed.</p>
         </section>
       </main>
       <SiteFooter />

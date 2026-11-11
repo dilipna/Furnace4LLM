@@ -52,7 +52,7 @@ export function Faq({ s }: { s: Story | null }) {
       "What works today, and what doesn’t?",
       <>
         It works for Python apps that build prompts in code and call a model you serve (measured on vLLM). It needs a
-        runner on a machine with Docker and a GPU. It can repair one regression family: per-request values at the start
+        runner with Docker and access to a GPU model server for measurements; the server may be remote. It can repair one regression family: per-request values at the start
         of a prompt. Not yet: TypeScript, latency on hosted APIs, and other repairs, which it refuses rather than guesses.
         The GitHub flow ran end to end once on a public repository (a check run on the right commit, a draft fix, real webhooks); that is one live trial, not a track record.
       </>,
@@ -61,7 +61,7 @@ export function Faq({ s }: { s: Story | null }) {
       "Where does my code run?",
       <>
         On your machine. The runner downloads your repository with a token scoped to that one repository and runs your
-        tests in a container with no network, read-only, without root. Prompts go only to your own model server.{" "}
+        tests in disposable container copies with no test-time network and a non-root user. Dependency installation has network access. Trusted suite Python runs on the host. Prompts go to your configured model server.{" "}
         <A href={`${REPO}/docs/security.md`}>Security controls and their tests</A>
       </>,
     ],
