@@ -159,6 +159,15 @@ Before pushing, run the CI jobs in Linux on the committed tree: `bash scripts/ci
 
 ## Runner commands
 
+Guard recovery: an exception, timeout or cancellation closes that attempt's check as
+`action_required` when GitHub is reachable. A queued retry runs the checks again with a
+fresh check; completed verdicts (including measured neutral results) are reused only for
+the same evaluation identity (repository/PR, base/head revisions, suite, questions,
+endpoint configuration, token budget and versioned gate policy). Legacy checks without
+an identity are evaluated once under the new identity. Retries
+remain bounded by the job's attempt limit. This recovery path is verified locally with
+mock GitHub and a real Postgres queue/worker, not a new live GitHub campaign.
+
 ```bash
 uv run furnace gh-setup --name furnace-dev-<you>         # create the GitHub App from its manifest (2 clicks)
 uv run poe gh-poll                                       # webhook events from the App's delivery log

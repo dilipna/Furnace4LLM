@@ -82,8 +82,22 @@ its handler, and its late completion or failure is refused. A job whose heartbea
 with no attempts left is failed by the reaper; a worker restarted mid-job fails its own
 orphans on start. Each kind has a timeout (`jobs.timeout_s`, default 1 h); handlers emit
 `job_events` (stage, message, structured data) that the UI streams. Side effects are
-idempotent at the GitHub layer as well, so a retried attempt cannot open a second PR or
-post a second check run.
+idempotent at the GitHub layer as well: a retried attempt cannot open a second PR, and a
+completed Guard verdict is reused only for the same evaluation identity. A crashed or cancelled Guard attempt is closed as
+`action_required` when GitHub is reachable; the next attempt creates a fresh check and
+executes the checks again, retaining the interrupted attempt's diagnostics. The identity
+is a SHA-256 digest in the check's `external_id`: repository/PR, base/head revisions, suite,
+questions, endpoint configuration, token budget, gate policy and evaluator protocol version.
+Lookup searches all pages for that identity, so a newer unrelated check cannot hide it.
+Legacy checks without an identity cannot prove input equivalence; a new evaluation is
+created once, then reused on later invocations. Identity-bearing in-progress checks can
+be taken over; unidentified ones are left untouched. Measured neutral verdicts (such as
+an inconclusive perf gate) are still reused for identical inputs. The queue's attempt limit and backoff
+are unchanged; after exhaustion, recovery requires an explicit CLI rerun.
+
+The evaluator protocol version must be bumped when evaluation semantics change. An
+endpoint URL/model/configuration cannot identify mutable server state: explicitly rerun
+Guard after replacing model weights or server configuration behind the same endpoint.
 
 Limit: a timeout or lost lease cancels the job's coroutine (and Guard closes its check run),
 but blocking work already handed to a worker thread (a sandboxed test run, a benchmark wave)

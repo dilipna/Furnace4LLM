@@ -13,9 +13,12 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
+import json
 import shutil
 import tempfile
 from collections.abc import Callable
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -101,6 +104,36 @@ async def _pull(repo: Repo, number: int) -> dict[str, Any]:
 # ---------------------------------------------------------------------------------- Guard
 
 
+def guard_identity(
+    full_name: str,
+    number: int,
+    pr: dict[str, Any],
+    suite: list[SuiteItem],
+    target: BenchTarget | None,
+    questions: list[str],
+    max_prompt_tokens: int | None,
+) -> str:
+    """Versioned evaluation inputs, stored as a digest in GitHub's external_id.
+
+    Bump the protocol version when evaluator semantics change. The endpoint identifies
+    a configuration, not mutable server state; use an explicit rerun after server changes.
+    """
+    inputs = {
+        "protocol": "furnace-guard-v1",
+        "repo": full_name.lower(),
+        "number": number,
+        "base": pr["base_sha"],
+        "head": pr["head_sha"],
+        "suite": [{**asdict(item), "triggers": sorted(item.triggers)} for item in suite],
+        "target": target.model_dump(mode="json") if target is not None else None,
+        "questions": questions,
+        "max_prompt_tokens": max_prompt_tokens,
+        "policy": asdict(GatePolicy()),
+    }
+    digest = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()
+    return f"furnace-guard-v1:{digest}"
+
+
 async def guard_pr(
     app: GitHubApp,
     full_name: str,
@@ -118,8 +151,9 @@ async def guard_pr(
 ) -> dict[str, Any]:
     """Run the graph-targeted checks for PR `number` and report them as a check run.
 
-    Idempotent per head commit: if a completed Furnace Guard check run already exists on
-    the PR head, its result is returned unless `rerun`; an in-progress one (left by an
+    Idempotent per evaluation identity: a completed verdict is returned unless `rerun`.
+    An incomplete attempt is retried with a new check run, retaining its diagnostics;
+    an in-progress one (left by an
     attempt that died) is taken over instead of creating a second. A job for a head that
     the PR has since moved past (`expected_head_sha`) is skipped as superseded.
 
@@ -136,8 +170,10 @@ async def guard_pr(
             "superseded": True,
             "signatures": [],
         }
-    existing = await repo.find_check(pr["head_sha"], app_id=app.app_id)
-    if existing and existing["status"] == "completed" and not rerun:
+    identity = guard_identity(full_name, number, pr, suite, target, questions, max_prompt_tokens)
+    existing = await repo.find_check(pr["head_sha"], app_id=app.app_id, external_id=identity)
+    incomplete = existing and existing["conclusion"] not in {"success", "failure", "neutral"}
+    if existing and existing["status"] == "completed" and not rerun and not incomplete:
         _say(progress, f"check run {existing['id']} already completed: {existing['conclusion']}")
         return {
             "check_id": existing["id"],
@@ -150,7 +186,7 @@ async def guard_pr(
         check_id = existing["id"]
         _say(progress, f"taking over check run {check_id} left in progress on {pr['head_sha'][:7]}")
     else:
-        check_id = await repo.create_check(pr["head_sha"])
+        check_id = await repo.create_check(pr["head_sha"], external_id=identity)
         _say(progress, f"check run {check_id} started on {pr['head_sha'][:7]}")
     tmp = Path(tempfile.mkdtemp(prefix="furnace-guard-pr-"))
     try:
@@ -210,7 +246,8 @@ async def guard_pr(
         }
     except (Exception, asyncio.CancelledError) as exc:
         # Never leave a check spinning (also on a job timeout or a lost lease, which cancel
-        # this coroutine): report that it did not complete, honestly, as neutral.
+        # this coroutine). This is not a measured verdict: action_required keeps it
+        # distinct from a neutral/inconclusive result and allows the next attempt to run.
         why = (
             "cancelled (job timeout or lost lease)"
             if isinstance(exc, asyncio.CancelledError)
@@ -220,7 +257,7 @@ async def guard_pr(
             await asyncio.shield(
                 repo.complete_check(
                     check_id,
-                    conclusion="neutral",
+                    conclusion="action_required",
                     title="Furnace Guard could not complete",
                     summary=why,
                 )

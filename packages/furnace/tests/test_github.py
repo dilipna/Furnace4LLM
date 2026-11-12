@@ -63,6 +63,29 @@ class Recorder:
         return httpx.Response(404, json={"message": "unexpected"})
 
 
+async def test_find_check_searches_all_pages_for_evaluation_identity():
+    pages = []
+
+    def github(req):
+        page = int(req.url.params["page"])
+        pages.append(page)
+        assert req.url.params["filter"] == "all"
+        assert req.url.params["app_id"] == "123"
+        runs = (
+            [{"id": i, "external_id": "other"} for i in range(100)]
+            if page == 1
+            else [
+                {"id": 999, "external_id": "wanted", "status": "completed", "conclusion": "success"}
+            ]
+        )
+        return httpx.Response(200, json={"check_runs": runs})
+
+    repo = Repo("acme/app", "t", transport=httpx.MockTransport(github))
+    found = await repo.find_check("head", app_id="123", external_id="wanted")
+    assert found is not None and found["id"] == 999 and pages == [1, 2]
+    assert await repo.find_check("head", app_id="123", external_id="absent") is None
+
+
 @pytest.mark.adversarial
 async def test_installation_token_is_scoped_to_one_repo_and_permissions():
     rec = Recorder({("POST", "/app/installations/77/access_tokens"): (201, {"token": "ghs_x"})})

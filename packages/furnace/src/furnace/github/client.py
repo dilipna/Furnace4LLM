@@ -336,20 +336,40 @@ class Repo:
         return {"number": pr["number"], "url": pr["html_url"], "state": "open"}
 
     async def find_check(
-        self, head_sha: str, name: str = "Furnace Guard", app_id: str | None = None
+        self,
+        head_sha: str,
+        name: str = "Furnace Guard",
+        app_id: str | None = None,
+        *,
+        external_id: str | None = None,
     ) -> dict[str, Any] | None:
         """The latest check run `name` on `head_sha` ({id, status, conclusion, title}) or None.
         With `app_id`, only this App's runs: another App's check of the same name is not ours
-        to reuse or take over."""
-        params: dict[str, Any] = {"check_name": name, "filter": "latest"}
+        to reuse or take over. With `external_id`, search all pages for that evaluation;
+        unidentified legacy runs are not evidence of an equivalent evaluation."""
+        params: dict[str, Any] = {
+            "check_name": name,
+            "filter": "all" if external_id else "latest",
+            "per_page": 100,
+        }
         if app_id:
             params["app_id"] = app_id
         async with self._client() as c:
-            data = await self._req(c, "GET", f"/commits/{head_sha}/check-runs", params=params)
-        runs = data.get("check_runs") or []
-        if not runs:
-            return None
-        cr = runs[0]
+            page = 1
+            while True:
+                data = await self._req(
+                    c, "GET", f"/commits/{head_sha}/check-runs", params={**params, "page": page}
+                )
+                runs = data.get("check_runs") or []
+                cr = next(
+                    (r for r in runs if external_id is None or r.get("external_id") == external_id),
+                    None,
+                )
+                if cr is not None:
+                    break
+                if len(runs) < 100:
+                    return None
+                page += 1
         return {
             "id": int(cr["id"]),
             "status": cr.get("status"),
@@ -357,13 +377,16 @@ class Repo:
             "title": (cr.get("output") or {}).get("title"),
         }
 
-    async def create_check(self, head_sha: str, name: str = "Furnace Guard") -> int:
+    async def create_check(
+        self, head_sha: str, name: str = "Furnace Guard", *, external_id: str | None = None
+    ) -> int:
         async with self._client() as c:
             r = await self._req(
                 c,
                 "POST",
                 "/check-runs",
-                json={"name": name, "head_sha": head_sha, "status": "in_progress"},
+                json={"name": name, "head_sha": head_sha, "status": "in_progress"}
+                | ({"external_id": external_id} if external_id is not None else {}),
             )
             return int(r["id"])
 
