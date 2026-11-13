@@ -7,12 +7,14 @@ Customer: researchers developing models, including architectures beyond transfor
 They focus on model training/testing. Furnace supplies the surrounding operational system.
 Journey: download Furnace from the website; inspect a model project locally; receive a
 free starter kit showing useful additions and missing pieces; optionally subscribe for
-$20 to infrastructure Furnace operates, including serving, harness, security, evaluations,
+$20/month to infrastructure Furnace operates, including serving, harness, security, evaluations,
 logs and related operational needs. Initial demo capacity: one or two models, not fleet scale.
 
-Open owner decisions: demo model repositories/checkpoints; subscription billing interval;
-who supplies and pays for compute. Do not silently set these or advertise checkout,
-unlimited compute, universal architecture support or production readiness.
+Owner clarification (2026-11-13): build the application before choosing/testing a model;
+research supported model families thoroughly. The subscription is $20/month. Both
+Furnace-provided and customer-provided compute are in scope. Demo operation precedes
+funding, so paid provisioning and billing remain inactive. Model validation follows
+application development; do not block the workspace on selecting a checkpoint.
 
 First local implementation: free model-project inventory and starter-kit export.
 No repository imports, checkpoint deserialization, inference, network, billing or provisioning.
@@ -29,19 +31,16 @@ start, readiness, inference, authenticated access, logs, evaluations, restart an
 
 ## Delivery order tied to this product
 
-1. Free local inspection and kit export, with unknowns visible (this branch).
-2. One selected real research model: reviewed loader/adapter, real inference and explicit
-   supported device/input/output contract. A paper alone is not executable compatibility.
-3. One complete operated demo: server lifecycle/readiness, authenticated inference,
-   structured redacted logs, resource limits, task-specific evaluation results, controlled
-   failure/recovery and clean stop. Add a second model only after the first proves the path.
-4. Downloadable application and setup experience connected to that working lifecycle,
-   with a truthful free/paid boundary. Packaging target follows the selected supported runtime.
-5. Subscription and managed infrastructure after the owner confirms billing interval,
-   compute ownership/funding and the actual offer. No charges, provisioning or publication
-   are authorized by the local implementation alone.
+1. Free local inspection and kit export (implemented).
+2. Local application: model projects, assessment, kit download, model contract,
+   infrastructure preferences, evaluation cases, activity and removal (current work).
+3. Package a downloadable local preview and verify installation/startup without models.
+4. Select one model from the researched support paths; implement its isolated adapter
+   and validate the complete lifecycle. Add the second model after that path works.
+5. Review public website download, native installation and managed-service release.
+   Billing and provisioning activation require a concrete, separately reviewed action.
 
-Existing model-endpoint benchmarking can be reused where the new model exposes a
-compatible interface. Architecture support must be proven per adapter; do not force a
-new architecture into a transformer-specific runtime. Existing application scanning,
-Guard and repair remain available but are not the researcher's onboarding entry point.
+See [model support research](model-support-research.md) for primary sources, compatibility
+boundaries, adapter paths and acceptance tests. Existing Guard and benchmarks are reusable
+components, not the researcher's product entry point. Runtime compatibility is not inferred
+from file names, successful UI actions or passing framework tests.

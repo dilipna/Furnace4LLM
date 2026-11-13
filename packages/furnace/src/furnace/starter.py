@@ -134,6 +134,12 @@ def export_starter(project: Path, output: Path) -> dict[str, Any]:
     if output.exists():
         raise FileExistsError("starter output already exists; choose a new directory")
     assessment = assess_model(project)
+    write_starter_files(assessment, output)
+    return assessment
+
+
+def write_starter_files(assessment: dict[str, Any], output: Path) -> None:
+    """Render a saved assessment into a new directory; never inspect a model here."""
     output.parent.mkdir(parents=True, exist_ok=True)
     output.mkdir()  # exclusive: an existing directory is never overwritten
     (output / "assessment.json").write_text(
@@ -148,7 +154,7 @@ def export_starter(project: Path, output: Path) -> dict[str, Any]:
         "2. Fill in model-contract.json with the model author; do not put secrets in it.\n"
         "3. Replace the example evaluation cases with representative inputs and expectations.\n"
         "4. Review operations.md before a supervised implementation.\n\n"
-        "The $20 managed-service offer is the owner's product direction, not an active subscription or provisioned service in this kit.\n",
+        "The $20/month managed-service offer is the owner's product direction, not an active subscription or provisioned service in this kit.\n",
         encoding="utf-8",
     )
     (output / "model-contract.json").write_text(
@@ -192,4 +198,3 @@ def export_starter(project: Path, output: Path) -> dict[str, Any]:
         "Record actual results; leave unexecuted cases as not_run.\n",
         encoding="utf-8",
     )
-    return assessment

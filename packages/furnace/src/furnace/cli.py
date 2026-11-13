@@ -85,6 +85,10 @@ def _print(obj: Any) -> None:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="furnace")
     sub = p.add_subparsers(dest="cmd", required=True)
+    studio = sub.add_parser("studio", help="open the local researcher application")
+    studio.add_argument("--workspace", type=Path, default=Path.home() / ".furnace" / "studio")
+    studio.add_argument("--port", type=int, default=8787)
+    studio.add_argument("--no-browser", action="store_true")
     starter = sub.add_parser(
         "starter",
         help="assess a local model project and export a free researcher starter kit (no code execution)",
@@ -140,6 +144,21 @@ def main(argv: list[str] | None = None) -> int:
                 "--open-pr", action="store_true", help="explicit write consent: open a draft PR"
             )
     a = p.parse_args(argv)
+    if a.cmd == "studio":
+        try:
+            from furnace_api.studio import launch
+        except ImportError:
+            print(
+                "Studio requires furnace-api; install the Furnace workspace with uv sync --frozen",
+                file=sys.stderr,
+            )
+            return 1
+        try:
+            launch(a.workspace, a.port, open_browser=not a.no_browser)
+        except (OSError, ValueError) as exc:
+            print(f"Studio could not start: {exc}", file=sys.stderr)
+            return 1
+        return 0
     if a.cmd == "starter":
         from furnace.starter import export_starter
 

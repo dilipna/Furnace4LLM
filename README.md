@@ -4,17 +4,24 @@
 
 Furnace is being developed for model researchers who need the operational infrastructure
 around their models, including new architectures. The owner-defined product is a free
-starter kit followed by a $20 managed-infrastructure subscription. The billing interval,
-compute funding and initial model selection are awaiting owner decisions. This branch
-implements the first local assessment/export step; it does not yet provide a downloadable
-desktop installer, paid checkout or a provisioned managed service.
+starter kit followed by a $20/month managed-infrastructure subscription, supporting
+both Furnace-provided and customer-provided compute. Application development precedes model selection/testing. This branch
+implements local assessment plus the Studio application. A wheel-based downloadable
+preview requires Python/uv; a native installer, paid checkout and provisioned model service
+are not yet available.
 
 ```bash
 uv sync --frozen
+uv run furnace studio
+# Build the local downloadable preview:
+uv run python scripts/build_studio_bundle.py
+# Or use the assessment command directly:
 uv run furnace starter /path/to/model-project --output /path/to/new-starter-kit
 ```
 
-This reads bounded local metadata and file names without importing model code, loading
+Studio setup, privacy boundaries and download instructions: [application guide](docs/product/studio.md).
+
+The assessment command reads bounded local metadata and file names without importing model code, loading
 weights or contacting a service. The kit includes an assessment, a model-author contract,
 evaluation-case template and operations checklist. All runtime/security/evaluation
 capabilities remain unverified until executed. Output must be a new directory outside
