@@ -85,6 +85,12 @@ def _print(obj: Any) -> None:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="furnace")
     sub = p.add_subparsers(dest="cmd", required=True)
+    starter = sub.add_parser(
+        "starter",
+        help="assess a local model project and export a free researcher starter kit (no code execution)",
+    )
+    starter.add_argument("project", type=Path)
+    starter.add_argument("--output", type=Path, required=True)
     sub.add_parser("gh-check", help="verify the GitHub App configuration")
     st = sub.add_parser("gh-setup", help="create the GitHub App from Furnace's manifest")
     st.add_argument("--name", default="furnace-dev", help="App name (globally unique on GitHub)")
@@ -134,6 +140,15 @@ def main(argv: list[str] | None = None) -> int:
                 "--open-pr", action="store_true", help="explicit write consent: open a draft PR"
             )
     a = p.parse_args(argv)
+    if a.cmd == "starter":
+        from furnace.starter import export_starter
+
+        try:
+            _print(export_starter(a.project, a.output))
+        except (OSError, ValueError) as exc:
+            print(f"starter assessment failed: {exc}", file=sys.stderr)
+            return 1
+        return 0
     say = lambda m: print(f"  {m}", file=sys.stderr, flush=True)  # noqa: E731
 
     from furnace.github import flows

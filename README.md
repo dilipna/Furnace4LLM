@@ -1,5 +1,29 @@
 # Furnace
 
+## Researcher-platform direction (local development branch)
+
+Furnace is being developed for model researchers who need the operational infrastructure
+around their models, including new architectures. The owner-defined product is a free
+starter kit followed by a $20 managed-infrastructure subscription. The billing interval,
+compute funding and initial model selection are awaiting owner decisions. This branch
+implements the first local assessment/export step; it does not yet provide a downloadable
+desktop installer, paid checkout or a provisioned managed service.
+
+```bash
+uv sync --frozen
+uv run furnace starter /path/to/model-project --output /path/to/new-starter-kit
+```
+
+This reads bounded local metadata and file names without importing model code, loading
+weights or contacting a service. The kit includes an assessment, a model-author contract,
+evaluation-case template and operations checklist. All runtime/security/evaluation
+capabilities remain unverified until executed. Output must be a new directory outside
+the source project. Unsupported or missing configuration is reported without assuming
+vLLM, transformers or a text-only model. See [the product direction](docs/product/researcher-platform.md).
+
+The pre-merge workflow and recorded evidence below describe existing components. They
+are preserved as reusable engineering foundations, not the complete researcher platform.
+
 [![ci](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml/badge.svg)](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml)
 
 **Try it without setup:** [browser prompt-prefix checker](https://furnace-5h6.pages.dev/prefix-check).
