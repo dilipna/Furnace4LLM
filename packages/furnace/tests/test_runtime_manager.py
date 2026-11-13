@@ -125,3 +125,32 @@ def test_local_endpoint_is_pinned_for_application_lifetime(tmp_path, monkeypatch
     assert "DOCKER_CONTEXT" not in first
     monkeypatch.setenv("DOCKER_HOST", "tcp://remote.example:2375")
     assert manager.docker_environment()["DOCKER_HOST"] == first["DOCKER_HOST"]
+
+
+@pytest.mark.parametrize(
+    "operating_system,has_image,expected",
+    [
+        ("linux", True, "ready"),
+        ("linux", False, "needs_preparation"),
+        ("windows", True, "unavailable"),
+    ],
+)
+def test_readiness_is_read_only_and_requires_linux(
+    tmp_path, monkeypatch, operating_system, has_image, expected
+):
+    from subprocess import CompletedProcess
+
+    manager = RuntimeManager(tmp_path)
+    commands = []
+
+    def docker(*args, **kwargs):
+        commands.append(args)
+        assert args[0] in {"version", "image"}
+        assert args[0] == "version" or args[1] in {"inspect", "ls"}
+        if args[0] == "version":
+            return CompletedProcess(args, 0, operating_system, "")
+        return CompletedProcess(args, 0 if has_image or args[1] == "ls" else 1, "", "")
+
+    monkeypatch.setattr(manager, "_docker", docker)
+    assert manager.readiness()["status"] == expected
+    assert commands

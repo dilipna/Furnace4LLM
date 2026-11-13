@@ -130,14 +130,18 @@ class RuntimeService:
     def update(self, project_id: str, field: str, value: Any, message: str) -> dict[str, Any]:
         self.store.get(project_id)
         with self.manager.lock_for(project_id):
-            runtime = self.store.get(project_id).get("runtime")
+            project = self.store.get(project_id)
+            runtime = project.get("runtime")
             if isinstance(runtime, dict) and runtime.get("status") in {
                 "ready",
                 "starting",
                 "unknown",
             }:
                 raise RuntimeFault("stop_worker_before_editing")
-            return self.store.change(project_id, field, value, message, extra={"evaluation": None})
+            extra: dict[str, Any] = {"evaluation": None}
+            if field in {"contract", "plan"}:
+                extra["cases"] = [{**case, "status": "not_run"} for case in project["cases"]]
+            return self.store.change(project_id, field, value, message, extra=extra)
 
     def predict(self, project_id: str, value: str, operation: str) -> dict[str, Any]:
         self.store.get(project_id)

@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import io
 import json
+import platform
 import secrets
 import sqlite3
 import tempfile
@@ -28,6 +29,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from furnace_api.studio_runtime import RuntimeService
 
 ASSETS = Path(__file__).with_name("studio_assets")
+EXAMPLE = Path(__file__).with_name("studio_example")
 MAX_BODY = 65536
 
 
@@ -233,7 +235,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
         return FileResponse(ASSETS / "index.html")
 
     @app.get("/assets/{name}")
-    def asset(name: Literal["studio.js", "studio.css"]):
+    def asset(name: Literal["studio.js", "studio.css", "studio-state.mjs"]):
         return FileResponse(ASSETS / name)
 
     @app.get("/healthz")
@@ -243,6 +245,77 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     @app.get("/api/projects")
     def projects():
         return [runtime.status(project["id"]) for project in store.all()]
+
+    @app.get("/api/system")
+    def system():
+        return {
+            "workspace": "available",
+            "platform": platform.system(),
+            "python": platform.python_version(),
+            "runtime": runtime.manager.readiness(),
+            "model_compatibility": "not_verified",
+            "billing": "inactive",
+        }
+
+    @app.post("/api/examples/framework")
+    def example():
+        # Reopening an example preserves edits/results and never starts a worker.
+        for saved in store.all():
+            if saved.get("origin") == "guided_example":
+                return runtime.status(saved["id"])
+        path, assessment = inspect_project(str(EXAMPLE))
+        return store.create(
+            {
+                "id": uuid.uuid4().hex,
+                "name": "Infrastructure walkthrough",
+                "origin": "guided_example",
+                "path": str(path),
+                "assessment": assessment,
+                "contract": Contract(
+                    architecture="Deterministic infrastructure fixture — not a model",
+                    task="custom",
+                    revision="framework-v1",
+                    license="Repository license; no model weights",
+                    device="cpu",
+                    notes="Returns framework: followed by uppercase input. No learned parameters, user code or weights. Exercises infrastructure only.",
+                ).model_dump(),
+                "plan": {
+                    **Plan(
+                        compute="customer", memory_gb=1, timeout_seconds=2, log_retention_days=7
+                    ).model_dump(),
+                    "subscription_usd_month": 20,
+                    "billing": "inactive",
+                    "provisioning": "not_started",
+                },
+                "cases": [
+                    {
+                        **Case(
+                            name="Exact protocol output",
+                            input="hello furnace",
+                            expected_behavior="The fixture uppercases input; this is not a model-quality test.",
+                            expected_output="framework:HELLO FURNACE",
+                        ).model_dump(),
+                        "status": "not_run",
+                    },
+                    {
+                        **Case(
+                            name="An expectation needs a scoring rule",
+                            input="explain your reasoning",
+                            expected_behavior="A description alone cannot establish correctness. This case must remain unscored.",
+                        ).model_dump(),
+                        "status": "not_run",
+                    },
+                ],
+                "runtime": "not_connected",
+                "evaluation": None,
+                "events": [
+                    {
+                        "at": now(),
+                        "message": "Guided infrastructure example created; no model or worker executed",
+                    }
+                ],
+            }
+        )
 
     @app.post("/api/projects", status_code=201)
     async def add_project(request: Request):

@@ -156,6 +156,28 @@ class RuntimeManager:
                 "build", "-t", IMAGE, "-f", str(DOCKERFILE), str(DOCKERFILE.parent), timeout=900
             )
 
+    def readiness(self) -> dict[str, Any]:
+        """Read-only local prerequisite check; never pull, build or start a worker."""
+        try:
+            operating_system = self._docker(
+                "version", "--format", "{{.Server.Os}}", timeout=3
+            ).stdout.strip()
+            if operating_system != "linux":
+                return {"status": "unavailable", "code": "linux_containers_required"}
+            image = self._docker("image", "inspect", IMAGE, check=False)
+            if image.returncode:
+                listed = self._docker(
+                    "image", "ls", "--filter", f"reference={IMAGE}", "--format", "{{.ID}}"
+                )
+                if listed.stdout.strip():
+                    raise RuntimeFault("image_inspection_failed")
+            return {
+                "status": "ready" if image.returncode == 0 else "needs_preparation",
+                "code": "image_ready" if image.returncode == 0 else "image_not_prepared",
+            }
+        except RuntimeFault as exc:
+            return {"status": "unavailable", "code": exc.code}
+
     def stop(self, project_id: str) -> None:
         with self.lock_for(project_id):
             if self.inspect(project_id) is not None:

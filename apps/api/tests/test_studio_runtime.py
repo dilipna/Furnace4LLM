@@ -40,7 +40,19 @@ def start(client, pid):
     return response.json()["runtime"]
 
 
-def test_real_api_worker_requests_evaluations_edits_export_and_removal(tmp_path):
+@pytest.mark.parametrize(
+    "change_field,change_value",
+    [
+        ("contract", {"notes": "A changed loading contract"}),
+        (
+            "plan",
+            {"compute": "furnace", "memory_gb": 8, "timeout_seconds": 1, "log_retention_days": 14},
+        ),
+    ],
+)
+def test_real_api_worker_requests_evaluations_edits_export_and_removal(
+    tmp_path, change_field, change_value
+):
     app = create_app(tmp_path / "workspace", TOKEN)
     manager = app.state.runtime.manager
     manager.prepare()
@@ -110,6 +122,9 @@ def test_real_api_worker_requests_evaluations_edits_export_and_removal(tmp_path)
         )
         assert client.post(f"/api/projects/{pid}/stop").json()["runtime"]["status"] == "stopped"
         assert manager.inspect(pid) is None
+        changed = client.put(f"/api/projects/{pid}/{change_field}", json=change_value).json()
+        assert changed["evaluation"] is None
+        assert [case["status"] for case in changed["cases"]] == ["not_run"] * 3
         assert (
             client.put(f"/api/projects/{pid}/cases", json={"cases": cases[:1]}).json()["evaluation"]
             is None

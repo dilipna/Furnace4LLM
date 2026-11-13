@@ -44,6 +44,7 @@ def main() -> None:
     launcher = """from pathlib import Path
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 root = Path(__file__).resolve().parent
@@ -52,8 +53,14 @@ manifest = json.loads((root / 'manifest.json').read_text())
 for name, expected in manifest['wheel_sha256'].items():
     if Path(name).name != name or hashlib.sha256((wheels / name).read_bytes()).hexdigest() != expected:
         raise SystemExit('Wheel integrity check failed; extract a fresh bundle')
-command = ['uv', 'tool', 'run', '--python', '3.12', '--with-requirements', str(root / 'requirements.txt'), '--from', str(wheels / 'furnace_api-0.1.0-py3-none-any.whl'), '--with', str(wheels / 'furnace-0.1.0-py3-none-any.whl'), '--with', str(wheels / 'furnace_bench-0.1.0-py3-none-any.whl'), 'furnace-studio', *sys.argv[1:]]
-raise SystemExit(subprocess.call(command))
+uv = shutil.which('uv')
+if uv is None:
+    raise SystemExit('Furnace needs uv to create its isolated environment. Install uv, reopen your terminal and run python launch.py again. See README.md for prerequisites.')
+command = [uv, 'tool', 'run', '--python', '3.12', '--with-requirements', str(root / 'requirements.txt'), '--from', str(wheels / 'furnace_api-0.1.0-py3-none-any.whl'), '--with', str(wheels / 'furnace-0.1.0-py3-none-any.whl'), '--with', str(wheels / 'furnace_bench-0.1.0-py3-none-any.whl'), 'furnace-studio', *sys.argv[1:]]
+try:
+    raise SystemExit(subprocess.call(command))
+except KeyboardInterrupt:
+    raise SystemExit(130) from None
 """
     readme = """# Furnace Studio — local application preview
 
@@ -67,6 +74,14 @@ Ctrl+C stops Studio. Open the private local session link printed by the launcher
 The app binds only to 127.0.0.1. Never share its session link or expose its port.
 Default local storage: ~/.furnace/studio (project metadata, cases and preferences).
 Projects must be folders on the machine running Studio. Model source is not altered.
+
+First visit: choose Open guided example to explore without a model folder or GPU.
+It contains metadata and two prepared cases, not a trained model. Opening it starts
+nothing. Follow Your next step, check the environment, prepare the local test image,
+then select the fixture and approve execution. One case checks exact output; the
+other demonstrates why descriptive expectations remain unscored. The environment
+check is read-only: it never downloads images, starts workers or verifies a model.
+You can inspect and export the example even without Docker installed.
 
 This is a wheel-based preview requiring Python/uv, not a native one-click installer.
 Free assessment, starter-kit export and local workspace persistence are implemented.

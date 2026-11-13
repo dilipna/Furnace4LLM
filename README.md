@@ -20,6 +20,10 @@ uv run python scripts/build_studio_bundle.py
 uv run furnace starter /path/to/model-project --output /path/to/new-starter-kit
 ```
 
+Open the guided example to explore without a model folder or GPU. A read-only environment
+check distinguishes workspace availability from optional local Docker readiness; saved
+preparation and executed framework results stay separate.
+
 Studio setup, privacy boundaries and download instructions: [application guide](docs/product/studio.md).
 
 The assessment command reads bounded local metadata and file names without importing model code, loading

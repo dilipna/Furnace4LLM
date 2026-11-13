@@ -26,6 +26,36 @@ Do not expose the port, share session links or enter secrets. Tokens rotate on r
 open the newly printed link in stale tabs. This is local-session security, not hosted
 multi-tenant authentication. Local SQLite/case/kit content is not encrypted by Furnace.
 
+## First visit and guided example
+
+Choose **Open guided example** to explore without selecting a research model or entering
+a folder path. The bundled metadata-only project contains a contract, local compute
+preferences and two cases. Opening it never starts Docker or executes a model. Reopening
+preserves edits/results; it occupies one of the two project slots. Its files ship inside
+the API wheel so it also works outside a source checkout.
+
+Follow **Your next step**. Preparation progress records saved information; the final
+framework stage requires matching case execution records. Read **Environment & compatibility**
+to distinguish an available local workspace, optional Docker readiness and unverified
+model compatibility. That check only reads local engine/image state; it never pulls an
+image, builds one or starts a worker. Remote Docker and Windows-container engines are
+reported as unsupported for this local fixture. The free workspace remains useful when
+Docker is absent.
+
+The example's exact assertion can pass; its descriptive expectation remains unscored.
+Inspect actual request IDs and durations before exporting evidence. No score here is
+research-model quality. Both pricing/compute choices remain inactive service preferences.
+
+Contract, preference and case drafts stay separately in browser-tab memory across project
+switches and status refreshes. The UI labels unsaved drafts and warns before closing a
+tab with those edits. Saving persists them locally; reloading/discarding a draft does not.
+Ad-hoc request outputs also belong to their project and are not durable logs. Selecting a
+different project resets the Docker consent checkbox.
+
+Changing a contract, preferences or cases invalidates the prior evaluation. Contract and
+preference edits reset saved case states to not_run atomically. The UI also refuses to
+count legacy case labels without a matching evaluation record as execution evidence.
+
 ## User journey
 
 1. Name a project and enter its absolute local folder. Inspection reads bounded metadata
@@ -93,6 +123,22 @@ For uninstall, stop normally and remove only the extracted bundle and reviewed d
 workspace directory. Do not delete shared caches or model folders. Reopening a crashed
 workspace for cleanup must happen before discarding its metadata.
 
+## Clean installed-bundle check
+
+`scripts/verify_studio_onboarding.py` runs the package outside the checkout in a disposable
+Linux environment. It needs Python 3.12 + uv and registry access. Run with an empty cache:
+
+```sh
+UV_CACHE_DIR=/tmp/new-furnace-cache UV_TOOL_DIR=/tmp/new-furnace-tools UV_TOOL_BIN_DIR=/tmp/new-furnace-bin python scripts/verify_studio_onboarding.py dist/furnace-studio-preview.zip --expect-empty-cache
+```
+
+Use a disposable Linux container with no Docker CLI/socket for the intended missing-Docker
+case. The script checks friendly missing-uv guidance, installed module assets, the guided
+example, kit bytes, settings persistence, token rotation/rejection and removal. It never
+runs a research model. This verifies the free onboarding path; actual fixture execution
+still needs the separate Docker-backed runtime tests. Fresh Windows/macOS onboarding and
+human comprehension remain release gates.
+
 ## Reproduce targeted verification
 
 With frozen development dependencies and local Docker running:
@@ -103,7 +149,8 @@ uv run ruff check .
 uv run ruff format --check .
 uv run lint-imports
 uv run pyright
-node --check apps/api/furnace_api/studio_assets/studio.js
+node --input-type=module --check < apps/api/furnace_api/studio_assets/studio.js
+node --test apps/api/tests/studio-state.test.mjs
 ```
 
 New runtime integration tests require Docker and intentionally fail if unavailable.
@@ -127,7 +174,7 @@ browser automation is not evidence of comprehension.
 | Run an exact check, inject a failure, recover and stop | | |
 | Use keyboard, download kit and recover a saved project after restart | | |
 
-Smallest remaining clean-environment onboarding test: fresh Windows or Linux user profile
+Clean-environment onboarding procedure (Linux run recorded separately; fresh Windows/macOS still needed): fresh Windows or Linux user profile
 with Python 3.12 and uv, empty uv cache, no checkout or existing Furnace environment.
 Extract the ZIP, install pinned dependencies, create a harmless metadata-only project,
 export its kit, quit/relaunch and confirm persistence/token rotation. Then, with local
