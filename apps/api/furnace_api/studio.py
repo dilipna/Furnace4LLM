@@ -11,15 +11,20 @@ import sqlite3
 import tempfile
 import uuid
 import zipfile
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response
+from furnace.runtime.manager import RuntimeFault, RuntimeManager
 from furnace.starter import assess_model, write_starter_files
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+from furnace_api.studio_runtime import RuntimeService
 
 ASSETS = Path(__file__).with_name("studio_assets")
 MAX_BODY = 65536
@@ -54,11 +59,24 @@ class Case(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     input: str = Field(min_length=1, max_length=4000)
     expected_behavior: str = Field(min_length=1, max_length=4000)
+    expected_output: str | None = Field(default=None, max_length=8000)
 
 
 class Cases(BaseModel):
     model_config = ConfigDict(extra="forbid")
     cases: list[Case] = Field(max_length=30)
+
+
+class StartInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    adapter: Literal["framework_fixture"]
+    consent: Literal[True]
+
+
+class PredictInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    input: str = Field(min_length=1, max_length=4000)
+    operation: Literal["predict", "error", "timeout", "crash"] = "predict"
 
 
 class Store:
@@ -104,7 +122,14 @@ class Store:
             )
         return value
 
-    def change(self, project_id: str, field: str, value: Any, event: str) -> dict[str, Any]:
+    def change(
+        self,
+        project_id: str,
+        field: str,
+        value: Any,
+        event: str,
+        extra: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT data FROM projects WHERE id=?", (project_id,)).fetchone()
@@ -112,6 +137,7 @@ class Store:
                 raise HTTPException(404, "Project not found")
             project = json.loads(row[0])
             project[field] = value
+            project.update(extra or {})
             project["events"] = (project["events"] + [{"at": now(), "message": event}])[-100:]
             db.execute("UPDATE projects SET data=? WHERE id=?", (json.dumps(project), project_id))
         return project
@@ -149,7 +175,32 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     if len(token) < 32:
         raise ValueError("Studio requires a strong local session token")
     store = Store(workspace)
-    app = FastAPI(title="Furnace Studio", docs_url=None, redoc_url=None, openapi_url=None)
+    runtime = RuntimeService(store, RuntimeManager(workspace))
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        await asyncio.to_thread(runtime.recover)
+        yield
+        await asyncio.to_thread(runtime.close)
+
+    app = FastAPI(
+        title="Furnace Studio", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
+    )
+    app.state.runtime = runtime
+
+    @app.exception_handler(RuntimeFault)
+    async def runtime_error(request: Request, exc: RuntimeFault):
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=409,
+            content={
+                "detail": "Framework runtime: "
+                + exc.code.replace("_", " ")
+                + ". No model validation is implied."
+            },
+        )
+
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1"])
 
     @app.middleware("http")
@@ -187,7 +238,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
 
     @app.get("/api/projects")
     def projects():
-        return store.all()
+        return [runtime.status(project["id"]) for project in store.all()]
 
     @app.post("/api/projects", status_code=201)
     async def add_project(request: Request):
@@ -208,6 +259,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                 "plan": None,
                 "cases": [],
                 "runtime": "not_connected",
+                "evaluation": None,
                 "events": [
                     {
                         "at": now(),
@@ -219,12 +271,13 @@ def create_app(workspace: Path, token: str) -> FastAPI:
 
     @app.get("/api/projects/{project_id}")
     def project(project_id: str):
-        return store.get(project_id)
+        return runtime.status(project_id)
 
     @app.put("/api/projects/{project_id}/contract")
     async def contract(project_id: str, request: Request):
         value = await payload(request, Contract)
-        return store.change(
+        return await asyncio.to_thread(
+            runtime.update,
             project_id,
             "contract",
             value.model_dump(),
@@ -234,7 +287,8 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     @app.put("/api/projects/{project_id}/plan")
     async def plan(project_id: str, request: Request):
         value = await payload(request, Plan)
-        return store.change(
+        return await asyncio.to_thread(
+            runtime.update,
             project_id,
             "plan",
             {
@@ -249,20 +303,57 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     @app.put("/api/projects/{project_id}/cases")
     async def cases(project_id: str, request: Request):
         value = await payload(request, Cases)
-        return store.change(
+        return await asyncio.to_thread(
+            runtime.update,
             project_id,
             "cases",
             [{**case.model_dump(), "status": "not_run"} for case in value.cases],
             "Evaluation cases saved; no model evaluation has run",
         )
 
+    @app.get("/api/adapters")
+    def adapters():
+        return [
+            {
+                "id": "framework_fixture",
+                "label": "Infrastructure fixture — not a model",
+                "evidence": "framework_only",
+                "model_execution": False,
+                "requires": "Local Docker and prepared framework image",
+                "limits": "256 MiB, 1 CPU, no network; request timeout at most 5 seconds",
+            }
+        ]
+
+    @app.post("/api/runtime/prepare")
+    def prepare_runtime():
+        runtime.manager.prepare()
+        return {"status": "prepared", "model_execution": False}
+
     @app.post("/api/projects/{project_id}/start")
-    def start(project_id: str):
+    async def start(project_id: str, request: Request):
         store.get(project_id)
-        raise HTTPException(
-            409,
-            "Model runtime is not connected. A validated adapter and model acceptance test are required; no server was started",
-        )
+        if request.headers.get("content-length", "0") == "0" and not request.headers.get(
+            "transfer-encoding"
+        ):
+            raise HTTPException(
+                409,
+                "Select the infrastructure fixture explicitly and approve local Docker execution; no model adapter is connected",
+            )
+        await payload(request, StartInput)
+        return await asyncio.to_thread(runtime.start, project_id)
+
+    @app.post("/api/projects/{project_id}/stop")
+    def stop(project_id: str):
+        return runtime.stop(project_id)
+
+    @app.post("/api/projects/{project_id}/predict")
+    async def predict(project_id: str, request: Request):
+        value = await payload(request, PredictInput)
+        return await asyncio.to_thread(runtime.predict, project_id, value.input, value.operation)
+
+    @app.post("/api/projects/{project_id}/evaluate")
+    def evaluate(project_id: str):
+        return runtime.evaluate(project_id)
 
     @app.post("/api/projects/{project_id}/kit")
     def kit(project_id: str):
@@ -282,7 +373,8 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                 json.dumps(
                     {
                         "plan": project["plan"],
-                        "runtime": "not_connected",
+                        "runtime": project["runtime"],
+                        "evaluation": project.get("evaluation"),
                         "assessment_sha256": hashlib.sha256(
                             json.dumps(project["assessment"], sort_keys=True).encode()
                         ).hexdigest(),
@@ -303,7 +395,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
 
     @app.delete("/api/projects/{project_id}", status_code=204)
     def remove(project_id: str):
-        store.delete(project_id)
+        runtime.remove(project_id)
         return Response(status_code=204)
 
     return app
@@ -322,7 +414,7 @@ def launch(workspace: Path, port: int, open_browser: bool = True) -> None:
     url = f"http://127.0.0.1:{port}/#session={token}"
     print(f"Furnace Studio local session: {url}", flush=True)
     print(
-        "Demo mode: $20/month offer; no billing, provisioning or model execution enabled.",
+        "Demo mode: $20/month offer; no billing or cloud provisioning. Docker infrastructure fixture is optional; no model adapter is validated.",
         flush=True,
     )
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, access_log=False))

@@ -71,12 +71,20 @@ Projects must be folders on the machine running Studio. Model source is not alte
 This is a wheel-based preview requiring Python/uv, not a native one-click installer.
 Free assessment, starter-kit export and local workspace persistence are implemented.
 The $20/month managed-service offer supports both compute ownership choices in
-configuration. Billing and cloud provisioning are inactive. No model adapter is
-connected yet; evaluations stay Not run and runtime start is refused with a reason.
+configuration. Billing and cloud provisioning are inactive. No research-model adapter
+is validated. Optional local Docker execution runs ONLY a deterministic infrastructure
+fixture, not a learned model. Prepare the local test environment, save preferences,
+select the fixture and approve its execution. It uses 256 MiB, one CPU, no network,
+no ports, a read-only root and no model-folder or credential mounts. Preparation may
+download public image/dependency packages. Remote Docker contexts are refused.
+Exact-output evaluations execute against this fixture; descriptive cases are unscored.
+Failures/timeouts stop the worker; restart explicitly. Stop Studio normally for cleanup;
+after a crash reopen the same workspace to reconcile its owned worker. One Studio
+process may own a workspace. No real model inference or quality evidence is included.
 
 Do not enter secrets or production input data. Project configuration and evaluation
 examples are saved locally and included in starter-kit exports. Workspace activity
-records configuration events, not model logs. Source file detection is not security,
+records configuration and framework request metadata, not raw request/output logs. Source file detection is not security,
 quality or architecture verification. Test with real models after application review.
 
 Remove a project through Activity to delete only its workspace record. Uninstall:

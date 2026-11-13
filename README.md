@@ -6,7 +6,8 @@ Furnace is being developed for model researchers who need the operational infras
 around their models, including new architectures. The owner-defined product is a free
 starter kit followed by a $20/month managed-infrastructure subscription, supporting
 both Furnace-provided and customer-provided compute. Application development precedes model selection/testing. This branch
-implements local assessment plus the Studio application. A wheel-based downloadable
+implements local assessment, the Studio application and an isolated Docker framework runtime.
+The runnable fixture verifies infrastructure only; it is not a model and supports no model-quality claims. A wheel-based downloadable
 preview requires Python/uv; a native installer, paid checkout and provisioned model service
 are not yet available.
 

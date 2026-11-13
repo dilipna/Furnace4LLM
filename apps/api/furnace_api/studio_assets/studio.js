@@ -1,8 +1,13 @@
 "use strict";
 const $ = (s) => document.querySelector(s);
 let token = new URLSearchParams(location.hash.slice(1)).get("session") || sessionStorage.getItem("furnace-session");
+window.addEventListener("hashchange",()=>{if(new URLSearchParams(location.hash.slice(1)).has("session"))location.reload();});
 if (token) { sessionStorage.setItem("furnace-session", token); history.replaceState(null, "", location.pathname); }
-let projects = [], current = null, view = "overview";
+let projects = [], current = null, view = "overview", polling = false;
+const activeStates = ["ready", "starting", "unknown"];
+function casePayload(c) { return {name:c.name,input:c.input,expected_behavior:c.expected_behavior,expected_output:c.expected_output ?? null}; }
+function selectProject(p) { current=p; projects=projects.map(item=>item.id===p.id?p:item); render(); }
+async function refreshProject() { if(!current)return; const id=current.id; const p=await api("projects/"+id); if(current?.id===id)selectProject(p); }
 function notice(text) { $("#notice").textContent = text; }
 async function api(path, method="GET", data) {
   const response = await fetch("/api/"+path, {method, headers:{"X-Furnace-Session":token || "", ...(data ? {"Content-Type":"application/json"} : {})}, body:data ? JSON.stringify(data) : undefined});
@@ -10,10 +15,17 @@ async function api(path, method="GET", data) {
   return response.status === 204 ? null : response.headers.get("content-type")?.includes("application/zip") ? response.blob() : response.json();
 }
 function text(tag, content, className) { const e=document.createElement(tag); e.textContent=content; if(className)e.className=className; return e; }
-async function action(button, fn) { button.disabled=true; notice(""); try { await fn(); } catch(e) { notice(e.message); } finally { button.disabled=false; } }
+async function action(button, fn) { button.disabled=true; notice(""); try { await fn(); } catch(e) { notice(e.message); } finally { button.disabled=false; syncRuntimeActions(); } }
+function syncRuntimeActions() {
+  if(!current)return;
+  const status=current.runtime?.status || "not_connected";
+  $("#evaluate").disabled=status!=="ready" || !current.cases.length;
+  $("#predict-form button").disabled=status!=="ready";
+  $("#stop-runtime").disabled=["not_connected","stopped","interrupted"].includes(status);
+}
 function navigation() {
   $("#count").textContent=projects.length+" / 2";
-  $("#projects").replaceChildren(...projects.map(p=> { const b=text("button",p.name,"project-button"); b.append(text("small","Model not connected")); if(current?.id===p.id)b.setAttribute("aria-current","true"); b.onclick=()=>{current=p;view="overview";render();}; return b; }));
+  $("#projects").replaceChildren(...projects.map(p=> { const b=text("button",p.name,"project-button"); b.append(text("small",typeof p.runtime === "object" ? "Fixture · "+p.runtime.status : "Model not connected")); if(current?.id===p.id)b.setAttribute("aria-current","true"); b.onclick=()=>{current=p;view="overview";render();}; return b; }));
 }
 function changeView(next) { view=next; renderPanels(); }
 function renderPanels() {
@@ -31,9 +43,18 @@ function render() {
   $("#warnings").hidden=!current.assessment.warnings.length; $("#warnings").textContent=current.assessment.warnings.join(" · ");
   for(const [key,value] of Object.entries(current.contract))$("#contract-form").elements.namedItem(key).value=value;
   $("#plan-form").reset(); if(current.plan)for(const key of ["compute","memory_gb","timeout_seconds","log_retention_days"])$("#plan-form").elements.namedItem(key).value=current.plan[key];
-  $("#runtime-message").textContent="Awaiting a validated model adapter. No model server is running.";
-  $("#cases").replaceChildren(...current.cases.map((c,i)=>{const card=text("article","","case");card.append(text("span","NOT RUN","state"),text("h3",c.name),text("p","Input: "+c.input),text("p","Expected: "+c.expected_behavior)); const remove=text("button","Remove case","secondary");remove.onclick=()=>action(remove,async()=>{await update("cases",{cases:current.cases.filter((_,j)=>i!==j).map(({name,input,expected_behavior})=>({name,input,expected_behavior}))});});card.append(remove);return card;}));
-  if(!current.cases.length)$("#cases").append(text("p","No evaluation cases yet. Add one above; it will stay Not run until real model execution is connected."));
+  const state=typeof current.runtime === "object" ? current.runtime : {status:"not_connected",reason:"No model adapter is connected."};
+  const active=activeStates.includes(state.status);
+  $("#project-state").textContent=state.status === "not_connected" ? "MODEL NOT CONNECTED" : "FRAMEWORK FIXTURE · "+state.status.toUpperCase();
+  $("#runtime-message").textContent=state.reason || state.status;
+  $("#runtime-detail").textContent="Last checked "+new Date().toLocaleTimeString()+" · Model execution: no · "+(state.container_id ? "Worker "+state.container_id.slice(0,12) : "No confirmed running worker");
+  for(const selector of ["#contract-form", "#plan-form", "#case-form"])document.querySelectorAll(selector+" input,"+selector+" select,"+selector+" textarea,"+selector+" button").forEach(e=>e.disabled=active);
+  syncRuntimeActions();
+  if(state.adapter)$("#adapter").value=state.adapter;
+  const evaluation=current.evaluation;
+  $("#evaluation-summary").textContent=evaluation ? "Infrastructure fixture evaluation "+evaluation.status+" · "+evaluation.results.filter(r=>r.status==="framework_pass").length+" exact checks passed · "+evaluation.results.filter(r=>r.status==="framework_fail").length+" failed · "+evaluation.results.filter(r=>r.status==="unscored").length+" unscored. No model-quality claim. Configuration "+evaluation.configuration_sha256.slice(0,12) : "No evaluation run. Descriptive expectations alone are not automatically scored.";
+  $("#cases").replaceChildren(...current.cases.map((c,i)=>{const card=text("article","","case");card.append(text("span",(c.status||"not_run").replaceAll("_"," ").toUpperCase(),"state"),text("h3",c.name),text("p","Input: "+c.input),text("p","Expected behavior: "+c.expected_behavior),text("p",c.expected_output == null ? "Exact assertion: none (unscored)" : "Exact output: "+c.expected_output)); const remove=text("button","Remove case","secondary");remove.disabled=active;remove.onclick=()=>action(remove,async()=>{await update("cases",{cases:current.cases.filter((_,j)=>i!==j).map(casePayload)});});card.append(remove);return card;}));
+  if(!current.cases.length)$("#cases").append(text("p","No evaluation cases yet. Add one above, start the infrastructure fixture, then run its framework checks."));
   $("#events").replaceChildren(...[...current.events].reverse().map(e=>{const li=text("li",e.message);const time=text("time",new Date(e.at).toLocaleString());time.dateTime=e.at;li.prepend(time);return li;}));
   $("#remove-confirm").hidden=true;renderPanels();
 }
@@ -43,9 +64,15 @@ $("#sections").onclick=e=>{const b=e.target.closest("[data-view]");if(b)changeVi
 $("#add-form").onsubmit=e=>{e.preventDefault();const form=e.currentTarget;action(form.querySelector("button"),async()=>{current=await api("projects","POST",Object.fromEntries(new FormData(form)));projects=await api("projects");view="overview";form.reset();render();$("#project-title").tabIndex=-1;$("#project-title").focus();});};
 $("#contract-form").onsubmit=e=>{e.preventDefault();const f=e.currentTarget;action(f.querySelector("button"),()=>update("contract",Object.fromEntries(new FormData(f))));};
 $("#plan-form").onsubmit=e=>{e.preventDefault();const f=e.currentTarget;const data=Object.fromEntries(new FormData(f));for(const k of ["memory_gb","timeout_seconds","log_retention_days"])data[k]=Number(data[k]);action(f.querySelector("button"),()=>update("plan",data));};
-$("#case-form").onsubmit=e=>{e.preventDefault();const f=e.currentTarget;action(f.querySelector("button"),async()=>{const cases=current.cases.map(({name,input,expected_behavior})=>({name,input,expected_behavior}));cases.push(Object.fromEntries(new FormData(f)));await update("cases",{cases});f.reset();});};
+$("#case-form").onsubmit=e=>{e.preventDefault();const f=e.currentTarget;action(f.querySelector("button"),async()=>{const cases=current.cases.map(casePayload);const data=Object.fromEntries(new FormData(f));data.expected_output=data.expect_exact ? data.expected_output : null;delete data.expect_exact;cases.push(data);await update("cases",{cases});f.reset();});};
 $("#download").onclick=e=>action(e.currentTarget,async()=>{const blob=await api("projects/"+current.id+"/kit","POST");const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="furnace-starter-kit.zip";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notice("Starter kit downloaded. It includes your saved assessment and configuration; no infrastructure has been provisioned.");});
-$("#start").onclick=e=>action(e.currentTarget,()=>api("projects/"+current.id+"/start","POST"));
+$("#prepare-runtime").onclick=e=>action(e.currentTarget,async()=>{await api("runtime/prepare","POST");notice("Local framework environment prepared. No model was downloaded or run.");});
+$("#start").onclick=e=>action(e.currentTarget,async()=>{if(!$("#adapter").value || !$("#runtime-consent").checked)throw new Error("Select the infrastructure fixture and approve local Docker execution first.");try{current.runtime={status:"starting",reason:"Starting the local infrastructure fixture…",model_execution:false};render();selectProject(await api("projects/"+current.id+"/start","POST",{adapter:$("#adapter").value,consent:true}));}finally{await refreshProject();}});
+$("#stop-runtime").onclick=e=>action(e.currentTarget,async()=>{try{selectProject(await api("projects/"+current.id+"/stop","POST"));}finally{await refreshProject();}});
+$("#refresh-runtime").onclick=e=>action(e.currentTarget,refreshProject);
+$("#predict-form").onsubmit=e=>{e.preventDefault();const f=e.currentTarget;action(f.querySelector("button"),async()=>{$("#prediction-output").textContent="Framework request running…";try{const result=await api("projects/"+current.id+"/predict","POST",Object.fromEntries(new FormData(f)));$("#prediction-output").textContent="Infrastructure fixture output (not a model):\n"+result.output+"\nRequest "+result.request_id+" · "+result.duration_ms+" ms";}catch(e){$("#prediction-output").textContent="Framework request failed; no output was produced for this attempt.";throw e;}finally{await refreshProject();}});};
+$("#evaluate").onclick=e=>action(e.currentTarget,async()=>{try{selectProject(await api("projects/"+current.id+"/evaluate","POST"));}finally{await refreshProject();}});
+setInterval(async()=>{if(polling||!current||view!=="infrastructure"||!activeStates.includes(current.runtime?.status))return;polling=true;try{const id=current.id;const old=current.runtime.status;const p=await api("projects/"+id);if(current?.id===id && p.runtime.status!==old)selectProject(p);}catch(e){notice("Worker status could not be refreshed: "+e.message);}finally{polling=false;}},5000);
 $("#remove").onclick=()=>{$("#remove-confirm").hidden=false;$("#remove-yes").focus();};
 $("#remove-no").onclick=()=>{$("#remove-confirm").hidden=true;$("#remove").focus();};
 $("#remove-yes").onclick=e=>action(e.currentTarget,async()=>{await api("projects/"+current.id,"DELETE");projects=await api("projects");current=projects[0]||null;view="overview";render();notice("Workspace record removed. Model files and exports were not changed.");});

@@ -33,8 +33,10 @@ start, readiness, inference, authenticated access, logs, evaluations, restart an
 
 1. Free local inspection and kit export (implemented).
 2. Local application: model projects, assessment, kit download, model contract,
-   infrastructure preferences, evaluation cases, activity and removal (current work).
-3. Package a downloadable local preview and verify installation/startup without models.
+   infrastructure preferences, evaluation cases, activity and removal (implemented locally).
+3. Package a downloadable local preview (implemented). Exercise isolated execution,
+   lifecycle, failures, evaluation evidence and recovery with a clearly labeled framework
+   fixture before connecting a real model (current local milestone).
 4. Select one model from the researched support paths; implement its isolated adapter
    and validate the complete lifecycle. Add the second model after that path works.
 5. Review public website download, native installation and managed-service release.

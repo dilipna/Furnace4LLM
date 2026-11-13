@@ -551,3 +551,6 @@ h1 {
 }
 
 }
+
+.runtime-actions { display:flex; flex-wrap:wrap; gap:10px; margin:22px 0; }
+#prediction-output { white-space:pre-wrap; overflow-wrap:anywhere; color:#d4dfb4; }
