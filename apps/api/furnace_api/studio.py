@@ -26,6 +26,7 @@ from furnace.starter import assess_model, write_starter_files
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from furnace_api.studio_evidence import project_view, provenance
 from furnace_api.studio_runtime import RuntimeService
 
 ASSETS = Path(__file__).with_name("studio_assets")
@@ -98,7 +99,8 @@ class Store:
     def all(self) -> list[dict[str, Any]]:
         with self.connect() as db:
             return [
-                json.loads(row[0]) for row in db.execute("SELECT data FROM projects ORDER BY rowid")
+                project_view(json.loads(row[0]))
+                for row in db.execute("SELECT data FROM projects ORDER BY rowid")
             ]
 
     def get(self, project_id: str) -> dict[str, Any]:
@@ -106,14 +108,14 @@ class Store:
             row = db.execute("SELECT data FROM projects WHERE id=?", (project_id,)).fetchone()
         if row is None:
             raise HTTPException(404, "Project not found")
-        return json.loads(row[0])
+        return project_view(json.loads(row[0]))
 
     def create(self, value: dict[str, Any]) -> dict[str, Any]:
         with self.connect() as db:
             db.execute("BEGIN IMMEDIATE")
             old = db.execute("SELECT data FROM projects WHERE path=?", (value["path"],)).fetchone()
             if old:
-                return json.loads(old[0])
+                return project_view(json.loads(old[0]))
             if db.execute("SELECT COUNT(*) FROM projects").fetchone()[0] >= 2:
                 raise HTTPException(
                     409,
@@ -123,7 +125,7 @@ class Store:
                 "INSERT INTO projects VALUES (?,?,?)",
                 (value["id"], value["path"], json.dumps(value)),
             )
-        return value
+        return project_view(value)
 
     def change(
         self,
@@ -141,9 +143,10 @@ class Store:
             project = json.loads(row[0])
             project[field] = value
             project.update(extra or {})
+            project["revision"] = project.get("revision", 0) + 1
             project["events"] = (project["events"] + [{"at": now(), "message": event}])[-100:]
             db.execute("UPDATE projects SET data=? WHERE id=?", (json.dumps(project), project_id))
-        return project
+        return project_view(project)
 
     def delete(self, project_id: str) -> None:
         with self.connect() as db:
@@ -233,6 +236,10 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     @app.get("/")
     def index():
         return FileResponse(ASSETS / "index.html")
+
+    @app.get("/guide")
+    def real_evaluation_guide():
+        return FileResponse(ASSETS / "real-evaluation.html")
 
     @app.get("/assets/{name}")
     def asset(name: Literal["studio.js", "studio.css", "studio-state.mjs"]):
@@ -452,6 +459,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                         "plan": project["plan"],
                         "runtime": project["runtime"],
                         "evaluation": project.get("evaluation"),
+                        "provenance": provenance(project),
                         "assessment_sha256": hashlib.sha256(
                             json.dumps(project["assessment"], sort_keys=True).encode()
                         ).hexdigest(),
@@ -460,6 +468,10 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                 ),
                 encoding="utf-8",
             )
+            with (folder / "README.md").open("a", encoding="utf-8") as readme:
+                readme.write(
+                    "\n## Studio evidence\n\nSee workspace-plan.json provenance for the project, configuration and verification status.\nFixture execution checks deterministic output against a saved expected string. There is no measured model baseline or base/head comparison.\nRound-trip timings include Docker control and are not model latency. No model inference, GPU result or model-quality verification is supplied.\nLegacy/unbound records are retained but do not verify the current configuration.\nFor a real-model validation procedure, open /guide in Studio.\n"
+                )
             data = io.BytesIO()
             with zipfile.ZipFile(data, "w", zipfile.ZIP_DEFLATED) as archive:
                 for file in sorted(folder.iterdir()):

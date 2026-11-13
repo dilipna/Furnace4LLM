@@ -1,4 +1,4 @@
-import {activeStates, caseStatus, countsFor, journeyFor, runtimeState, toneFor} from "./studio-state.mjs";
+import {activeStates, caseStatus, countsFor, mergeProjectRecord, updateKnownProject, requestOutputFor, journeyFor, runtimeState, toneFor} from "./studio-state.mjs";
 
 const $ = selector => document.querySelector(selector);
 const token = new URLSearchParams(location.hash.slice(1)).get("session") || sessionStorage.getItem("furnace-session");
@@ -10,12 +10,11 @@ window.addEventListener("hashchange", () => {
   if (new URLSearchParams(location.hash.slice(1)).has("session")) location.reload();
 });
 
-let projects = [], current = null, view = "overview", polling = false, renderedProjectId = null;
+let projects = [], current = null, view = "overview", polling = false, renderedProjectId = null, evidenceFresh = true;
 const pending = new Set(), drafts = new Map(), baselines = new Map(), outputs = new Map(), checked = new Map();
 const formNames = {"contract-form": "contract", "plan-form": "plan", "case-form": "case", "predict-form": "predict"};
 const formKey = (id, name) => `${id}:${name}`;
 const isPending = (kind, id = current?.id) => pending.has(formKey(id, kind));
-const defaultOutput = "No request yet. Start a worker, then send a sanitized input.";
 const casePayload = c => ({name: c.name, input: c.input, expected_behavior: c.expected_behavior, expected_output: c.expected_output ?? null});
 
 function text(tag, content, className) {
@@ -68,8 +67,9 @@ async function action(button, kind, fn, id = current?.id) {
   }
 }
 function acceptProject(project) {
-  if (projects.some(item => item.id === project.id)) projects = projects.map(item => item.id === project.id ? project : item);
-  else projects.push(project);
+  const updated = updateKnownProject(projects, project);
+  if (updated === projects) return;
+  projects = updated;
   if (current?.id === project.id) { current = project; render(); }
   else navigation();
 }
@@ -77,6 +77,7 @@ async function refreshProject(id = current?.id) {
   if (!id) return;
   const project = await api("projects/" + id);
   checked.set(id, new Date());
+  evidenceFresh = true;
   acceptProject(project);
 }
 function openProject(project) {
@@ -165,6 +166,12 @@ function syncControls() {
   syncEntryControls();
   if (!current) return;
   const state = runtimeState(current), active = activeStates.includes(state.status);
+  if (!evidenceFresh) {
+    document.querySelectorAll("#workspace button,#workspace input,#workspace textarea,#workspace select").forEach(control => control.disabled = true);
+    document.querySelectorAll("#sections button,#refresh-runtime").forEach(control => control.disabled = false);
+    return;
+  }
+  document.querySelectorAll("#workspace button").forEach(button => button.disabled = false);
   for (const [formId, name] of Object.entries(formNames)) {
     const form = $("#" + formId);
     const disabled = name === "predict" ? state.status !== "ready" || isPending("predict") : active || isPending("save-" + name);
@@ -179,9 +186,10 @@ function syncControls() {
   $("#adapter").disabled = active;
   $("#runtime-consent").disabled = active;
   document.querySelectorAll("[data-remove-case]").forEach(button => button.disabled = active || isPending("save-case"));
+  document.querySelectorAll('#workspace button[aria-busy="true"]').forEach(button => button.disabled = true);
 }
 function renderJourney() {
-  const journey = journeyFor(current);
+  const journey = journeyFor(evidenceFresh ? current : {...current, evaluation: null, evaluation_verification: "unconfirmed"});
   $("#next-title").textContent = journey.next.title;
   $("#next-description").textContent = journey.next.description;
   $("#next-action").textContent = journey.next.action;
@@ -200,8 +208,10 @@ function renderJourney() {
 }
 function renderEvaluation() {
   const evaluation = current.evaluation, counts = countsFor(current);
-  $("#evaluation-summary").textContent = evaluation
-    ? `Attempt ${evaluation.status}. Configuration ${evaluation.configuration_sha256?.slice(0,12) || "unavailable"}. Fixture evidence only; no model-quality claim.`
+  $("#cases").hidden = !evidenceFresh;
+  $("#evaluation-results").hidden = !evidenceFresh;
+  $("#evaluation-summary").textContent = !evidenceFresh ? "Results are unconfirmed while Studio reconnects. Refresh status before trusting saved labels." : evaluation && current.evaluation_verification !== "current_framework_evidence" ? "An older/unbound run is retained but does not verify this project/configuration. Execute again." : evaluation
+    ? `Saved fixture attempt ${evaluation.status} · ${evaluation.at ? new Date(evaluation.at).toLocaleString() : "time unavailable"}. Configuration ${evaluation.configuration_sha256?.slice(0,12) || "unavailable"}. Opening this page does not rerun it. No model-quality claim.`
     : "No run yet. Start the local fixture, then execute your cases. Descriptive expectations alone are not scored.";
   const labels = {framework_pass: "Exact checks passed", framework_fail: "Exact checks failed", unscored: "Unscored", error: "Execution errors", not_run: "Not run"};
   $("#evaluation-results").replaceChildren(...Object.entries(labels).map(([status, label]) => {
@@ -213,7 +223,7 @@ function renderEvaluation() {
     card.append(badge, text("h3", item.name), text("p", "Input: " + item.input), text("p", "Expected behavior: " + item.expected_behavior), text("p", item.expected_output == null ? "Scoring: no exact assertion — an executed case remains unscored." : "Exact output: " + item.expected_output));
     const evidence = evaluation?.results?.find(result => result.case_index === index);
     const footer = text("div", "", "case-footer");
-    footer.append(text("span", evidence?.request_id ? `Request ${evidence.request_id} · ${evidence.duration_ms} ms` : evidence?.reason ? `Execution note: ${evidence.reason.replaceAll("_", " ")}` : "No execution evidence for this case."));
+    footer.append(text("span", evidence?.request_id ? `Request ${evidence.request_id} · worker round trip ${evidence.duration_ms} ms (not model latency)` : evidence?.reason ? `Execution note: ${evidence.reason.replaceAll("_", " ")}` : "No execution evidence for this case."));
     const remove = text("button", "Remove case", "text-button"); remove.dataset.removeCase = index;
     const id = current.id, cases = current.cases.map(casePayload);
     remove.onclick = () => action(remove, "save-case", async () => acceptProject(await api(`projects/${id}/cases`, "PUT", {cases: cases.filter((_, i) => i !== index)})), id);
@@ -242,13 +252,13 @@ function render() {
   renderForm("contract", current.contract); renderForm("plan", current.plan || {}); renderForm("case", {}); renderForm("predict", {});
   draftLabels(); $("#exact-output-label").hidden = !$("#case-form").elements.namedItem("expect_exact").checked;
   const state = runtimeState(current);
-  $("#project-state").textContent = state.status === "not_connected" ? "MODEL NOT CONNECTED" : "FIXTURE · " + state.status.replaceAll("_", " ").toUpperCase();
+  $("#project-state").textContent = !evidenceFresh ? "SAVED STATE UNCONFIRMED" : state.status === "not_connected" ? "MODEL NOT CONNECTED" : "FIXTURE · " + state.status.replaceAll("_", " ").toUpperCase();
   $("#project-state").dataset.tone = toneFor(state.status);
   $("#runtime-message").textContent = state.reason || state.status;
   $("#runtime-detail").textContent = (checked.has(current.id) ? "Checked " + checked.get(current.id).toLocaleTimeString() + " · " : "") + "Model execution: no · " + (state.container_id ? "Worker " + state.container_id.slice(0,12) : "No confirmed running worker");
   if (state.adapter) $("#adapter").value = state.adapter;
   else $("#adapter").value = "";
-  $("#prediction-output").textContent = outputs.get(current.id) || defaultOutput;
+  $("#prediction-output").textContent = evidenceFresh ? requestOutputFor(current, outputs.get(current.id)) : "Reconnect to confirm the current project configuration.";
   renderJourney(); renderEvaluation();
   $("#events").replaceChildren(...[...current.events].reverse().map(event => { const li = text("li", event.message), time = text("time", new Date(event.at).toLocaleString()); time.dateTime = event.at; li.prepend(time); return li; }));
   $("#remove-confirm").hidden = true; renderPanels(); syncControls();
@@ -319,9 +329,11 @@ $("#refresh-runtime").onclick = event => action(event.currentTarget, "refresh", 
 $("#predict-form").onsubmit = event => {
   event.preventDefault(); const form = event.currentTarget, data = readForm(form), id = current.id;
   action(form.querySelector("button"), "predict", async () => {
-    outputs.set(id, "Framework request running…"); if (current?.id === id) $("#prediction-output").textContent = outputs.get(id);
-    try { const result = await api(`projects/${id}/predict`, "POST", data); outputs.set(id, `Infrastructure fixture output (not a model):\n${result.output}\nRequest ${result.request_id} · ${result.duration_ms} ms`); }
-    catch (error) { outputs.set(id, "Framework request failed; no output was produced for this attempt."); throw error; }
+    const identity = projects.find(project => project.id === id).configuration_sha256;
+    const record = text => ({project_id: id, configuration_sha256: identity, text});
+    outputs.set(id, record("Framework request running…")); if (current?.id === id) $("#prediction-output").textContent = requestOutputFor(current, outputs.get(id));
+    try { const result = await api(`projects/${id}/predict`, "POST", data); outputs.set(id, {...result, text: `Deterministic fixture output (no model inference):\n${result.output}\nRequest ${result.request_id} · worker round trip ${result.duration_ms} ms, including Docker control; not model latency.`}); }
+    catch (error) { outputs.set(id, record("Framework request failed; no output was produced for this attempt.")); throw error; }
     finally { await refreshProject(id); }
   }, id);
 };
@@ -377,3 +389,17 @@ $("#check-environment").onclick = event => action(event.currentTarget, "environm
     render(); if (!token) notice("Open Studio through the private session link printed by furnace studio.");
   } catch (error) { notice(error.message); }
 })();
+
+// Back/forward cache can restore an old DOM while another session changed the project.
+window.addEventListener("pageshow", async event => {
+  if (!event.persisted) return;
+  evidenceFresh = false;
+  render();
+  try {
+    const saved = await api("projects");
+    projects = saved.map(project => mergeProjectRecord(projects.find(p => p.id === project.id), project));
+    current = projects.find(project => project.id === current?.id) || projects[0] || null;
+    evidenceFresh = true;
+    render();
+  } catch (error) { notice("Saved state could not be confirmed: " + error.message); }
+});

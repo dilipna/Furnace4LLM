@@ -250,3 +250,7 @@ footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12
   .card-heading { gap: 10px; }.runtime-actions { gap: 8px; }.result-stats { grid-template-columns: repeat(3,minmax(0,1fr)); }
 }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+.guide-code { white-space: pre-wrap; overflow-wrap: anywhere; padding: 18px; border: 1px solid var(--line); background: var(--bg); font: 12px/1.9 ui-monospace,Consolas,monospace; }
+
+.guide-page main { max-width: 1080px; }

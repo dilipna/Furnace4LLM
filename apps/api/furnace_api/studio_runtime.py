@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import contextlib
 import hashlib
-import json
 import threading
 import time
 import uuid
@@ -12,6 +11,8 @@ from datetime import UTC, datetime
 from typing import Any, Protocol
 
 from furnace.runtime.manager import RuntimeFault, RuntimeManager
+
+from furnace_api.studio_evidence import PROTOCOL, case_input, configuration_identity
 
 ACTIVE = {"starting", "ready", "unknown", "failed"}
 
@@ -140,7 +141,9 @@ class RuntimeService:
                 raise RuntimeFault("stop_worker_before_editing")
             extra: dict[str, Any] = {"evaluation": None}
             if field in {"contract", "plan"}:
-                extra["cases"] = [{**case, "status": "not_run"} for case in project["cases"]]
+                extra["cases"] = [
+                    {**case_input(case), "status": "not_run"} for case in project["cases"]
+                ]
             return self.store.change(project_id, field, value, message, extra=extra)
 
     def predict(self, project_id: str, value: str, operation: str) -> dict[str, Any]:
@@ -160,13 +163,18 @@ class RuntimeService:
             except RuntimeFault as exc:
                 self._fail(project_id, exc.code)
                 raise
-            self.store.change(
+            saved = self.store.change(
                 project_id,
                 "runtime",
                 runtime,
                 f"Framework request {result['request_id']} completed in {result['duration_ms']} ms; input/output not logged",
             )
-            return result
+            return {
+                **result,
+                "project_id": project_id,
+                "project_revision": saved["revision"],
+                "configuration_sha256": configuration_identity(project),
+            }
 
     def evaluate(self, project_id: str) -> dict[str, Any]:
         self.store.get(project_id)
@@ -177,23 +185,15 @@ class RuntimeService:
                 raise RuntimeFault("worker_not_ready")
             if not project["cases"]:
                 raise RuntimeFault("add_evaluation_cases_first")
-            source = [{k: v for k, v in case.items() if k != "status"} for case in project["cases"]]
-            identity = hashlib.sha256(
-                json.dumps(
-                    {
-                        "cases": source,
-                        "contract": project["contract"],
-                        "plan": project["plan"],
-                        "protocol": "framework-v1",
-                    },
-                    sort_keys=True,
-                ).encode()
-            ).hexdigest()
+            source = [case_input(case) for case in project["cases"]]
+            identity = configuration_identity(project)
             cases = [{**case, "status": "not_run"} for case in source]
             evaluation = {
                 "status": "running",
                 "evidence": "framework_fixture",
                 "model_execution": False,
+                "project_id": project_id,
+                "protocol": PROTOCOL,
                 "configuration_sha256": identity,
                 "container_id": runtime.get("container_id"),
                 "run_id": uuid.uuid4().hex,

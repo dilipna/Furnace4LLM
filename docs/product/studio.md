@@ -56,6 +56,33 @@ Changing a contract, preferences or cases invalidates the prior evaluation. Cont
 preference edits reset saved case states to not_run atomically. The UI also refuses to
 count legacy case labels without a matching evaluation record as execution evidence.
 
+## Evidence identity and real-model handoff
+
+Framework protocol `framework-v2` binds a run to its project ID, contract, compute
+preferences and case inputs/expectations. A monotonic stored project revision fences
+late responses; that revision is an application-state counter, not a model revision.
+Configuration edits invalidate results. Legacy/unbound records are retained with their
+recorded labels but are not presented as current evidence. Re-run the fixture to obtain
+new identity-bound evidence. Bump the protocol when evaluator/fixture semantics change.
+
+The example compares actual deterministic output with a saved exact string. No base/head
+model change is compared; the expected string is not a measured performance baseline.
+Worker round-trip durations include Docker control and do not measure model latency.
+Saved runs show their time; reopening does not execute another run. Export provenance
+in workspace-plan.json states project, configuration, verification status and limitations.
+
+Browser Back restoration reconfirms saved state before presenting verdicts. Drafts remain
+in tab memory during SPA project switches; they are not durable across reload/closure.
+If a back-cache restoration cannot reconnect, results stay unconfirmed and navigation/
+Refresh status remain available. Automated Back navigation does not by itself establish
+that a particular browser actually used its back/forward cache.
+
+Choose **Evaluate your own model** in the app header (or open `/guide`). It separates
+validated fixture infrastructure, implemented CLI endpoint adapters and planned Studio
+research-model adapters. The exact bounded real-endpoint CLI procedure requires an
+identified authorized live model server and author-reference output. Neither is supplied
+by opening the guided example. No mock is substituted for a requested real-model run.
+
 ## User journey
 
 1. Name a project and enter its absolute local folder. Inspection reads bounded metadata

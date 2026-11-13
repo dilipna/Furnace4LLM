@@ -4,7 +4,26 @@ export function runtimeState(project) {
   return typeof project.runtime === "object" && project.runtime !== null
     ? project.runtime : {status: "not_connected", reason: "No model adapter is connected."};
 }
+export function mergeProjectRecord(existing, incoming) {
+  if (existing && existing.id !== incoming.id) throw new Error("Project identity mismatch");
+  return existing && (existing.revision || 0) > (incoming.revision || 0) ? existing : incoming;
+}
+export function updateKnownProject(projects, incoming) {
+  const known = projects.find(project => project.id === incoming.id);
+  if (!known) return projects; // A deleted project cannot be recreated by a late response.
+  const accepted = mergeProjectRecord(known, incoming);
+  return accepted === known ? projects : projects.map(project => project.id === incoming.id ? accepted : project);
+}
+export function requestOutputFor(project, record) {
+  if (!record) return "No request yet. Start a worker, then send a sanitized input.";
+  if (record.project_id !== project.id || record.configuration_sha256 !== project.configuration_sha256)
+    return "Previous output is not for this project/configuration. Send a new request.";
+  return record.text;
+}
 export function caseStatus(project, index) {
+  if (project.evaluation_verification !== "current_framework_evidence"
+      || project.evaluation?.project_id !== project.id
+      || project.evaluation?.configuration_sha256 !== project.configuration_sha256) return "not_run";
   const status = project.cases[index]?.status;
   if (!["framework_pass", "framework_fail", "unscored", "error", "not_run"].includes(status)) return "not_run";
   const evidence = project.evaluation?.results?.find(result => result.case_index === index && result.status === status);

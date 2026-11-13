@@ -76,13 +76,13 @@ exports free kits, captures model contracts and both compute ownership choices, 
 evaluation cases and records actual workspace events. It has session-token authentication,
 origin/host restrictions and bounded forms. It makes no model-serving or billing calls.
 
-The control application does not execute model code. Next, the model worker must be a
+The control application does not execute model code. The deterministic fixture already uses a separate worker. A future research-model worker must be a
 separate isolated process/container with no control-plane secrets or Docker socket,
 read-only model input where feasible, explicit network and resource policies, a timeout,
 structured results and lifecycle control. Dependency installation is a separate trust
 boundary. Do not run unknown author loading code in the Studio web process.
 
-For the demo, a native Python/uv bundle is sufficient to review the full workspace journey.
+For the demo, a Python/uv wheel bundle is sufficient to review the full workspace journey.
 A signed native installer and public website download need their own release verification.
 The current ZIP requires Python 3.12/uv and installs pinned dependencies; it is not a
 self-contained binary. No new serving framework, cloud account or billing service is added.
@@ -106,7 +106,9 @@ self-contained binary. No new serving framework, cloud account or billing servic
 
 No research checkpoint was downloaded or executed. No new GPU evidence, customer
 onboarding, billing event, remote provisioning or human usability result exists.
-Browser automation was unavailable during this application turn; visual/keyboard checks
-remain pending. Direct API, package-install and real local HTTP checks are recorded in
-the accompanying implementation handoff. Paper/vendor claims stay separate from these
+The earlier workspace-only milestone could not connect browser automation; subsequent
+Studio browser/keyboard/responsive checks and installed-bundle tests are recorded in the
+verification documents. They are automated observations, not human comprehension evidence.
+Studio /guide provides the exact bounded real-endpoint CLI procedure and its missing
+prerequisite; no real-model adapter is connected to Studio. Paper/vendor claims stay separate from these
 application checks.

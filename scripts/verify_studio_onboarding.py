@@ -37,6 +37,7 @@ def main() -> None:
         install = root / "installed"
         with zipfile.ZipFile(args.bundle) as archive:
             archive.extractall(install)
+        manifest = json.loads((install / "manifest.json").read_text(encoding="utf-8"))
         missing_uv = subprocess.run(  # noqa: S603 -- own generated launcher; empty executable path
             [sys.executable, str(install / "launch.py")],
             env={**os.environ, "PATH": ""},
@@ -152,7 +153,13 @@ def main() -> None:
                     json.loads(kit.read("model-contract.json"))["architecture"]
                     == "Preserved metadata only"
                 )
-                assert json.loads(kit.read("workspace-plan.json"))["evaluation"] is None
+                snapshot = json.loads(kit.read("workspace-plan.json"))
+                assert snapshot["evaluation"] is None
+                assert snapshot["provenance"]["project_id"] == pid
+                assert snapshot["provenance"]["verification_status"] == "no_current_evidence"
+                assert snapshot["provenance"]["model_inference"] is False
+            with urllib.request.urlopen(base + "/guide", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
+                assert b"YOUR_PINNED_MODEL_ID" in response.read()
             old_token = session
             stop()
             session = launch("restarted")
@@ -171,8 +178,18 @@ def main() -> None:
             api(f"projects/{pid}", "DELETE")
             assert api("projects") == []
             report = {
+                "source_commit": manifest.get("source_commit"),
+                "source_dirty": manifest.get("source_dirty"),
+                "package_version": manifest.get("package_version"),
                 "bundle_sha256": hashlib.sha256(args.bundle.read_bytes()).hexdigest(),
                 "platform": sys.platform,
+                "python": sys.version.split()[0],
+                "outside_repository": True,
+                "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
+                "docker_usage": "outer test container only; no Docker CLI/socket in Studio",
+                "github_operations": False,
+                "real_application_evaluation": False,
+                "remote_inference": False,
                 "uid": os.getuid(),
                 "empty_cache_required": args.expect_empty_cache,
                 "first_start_seconds_including_install": first_start_seconds,

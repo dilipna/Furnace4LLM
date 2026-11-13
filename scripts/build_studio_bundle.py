@@ -32,6 +32,7 @@ def main() -> None:
             "export",
             "--frozen",
             "--no-dev",
+            "--no-header",
             "--no-emit-workspace",
             "--no-editable",
             "--output-file",
@@ -106,7 +107,17 @@ Remove a project through Activity to delete only its workspace record. Uninstall
 stop the process, remove this extracted folder and (if desired) the dedicated workspace
 folder after reviewing retention. Do not delete shared model folders or uv caches.
 """
+    git = shutil.which("git")
+    if git is None:
+        raise SystemExit("Git is required to record preview source provenance")
+    source_commit = subprocess.check_output([git, "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()  # noqa: S603 -- resolved git, fixed read-only arguments
+    source_dirty = bool(
+        subprocess.check_output([git, "status", "--porcelain"], cwd=ROOT, text=True)
+    )  # noqa: S603 -- resolved git, fixed read-only arguments
     manifest = {
+        "source_commit": source_commit,
+        "source_dirty": source_dirty,
+        "package_version": "0.1.0",
         "kind": "local_application_preview",
         "model_execution": False,
         "billing": "inactive",

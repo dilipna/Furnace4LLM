@@ -1,4 +1,6 @@
+import io
 import json
+import zipfile
 
 import pytest
 from fastapi.testclient import TestClient
@@ -111,6 +113,16 @@ def test_real_api_worker_requests_evaluations_edits_export_and_removal(
         ]
         assert result["evaluation"]["model_execution"] is False
         assert result["evaluation"]["status"] == "completed"
+        assert result["evaluation"]["project_id"] == pid
+        assert result["evaluation_verification"] == "current_framework_evidence"
+        assert result["evaluation"]["configuration_sha256"] == result["configuration_sha256"]
+        with zipfile.ZipFile(
+            io.BytesIO(client.post(f"/api/projects/{pid}/kit").content)
+        ) as archive:
+            snapshot = json.loads(archive.read("workspace-plan.json"))
+            assert snapshot["provenance"]["project_id"] == pid
+            assert snapshot["provenance"]["verification_status"] == "current_framework_evidence"
+            assert snapshot["provenance"]["model_inference"] is False
         again = client.post(f"/api/projects/{pid}/evaluate").json()
         assert (
             again["evaluation"]["configuration_sha256"]
@@ -270,7 +282,7 @@ def test_batch_time_budget_does_not_execute_remaining_cases(tmp_path, monkeypatc
         assert manager.inspect(pid) is None
 
 
-def test_restart_keeps_partial_evaluation_evidence_without_promoting_missing_cases(tmp_path):
+def test_restart_retains_legacy_evidence_without_promoting_unbound_labels(tmp_path):
     app = create_app(tmp_path / "workspace", TOKEN)
     service = app.state.runtime
     with TestClient(
@@ -296,5 +308,7 @@ def test_restart_keeps_partial_evaluation_evidence_without_promoting_missing_cas
     ) as client:
         result = client.get(f"/api/projects/{pid}").json()
         assert result["evaluation"]["status"] == "interrupted"
-        assert [c["status"] for c in result["cases"]] == ["framework_pass", "not_run"]
+        assert [c["status"] for c in result["cases"]] == ["not_run", "not_run"]
+        assert result["cases"][0]["recorded_status"] == "framework_pass"
+        assert result["evaluation_verification"] == "unbound_or_stale"
         assert len(result["evaluation"]["results"]) == 1
