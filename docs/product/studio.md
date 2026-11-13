@@ -83,3 +83,40 @@ for what a model support contract must prove next.
 Stop with Ctrl+C in the application terminal. For uninstall, remove only the extracted
 bundle and the dedicated workspace directory after reviewing retention. Do not delete
 shared uv caches, model folders or unrelated resources.
+
+## Application milestone verification (2026-11-13)
+
+Application source commit: 842e0ec93b825e181304b55887bb58043ce51817.
+- Whole-repository Ruff, formatting and Pyright passed through the frozen uv workspace;
+  import boundaries passed (2 kept). JavaScript syntax check passed.
+- Final Studio + starter tests: 19 passed, 1 Windows symlink-permission skip, 1 existing
+  Starlette/httpx deprecation warning. Assertions inspect actual SQLite persistence,
+  ZIP bytes, saved settings/cases, auth/refusal behavior and untouched source files.
+- Broader relevant CLI/repair/setup run: 75 passed, 1 skipped, 1 warning and 1 setup error.
+  The failing existing poller test required unavailable Postgres. Its exact case was
+  then rerun against a fresh disposable Postgres with real migrations: 1 passed; the
+  container was stopped/removed. No test, threshold or requirement was weakened.
+- Focused Linux application check passed using an existing API image, non-root user,
+  no network and read-only source mount. Real symlinks were excluded; actual project,
+  preferences, ZIP, persistence, deletion and missing-runtime refusal were checked.
+  This is not the full Linux CI job or a fresh image build of this branch.
+- Built three wheels and a downloadable ZIP. The wheel contains UI assets and the
+  furnace-studio entry point, and excludes local databases/session logs/env files.
+  Extracted package ran in an isolated uv tool environment outside the checkout.
+  First offline launch lacked dependency registry metadata; permitted first-launch
+  dependency resolution installed 57 pinned packages. No model weights were fetched.
+- Real loopback HTTP flow passed on installed wheels: assets, session/origin guards,
+  project creation, both compute modes across API/HTTP tests, cases staying not_run,
+  kit download, refused unconnected start and source-preserving removal.
+- Final bundle restart with the same workspace preserved a saved project, rotated its
+  token, rejected the old token and rejected an oversized request. Tampering with a
+  bundled wheel caused the launcher to refuse it before installation. Hashes detect
+  corruption, not publisher authenticity; this is not a signed installer.
+- A direct Pyright invocation selected the wrong Python environment and reported
+  unresolved workspace imports; `uv run --frozen --offline pyright` passed with 0 errors.
+
+Browser automation could not connect (two timeouts). No visual/mobile/keyboard or actual
+browser-download success is claimed. No real model, new GPU measurement, executed model
+quality evaluation, remote provisioning, payment, customer onboarding or human feedback.
+The model runtime is deliberately unconnected; infrastructure preferences are not a
+provisioned service, and workspace activity is not inference telemetry.
