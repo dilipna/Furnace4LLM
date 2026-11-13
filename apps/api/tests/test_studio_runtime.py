@@ -1,6 +1,8 @@
 import json
 
+import pytest
 from fastapi.testclient import TestClient
+from furnace.runtime.lease import WorkspaceBusy
 from furnace.runtime.manager import RuntimeFault
 from furnace_api.studio import create_app
 
@@ -128,6 +130,18 @@ def test_application_restart_and_shutdown_remove_owned_workers(tmp_path):
     ) as client:
         pid = project_and_plan(client, tmp_path / "model")
         first = start(client, pid)
+        concurrent = create_app(workspace, TOKEN + "concurrent")
+        with pytest.raises(WorkspaceBusy, match="already open"), TestClient(concurrent):
+            pytest.fail("second application acquired a live workspace")
+        info = manager.inspect(pid)
+        assert info is not None and info["State"]["Running"]
+        assert info["Id"] == first["container_id"]
+        assert (
+            client.post(f"/api/projects/{pid}/predict", json={"input": "still alive"}).json()[
+                "output"
+            ]
+            == "framework:STILL ALIVE"
+        )
     assert manager.inspect(pid) is None  # normal shutdown stops the worker
     # Create an actual orphan worker + persisted active state without a live app lease.
     orphan = manager.start(pid)

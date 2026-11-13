@@ -19,6 +19,7 @@ from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response
+from furnace.runtime.lease import WorkspaceLease
 from furnace.runtime.manager import RuntimeFault, RuntimeManager
 from furnace.starter import assess_model, write_starter_files
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -179,9 +180,12 @@ def create_app(workspace: Path, token: str) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        await asyncio.to_thread(runtime.recover)
-        yield
-        await asyncio.to_thread(runtime.close)
+        with WorkspaceLease(workspace):
+            await asyncio.to_thread(runtime.recover)
+            try:
+                yield
+            finally:
+                await asyncio.to_thread(runtime.close)
 
     app = FastAPI(
         title="Furnace Studio", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
@@ -434,6 +438,8 @@ def launch(workspace: Path, port: int, open_browser: bool = True) -> None:
         server.run()
     finally:
         done.set()
+    if not server.started:
+        raise SystemExit("Studio could not start; check the application errors above")
 
 
 def main() -> None:
