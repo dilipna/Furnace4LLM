@@ -111,9 +111,8 @@ folder after reviewing retention. Do not delete shared model folders or uv cache
     if git is None:
         raise SystemExit("Git is required to record preview source provenance")
     source_commit = subprocess.check_output([git, "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()  # noqa: S603 -- resolved git, fixed read-only arguments
-    source_dirty = bool(
-        subprocess.check_output([git, "status", "--porcelain"], cwd=ROOT, text=True)
-    )  # noqa: S603 -- resolved git, fixed read-only arguments
+    status = subprocess.check_output([git, "status", "--porcelain"], cwd=ROOT, text=True)  # noqa: S603 -- resolved git, fixed read-only arguments
+    source_dirty = bool(status)
     manifest = {
         "source_commit": source_commit,
         "source_dirty": source_dirty,
