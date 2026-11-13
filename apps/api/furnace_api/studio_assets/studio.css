@@ -50,6 +50,7 @@ h3 { font-size: 16px; line-height: 1.4; font-weight: 600; margin: 0 0 8px; }
 p { color: var(--muted); margin: 10px 0 16px; }
 .intro { font-size: 15px; max-width: 570px; line-height: 1.8; }
 .welcome-grid { display: grid; grid-template-columns: 1.35fr 1fr; align-items: center; gap: 44px; margin: 8px 0 40px; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 23px; }
 .hero-facts { display: flex; flex-wrap: wrap; gap: 5px 18px; color: #b8c1cc; font-size: 10px; margin-top: 24px; }
 .hero-facts span::before { content: "✓"; color: var(--green); margin-right: 6px; }
 .system-map { min-width: 0; border: 1px solid #343a44; border-radius: var(--radius); padding: 25px; background: radial-gradient(ellipse at top right, #2e2a25 0, #1c2026 65%); }
@@ -239,6 +240,8 @@ footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12
   .layout { display: block; }aside { padding: 18px; border-right: 0; border-bottom: 1px solid var(--line); }.side-note,#system-nav { display: none; }
   .side-title { padding: 0; margin-bottom: 10px; }#projects { grid-template-columns: 1fr 1fr; }aside .wide { width: auto; padding-block: 7px; min-height: 36px; }
   main { padding: 26px 18px 20px; }h1 { font-size: 35px; }.intro { font-size: 14px; }.welcome-grid { margin-top: 0; }
+  input,textarea,select { font-size: 16px; }
+  .primary,.secondary { min-height: 44px; font-size: 12px; }
   .hero-facts { gap: 7px 12px; font-size: 9px; }.system-map { padding: 16px; }.card { padding: 20px; border-radius: 9px; }
   .card-heading h2 { font-size: 18px; }.section-head h2 { font-size: 22px; }.project-head h1 { font-size: 28px; }
   .next-step { padding: 18px; }.metrics { gap: 12px; }.metric strong { font-size: 18px; }.metric span { font-size: 9px; }

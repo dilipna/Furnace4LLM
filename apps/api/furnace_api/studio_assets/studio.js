@@ -158,6 +158,7 @@ window.addEventListener("beforeunload", event => {
 function syncEntryControls() {
   $("#project-limit").hidden = projects.length < 2;
   $("#open-example").disabled = isPending("example", null) || (projects.length >= 2 && !projects.some(p => p.origin === "guided_example"));
+  $("#hero-example").disabled = $("#open-example").disabled;
   $("#check-environment").disabled = isPending("environment", null);
 }
 function syncControls() {
@@ -264,12 +265,15 @@ $("#add-form").onsubmit = event => {
   event.preventDefault(); const form = event.currentTarget, data = readForm(form);
   action(form.querySelector("button"), "add-project", async () => { const project = await api("projects", "POST", data); projects = await api("projects"); form.reset(); openProject(project); $("#project-title").tabIndex = -1; $("#project-title").focus(); }, null);
 };
-$("#open-example").onclick = event => action(event.currentTarget, "example", async () => {
+function openExample(button) { return action(button, "example", async () => {
   const project = await api("examples/framework", "POST");
   if (!projects.some(p => p.id === project.id)) projects.push(project);
   openProject(project); $("#project-title").tabIndex = -1; $("#project-title").focus();
   notice("Guided example opened. Nothing has executed. Review your next step below.", "success");
-}, null);
+}, null); }
+$("#open-example").onclick = event => openExample(event.currentTarget);
+$("#hero-example").onclick = event => openExample(event.currentTarget);
+$("#hero-project").onclick = () => $("#add-form input").focus();
 for (const name of ["contract", "plan", "case"]) {
   const form = $("#" + Object.keys(formNames).find(key => formNames[key] === name));
   form.onsubmit = event => {
