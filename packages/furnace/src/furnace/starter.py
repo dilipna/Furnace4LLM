@@ -27,30 +27,25 @@ def assess_model(project: Path) -> dict[str, Any]:
     visited = 0
     skipped_links = 0
 
-    def walk_error(error: OSError) -> None:
-        raise error
-
-    for directory, dirs, files in os.walk(project, followlinks=False, onerror=walk_error):
-        visited += len(dirs)
-        if visited > MAX_FILES:
-            raise ValueError(
-                f"project inventory exceeds {MAX_FILES} entries; choose a smaller model project"
-            )
-        parent = Path(directory)
-        skipped_links += sum(_is_link(parent / d) for d in dirs)
-        dirs[:] = sorted(d for d in dirs if d not in IGNORED and not _is_link(parent / d))
-        for name in sorted(files):
-            visited += 1
-            if visited > MAX_FILES:
-                raise ValueError(
-                    f"project inventory exceeds {MAX_FILES} entries; choose a smaller model project"
-                )
-            file = parent / name
-            if _is_link(file):
-                skipped_links += 1
-                continue
-            if file.is_file():
-                names.append(file.relative_to(project).as_posix())
+    pending = [project]
+    while pending:
+        directory = pending.pop()
+        # Stream directory entries so the limit also bounds very wide directories.
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                visited += 1
+                if visited > MAX_FILES:
+                    raise ValueError(
+                        f"project inventory exceeds {MAX_FILES} entries; choose a smaller model project"
+                    )
+                file = Path(entry.path)
+                if _is_link(file):
+                    skipped_links += 1
+                elif entry.is_dir(follow_symlinks=False):
+                    if entry.name not in IGNORED:
+                        pending.append(file)
+                elif entry.is_file(follow_symlinks=False):
+                    names.append(file.relative_to(project).as_posix())
     warnings: list[str] = []
     metadata: dict[str, Any] = {}
     if "config.json" in names:
