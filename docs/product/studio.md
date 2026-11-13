@@ -136,6 +136,8 @@ stop and verify no worker remains. Expected: instructions suffice without undocu
 steps; no research code/weights execute. Existing-machine installed-package smoke does
 not establish this clean-machine result.
 
+Current runtime milestone evidence: [verification record](studio-runtime-verification.md).
+
 ## Historical workspace milestone (2026-11-13, before runtime implementation)
 
 Application source commit: 842e0ec93b825e181304b55887bb58043ce51817.
