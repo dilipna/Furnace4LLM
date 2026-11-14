@@ -1,3 +1,11 @@
+# Current integration status
+
+This document records the earlier source/artifact verification. PR #6 has since merged
+normally as d4c92cfb453a79582896404849654ae7c18ee1a7. See INTEGRATION.md and PR #7's
+current integration section for the main-based head and fresh hosted checks. Historical
+pending-authorization/check statements below describe the earlier review, not current
+blockers. Artifact hashes and clean-install claims still apply only to their named source.
+
 # Onboarding milestone review — 2026-11-14
 
 Code/package source: **34748999f5f0b14b0cefbf09cd38af05b4562f80** on

@@ -1,10 +1,9 @@
 # Add local researcher Studio with trustworthy fixture onboarding
 
-Base proposal: `fix/repair-verification` while PR #6 remains open. Main is
-9efc38d43e4dcb24472ceb10bb828931ec3682db; PR #5 is merged. This branch contains PR #6's
-59ea54d parent plus the previously unpublished product commits through 1c22602 and this
-final review. The product diff against #6 excludes the parent repair patch. No shared
-history was rewritten. After #6 merges normally, retarget to main and check the new head.
+Current base: main at d4c92cfb453a79582896404849654ae7c18ee1a7 after PR #6's normal
+merge. Main was merged into this branch without source changes or history rewrite.
+The child diff excludes the parent repair patch. PR #7 remains a draft. Exact final
+head/base and fresh hosted checks are recorded in its current integration section.
 
 Researchers previously had no downloadable workspace to inspect their projects, prepare
 contracts/cases or try the surrounding infrastructure. Studio adds the free starter kit,
@@ -31,7 +30,7 @@ verification receipts. Focused tests inspect actual worker outputs/removal, pers
 revisions, exports, input invalidation and deliberately delayed response ordering. Browser
 journeys cover visitor, developer and returning-user paths. Clean Linux installation
 covers metadata/export/restart, not real application inference. The preinstalled-Node
-Python-runner workaround is local evidence; hosted checks require pushing this PR head.
+Python-runner workaround is local evidence; current hosted results are recorded in PR #7.
 
 No performance threshold, historical measurement, model weight, billing/account system,
 remote infrastructure or public website deployment changed. Dependency-cache recovery,
