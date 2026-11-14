@@ -1,0 +1,252 @@
+# Furnace Studio local application
+
+Studio is the application-first workspace for researchers who need infrastructure
+around their models. The free kit and local workspace work without Docker. An optional
+Docker runtime exercises the infrastructure using a deterministic fixture. **It is not
+a learned model, does not load user code/weights, and provides no model-quality evidence.**
+The $20/month offer and both compute ownership choices are represented in configuration;
+billing, cloud provisioning and actual research-model adapters remain inactive.
+
+## Run from source
+
+Prerequisites: Git, Python 3.12 and uv. From the repository root:
+
+```sh
+uv sync --frozen
+uv run furnace studio
+```
+
+Studio binds to 127.0.0.1:8787 and opens its private local session after startup. Use
+`--no-browser`, `--port` or `--workspace PATH` as needed. Default data: `~/.furnace/studio`.
+No API/Postgres/GPU setup is needed. Keep the terminal open; Ctrl+C stops Studio and its
+owned workers. One process may own a workspace. After a crash, reopen the same workspace
+to remove interrupted workers and reconcile partial evaluations before an explicit restart.
+If Docker is unreachable, cleanup is unknown, not successful; recover Docker and retry stop.
+Do not expose the port, share session links or enter secrets. Tokens rotate on restart;
+open the newly printed link in stale tabs. This is local-session security, not hosted
+multi-tenant authentication. Local SQLite/case/kit content is not encrypted by Furnace.
+
+## First visit and guided example
+
+Choose **Open guided example** to explore without selecting a research model or entering
+a folder path. The bundled metadata-only project contains a contract, local compute
+preferences and two cases. Opening it never starts Docker or executes a model. Reopening
+preserves edits/results; it occupies one of the two project slots. Its files ship inside
+the API wheel so it also works outside a source checkout.
+
+Follow **Your next step**. Preparation progress records saved information; the final
+framework stage requires matching case execution records. Read **Environment & compatibility**
+to distinguish an available local workspace, optional Docker readiness and unverified
+model compatibility. That check only reads local engine/image state; it never pulls an
+image, builds one or starts a worker. Remote Docker and Windows-container engines are
+reported as unsupported for this local fixture. The free workspace remains useful when
+Docker is absent.
+
+The example's exact assertion can pass; its descriptive expectation remains unscored.
+Inspect actual request IDs and durations before exporting evidence. No score here is
+research-model quality. Both pricing/compute choices remain inactive service preferences.
+
+Contract, preference and case drafts stay separately in browser-tab memory across project
+switches and status refreshes. The UI labels unsaved drafts and warns before closing a
+tab with those edits. Saving persists them locally; reloading/discarding a draft does not.
+Ad-hoc request outputs also belong to their project and are not durable logs. Selecting a
+different project resets the Docker consent checkbox.
+
+Changing a contract, preferences or cases invalidates the prior evaluation. Contract and
+preference edits reset saved case states to not_run atomically. The UI also refuses to
+count legacy case labels without a matching evaluation record as execution evidence.
+
+## Evidence identity and real-model handoff
+
+Framework protocol `framework-v2` binds a run to its project ID, contract, compute
+preferences and case inputs/expectations. A monotonic stored project revision fences
+late responses; that revision is an application-state counter, not a model revision.
+Configuration edits invalidate results. Legacy/unbound records are retained with their
+recorded labels but are not presented as current evidence. Re-run the fixture to obtain
+new identity-bound evidence. Bump the protocol when evaluator/fixture semantics change.
+
+The example compares actual deterministic output with a saved exact string. No base/head
+model change is compared; the expected string is not a measured performance baseline.
+Worker round-trip durations include Docker control and do not measure model latency.
+Saved runs show their time; reopening does not execute another run. Export provenance
+in workspace-plan.json states project, configuration, verification status and limitations.
+
+Browser Back restoration reconfirms saved state before presenting verdicts. Drafts remain
+in tab memory during SPA project switches; they are not durable across reload/closure.
+If a back-cache restoration cannot reconnect, results stay unconfirmed and navigation/
+Refresh status remain available. Automated Back navigation does not by itself establish
+that a particular browser actually used its back/forward cache.
+
+Choose **Evaluate your own model** in the app header (or open `/guide`). It separates
+validated fixture infrastructure, implemented CLI endpoint adapters and planned Studio
+research-model adapters. The exact bounded real-endpoint CLI procedure requires an
+identified authorized live model server and author-reference output. Neither is supplied
+by opening the guided example. No mock is substituted for a requested real-model run.
+
+## User journey
+
+1. Name a project and enter its absolute local folder. Inspection reads bounded metadata
+   without importing source or loading checkpoints. Review detections as unverified.
+2. Download the free kit. Save the architecture/task/revision/license/device contract.
+3. Save compute ownership and demo preferences. Saving does not buy or provision anything.
+4. Add sanitized cases and optional exact expected outputs. Descriptions alone are unscored.
+5. For **infrastructure testing only**, install/start local Linux Docker (Docker Desktop
+   with Linux containers on Windows). Choose Prepare local test environment. It builds the
+   existing reviewed Python sandbox image if absent; public packages/images may download.
+6. Select “Infrastructure fixture — not a model”, approve local execution and start.
+   Readiness is checked against the actual container. Send `hello` to receive
+   `framework:HELLO`. This deterministic uppercase function has no learned parameters.
+7. Run framework evaluations. Exact equality gives framework_pass/framework_fail;
+   descriptive-only cases are unscored. Error/interruption leaves missing cases not_run.
+8. Inject error/timeout/crash, confirm failed status, then explicitly restart. Stop before
+   editing configuration/cases. Activity records real request IDs/durations, not raw
+   request/response contents. Downloaded kits include the saved evaluation snapshot.
+9. Stop or remove the workspace record. Removal first confirms owned-worker cleanup and
+   preserves model files/exports. The demo has two project slots.
+
+## Boundaries and execution evidence
+
+The worker runs as uid 10001, no network or published ports, read-only root, dropped
+capabilities, no-new-privileges, 256 MiB RAM, one CPU, 64 processes and a 16 MiB tmpfs.
+Only the authored worker file is mounted read-only; project folders, weights, Docker
+socket and host secrets are not passed into it. A Docker daemon remains trusted host
+infrastructure; these flags are not a proof against arbitrary hostile code. Unreviewed
+model adapters are refused. Only local unix/npipe Docker endpoints are accepted and
+pinned for the manager lifetime. No remote compute is provisioned by either compute choice.
+
+Requests are capped at five seconds (or a lower configured timeout); an evaluation has
+30 seconds for prediction calls plus Docker control/cleanup overhead. Stop requests cancel
+between cases. Each case result is persisted before the next. On recovery, a running
+attempt becomes interrupted; completed case evidence remains, missing evidence is never
+promoted. Configuration changes invalidate evaluation results. Each explicit run executes
+again with a new run/request identity. A workspace OS lock prevents concurrent app owners.
+
+Memory and retention form values are future managed-demo preferences; the fixture uses
+the fixed limits above. Activity retains at most 100 events, not the selected day-based
+retention policy. Inputs/case expectations are stored locally and included in exports;
+only ad-hoc request inputs/outputs are excluded from activity logs. No remote log collector,
+GPU monitor, hosted authentication, payment flow or production SLA is implemented.
+
+## Build and install the download
+
+```sh
+uv run python scripts/build_studio_bundle.py
+```
+
+Output: `dist/furnace-studio-preview.zip`. Extract into a new folder and run:
+
+```sh
+python launch.py --no-browser --workspace /path/to/dedicated-workspace --port 8787
+```
+
+The ZIP contains three workspace wheels, pinned dependency requirements, launcher,
+instructions and wheel hashes. Python 3.12 and uv are prerequisites. First launch needs
+registry access unless all pinned metadata/packages are cached. It may obtain Python
+through uv. This is a wheel-based preview, not a native signed installer; hashes detect
+corruption, not publisher identity. User models/databases/session logs/env files are excluded.
+Docker is optional until explicitly exercising the infrastructure fixture.
+
+For uninstall, stop normally and remove only the extracted bundle and reviewed dedicated
+workspace directory. Do not delete shared caches or model folders. Reopening a crashed
+workspace for cleanup must happen before discarding its metadata.
+
+## Clean installed-bundle check
+
+`scripts/verify_studio_onboarding.py` runs the package outside the checkout in a disposable
+Linux environment. It needs Python 3.12 + uv and registry access. Run with an empty cache:
+
+```sh
+UV_CACHE_DIR=/tmp/new-furnace-cache UV_TOOL_DIR=/tmp/new-furnace-tools UV_TOOL_BIN_DIR=/tmp/new-furnace-bin python scripts/verify_studio_onboarding.py dist/furnace-studio-preview.zip --expect-empty-cache
+```
+
+Use a disposable Linux container with no Docker CLI/socket for the intended missing-Docker
+case. The script checks friendly missing-uv guidance, installed module assets, the guided
+example, kit bytes, settings persistence, token rotation/rejection and removal. It never
+runs a research model. This verifies the free onboarding path; actual fixture execution
+still needs the separate Docker-backed runtime tests. Fresh Windows/macOS onboarding and
+human comprehension remain release gates.
+
+## Reproduce targeted verification
+
+With frozen development dependencies and local Docker running:
+
+```sh
+uv run pytest -q apps/api/tests/test_studio.py packages/furnace/tests/test_starter.py packages/furnace/tests/test_runtime_manager.py apps/api/tests/test_studio_runtime.py packages/furnace/tests/test_workspace_lease.py
+uv run ruff check .
+uv run ruff format --check .
+uv run lint-imports
+uv run pyright
+node --input-type=module --check < apps/api/furnace_api/studio_assets/studio.js
+node --test apps/api/tests/studio-state.test.mjs
+```
+
+New runtime integration tests require Docker and intentionally fail if unavailable.
+They inspect real container flags, mounts, IDs, request outputs, removal and recovery;
+unit tests separately simulate daemon/cleanup failure. No GPU/model inference is tested.
+For full committed Linux checks, use `bash scripts/ci_linux.sh python`; this needs Docker,
+public registry access and enough Docker-VM disk space. Local Windows pytest is not Linux CI.
+
+## Human review (no participants yet)
+
+Two participants should work independently. Record observations only after participation;
+browser automation is not evidence of comprehension.
+
+| Task | Participant 1 observation | Participant 2 observation |
+| --- | --- | --- |
+| Explain intended customer, free kit and $20/month offer | | |
+| Distinguish local fixture execution, recorded historical demo and live model inference | | |
+| Explain a framework result and why it says nothing about model quality | | |
+| Determine Python/uv/Docker prerequisites for the desired feature | | |
+| Inspect a project, save contract/preferences and find the next action unaided | | |
+| Run an exact check, inject a failure, recover and stop | | |
+| Use keyboard, download kit and recover a saved project after restart | | |
+
+Clean-environment onboarding procedure (Linux run recorded separately; fresh Windows/macOS still needed): fresh Windows or Linux user profile
+with Python 3.12 and uv, empty uv cache, no checkout or existing Furnace environment.
+Extract the ZIP, install pinned dependencies, create a harmless metadata-only project,
+export its kit, quit/relaunch and confirm persistence/token rotation. Then, with local
+Linux Docker installed/running and no Furnace sandbox image, prepare/start/request/evaluate/
+stop and verify no worker remains. Expected: instructions suffice without undocumented
+steps; no research code/weights execute. Existing-machine installed-package smoke does
+not establish this clean-machine result.
+
+Current onboarding and interface evidence: [verification record](studio-onboarding-verification.md).
+
+Earlier runtime milestone evidence: [verification record](studio-runtime-verification.md).
+
+## Historical workspace milestone (2026-11-13, before runtime implementation)
+
+Application source commit: 842e0ec93b825e181304b55887bb58043ce51817.
+- Whole-repository Ruff, formatting and Pyright passed through the frozen uv workspace;
+  import boundaries passed (2 kept). JavaScript syntax check passed.
+- Final Studio + starter tests: 19 passed, 1 Windows symlink-permission skip, 1 existing
+  Starlette/httpx deprecation warning. Assertions inspect actual SQLite persistence,
+  ZIP bytes, saved settings/cases, auth/refusal behavior and untouched source files.
+- Broader relevant CLI/repair/setup run: 75 passed, 1 skipped, 1 warning and 1 setup error.
+  The failing existing poller test required unavailable Postgres. Its exact case was
+  then rerun against a fresh disposable Postgres with real migrations: 1 passed; the
+  container was stopped/removed. No test, threshold or requirement was weakened.
+- Focused Linux application check passed using an existing API image, non-root user,
+  no network and read-only source mount. Real symlinks were excluded; actual project,
+  preferences, ZIP, persistence, deletion and missing-runtime refusal were checked.
+  This is not the full Linux CI job or a fresh image build of this branch.
+- Built three wheels and a downloadable ZIP. The wheel contains UI assets and the
+  furnace-studio entry point, and excludes local databases/session logs/env files.
+  Extracted package ran in an isolated uv tool environment outside the checkout.
+  First offline launch lacked dependency registry metadata; permitted first-launch
+  dependency resolution installed 57 pinned packages. No model weights were fetched.
+- Real loopback HTTP flow passed on installed wheels: assets, session/origin guards,
+  project creation, both compute modes across API/HTTP tests, cases staying not_run,
+  kit download, refused unconnected start and source-preserving removal.
+- Final bundle restart with the same workspace preserved a saved project, rotated its
+  token, rejected the old token and rejected an oversized request. Tampering with a
+  bundled wheel caused the launcher to refuse it before installation. Hashes detect
+  corruption, not publisher authenticity; this is not a signed installer.
+- A direct Pyright invocation selected the wrong Python environment and reported
+  unresolved workspace imports; `uv run --frozen --offline pyright` passed with 0 errors.
+
+Browser automation could not connect (two timeouts). No visual/mobile/keyboard or actual
+browser-download success is claimed. No real model, new GPU measurement, executed model
+quality evaluation, remote provisioning, payment, customer onboarding or human feedback.
+The model runtime is deliberately unconnected; infrastructure preferences are not a
+provisioned service, and workspace activity is not inference telemetry.
