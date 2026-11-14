@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import math
 import tempfile
 import uuid
 from collections.abc import Sequence
@@ -388,6 +389,88 @@ def describe(c: dict[str, Any]) -> str:
     return f"{line}; {c['reason']}" if c.get("reason") else line
 
 
+def _finite(value: Any) -> bool:
+    try:
+        return (
+            isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+        )
+    except OverflowError:
+        return False
+
+
+def _repair_comparison_valid(c: Any) -> bool:
+    if (
+        not isinstance(c, dict)
+        or not isinstance(c.get("verdict"), str)
+        or c["verdict"] not in {"pass", "warn", "block", "inconclusive"}
+    ):
+        return False
+    ci, change = c.get("ci_pct"), c.get("change_pct")
+    if not isinstance(ci, (list, tuple)) or len(ci) != 2:
+        return False
+    if not all(_finite(v) for v in [change, *ci]) or not ci[0] <= change <= ci[1]:
+        return False
+    return all(_finite(c[k]) and c[k] > 0 for k in ("baseline", "value") if k in c)
+
+
+def _finite_evidence(value: Any) -> bool:
+    """Evidence must be serializable data with no non-finite measurements, including samples."""
+    if isinstance(value, dict):
+        return all(isinstance(k, str) and _finite_evidence(v) for k, v in value.items())
+    if isinstance(value, (list, tuple)):
+        return all(_finite_evidence(v) for v in value)
+    if value is None or isinstance(value, (str, bool)):
+        return True
+    return _finite(value)
+
+
+def verified_repair_performance(perf: Any, policy: GatePolicy) -> bool:
+    """Validate current measured evidence at the callback and GitHub write boundaries.
+
+    A boolean, skipped result or historical summary alone cannot establish verification.
+    Recompute the existing acceptance rule rather than trusting within_budget's truthiness.
+    """
+    if (
+        not isinstance(perf, dict)
+        or perf.get("within_budget") is not True
+        or not _finite_evidence(perf)
+    ):
+        return False
+    if perf.get("status") not in (None, "passed", "verified") or perf.get("error") is not None:
+        return False
+    comparisons = [perf.get(k) for k in ("head_vs_base", "candidate_vs_base", "candidate_vs_head")]
+    valid: list[dict[str, Any]] = []
+    for index, c in enumerate(comparisons):
+        if not isinstance(c, dict) or not _repair_comparison_valid(c):
+            return False
+        if (
+            c.get("metric") != policy.metric
+            or c.get("confidence") != policy.confidence
+            or c.get("method") != METHOD_WELCH.format(pct=round(policy.confidence * 100))
+        ):
+            return False
+        runs = c.get("runs")
+        if not isinstance(runs, int) or isinstance(runs, bool) or runs < policy.min_runs:
+            return False
+        for key in ("baseline_runs", "value_runs"):
+            xs = c.get(key)
+            if not isinstance(xs, (list, tuple)) or len(xs) < policy.min_runs:
+                return False
+            if not all(_finite(x) and x > 0 for x in xs):
+                return False
+        if len(c["value_runs"]) != runs or "baseline" not in c or "value" not in c:
+            return False
+        # Candidate evidence cannot contradict its own gate verdict. In particular,
+        # failure-rate BLOCKs must not be hidden behind otherwise favorable latency.
+        # The PR head may legitimately be blocked; it is the revision being repaired.
+        # Do not reclassify the base comparison from its rounded interval: its
+        # original PASS/WARN/INCONCLUSIVE may differ at the +10% rounding boundary.
+        if (index == 1 and c["verdict"] == "block") or (index == 2 and c["verdict"] != "pass"):
+            return False
+        valid.append(c)
+    return accept_repair(valid[0], valid[1], valid[2], policy)[0]
+
+
 def accept_repair(
     head_vs_base: dict[str, Any],
     cand_vs_base: dict[str, Any],
@@ -401,16 +484,11 @@ def accept_repair(
     against the base revision (the interval's upper bound) stays below block_pct (it is not
     a new regression of blocking size). Whether it is within the noise tolerance of base is reported, not assumed:
     staying inside a tolerance band is not evidence of an improvement."""
-    if "error" in (head_vs_base.get("verdict"), cand_vs_base.get("verdict")):
-        return False, ["the benchmark measured nothing; a candidate is never accepted unmeasured"]
+    if any(not _repair_comparison_valid(c) for c in (head_vs_base, cand_vs_base, cand_vs_head)):
+        return False, ["required finite performance intervals are missing, invalid or not measured"]
     if cand_vs_base.get("reason") and cand_vs_base.get("verdict") == "block":
         return False, [f"candidate blocked: {cand_vs_base['reason']}"]
-    ci_h, ci_b = cand_vs_head.get("ci_pct"), cand_vs_base.get("ci_pct")
-    if ci_h is None or ci_b is None:  # summaries only: the earlier rule, labeled
-        ok = cand_vs_base["verdict"] in ("pass", "warn")
-        return ok, [
-            f"point rule (no per-request samples): candidate vs base {describe(cand_vs_base)}"
-        ]
+    ci_h, ci_b = cand_vs_head["ci_pct"], cand_vs_base["ci_pct"]
     reasons = []
     fixes = ci_h[1] < 0
     reasons.append(

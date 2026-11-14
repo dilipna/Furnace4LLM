@@ -240,10 +240,10 @@ class FakeGitData:
         return httpx.Response(404, json={"message": f"unexpected {req.method} {p}"})
 
 
-async def _open(gh, files=None, body="b"):
+async def _open(gh, files=None, body="b", branch="furnace/forge-1"):
     repo = Repo("acme/app", "t", transport=httpx.MockTransport(gh))
     return await repo.open_draft_pr(
-        base_branch="main", new_branch="furnace/forge-1", files=files or {"a.py": "x"},
+        base_branch="main", new_branch=branch, files=files or {"a.py": "x"},
         title="t", body=body, commit_message="m", base_sha="base0",
     )  # fmt: skip
 
@@ -255,6 +255,24 @@ async def test_retrying_the_same_change_never_opens_a_second_pull_request():
     assert first["reused"] is False and again["reused"] is True
     assert again["number"] == first["number"] and again["branch"] == "furnace/forge-1"
     assert len(gh.pulls) == 1 and list(gh.refs) == ["furnace/forge-1"]
+
+
+async def test_repair_namespaces_reuse_within_version_without_relabeling_legacy_drafts():
+    gh = FakeGitData()
+    legacy = await _open(gh, body="legacy evidence", branch="furnace/repair-pr5-abc1234")
+    legacy_tip = gh.refs[legacy["branch"]]
+    new_numbers = set()
+    for kind, body in (("proposal", "performance UNVERIFIED"), ("repair", "measured evidence")):
+        branch = f"furnace/{kind}-v2-pr5-abc1234"
+        first = await _open(gh, body=body, branch=branch)
+        again = await _open(gh, body=body, branch=branch)
+        assert not first["reused"] and again["reused"]
+        assert first["number"] == again["number"] and again["branch"] == branch
+        assert first["number"] != legacy["number"]
+        new_numbers.add(first["number"])
+    assert len(new_numbers) == 2 and len(gh.pulls) == 3
+    assert gh.refs[legacy["branch"]] == legacy_tip and gh.pulls[0]["body"] == "legacy evidence"
+    assert not any(m in ("PATCH", "PUT", "DELETE") for m, _ in gh.calls)
 
 
 async def test_a_pull_request_closed_by_a_human_is_not_reopened_or_duplicated():

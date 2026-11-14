@@ -5,7 +5,7 @@
   furnace gh-check                                   # verify the GitHub App id, key and installations
   furnace gh-forge OWNER/REPO [--open-pr]            # Forge: plan + sandbox-validate, then a draft PR
   furnace gh-guard OWNER/REPO PR --suite FILE.py     # Guard: targeted checks -> GitHub check run
-  furnace gh-repair OWNER/REPO PR --suite FILE.py [--open-pr]   # verified repair -> draft PR
+  furnace gh-repair OWNER/REPO PR --suite FILE.py [--open-pr]   # measured repair; --no-endpoint is unverified
 
 Configuration (environment or .env): FURNACE_GITHUB_APP_ID, FURNACE_GITHUB_PRIVATE_KEY_PATH,
 FURNACE_LAB_BASE_URL (default http://localhost:8100/v1), FURNACE_LAB_MODEL (default lab).
@@ -113,7 +113,13 @@ def main(argv: list[str] | None = None) -> int:
         g.add_argument("--suite", required=True, help="Python file defining the suite list")
         g.add_argument("--questions")
         g.add_argument(
-            "--no-endpoint", action="store_true", help="skip checks that need an inference endpoint"
+            "--no-endpoint",
+            action="store_true",
+            help=(
+                "skip checks that need an inference endpoint"
+                if name == "gh-guard"
+                else "functional-only, performance-unverified proposal; no endpoint measurement"
+            ),
         )
         if name == "gh-guard":
             g.add_argument("--max-prompt-tokens", type=int)

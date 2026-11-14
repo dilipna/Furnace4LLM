@@ -159,6 +159,12 @@ Before pushing, run the CI jobs in Linux on the committed tree: `bash scripts/ci
 
 ## Runner commands
 
+Repair has two distinct outcomes: measured `verified`, and offline `functional_only`.
+`gh-repair --no-endpoint --open-pr` proposes a draft visibly marked performance UNVERIFIED;
+it cannot satisfy measured/automatic repair verification. Missing, invalid or inconclusive
+required interval evidence opens no verified repair. [Contract](docs/repair-verification.md) ·
+[supervised external-pilot package](docs/pilot/README.md).
+
 Guard recovery: an exception, timeout or cancellation closes that attempt's check as
 `action_required` when GitHub is reachable. A queued retry runs the checks again with a
 fresh check; completed verdicts (including measured neutral results) are reused only for

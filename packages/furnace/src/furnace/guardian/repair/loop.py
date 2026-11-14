@@ -26,6 +26,7 @@ from furnace.contracts.guard import (
 )
 from furnace.forge.harness import HARNESS_FILE, write_harness
 from furnace.guardian.impact import ImpactResult
+from furnace.guardian.perf_gate import GatePolicy, verified_repair_performance
 from furnace.guardian.repair.regression import (
     min_shared_prefix,
     prefix_stability_test,
@@ -46,8 +47,23 @@ class RepairOutcome:
     test_path: str = ""
     logs: dict[str, str] = field(default_factory=dict)
     perf: dict[str, Any] = field(default_factory=dict)
-    # Full new contents of every file the repair PR changes (path -> text); set when verified.
+    # Full changed file contents; set for a measured repair or a functional-only proposal.
     files: dict[str, str] = field(default_factory=dict)
+
+    @property
+    def functional_passed(self) -> bool:
+        a = self.attempt
+        if not a.repro or not a.repro.head_fails or not a.repro.base_passes:
+            return False
+        candidates = a.candidates
+        if a.selected is not None:
+            if not 0 <= a.selected < len(candidates):
+                return False
+            candidates = [candidates[a.selected]]
+        return any(
+            c.results.get("regression_test") == "pass" and c.results.get("existing_tests") == "pass"
+            for c in candidates
+        )
 
 
 def _copy(src: Path, dest: Path) -> Path:
@@ -211,12 +227,19 @@ def repair_prefix_instability(
         )
         perf: dict[str, Any] = {}
         if perf_check is not None and new_test.ok and all_tests.ok:
-            perf = perf_check(base, head, cand)
+            try:
+                raw = perf_check(base, head, cand)
+                perf = raw if isinstance(raw, dict) else {"error": "malformed performance result"}
+            except Exception as exc:
+                # Keep credentials in arbitrary endpoint/SDK exception messages out of proposals.
+                perf = {"error": f"performance measurement failed ({type(exc).__name__})"}
             candidate.results["perf"] = perf
             outcome.perf = perf  # the last measured candidate, or the selected one
             say("benchmark", str(perf.get("summary", "")))
         passed = (
-            new_test.ok and all_tests.ok and (perf_check is None or bool(perf.get("within_budget")))
+            new_test.ok
+            and all_tests.ok
+            and (perf_check is None or verified_repair_performance(perf, GatePolicy()))
         )
         candidate.verdict = "pass" if passed else "fail"
         if passed:
@@ -228,7 +251,11 @@ def repair_prefix_instability(
         outcome.logs["strategy"] = "no rule strategy applies"
         shutil.rmtree(work, ignore_errors=True)
         return outcome
-    attempt.status = RepairStatus.verified if passed else RepairStatus.rejected
+    attempt.status = (
+        (RepairStatus.functional_only if perf_check is None else RepairStatus.verified)
+        if passed
+        else RepairStatus.rejected
+    )
     outcome.patch = diff if passed else ""
     if passed:
         outcome.files = {
