@@ -7,8 +7,8 @@
 - [x] Project/configuration identity, revision fencing, input invalidation and export provenance.
 - [x] Real-endpoint procedure inspected against CLI/parser; no identified model endpoint available.
 - [x] Five-task human test prepared; observations blank.
-- [ ] Record final source, artifact hash, focused checks, Linux checks and clean-install receipt in REVIEW.md.
-- [ ] Curate public-review files and inspect nested wheels for secrets/private logs.
+- [x] Record final source, artifact hash, focused checks, Linux checks and clean-install receipt in REVIEW.md.
+- [x] Curate public-review files and inspect nested wheels for secrets/private logs (147 nested files; scope in receipt).
 - [ ] Obtain approval to push `product/researcher-starter` to `dilipna/Furnace4LLM` and open a draft PR against `fix/repair-verification`.
 - [ ] Run hosted checks on the actual pushed PR head; inspect any failures before assigning causes.
 - [ ] Merge #6 through its own review; retarget this PR to main without duplicating parent changes.
