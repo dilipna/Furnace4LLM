@@ -521,6 +521,10 @@ def launch(workspace: Path, port: int, open_browser: bool = True) -> None:
         threading.Thread(target=open_when_ready, daemon=True).start()
     try:
         server.run()
+    except KeyboardInterrupt:
+        # Uvicorn may re-raise SIGINT after lifespan cleanup; Ctrl+C is not a crash.
+        if not server.started:
+            raise SystemExit(130) from None
     finally:
         done.set()
     if not server.started:

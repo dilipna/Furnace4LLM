@@ -185,3 +185,52 @@ def test_startup_and_assets_are_real_local_application(setup):
     assert client.get("/assets/studio.css").status_code == 200
     with pytest.raises(ValueError, match="strong"):
         create_app(Path("unused"), "short")
+
+
+@pytest.mark.parametrize("started", [True, False])
+def test_launch_interrupt_has_no_traceback(tmp_path, monkeypatch, started):
+    import uvicorn
+    from furnace_api import studio
+
+    class InterruptedServer:
+        def __init__(self, config):
+            self.started = started
+
+        def run(self):
+            # Uvicorn can re-raise SIGINT after its lifespan cleanup completes.
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(studio, "create_app", lambda *args: object())
+    monkeypatch.setattr(uvicorn, "Server", InterruptedServer)
+    try:
+        if started:
+            studio.launch(tmp_path, 8787, open_browser=False)
+        else:
+            with pytest.raises(SystemExit) as stopped:
+                studio.launch(tmp_path, 8787, open_browser=False)
+            assert stopped.value.code == 130
+    except KeyboardInterrupt:
+        pytest.fail("Normal Ctrl+C escaped the application boundary")
+
+
+@pytest.mark.parametrize("failure", [None, RuntimeError("unexpected server failure")])
+def test_launch_still_reports_server_failure(tmp_path, monkeypatch, failure):
+    import uvicorn
+    from furnace_api import studio
+
+    class FailedServer:
+        started = False
+
+        def __init__(self, config):
+            pass
+
+        def run(self):
+            if failure:
+                raise failure
+
+    monkeypatch.setattr(studio, "create_app", lambda *args: object())
+    monkeypatch.setattr(uvicorn, "Server", FailedServer)
+    with pytest.raises(
+        RuntimeError if failure else SystemExit, match=r"server failure|could not start"
+    ):
+        studio.launch(tmp_path, 8787, open_browser=False)
