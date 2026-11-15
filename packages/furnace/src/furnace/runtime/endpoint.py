@@ -56,7 +56,8 @@ class LocalChatEndpoint:
             if active_socket is not None:
                 with contextlib.suppress(OSError):
                     active_socket.shutdown(socket.SHUT_RDWR)
-            connection.close()
+            # Leave HTTPConnection state to its owning thread. Concurrent close()
+            # clears .sock while request/getresponse may still be using it.
 
         timer = threading.Timer(timeout, abort)
         timer.daemon = True
