@@ -25,6 +25,9 @@ def main() -> None:
     parser.add_argument("bundle", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--expect-empty-cache", action="store_true")
+    parser.add_argument("--connector", action="store_true", help="Exercise installed endpoint API")
+    parser.add_argument("--browser", action="store_true", help="Also run isolated Chromium checks")
+    parser.add_argument("--screenshots", type=Path)
     args = parser.parse_args()
     if sys.platform != "linux":
         raise SystemExit("Run this clean-environment smoke inside a disposable Linux container")
@@ -161,6 +164,19 @@ def main() -> None:
             with urllib.request.urlopen(base + "/guide", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
                 assert b"YOUR_PINNED_MODEL_ID" in response.read()
             old_token = session
+            connector = None
+            if args.connector or args.browser:
+                from studio_connector_checks import verify_connector
+
+                connector = verify_connector(
+                    base,
+                    session,
+                    api,
+                    pid,
+                    root,
+                    browser=args.browser,
+                    screenshots=args.screenshots,
+                )
             stop()
             session = launch("restarted")
             assert old_token != session
@@ -175,6 +191,11 @@ def main() -> None:
                 and restored["contract"]["architecture"] == "Preserved metadata only"
             )
             assert len(api("projects")) == 1
+            if connector:
+                endpoint = restored["model_endpoint"]
+                assert endpoint["state"]["status"] == "disconnected"
+                assert endpoint["evaluation"]["run_id"] == connector["saved_run_id"]
+                connector["restart_disconnected_and_evidence_preserved"] = "passed"
             api(f"projects/{pid}", "DELETE")
             assert api("projects") == []
             report = {
@@ -200,6 +221,7 @@ def main() -> None:
                 "persistence_and_token_rotation": "passed",
                 "model_execution": False,
                 "gpu_execution": False,
+                "connector": connector,
             }
             if args.output:
                 args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")

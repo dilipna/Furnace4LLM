@@ -4,6 +4,7 @@ const fragment = new URLSearchParams(location.hash.slice(1)).get("session");
 const token = fragment || sessionStorage.getItem("furnace-session") || "";
 if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", "/model"); }
 let projects = [], selected = null, busy = false, refreshing = false;
+let refreshGeneration = 0;
 const drafts = new Map(), outputs = new Map(), prompts = new Map();
 function notice(value) { $("#model-notice").textContent = value; }
 function readableError(reason) {
@@ -83,17 +84,22 @@ function render() {
   }
 }
 async function refresh() {
+  const generation = ++refreshGeneration;
   $("#model-consent").checked = false;
   refreshing = true; render();
   try {
     const saved = await api("projects");
+    if (generation !== refreshGeneration) return;
     projects = saved.map(p => mergeProjectRecord(projects.find(old => old.id === p.id), p));
     if (!projects.some(p => p.id === selected)) selected = projects[0]?.id || null;
     const selector = $("#model-project"); selector.replaceChildren();
     for (const p of projects) { const option = document.createElement("option"); option.value = p.id; option.textContent = p.name; selector.append(option); }
     selector.value = selected || "";
     refreshing = false; render();
-  } catch (error) { notice("Saved state not confirmed: " + error.message); render(); }
+  } catch (error) {
+    if (generation !== refreshGeneration) return;
+    notice("Saved state not confirmed: " + error.message); render();
+  }
 }
 async function action(fn) {
   if (busy || !current()) return;
