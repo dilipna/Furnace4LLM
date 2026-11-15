@@ -121,3 +121,6 @@ author-reviewed reference case. Confirm readiness and nonempty reference inferen
 then test bad input, timeout, restart, reconnection and export against that same server.
 Do not substitute the HTTP test server or historical GPU measurements for this gate.
 No compute has been purchased and no model needs to be selected to review the app.
+
+See the [verification record](local-model-endpoint-verification.md) for the exact
+source, local checks, preview hash and unverified gates.
