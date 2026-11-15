@@ -105,7 +105,8 @@ def verify_connector(base, session, api, pid, root, *, browser=False, screenshot
         assert probe.requests == [("/v1/models", None)]
         result = api(path + "/predict", "POST", {"input": "test"})
         assert result["output"] == ANSWER
-        assert probe.requests[-1][1]["messages"] == [{"role": "user", "content": "test"}]
+        body = probe.requests[-1][1]
+        assert body is not None and body["messages"] == [{"role": "user", "content": "test"}]
         probe.mode = "error"
         failed = api(path + "/evaluate", "POST")["model_endpoint"]
         assert failed["state"]["status"] == "failed"
@@ -288,9 +289,12 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             page.get_by_role("button", name="Refresh saved state").click()
             expect(selector.locator("option")).to_have_count(1)
             print("Browser refresh reproduction: newest snapshot has one project", flush=True)
-            snapshots[0][0].fulfill(response=snapshots[0][1])
-            # Wait for the older fetch's JS continuation, not just the newest response.
-            page.wait_for_timeout(200)
+            with page.expect_event(
+                "requestfinished", predicate=lambda request: request == snapshots[0][0].request
+            ):
+                snapshots[0][0].fulfill(response=snapshots[0][1])
+            # Let the completed fetch's promise handlers render before inspecting absence.
+            page.evaluate("new Promise(resolve => requestAnimationFrame(resolve))")
             print(
                 "Browser refresh reproduction: after old response, project count =",
                 selector.locator("option").count(),
@@ -309,10 +313,15 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             assert snapshots
             page.get_by_role("button", name="Refresh saved state").click()
             expect(page.locator("#model-state")).not_to_contain_text("Reconfirming")
-            snapshots[0][0].fulfill(
-                status=503, content_type="application/json", body='{"detail":"old refresh failed"}'
-            )
-            page.wait_for_timeout(200)
+            with page.expect_event(
+                "requestfinished", predicate=lambda request: request == snapshots[0][0].request
+            ):
+                snapshots[0][0].fulfill(
+                    status=503,
+                    content_type="application/json",
+                    body='{"detail":"old refresh failed"}',
+                )
+            page.evaluate("new Promise(resolve => requestAnimationFrame(resolve))")
             expect(page.locator("#model-notice")).not_to_contain_text("old refresh failed")
             page.unroute("**/api/projects", hold_first_snapshot)
 
@@ -343,6 +352,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             page.unroute("**/api/projects")
             page.get_by_role("button", name="Refresh saved state").click()
             expect(page.locator("#model-run")).to_contain_text("completed")
+            expect(page.locator("#model-notice")).not_to_contain_text("Saved state not confirmed")
             page.evaluate("scrollTo(0, 0)")
             if screenshots:
                 screenshots.mkdir(parents=True, exist_ok=True)

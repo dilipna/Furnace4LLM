@@ -85,6 +85,7 @@ function render() {
 }
 async function refresh() {
   const generation = ++refreshGeneration;
+  notice("");
   $("#model-consent").checked = false;
   refreshing = true; render();
   try {
