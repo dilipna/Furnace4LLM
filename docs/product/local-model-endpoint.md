@@ -98,11 +98,15 @@ uv run pytest apps/api/tests/test_studio_model.py -q
 node --test apps/api/tests/studio-state.test.mjs
 ```
 
-Desktop browser automation was attempted but stopped by its safety helper because it
-could not determine Chrome's current URL reliably. The new screen's visual layout,
-keyboard journey and browser restoration therefore still need verification. Existing
-Studio state tests cover shared identity utilities, not a full browser execution of
-this new page. Automated transport checks are not human comprehension evidence.
+The installed preview now passes isolated Linux Chromium checks for connection,
+requests, case evaluation, downloaded ZIP identity, late responses, overlapping
+refreshes, project drafts, keyboard form navigation, reload/Back and mobile overflow.
+Desktop/mobile screenshots were inspected. An older response cannot restore a deleted
+project or replace a newer refresh failure/success state. Recovery clears stale errors.
+The persisted-pageshow failure/recovery handler was exercised with a synthetic event;
+actual BFCache use was not established. Desktop Chrome, fresh Windows/macOS installation
+and other browser engines remain unverified for this connector. Automated checks do
+not establish human comprehension. See the verification record for exact source/artifact.
 
 Owner-assisted trial (leave observations blank until performed):
 
