@@ -167,6 +167,22 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             expect(page.get_by_role("link", name="Skip to model connection")).to_be_focused()
             page.keyboard.press("Enter")
             expect(page.locator("#model-main")).to_be_focused()
+            for control in [
+                selector,
+                page.get_by_role("button", name="Refresh saved state"),
+                page.get_by_label("Local API base URL"),
+                page.get_by_label("Exact advertised model ID"),
+                page.get_by_label("Declared code/checkpoint or server revision"),
+                page.get_by_label("Request timeout, seconds"),
+                page.get_by_label("Maximum generated tokens"),
+                page.get_by_role("button", name="Save connection settings"),
+                page.locator("#model-consent"),
+            ]:
+                page.keyboard.press("Tab")
+                expect(control).to_be_focused()
+            page.keyboard.press("Space")
+            expect(page.locator("#model-consent")).to_be_checked()
+            page.keyboard.press("Space")
 
             # Connection settings and prompt drafts must remain scoped to their project.
             revision = page.get_by_label("Declared code/checkpoint or server revision")
@@ -316,10 +332,23 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             expect(page.get_by_role("button", name="Run endpoint cases")).to_be_enabled()
             page.get_by_role("button", name="Run endpoint cases").click()
             expect(page.locator("#model-run")).to_contain_text("completed")
+            # Exercise the persisted-pageshow handler without claiming a BFCache hit.
+            page.route("**/api/projects", lambda route: route.abort())
+            page.evaluate("dispatchEvent(new PageTransitionEvent('pageshow', {persisted:true}))")
+            expect(page.locator("#model-notice")).to_contain_text("Saved state not confirmed")
+            expect(page.locator("#model-run")).not_to_contain_text("completed")
+            expect(page.get_by_role("button", name="Send to local server")).to_be_disabled()
+            expect(consent).not_to_be_checked()
+            expect(page.get_by_role("button", name="Refresh saved state")).to_be_enabled()
+            page.unroute("**/api/projects")
+            page.get_by_role("button", name="Refresh saved state").click()
+            expect(page.locator("#model-run")).to_contain_text("completed")
+            page.evaluate("scrollTo(0, 0)")
             if screenshots:
                 screenshots.mkdir(parents=True, exist_ok=True)
                 page.screenshot(path=str(screenshots / "connector-desktop.png"), full_page=True)
             page.set_viewport_size({"width": 390, "height": 844})
+            page.evaluate("scrollTo(0, 0)")
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             if screenshots:
                 page.screenshot(path=str(screenshots / "connector-mobile.png"), full_page=True)
@@ -329,6 +358,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
                 "checks": "passed",
                 "human_comprehension": "not_tested",
                 "bfcache_use": "not_asserted",
+                "persisted_pageshow_failure_recovery": "synthetic_event_passed",
             }
         except Exception:
             if screenshots:
