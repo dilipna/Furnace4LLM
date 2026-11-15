@@ -1,4 +1,4 @@
-"""Local researcher workspace. No model execution, cloud provisioning or billing."""
+"""Local workspace with optional fixture execution and explicit external-server requests."""
 
 from __future__ import annotations
 
@@ -27,6 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from furnace_api.studio_evidence import project_view, provenance
+from furnace_api.studio_model import ConnectionInput, ConsentInput, ModelPrompt, ModelService
 from furnace_api.studio_runtime import RuntimeService
 
 ASSETS = Path(__file__).with_name("studio_assets")
@@ -182,20 +183,24 @@ def create_app(workspace: Path, token: str) -> FastAPI:
         raise ValueError("Studio requires a strong local session token")
     store = Store(workspace)
     runtime = RuntimeService(store, RuntimeManager(workspace))
+    model = ModelService(store, runtime.manager)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         with WorkspaceLease(workspace):
             await asyncio.to_thread(runtime.recover)
+            await asyncio.to_thread(model.recover)
             try:
                 yield
             finally:
+                await asyncio.to_thread(model.recover)
                 await asyncio.to_thread(runtime.close)
 
     app = FastAPI(
         title="Furnace Studio", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
     )
     app.state.runtime = runtime
+    app.state.model = model
 
     @app.exception_handler(RuntimeFault)
     async def runtime_error(request: Request, exc: RuntimeFault):
@@ -204,7 +209,9 @@ def create_app(workspace: Path, token: str) -> FastAPI:
         return JSONResponse(
             status_code=409,
             content={
-                "detail": "Framework runtime: "
+                "detail": exc.code
+                if "/model/" in request.url.path
+                else "Framework runtime: "
                 + exc.code.replace("_", " ")
                 + ". No model validation is implied."
             },
@@ -241,8 +248,12 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     def real_evaluation_guide():
         return FileResponse(ASSETS / "real-evaluation.html")
 
+    @app.get("/model")
+    def model_workspace():
+        return FileResponse(ASSETS / "model.html")
+
     @app.get("/assets/{name}")
-    def asset(name: Literal["studio.js", "studio.css", "studio-state.mjs"]):
+    def asset(name: Literal["studio.js", "studio.css", "studio-state.mjs", "model.js"]):
         return FileResponse(ASSETS / name)
 
     @app.get("/healthz")
@@ -459,6 +470,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                         "plan": project["plan"],
                         "runtime": project["runtime"],
                         "evaluation": project.get("evaluation"),
+                        "model_endpoint": project["model_endpoint"],
                         "provenance": provenance(project),
                         "assessment_sha256": hashlib.sha256(
                             json.dumps(project["assessment"], sort_keys=True).encode()
@@ -470,7 +482,10 @@ def create_app(workspace: Path, token: str) -> FastAPI:
             )
             with (folder / "README.md").open("a", encoding="utf-8") as readme:
                 readme.write(
-                    "\n## Studio evidence\n\nSee workspace-plan.json provenance for the project, configuration and verification status.\nFixture execution checks deterministic output against a saved expected string. There is no measured model baseline or base/head comparison.\nRound-trip timings include Docker control and are not model latency. No model inference, GPU result or model-quality verification is supplied.\nLegacy/unbound records are retained but do not verify the current configuration.\nFor a real-model validation procedure, open /guide in Studio.\n"
+                    "\n## Studio evidence\n\nSee workspace-plan.json provenance for the project, configuration and verification status.\nFixture execution checks deterministic output against a saved expected string. There is no measured model baseline or base/head comparison.\nRound-trip timings include Docker control and are not model latency. Fixture evidence supplies no model inference, GPU result or model-quality verification.\nLegacy/unbound records are retained but do not verify the current configuration.\nFor a real-model validation procedure, open /guide in Studio.\n"
+                )
+                readme.write(
+                    "\nIf configured, model_endpoint records separate local-server HTTP observations. Its declared model/revision is not independently attested; exact output equality is not semantic quality. Non-streaming round-trip duration is not TTFT. Disconnecting Furnace never stops the external server.\n"
                 )
             data = io.BytesIO()
             with zipfile.ZipFile(data, "w", zipfile.ZIP_DEFLATED) as archive:
@@ -484,8 +499,38 @@ def create_app(workspace: Path, token: str) -> FastAPI:
 
     @app.delete("/api/projects/{project_id}", status_code=204)
     def remove(project_id: str):
+        model.flag(project_id).set()
         runtime.remove(project_id)
         return Response(status_code=204)
+
+    @app.put("/api/projects/{project_id}/model/connection")
+    async def model_connection(project_id: str, request: Request):
+        value = await payload(request, ConnectionInput)
+        return await asyncio.to_thread(
+            model.configure, project_id, value.model_dump(), request.url.port
+        )
+
+    @app.get("/api/projects/{project_id}/model")
+    def saved_model(project_id: str):
+        return store.get(project_id)
+
+    @app.post("/api/projects/{project_id}/model/connect")
+    async def model_connect(project_id: str, request: Request):
+        value = await payload(request, ConsentInput)
+        return await asyncio.to_thread(model.connect, project_id, value.consent)
+
+    @app.post("/api/projects/{project_id}/model/disconnect")
+    def model_disconnect(project_id: str):
+        return model.disconnect(project_id)
+
+    @app.post("/api/projects/{project_id}/model/predict")
+    async def model_predict(project_id: str, request: Request):
+        value = await payload(request, ModelPrompt)
+        return await asyncio.to_thread(model.predict, project_id, value.input)
+
+    @app.post("/api/projects/{project_id}/model/evaluate")
+    def model_evaluate(project_id: str):
+        return model.evaluate(project_id)
 
     return app
 

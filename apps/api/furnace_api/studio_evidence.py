@@ -6,6 +6,8 @@ import hashlib
 import json
 from typing import Any
 
+from furnace_api.studio_model_evidence import view as model_view
+
 PROTOCOL = "framework-v2"
 
 
@@ -51,6 +53,7 @@ def project_view(project: dict[str, Any]) -> dict[str, Any]:
         "revision": project.get("revision", 0),
         "cases": cases,
         "configuration_sha256": identity,
+        "model_endpoint": model_view(project),
         "evaluation_verification": "current_framework_evidence"
         if current
         else "unbound_or_stale"

@@ -61,7 +61,7 @@ benchmarks or establish that a proposed architecture beats transformers generall
 | Reviewed native adapter | Author provides custom Python/framework model implementation | Pin code/deps/checkpoint; reference inference; state/reset contract; bounded isolated execution | Contract capture only; execution not connected |
 | Reviewed framework adapter | Compatible Transformers/custom-model API | Pin revisions; explicitly review custom code; tokenizer/input/output and device checks | No compatibility claim yet |
 | Supported engine adapter | Exact model/revision supported by vLLM or another engine | Engine/model match, launch flags, readiness, inference, cancellation and telemetry | Prior endpoint benchmarks exist; no new research-model validation |
-| Existing endpoint connector | Researcher already runs a server | Explicit request/response schema, auth, timeout, errors and task evaluation | Future connector; no arbitrary URL calls in Studio |
+| Existing endpoint connector | Researcher already runs a server | Explicit request/response schema, auth, timeout, errors and task evaluation | Implemented literal-loopback text-chat connector; no auth/remote endpoints; no model combination validated |
 
 Support is a versioned registry entry: proposed → adapter implemented → acceptance passed.
 Keep “unsupported”, “needs adapter”, “not tested” and “failed validation” distinguishable.
@@ -74,7 +74,7 @@ Studio is a local loopback application using the existing FastAPI dependency, pa
 with HTML/CSS/JS assets and workspace wheels. It stores two project records in SQLite,
 exports free kits, captures model contracts and both compute ownership choices, prepares
 evaluation cases and records actual workspace events. It has session-token authentication,
-origin/host restrictions and bounded forms. It makes no model-serving or billing calls.
+origin/host restrictions and bounded forms. It makes no billing calls. The optional local-server connector makes explicitly authorized, bounded HTTP calls; see [its contract and limitations](local-model-endpoint.md).
 
 The control application does not execute model code. The deterministic fixture already uses a separate worker. A future research-model worker must be a
 separate isolated process/container with no control-plane secrets or Docker socket,
@@ -110,5 +110,5 @@ The earlier workspace-only milestone could not connect browser automation; subse
 Studio browser/keyboard/responsive checks and installed-bundle tests are recorded in the
 verification documents. They are automated observations, not human comprehension evidence.
 Studio /guide provides the exact bounded real-endpoint CLI procedure and its missing
-prerequisite; no real-model adapter is connected to Studio. Paper/vendor claims stay separate from these
+prerequisite. Studio also has a separate local-server connector, tested against HTTP test servers only; native model loading is unimplemented. Paper/vendor claims stay separate from these
 application checks.

@@ -84,6 +84,13 @@ other demonstrates why descriptive expectations remain unscored. The environment
 check is read-only: it never downloads images, starts workers or verifies a model.
 You can inspect and export the example even without Docker installed.
 
+The separate Connect a local model server page sends bounded requests to an already
+running, unauthenticated OpenAI-compatible text-chat server on literal 127.0.0.1.
+You supply and operate that server; Furnace does not install or start it. No model
+combination is validated yet. Saving settings is not execution. Endpoint observations
+stay separate from fixture evidence; exact equality is not semantic quality and HTTP
+round-trip timing is not TTFT. Disconnecting never stops the external model server.
+
 This is a wheel-based preview requiring Python/uv, not a native one-click installer.
 Free assessment, starter-kit export and local workspace persistence are implemented.
 The $20/month managed-service offer supports both compute ownership choices in
