@@ -90,6 +90,9 @@ by opening the guided example. No mock is substituted for a requested real-model
 2. Download the free kit. Save the architecture/task/revision/license/device contract.
 3. Save compute ownership and demo preferences. Saving does not buy or provision anything.
 4. Add sanitized cases and optional exact expected outputs. Descriptions alone are unscored.
+   Existing suites can be [previewed and imported from JSONL](case-suite-import.md),
+   including the kit's exported cases. Imported status labels are discarded; replacement
+   requires an explicit action and refuses a preview made before a concurrent edit.
 5. For **infrastructure testing only**, install/start local Linux Docker (Docker Desktop
    with Linux containers on Windows). Choose Prepare local test environment. It builds the
    existing reviewed Python sandbox image if absent; public packages/images may download.

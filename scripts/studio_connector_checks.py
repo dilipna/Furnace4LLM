@@ -152,6 +152,104 @@ def verify_connector(base, session, api, pid, root, *, browser=False, screenshot
         return report
 
 
+def verify_case_import(page, base, session, api, pid, other_id, probe):
+    from playwright.sync_api import expect
+
+    page.goto(base + "/#session=" + session)
+    page.locator('[data-view="evaluations"]').click()
+    picker = page.get_by_label("Case suite JSONL file")
+    status = page.locator("#case-import-status")
+    preview = page.locator("#case-import-preview")
+    replace = page.get_by_role("button", name="Replace saved cases with preview")
+    before = api(f"projects/{pid}/model")
+    calls = len(probe.requests)
+    picker.set_input_files(
+        {"name": "invalid.jsonl", "mimeType": "application/x-ndjson", "buffer": b"{PRIVATE INVALID"}
+    )
+    expect(status).to_contain_text("Line 1: invalid JSON")
+    expect(status).not_to_contain_text("PRIVATE")
+    expect(replace).to_be_disabled()
+    assert api(f"projects/{pid}/model")["cases"] == before["cases"]
+    assert api(f"projects/{pid}/model")["revision"] == before["revision"]
+    cases = [
+        {
+            "name": "Imported transport exact",
+            "input": "test",
+            "expected_behavior": "Exact authored HTTP test response",
+            "expected_output": ANSWER,
+            "status": "framework_pass",
+        },
+        {
+            "name": "Imported descriptive case",
+            "input": "test",
+            "expected_behavior": "Needs human scoring",
+            "recorded_status": "framework_pass",
+        },
+    ]
+    content = "\n".join(json.dumps(item) for item in cases).encode()
+    # Delay an actual file read, then change project before its preview arrives.
+    page.evaluate("""() => {
+      const read = File.prototype.arrayBuffer;
+      File.prototype.arrayBuffer = async function() {
+        const bytes = await read.call(this);
+        if (this.name === 'delayed.jsonl') await new Promise(resolve => { window.releaseCaseImportRead = resolve; });
+        return bytes;
+      };
+    }""")
+    picker.set_input_files(
+        {"name": "delayed.jsonl", "mimeType": "application/x-ndjson", "buffer": content}
+    )
+    page.wait_for_function("typeof window.releaseCaseImportRead === 'function'")
+    page.locator(f'[data-project="{other_id}"]').click()
+    page.locator('[data-view="evaluations"]').click()
+    page.evaluate("releaseCaseImportRead()")
+    expect(preview.locator("li")).to_have_count(0)
+    expect(replace).to_be_disabled()
+    page.locator(f'[data-project="{pid}"]').click()
+    page.locator('[data-view="evaluations"]').click()
+    expect(preview.locator("li")).to_have_count(2)
+    expect(status).to_contain_text("2 imported result labels discarded")
+    assert api(f"projects/{pid}/model")["cases"] == before["cases"]
+    assert api(f"projects/{pid}/model")["revision"] == before["revision"]
+    # A different window edits after preview; the backend must reject the stale save.
+    api(
+        f"projects/{pid}/contract",
+        "PUT",
+        {"architecture": "Preserved metadata only", "notes": "Edited after preview"},
+    )
+    replace.click()
+    expect(page.locator("#notice")).to_contain_text("changed after preview")
+    assert api(f"projects/{pid}/model")["cases"] == before["cases"]
+    page.locator('[data-view="infrastructure"]').click()
+    page.locator("#refresh-runtime").click()
+    expect(page.locator("#refresh-runtime")).to_be_enabled()
+    page.locator('[data-view="evaluations"]').click()
+    expect(status).to_contain_text("Project changed after preview")
+    expect(replace).to_be_disabled()
+    picker.set_input_files(
+        {"name": "valid.jsonl", "mimeType": "application/x-ndjson", "buffer": content}
+    )
+    expect(replace).to_be_enabled()
+    replace.click()
+    expect(page.locator("#notice")).to_contain_text("Imported cases saved")
+    saved = api(f"projects/{pid}/model")
+    assert [item["name"] for item in saved["cases"]] == [item["name"] for item in cases]
+    assert [item["status"] for item in saved["cases"]] == ["not_run", "not_run"]
+    assert saved["evaluation"] is None
+    assert api(f"projects/{other_id}/model")["cases"] == []
+    assert len(probe.requests) == calls
+    # Starter-kit JSONL includes saved status metadata, and round-trips safely.
+    with zipfile.ZipFile(io.BytesIO(api(f"projects/{pid}/kit", "POST"))) as archive:
+        exported = archive.read("evaluation-cases.example.jsonl")
+    picker.set_input_files(
+        {"name": "from-kit.jsonl", "mimeType": "application/x-ndjson", "buffer": exported}
+    )
+    expect(preview.locator("li")).to_have_count(2)
+    expect(status).to_contain_text("2 imported result labels discarded")
+    page.get_by_role("button", name="Discard import preview").click()
+    expect(preview.locator("li")).to_have_count(0)
+
+
 def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | None):
     from playwright.sync_api import expect, sync_playwright
 
@@ -166,6 +264,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
         page = context.new_page()
         page.on("pageerror", lambda error: errors.append(str(error)))
         try:
+            verify_case_import(page, base, session, api, pid, other_id, probe)
             page.goto(base + "/model#session=" + session)
             selector = page.get_by_label("Workspace project")
             expect(selector).to_have_value(pid)
@@ -400,6 +499,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
                 "bfcache_use": "not_asserted",
                 "persisted_pageshow_failure_recovery": "synthetic_event_passed",
                 "attempt_history": "failed_attempt_inspected_without_execution; retained_after_retry_and_configuration_edit; project_scoped; exported",
+                "case_import": "invalid_and_delayed_reads_safe; stale_replace_refused; explicit_replace_reset_statuses; kit_jsonl_round_trip",
             }
         except Exception:
             if screenshots:

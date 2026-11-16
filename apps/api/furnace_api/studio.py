@@ -70,6 +70,9 @@ class Case(BaseModel):
 class Cases(BaseModel):
     model_config = ConfigDict(extra="forbid")
     cases: list[Case] = Field(max_length=30)
+    expected_configuration_sha256: str | None = Field(
+        default=None, min_length=64, max_length=64, pattern=r"^[a-f0-9]+$"
+    )
 
 
 class StartInput(BaseModel):
@@ -209,7 +212,9 @@ def create_app(workspace: Path, token: str) -> FastAPI:
         return JSONResponse(
             status_code=409,
             content={
-                "detail": exc.code
+                "detail": "The project changed after preview. Refresh its saved state, then preview the suite again."
+                if exc.code == "configuration_changed_before_case_import"
+                else exc.code
                 if "/model/" in request.url.path
                 else "Framework runtime: "
                 + exc.code.replace("_", " ")
@@ -253,7 +258,9 @@ def create_app(workspace: Path, token: str) -> FastAPI:
         return FileResponse(ASSETS / "model.html")
 
     @app.get("/assets/{name}")
-    def asset(name: Literal["studio.js", "studio.css", "studio-state.mjs", "model.js"]):
+    def asset(
+        name: Literal["studio.js", "studio.css", "studio-state.mjs", "model.js", "case-import.mjs"],
+    ):
         return FileResponse(ASSETS / name)
 
     @app.get("/healthz")
@@ -404,6 +411,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
             "cases",
             [{**case.model_dump(), "status": "not_run"} for case in value.cases],
             "Evaluation cases saved; no model evaluation has run",
+            value.expected_configuration_sha256,
         )
 
     @app.get("/api/adapters")

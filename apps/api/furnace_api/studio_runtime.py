@@ -128,10 +128,22 @@ class RuntimeService:
                 self._fail(project_id, exc.code)
                 return self.store.get(project_id)
 
-    def update(self, project_id: str, field: str, value: Any, message: str) -> dict[str, Any]:
+    def update(
+        self,
+        project_id: str,
+        field: str,
+        value: Any,
+        message: str,
+        expected_configuration_sha256: str | None = None,
+    ) -> dict[str, Any]:
         self.store.get(project_id)
         with self.manager.lock_for(project_id):
             project = self.store.get(project_id)
+            if (
+                expected_configuration_sha256 is not None
+                and project["configuration_sha256"] != expected_configuration_sha256
+            ):
+                raise RuntimeFault("configuration_changed_before_case_import")
             runtime = project.get("runtime")
             if isinstance(runtime, dict) and runtime.get("status") in {
                 "ready",
