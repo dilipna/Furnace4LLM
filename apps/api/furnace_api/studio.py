@@ -485,7 +485,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                     "\n## Studio evidence\n\nSee workspace-plan.json provenance for the project, configuration and verification status.\nFixture execution checks deterministic output against a saved expected string. There is no measured model baseline or base/head comparison.\nRound-trip timings include Docker control and are not model latency. Fixture evidence supplies no model inference, GPU result or model-quality verification.\nLegacy/unbound records are retained but do not verify the current configuration.\nFor a real-model validation procedure, open /guide in Studio.\n"
                 )
                 readme.write(
-                    "\nIf configured, model_endpoint records separate local-server HTTP observations. Its declared model/revision is not independently attested; exact output equality is not semantic quality. Non-streaming round-trip duration is not TTFT. Disconnecting Furnace never stops the external server.\n"
+                    "\nIf configured, model_endpoint records separate local-server HTTP observations. Its history retains the last ten attempts in start order, including failures; older attempts expire uniformly. Export before retrying to preserve older copies. History stores hashes and request metadata, not raw prompts/outputs or previous case text. A matching configuration label does not establish readiness or independently attest the declared model/revision; exact output equality is not semantic quality. Non-streaming round-trip duration is not TTFT. Disconnecting Furnace never stops the external server.\n"
                 )
             data = io.BytesIO()
             with zipfile.ZipFile(data, "w", zipfile.ZIP_DEFLATED) as archive:

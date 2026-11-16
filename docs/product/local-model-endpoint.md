@@ -49,6 +49,30 @@ dedicated local test instance. No API keys belong in these forms or exports.
 5. Export the kit and inspect `workspace-plan.json` → `model_endpoint`. Fixture
    evidence and provenance remain separate fields. Disconnect when finished.
 
+## Review attempts without losing the failure
+
+**Attempt history** retains the last ten endpoint evaluations per project, newest
+first in Studio. Expand an attempt with a click or keyboard to inspect its status,
+request IDs, per-case records, durations and output hashes. Opening history makes no
+model request. A successful retry retains the earlier failure; retries still execute
+all cases again. An attempt can be completed while containing failed or unscored cases.
+
+History and the current result are saved together after each case and at completion.
+Restart marks a partial run interrupted and retains its recorded cases. Changing
+connection settings clears the current result but keeps historical attempts. Contract,
+case and preference edits change the configuration identity; older attempts show
+**Earlier or unbound configuration**. Restoring an earlier configuration may make its
+history label match again, but does not reconnect or promote it to the current result.
+
+Retention is by attempt start order, with the same ten-attempt limit for successes,
+failures and interruptions. Starting attempt eleven expires the oldest; export the kit
+beforehand to preserve a separate copy. `model_endpoint.history` contains retained
+records and `history_limit` states the limit. No raw prompts/outputs or previous case
+text are retained in history. Historical names/expectations are not reconstructed from
+the current cases. Earlier previews' last saved run is included; already overwritten
+attempts cannot be recovered, and missing original case counts stay unknown. Removing
+a project removes its local history; downloaded copies remain under your control.
+
 ## Failure, identity and privacy contract
 
 Each request has a 1–10 second deadline, including a slowly trickling body. The

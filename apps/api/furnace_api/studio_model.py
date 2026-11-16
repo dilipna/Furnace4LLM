@@ -14,7 +14,7 @@ from furnace.runtime.manager import RuntimeFault, RuntimeManager
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from furnace_api.studio_evidence import case_input
-from furnace_api.studio_model_evidence import PROTOCOL, identity
+from furnace_api.studio_model_evidence import HISTORY_LIMIT, PROTOCOL, identity, retained_runs
 from furnace_api.studio_runtime import WorkspaceStore
 
 
@@ -85,6 +85,7 @@ class ModelService:
             raise RuntimeFault("studio_cannot_be_its_own_model_endpoint")
         self.flag(pid).set()
         with self.manager.lock_for(pid):
+            history = retained_runs(self.store.get(pid))
             return self.store.change(
                 pid,
                 "model_connection",
@@ -93,6 +94,7 @@ class ModelService:
                 extra={
                     "model_connection_state": {"status": "disconnected"},
                     "model_evaluation": None,
+                    "model_evaluation_history": history,
                 },
             )
 
@@ -167,6 +169,17 @@ class ModelService:
                 "project_revision": saved["revision"],
             }
 
+    def save_run(self, pid: str, run: dict, event: str) -> dict:
+        # Callers hold the project lock. Current result and bounded history commit together.
+        history = [r for r in retained_runs(self.store.get(pid)) if r["run_id"] != run["run_id"]]
+        return self.store.change(
+            pid,
+            "model_evaluation",
+            run,
+            event,
+            extra={"model_evaluation_history": [*history, run][-HISTORY_LIMIT:]},
+        )
+
     def evaluate(self, pid: str) -> dict:
         self.store.get(pid)
         with self.manager.lock_for(pid):
@@ -184,8 +197,10 @@ class ModelService:
                 "model_identity_independently_verified": False,
                 "results": [],
                 "declared_revision": config["declared_revision"],
+                "model_id": config["model_id"],
+                "case_count": len(project["cases"]),
             }
-            self.store.change(pid, "model_evaluation", run, "Local endpoint evaluation started")
+            self.save_run(pid, run, "Local endpoint evaluation started")
             deadline = time.monotonic() + 30
             for index, item in enumerate(project["cases"]):
                 case = case_input(item)
@@ -220,9 +235,8 @@ class ModelService:
                             "output_sha256": hashlib.sha256(result["output"].encode()).hexdigest(),
                         }
                     )
-                    self.store.change(
+                    self.save_run(
                         pid,
-                        "model_evaluation",
                         run,
                         f"Local endpoint case {index + 1} recorded: {status}",
                     )
@@ -235,9 +249,8 @@ class ModelService:
                     break
             if run["status"] == "running":
                 run["status"] = "completed"
-            return self.store.change(
+            return self.save_run(
                 pid,
-                "model_evaluation",
                 run,
                 "Local endpoint evaluation ended; exact checks are not semantic quality",
             )
@@ -248,9 +261,8 @@ class ModelService:
             with self.manager.lock_for(pid):
                 run = project.get("model_evaluation")
                 if run and run.get("status") == "running":
-                    self.store.change(
+                    self.save_run(
                         pid,
-                        "model_evaluation",
                         {**run, "status": "interrupted"},
                         "Interrupted endpoint evaluation retained; reconnect and retry explicitly",
                     )

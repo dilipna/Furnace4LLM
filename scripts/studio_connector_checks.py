@@ -127,6 +127,11 @@ def verify_connector(base, session, api, pid, root, *, browser=False, screenshot
             "unscored",
         ]
         assert completed["evaluation"] is None
+        assert [run["status"] for run in completed["model_endpoint"]["history"]] == [
+            "interrupted",
+            "completed",
+        ]
+        assert completed["model_endpoint"]["history"][0]["run_id"] == failed["evaluation"]["run_id"]
         report = {"http_test_server_only": True, "installed_api_checks": "passed"}
         if browser:
             report["browser"] = verify_browser(
@@ -140,7 +145,9 @@ def verify_connector(base, session, api, pid, root, *, browser=False, screenshot
                 endpoint["configuration_sha256"] == saved["model_endpoint"]["configuration_sha256"]
             )
             assert endpoint["verification"] == "current_endpoint_observation"
+            assert endpoint["history"] == saved["model_endpoint"]["history"]
         report["saved_run_id"] = saved["model_endpoint"]["evaluation"]["run_id"]
+        report["saved_history_ids"] = [run["run_id"] for run in saved["model_endpoint"]["history"]]
         report["actual_http_requests"] = len(probe.requests)
         return report
 
@@ -213,11 +220,22 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             expect(page.locator("#model-results")).to_contain_text("exact_pass")
             expect(page.locator("#model-results")).to_contain_text("unscored")
             expect(page.locator("#model-run")).to_contain_text("completed")
+            history = page.locator("#model-history")
+            failed_attempt = history.locator("details").filter(has_text="interrupted")
+            expect(failed_attempt).to_have_count(1)
+            before_inspection = len(probe.requests)
+            failed_attempt.locator("summary").focus()
+            page.keyboard.press("Enter")
+            expect(failed_attempt).to_have_attribute("open", "")
+            expect(failed_attempt).to_contain_text("error: 1")
+            expect(failed_attempt).to_contain_text("not_run: 1")
+            assert len(probe.requests) == before_inspection
             with page.expect_download() as download:
                 page.get_by_role("button", name="Export kit with both evidence types").click()
             with zipfile.ZipFile(download.value.path()) as archive:
                 exported = json.loads(archive.read("workspace-plan.json"))["model_endpoint"]
                 assert exported["evaluation"]["project_id"] == pid
+                assert exported["history"][0]["status"] == "interrupted"
 
             # Deliver a real response late, after another project becomes selected.
             held = []
@@ -239,6 +257,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
                 page.wait_for_timeout(20)
             assert held
             selector.select_option(other_id)
+            expect(history.locator("details")).to_have_count(0)
             held[0][0].fulfill(response=held[0][1])
             expect(selector).to_have_value(other_id)
             expect(page.locator("#model-notice")).to_contain_text("Request completed")
@@ -267,6 +286,12 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             expect(page.locator("#model-notice")).to_contain_text("Request completed")
             expect(page.locator("#model-output")).not_to_contain_text(ANSWER)
             expect(page.locator("#model-run")).not_to_contain_text("completed")
+            expect(
+                history.locator("summary").filter(has_text="Current saved configuration")
+            ).to_have_count(0)
+            expect(
+                history.locator("summary").filter(has_text="Earlier or unbound configuration")
+            ).to_have_count(3)
             page.unroute(prediction, delay_predict)
 
             # Two refreshes resolve out of order, with a deletion between snapshots.
@@ -346,6 +371,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             page.evaluate("dispatchEvent(new PageTransitionEvent('pageshow', {persisted:true}))")
             expect(page.locator("#model-notice")).to_contain_text("Saved state not confirmed")
             expect(page.locator("#model-run")).not_to_contain_text("completed")
+            expect(history.locator("details")).to_have_count(0)
             expect(page.get_by_role("button", name="Send to local server")).to_be_disabled()
             expect(consent).not_to_be_checked()
             expect(page.get_by_role("button", name="Refresh saved state")).to_be_enabled()
@@ -369,6 +395,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
                 "human_comprehension": "not_tested",
                 "bfcache_use": "not_asserted",
                 "persisted_pageshow_failure_recovery": "synthetic_event_passed",
+                "attempt_history": "failed_attempt_inspected_without_execution; retained_after_retry_and_configuration_edit; project_scoped; exported",
             }
         except Exception:
             if screenshots:

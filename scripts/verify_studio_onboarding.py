@@ -195,6 +195,9 @@ def main() -> None:
                 endpoint = restored["model_endpoint"]
                 assert endpoint["state"]["status"] == "disconnected"
                 assert endpoint["evaluation"]["run_id"] == connector["saved_run_id"]
+                assert [run["run_id"] for run in endpoint["history"]] == connector[
+                    "saved_history_ids"
+                ]
                 connector["restart_disconnected_and_evidence_preserved"] = "passed"
             api(f"projects/{pid}", "DELETE")
             assert api("projects") == []

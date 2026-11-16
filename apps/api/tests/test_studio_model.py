@@ -218,6 +218,7 @@ def test_actual_requests_state_identity_export_and_failure_then_explicit_retry(t
         assert state.requests[-1][1]["max_tokens"] == 16
         state.mode = "error"
         failed = client.post(f"/api/projects/{pid}/model/evaluate").json()
+        failed_run_id = failed["model_endpoint"]["evaluation"]["run_id"]
         assert failed["model_endpoint"]["evaluation"]["status"] == "interrupted"
         assert len(failed["model_endpoint"]["evaluation"]["results"]) == 1
         assert failed["model_endpoint"]["evaluation"]["results"][0]["status"] == "error"
@@ -229,6 +230,12 @@ def test_actual_requests_state_identity_export_and_failure_then_explicit_retry(t
         connect(client, pid)
         completed = client.post(f"/api/projects/{pid}/model/evaluate").json()
         endpoint = completed["model_endpoint"]
+        assert failed_run_id in json.dumps(completed), "Retry erased the failed attempt"
+        assert [run["status"] for run in endpoint["history"]] == ["interrupted", "completed"]
+        assert endpoint["history"][0]["run_id"] == failed_run_id
+        assert all(run["matches_current_configuration"] for run in endpoint["history"])
+        assert all(run["case_count"] == 2 for run in endpoint["history"])
+        assert "answer" not in json.dumps(endpoint["history"])
         assert len(state.requests) == requests_after_failure + 3  # Check + two actual completions.
         assert [r["status"] for r in endpoint["evaluation"]["results"]] == [
             "exact_pass",
@@ -244,8 +251,13 @@ def test_actual_requests_state_identity_export_and_failure_then_explicit_retry(t
             assert exported["configuration_sha256"] == endpoint["configuration_sha256"]
             assert exported["evaluation"]["project_id"] == pid
             assert exported["evaluation"]["execution_kind"] == "local_endpoint_response"
+            assert exported["history"] == endpoint["history"]
         changed = client.put(f"/api/projects/{pid}/contract", json={"notes": "changed"}).json()
         assert changed["model_endpoint"]["verification"] == "no_current_endpoint_evidence"
+        assert len(changed["model_endpoint"]["history"]) == 2
+        assert not any(
+            run["matches_current_configuration"] for run in changed["model_endpoint"]["history"]
+        )
         assert (
             changed["model_endpoint"]["configuration_sha256"]
             != configured["model_endpoint"]["configuration_sha256"]
@@ -292,6 +304,7 @@ def test_restart_does_not_reconnect_or_rerun_and_preserves_saved_evidence(tmp_pa
         restored = client.get(f"/api/projects/{pid}/model").json()
         assert restored["model_endpoint"]["state"]["status"] == "disconnected"
         assert restored["model_endpoint"]["evaluation"]["run_id"] == run_id
+        assert restored["model_endpoint"]["history"][-1]["run_id"] == run_id
         assert client.post(f"/api/projects/{pid}/model/evaluate").status_code == 409
         assert len(state.requests) == before
         connect(client, pid)  # Disconnect never stopped our independent HTTP server.
@@ -388,6 +401,7 @@ def test_restart_retains_partial_run_without_reusing_it_for_another_project(tmp_
     with TestClient(create_app(tmp_path, TOKEN), **args) as client:
         endpoint = client.get(f"/api/projects/{pid}/model").json()["model_endpoint"]
         assert endpoint["evaluation"]["status"] == "interrupted"
+        assert endpoint["history"][-1]["status"] == "interrupted"
         assert len(endpoint["evaluation"]["results"]) == 1
         assert len(state.requests) == before
         assert client.post(f"/api/projects/{pid}/model/evaluate").status_code == 409
@@ -400,5 +414,83 @@ def test_restart_retains_partial_run_without_reusing_it_for_another_project(tmp_
         )
         changed = configure(client, pid, {**config, "declared_revision": "different-revision"})
         assert changed["model_endpoint"]["evaluation"] is None
+        assert changed["model_endpoint"]["history"][-1]["run_id"] == run["run_id"]
         assert changed["model_endpoint"]["configuration_sha256"] != run["configuration_sha256"]
+        assert len(state.requests) == before
+
+
+def test_history_retention_is_chronological_for_failures_and_successes(tmp_path, server):
+    state, config = server
+    args = {"base_url": "http://localhost", "headers": {"x-furnace-session": TOKEN}}
+    ids, statuses = [], []
+    with TestClient(create_app(tmp_path, TOKEN), **args) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        add_cases(client, pid)
+        configure(client, pid, config)
+        for index in range(12):
+            connect(client, pid)
+            state.mode = "error" if index % 3 == 0 else "normal"
+            endpoint = client.post(f"/api/projects/{pid}/model/evaluate").json()["model_endpoint"]
+            ids.append(endpoint["evaluation"]["run_id"])
+            statuses.append(endpoint["evaluation"]["status"])
+        assert len(state.requests) == 32  # 12 readiness checks; 8*2 + 4*1 completions.
+        assert endpoint["history_limit"] == 10
+        assert [run["run_id"] for run in endpoint["history"]] == ids[-10:]
+        assert [run["status"] for run in endpoint["history"]] == statuses[-10:]
+        assert len(set(ids)) == 12
+        before = len(state.requests)
+    with TestClient(create_app(tmp_path, TOKEN), **args) as client:
+        restored = client.get(f"/api/projects/{pid}/model").json()["model_endpoint"]
+        assert [run["run_id"] for run in restored["history"]] == ids[-10:]
+        assert len(state.requests) == before  # Reading history never re-executes a case.
+        with zipfile.ZipFile(
+            io.BytesIO(client.post(f"/api/projects/{pid}/kit").content)
+        ) as archive:
+            exported = json.loads(archive.read("workspace-plan.json"))["model_endpoint"]
+            assert exported["history"] == restored["history"]
+
+
+def test_legacy_last_result_survives_reconfiguration_and_cannot_attest_another_project(
+    tmp_path, server
+):
+    from furnace_api.studio_model_evidence import view
+
+    state, config = server
+    app = create_app(tmp_path, TOKEN)
+    with TestClient(
+        app, base_url="http://localhost", headers={"x-furnace-session": TOKEN}
+    ) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        add_cases(client, pid)
+        configure(client, pid, config)
+        connect(client, pid)
+        endpoint = client.post(f"/api/projects/{pid}/model/evaluate").json()["model_endpoint"]
+        old = dict(endpoint["evaluation"])
+        old.pop("case_count")
+        old.pop("model_id")
+        # Earlier previews stored only this single result, without a history field.
+        with app.state.model.store.connect() as db:
+            project = json.loads(
+                db.execute("SELECT data FROM projects WHERE id=?", (pid,)).fetchone()[0]
+            )
+            project.pop("model_evaluation_history")
+            project["model_evaluation"] = old
+            db.execute("UPDATE projects SET data=? WHERE id=?", (json.dumps(project), pid))
+        before = len(state.requests)
+        changed = configure(client, pid, {**config, "declared_revision": "new-declaration"})
+        history = changed["model_endpoint"]["history"]
+        assert len(history) == 1 and history[0]["run_id"] == old["run_id"]
+        assert "case_count" not in history[0]
+        assert not history[0]["matches_current_configuration"]
+        assert changed["model_endpoint"]["evaluation"] is None
+        assert len(state.requests) == before
+        assert view({**changed, "id": "b" * 32})["history"] == []
+        restored_config = configure(client, pid, config)["model_endpoint"]
+        assert restored_config["history"][0]["matches_current_configuration"]
+        assert restored_config["evaluation"] is None
+        assert restored_config["verification"] == "no_current_endpoint_evidence"
+        assert (
+            client.post(f"/api/projects/{pid}/model/predict", json={"input": "x"}).status_code
+            == 409
+        )
         assert len(state.requests) == before

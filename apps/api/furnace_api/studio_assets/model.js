@@ -82,6 +82,25 @@ function render() {
     row.textContent = item.name + " — " + (result?.status || "not_run") + (result?.duration_ms !== undefined ? " · HTTP round trip " + result.duration_ms + " ms (not TTFT)" : "") + (result?.reason ? " · " + result.reason : "");
     list.append(row);
   }
+  const history = refreshing ? [] : endpoint.history || [];
+  $("#model-history-state").textContent = refreshing
+    ? "Reconfirming saved history…"
+    : history.length + " retained attempts (limit " + endpoint.history_limit + "). Newest first; opening an attempt sends no request.";
+  const archive = $("#model-history"); archive.replaceChildren();
+  for (const attempt of history.slice().reverse()) {
+    const entry = document.createElement("details"), heading = document.createElement("summary");
+    const binding = attempt.matches_current_configuration ? "Current saved configuration" : "Earlier or unbound configuration";
+    heading.textContent = new Date(attempt.at).toLocaleString() + " · " + attempt.status + " · " + binding;
+    const identification = document.createElement("p");
+    identification.textContent = "Attempt " + attempt.run_id + " · Model ID: " + (attempt.model_id || "not recorded") + " · Declared revision: " + (attempt.declared_revision || "not recorded");
+    const counts = document.createElement("p");
+    const results = attempt.results || [];
+    counts.textContent = ["exact_pass", "exact_fail", "unscored", "incomplete", "error"].map(status => status + ": " + results.filter(r => r.status === status).length).join(" · ")
+      + (Number.isInteger(attempt.case_count) ? " · not_run: " + Math.max(0, attempt.case_count - results.length) : " · original case count not recorded");
+    const record = document.createElement("pre"); record.className = "guide-code";
+    record.textContent = JSON.stringify(attempt, null, 2);
+    entry.append(heading, identification, counts, record); archive.append(entry);
+  }
 }
 async function refresh() {
   const generation = ++refreshGeneration;
