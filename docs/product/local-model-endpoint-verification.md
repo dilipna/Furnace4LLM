@@ -1,5 +1,9 @@
 # Local connector verification — 2026-11-15
 
+Follow-up on 2026-11-16: [bounded attempt history](evaluation-history-verification.md)
+adds failure retention, a newer verified preview and fresh checks. The source IDs and
+archive hashes below describe the earlier milestones and remain historical evidence.
+
 Initial connector source: `761bd37ac393a36e1da14359202048d55da9900a` on
 `product/local-model-endpoint`, based on the existing Studio branch at
 `bdbedca5add63bd1778e8bdeec540f3cc14dbbbd`. This is local, unpublished development.

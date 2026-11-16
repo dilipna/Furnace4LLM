@@ -54,8 +54,9 @@ dedicated local test instance. No API keys belong in these forms or exports.
 **Attempt history** retains the last ten endpoint evaluations per project, newest
 first in Studio. Expand an attempt with a click or keyboard to inspect its status,
 request IDs, per-case records, durations and output hashes. Opening history makes no
-model request. A successful retry retains the earlier failure; retries still execute
-all cases again. An attempt can be completed while containing failed or unscored cases.
+model request. A successful retry retains the earlier failure; retries restart from
+the first case and remain subject to the request/batch limits. An attempt can be
+completed while containing failed or unscored cases.
 
 History and the current result are saved together after each case and at completion.
 Restart marks a partial run interrupted and retains its recorded cases. Changing
@@ -69,9 +70,13 @@ failures and interruptions. Starting attempt eleven expires the oldest; export t
 beforehand to preserve a separate copy. `model_endpoint.history` contains retained
 records and `history_limit` states the limit. No raw prompts/outputs or previous case
 text are retained in history. Historical names/expectations are not reconstructed from
-the current cases. Earlier previews' last saved run is included; already overwritten
+the current cases. Export before editing cases or the contract if you need to reproduce
+their original inputs later. Earlier previews' last saved run is included; already overwritten
 attempts cannot be recovered, and missing original case counts stay unknown. Removing
 a project removes its local history; downloaded copies remain under your control.
+
+The [history verification record](evaluation-history-verification.md) documents the
+before/after reproduction, retention and legacy checks, and installed-browser evidence.
 
 ## Failure, identity and privacy contract
 
