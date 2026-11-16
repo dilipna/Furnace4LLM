@@ -112,7 +112,7 @@ def main() -> None:
                         request = urllib.request.Request(  # noqa: S310 -- generated loopback URL only
                             base + "/api/projects", headers={"X-Furnace-Session": match[1]}
                         )
-                        with opener.open(request, timeout=3) as response:  # noqa: S310 -- generated loopback URL only
+                        with opener.open(request, timeout=3) as response:
                             if response.status == 200:
                                 return match[1]
                     except OSError:
@@ -151,7 +151,7 @@ def main() -> None:
                 try:
                     with opener.open(
                         base + "/healthz", timeout=3 if sys.platform == "win32" else 0.5
-                    ) as response:  # noqa: S310 -- generated loopback URL
+                    ) as response:
                         response.read()
                     listening = True
                 except urllib.error.HTTPError:
@@ -190,7 +190,7 @@ def main() -> None:
                     "Origin": base,
                 },
             )
-            with opener.open(request, timeout=20) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(request, timeout=20) as response:
                 raw = response.read()
                 return (
                     raw
@@ -209,7 +209,7 @@ def main() -> None:
                 system["workspace"] == "available" and system["runtime"]["status"] == "unavailable"
             )
             assert system["runtime"]["code"] == "docker_unavailable"
-            with opener.open(base + "/assets/studio-state.mjs", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(base + "/assets/studio-state.mjs", timeout=5) as response:
                 assert "javascript" in response.headers["content-type"]
                 assert b"journeyFor" in response.read()
             example = api("examples/framework", "POST")
@@ -235,7 +235,7 @@ def main() -> None:
                 assert snapshot["provenance"]["project_id"] == pid
                 assert snapshot["provenance"]["verification_status"] == "no_current_evidence"
                 assert snapshot["provenance"]["model_inference"] is False
-            with opener.open(base + "/guide", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(base + "/guide", timeout=5) as response:
                 assert b"YOUR_PINNED_MODEL_ID" in response.read()
             old_token = session
             connector = None
