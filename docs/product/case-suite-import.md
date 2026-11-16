@@ -55,3 +55,6 @@ Previewing reads the chosen file in the browser and never executes/imports its c
 Explicit replacement sends the normalized case fields to this machine's private Studio
 API. Saved inputs/expectations are stored locally and included in kit exports; they
 are not encrypted by Furnace. Use sanitized inputs and do not import secrets.
+
+See the [verification record](case-suite-import-verification.md) for exact source,
+installed-browser checks and remaining limitations.

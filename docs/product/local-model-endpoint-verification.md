@@ -3,6 +3,8 @@
 Follow-up on 2026-11-16: [bounded attempt history](evaluation-history-verification.md)
 adds failure retention, a newer verified preview and fresh checks. The source IDs and
 archive hashes below describe the earlier milestones and remain historical evidence.
+The subsequent [case-suite import milestone](case-suite-import-verification.md) adds
+safe JSONL preview/replacement and records the latest installed preview and checks.
 
 Initial connector source: `761bd37ac393a36e1da14359202048d55da9900a` on
 `product/local-model-endpoint`, based on the existing Studio branch at
