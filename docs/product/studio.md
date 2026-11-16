@@ -26,6 +26,11 @@ Do not expose the port, share session links or enter secrets. Tokens rotate on r
 open the newly printed link in stale tabs. This is local-session security, not hosted
 multi-tenant authentication. Local SQLite/case/kit content is not encrypted by Furnace.
 
+Database initialization and recovery happen only after startup acquires the workspace
+lease. A rejected second application does not initialize the database. Custom ASGI
+hosting must enable lifespan handling; constructing the application alone does not
+open/create the database. See [ownership verification](workspace-ownership-verification.md).
+
 ## First visit and guided example
 
 Choose **Open guided example** to explore without selecting a research model or entering

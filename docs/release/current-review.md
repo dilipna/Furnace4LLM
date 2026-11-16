@@ -1,4 +1,4 @@
-# Local integration and release handoff — 2026-11-16
+# Integration and release handoff — 2026-11-16
 
 This is a review checklist, not a release announcement. No deployment, release,
 new paid service, learned inference or new GPU experiment was performed.
@@ -13,8 +13,9 @@ new paid service, learned inference or new GPU experiment was performed.
 - Exact-head hosted checks are successful: Python, Web (including Studio state tests)
   and API image in [CI](https://github.com/dilipna/Furnace4LLM/actions/runs/43572672946);
   saved measurements in [evidence](https://github.com/dilipna/Furnace4LLM/actions/runs/43572672904).
-  These checks belong to #7, not the unpublished work below.
-- `product/local-model-endpoint` is a local child of #7. It adds the optional local
+  These checks belong to #7. The follow-up PRs have their own checks below.
+- [PR #9](https://github.com/dilipna/Furnace4LLM/pull/9), `product/local-model-endpoint`,
+  is a child of #7. It adds the optional local
   text-chat connector, bounded evaluation history, safe case-suite import and
   verification. It is not part of #7 or available on the public website.
 - `improve/visitor-journeys` is preserved clean at
@@ -28,6 +29,24 @@ new paid service, learned inference or new GPU experiment was performed.
   Its branch contains the before/after record and prepared PR description under
   `docs/follow-ups/002-cache-*`. The Python run uses the same documented Node
   workaround; its results must not be added to Studio's different-branch test count.
+
+## Published follow-up checkpoint
+
+- [PR #8](https://github.com/dilipna/Furnace4LLM/pull/8) is a draft at
+  `b004e7f228bdd92bf1670b6a3018a6158c4a0c04`. Its four hosted checks passed: Python
+  reported 576 passed/1 skipped; Web included 12 state tests; image and evidence passed.
+- PR #9's earlier `481f5da9ff015252ef9787527eea99549673e9ba` head passed all four
+  hosted checks: Python 600 passed/1 skipped and Web 18 state tests. Those results
+  do not certify subsequent corrections on this branch.
+- Review subsequently fixed database initialization preceding workspace ownership
+  and corrected CI's moving-HEAD archive/pass-stamp race. Their before/after evidence
+  is in [workspace ownership](../product/workspace-ownership-verification.md) and
+  [CI identity](ci-commit-identity.md). Fresh exact-head results are recorded in PR #9.
+- A separate local `integration/local-release` worktree combines both PRs without
+  rewriting either branch. It does not merge them into main or deploy either UI.
+- Native Windows picker automation stopped because the computer-use helper could not
+  determine Chrome's current URL confidently enough to enforce policy. No browser
+  input occurred. Native picker selection and human comprehension remain unverified.
 
 ## Local preview and practical review
 
@@ -53,11 +72,11 @@ to install Docker. Label facilitator operation or explanation as assisted observ
 ## Remaining gates in order
 
 1. Completed: merge #7 after exact-head verification, preserving ancestry.
-2. Authorized: push the local connector branch and open a focused draft PR. Main has
-   been merged without conflicts or rewriting history. Run all local pre-push checks
-   and obtain hosted checks on its actual head. Local tests do not replace those checks.
-3. Authorized: publish the separate cache-recovery fix through its own review PR after
-   its integration checks. Neither follow-up PR is being merged in this operation.
+2. Completed: publish the connector as draft #9. Scoped review corrections require
+   fresh local pre-push and exact-head hosted checks after each update.
+3. Completed: publish the independent cache fix as draft #8. Neither follow-up PR is
+   being merged in this operation. Combined local execution is a separate verification
+   gate, not evidence that either draft has been merged or deployed.
 4. Run the [smallest fresh-profile onboarding test](../product/native-windows-verification.md#remaining-release-gates)
    and collect actual owner/developer comprehension feedback. Assess native file-picker
    interaction; automated file injection is insufficient for that claim.

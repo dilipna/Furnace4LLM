@@ -17,8 +17,10 @@ def setup(tmp_path):
     (model / "config.json").write_text('{"model_type":"test_metadata_only"}')
     (model / "research.py").write_text("raise RuntimeError('must never execute')")
     app = create_app(tmp_path / "workspace", TOKEN)
-    client = TestClient(app, base_url="http://localhost", headers={"x-furnace-session": TOKEN})
-    return client, model, tmp_path
+    with TestClient(
+        app, base_url="http://localhost", headers={"x-furnace-session": TOKEN}
+    ) as client:
+        yield client, model, tmp_path
 
 
 def add(client, model):
@@ -27,8 +29,8 @@ def add(client, model):
     return response.json()
 
 
-def test_complete_workspace_roundtrip_export_and_restart(setup):
-    client, model, root = setup
+def test_complete_workspace_roundtrip_export_and_removal(setup):
+    client, model, _ = setup
     project = add(client, model)
     pid = project["id"]
     assert project["runtime"] == "not_connected"
@@ -69,20 +71,36 @@ def test_complete_workspace_roundtrip_export_and_restart(setup):
         )
         assert json.loads(kit.read("evaluation-cases.example.jsonl"))["status"] == "not_run"
         assert json.loads(kit.read("workspace-plan.json"))["plan"]["compute"] == "customer"
-    other = TestClient(
-        create_app(root / "workspace", TOKEN + "new"),
-        base_url="http://localhost",
-        headers={"x-furnace-session": TOKEN + "new"},
-    )
-    saved = other.get(f"/api/projects/{pid}").json()
+    saved = client.get(f"/api/projects/{pid}").json()
     assert saved["cases"][0]["name"] == "A representative case"
     assert len(saved["events"]) == 4
     assert "sanitized input" not in json.dumps(saved["events"])
-    assert other.get("/api/projects", headers={"x-furnace-session": TOKEN}).status_code == 401
     assert client.post(f"/api/projects/{pid}/start").status_code == 409
     assert client.delete(f"/api/projects/{pid}").status_code == 204
     assert (model / "research.py").exists()
-    assert other.get("/api/projects").json() == []
+    assert client.get("/api/projects").json() == []
+
+
+def test_metadata_restart_rotates_token_and_preserves_saved_configuration(tmp_path):
+    workspace = tmp_path / "workspace"
+    with TestClient(
+        create_app(workspace, TOKEN),
+        base_url="http://localhost",
+        headers={"x-furnace-session": TOKEN},
+    ) as client:
+        project = client.post("/api/examples/framework").json()
+        pid = project["id"]
+        client.put(f"/api/projects/{pid}/contract", json={"notes": "saved before restart"})
+        saved = client.get(f"/api/projects/{pid}").json()
+    with TestClient(
+        create_app(workspace, TOKEN + "new"),
+        base_url="http://localhost",
+        headers={"x-furnace-session": TOKEN + "new"},
+    ) as other:
+        restored = other.get(f"/api/projects/{pid}").json()
+        assert restored == saved
+        assert restored["contract"]["notes"] == "saved before restart"
+        assert other.get("/api/projects", headers={"x-furnace-session": TOKEN}).status_code == 401
 
 
 @pytest.mark.parametrize(
