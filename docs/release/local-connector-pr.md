@@ -2,7 +2,10 @@
 
 Prepared description for a future draft PR from `product/local-model-endpoint`.
 Do not attach this to #7: it describes its dependent child changes. No push or PR
-creation has been performed for this branch.
+creation had been performed when this description was prepared. The owner has now
+authorized publication after local integration checks; #7 was merged normally at
+`09427b15f07e23ae395225b76ce221d1919cd504` and main merged into this branch without
+conflicts or history rewriting. Fresh local/hosted results will be attached to the PR.
 
 Researchers can connect Studio to an already running loopback text-chat server,
 explicitly consent to bounded requests, inspect failure/retry evidence and export a

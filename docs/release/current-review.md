@@ -5,11 +5,11 @@ new paid service, learned inference or new GPU experiment was performed.
 
 ## Integration state verified
 
-- PR #5 and #6 are merged; current main is
-  `d4c92cfb453a79582896404849654ae7c18ee1a7`.
-- [PR #7](https://github.com/dilipna/Furnace4LLM/pull/7) remains an open draft against
-  main at `bdbedca5add63bd1778e8bdeec540f3cc14dbbbd`. No submitted reviews or review
-  threads were returned. No merge was authorized for #7 in the earlier integration task.
+- PR #5, #6 and [#7](https://github.com/dilipna/Furnace4LLM/pull/7) are merged.
+  Current main is `09427b15f07e23ae395225b76ce221d1919cd504`, #7's normal merge.
+  The owner explicitly authorized integration on 2026-11-16. Before merge, #7's
+  unchanged `bdbedca5add63bd1778e8bdeec540f3cc14dbbbd` head had all four checks
+  successful, no submitted reviews or review threads, and no new correctness blocker.
 - Exact-head hosted checks are successful: Python, Web (including Studio state tests)
   and API image in [CI](https://github.com/dilipna/Furnace4LLM/actions/runs/43572672946);
   saved measurements in [evidence](https://github.com/dilipna/Furnace4LLM/actions/runs/43572672904).
@@ -52,12 +52,12 @@ to install Docker. Label facilitator operation or explanation as assisted observ
 
 ## Remaining gates in order
 
-1. Obtain explicit authorization to merge #7; check its exact head/reviews/checks again
-   at merge time and prefer a normal merge commit to preserve child ancestry.
-2. Obtain authorization to push the local connector branch and open a focused draft
-   PR. Reconcile it with main, review the child-only diff, and obtain hosted checks on
-   its actual head. Local tests do not replace those checks.
-3. Review/publish the separate cache-recovery fix through its own PR when authorized.
+1. Completed: merge #7 after exact-head verification, preserving ancestry.
+2. Authorized: push the local connector branch and open a focused draft PR. Main has
+   been merged without conflicts or rewriting history. Run all local pre-push checks
+   and obtain hosted checks on its actual head. Local tests do not replace those checks.
+3. Authorized: publish the separate cache-recovery fix through its own review PR after
+   its integration checks. Neither follow-up PR is being merged in this operation.
 4. Run the [smallest fresh-profile onboarding test](../product/native-windows-verification.md#remaining-release-gates)
    and collect actual owner/developer comprehension feedback. Assess native file-picker
    interaction; automated file injection is insufficient for that claim.
