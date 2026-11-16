@@ -1,4 +1,4 @@
-"""Installed-bundle onboarding smoke. Run in a disposable Linux Python/uv environment."""
+"""Installed-bundle smoke: disposable Linux container or isolated native Windows run."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import io
 import json
 import os
 import re
+import shutil
 import signal
 import socket
 import subprocess
@@ -25,9 +26,12 @@ def main() -> None:
     parser.add_argument("bundle", type=Path)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--expect-empty-cache", action="store_true")
+    parser.add_argument("--connector", action="store_true", help="Exercise installed endpoint API")
+    parser.add_argument("--browser", action="store_true", help="Also run isolated Chromium checks")
+    parser.add_argument("--screenshots", type=Path)
     args = parser.parse_args()
-    if sys.platform != "linux":
-        raise SystemExit("Run this clean-environment smoke inside a disposable Linux container")
+    if sys.platform not in {"linux", "win32"}:
+        raise SystemExit("This verifier currently supports Linux and Windows only")
     if args.expect_empty_cache:
         cache = Path(os.environ["UV_CACHE_DIR"])
         if cache.exists() and any(cache.iterdir()):
@@ -51,15 +55,29 @@ def main() -> None:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
         base = f"http://127.0.0.1:{port}"
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         workspace = root / "workspace"
         process: subprocess.Popen | None = None
         session = ""
+        launch_env = {**os.environ, "PYTHONNOUSERSITE": "1", "PYTHONUTF8": "1"}
+        launch_env.pop("PYTHONPATH", None)
+        if sys.platform == "win32":
+            uv = shutil.which("uv")
+            if uv is None:
+                raise SystemExit("Install uv before running the Windows verifier")
+            # Exercise the workspace without Docker discovery; do not alter system PATH.
+            launch_env["PATH"] = os.pathsep.join(
+                [str(Path(uv).parent), str(Path(sys.executable).parent)]
+            )
 
         def launch(label: str) -> str:
             nonlocal process
             stdout = root / (label + ".out")
             stderr = root / (label + ".err")
-            with stdout.open("w") as out, stderr.open("w") as err:
+            with (
+                stdout.open("w", encoding="utf-8") as out,
+                stderr.open("w", encoding="utf-8") as err,
+            ):
                 process = subprocess.Popen(  # noqa: S603 -- own generated launcher; no shell
                     [
                         sys.executable,
@@ -73,34 +91,93 @@ def main() -> None:
                     cwd=install,
                     stdout=out,
                     stderr=err,
-                    start_new_session=True,
+                    env=launch_env,
+                    start_new_session=sys.platform != "win32",
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                    if sys.platform == "win32"
+                    else 0,
                 )
             for _ in range(360):
                 if process.poll() is not None:
-                    raise RuntimeError("Installed launch failed: " + stderr.read_text()[-4000:])
-                match = re.search(r"#session=([a-zA-Z0-9_-]+)", stdout.read_text())
+                    raise RuntimeError(
+                        "Installed launch failed: "
+                        + stderr.read_text(encoding="utf-8", errors="replace")[-4000:]
+                    )
+                match = re.search(
+                    r"#session=([a-zA-Z0-9_-]+)",
+                    stdout.read_text(encoding="utf-8", errors="replace"),
+                )
                 if match:
                     try:
                         request = urllib.request.Request(  # noqa: S310 -- generated loopback URL only
                             base + "/api/projects", headers={"X-Furnace-Session": match[1]}
                         )
-                        with urllib.request.urlopen(request, timeout=2) as response:  # noqa: S310 -- generated loopback URL only
+                        with opener.open(request, timeout=3) as response:
                             if response.status == 200:
                                 return match[1]
                     except OSError:
                         pass
                 time.sleep(0.5)
-            raise RuntimeError("Installed startup timed out: " + stderr.read_text()[-4000:])
+            raise RuntimeError(
+                "Installed startup timed out: "
+                + stderr.read_text(encoding="utf-8", errors="replace")[-4000:]
+            )
 
         def stop() -> None:
-            if process is not None and process.poll() is None:
-                os.killpg(process.pid, signal.SIGINT)
+            if process is None:
+                return
+            if process.poll() is None:
+                if sys.platform == "win32":
+                    process.send_signal(signal.CTRL_BREAK_EVENT)
+                else:
+                    os.killpg(process.pid, signal.SIGINT)
                 try:
                     process.wait(timeout=20)
                 except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
+                    if sys.platform == "win32":
+                        taskkill = shutil.which("taskkill")
+                        if taskkill:
+                            subprocess.run(  # noqa: S603 -- only the process created above and its descendants
+                                [taskkill, "/PID", str(process.pid), "/T", "/F"],
+                                check=False,
+                                capture_output=True,
+                            )
+                    else:
+                        os.killpg(process.pid, signal.SIGKILL)
                     process.wait(timeout=5)
                     raise RuntimeError("Installed application did not shut down normally") from None
+            deadline = time.monotonic() + 20
+            while True:
+                try:
+                    with opener.open(
+                        base + "/healthz", timeout=3 if sys.platform == "win32" else 0.5
+                    ) as response:
+                        response.read()
+                    listening = True
+                except urllib.error.HTTPError:
+                    listening = True  # Any HTTP response proves the listener still exists.
+                except urllib.error.URLError as error:
+                    listening = not isinstance(error.reason, ConnectionRefusedError)
+                except OSError:
+                    listening = True  # Timeout/reset does not prove the port has closed.
+                released = True
+                if sys.platform == "win32" and (workspace / "studio.lock").exists():
+                    import msvcrt
+
+                    try:
+                        with (workspace / "studio.lock").open("r+b") as lease:
+                            msvcrt.locking(lease.fileno(), msvcrt.LK_NBLCK, 1)
+                            lease.seek(0)
+                            msvcrt.locking(lease.fileno(), msvcrt.LK_UNLCK, 1)
+                    except OSError:
+                        released = False
+                if not listening and released:
+                    break
+                if time.monotonic() >= deadline:
+                    raise RuntimeError(
+                        "Installed server or workspace lease remained active after shutdown"
+                    )
+                time.sleep(0.1)
 
         def api(path: str, method: str = "GET", data: dict | None = None, token: str | None = None):
             request = urllib.request.Request(  # noqa: S310 -- generated loopback URL only
@@ -113,7 +190,7 @@ def main() -> None:
                     "Origin": base,
                 },
             )
-            with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(request, timeout=20) as response:
                 raw = response.read()
                 return (
                     raw
@@ -132,7 +209,7 @@ def main() -> None:
                 system["workspace"] == "available" and system["runtime"]["status"] == "unavailable"
             )
             assert system["runtime"]["code"] == "docker_unavailable"
-            with urllib.request.urlopen(base + "/assets/studio-state.mjs", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(base + "/assets/studio-state.mjs", timeout=5) as response:
                 assert "javascript" in response.headers["content-type"]
                 assert b"journeyFor" in response.read()
             example = api("examples/framework", "POST")
@@ -158,9 +235,22 @@ def main() -> None:
                 assert snapshot["provenance"]["project_id"] == pid
                 assert snapshot["provenance"]["verification_status"] == "no_current_evidence"
                 assert snapshot["provenance"]["model_inference"] is False
-            with urllib.request.urlopen(base + "/guide", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(base + "/guide", timeout=5) as response:
                 assert b"YOUR_PINNED_MODEL_ID" in response.read()
             old_token = session
+            connector = None
+            if args.connector or args.browser:
+                from studio_connector_checks import verify_connector
+
+                connector = verify_connector(
+                    base,
+                    session,
+                    api,
+                    pid,
+                    root,
+                    browser=args.browser,
+                    screenshots=args.screenshots,
+                )
             stop()
             session = launch("restarted")
             assert old_token != session
@@ -175,6 +265,14 @@ def main() -> None:
                 and restored["contract"]["architecture"] == "Preserved metadata only"
             )
             assert len(api("projects")) == 1
+            if connector:
+                endpoint = restored["model_endpoint"]
+                assert endpoint["state"]["status"] == "disconnected"
+                assert endpoint["evaluation"]["run_id"] == connector["saved_run_id"]
+                assert [run["run_id"] for run in endpoint["history"]] == connector[
+                    "saved_history_ids"
+                ]
+                connector["restart_disconnected_and_evidence_preserved"] = "passed"
             api(f"projects/{pid}", "DELETE")
             assert api("projects") == []
             report = {
@@ -186,11 +284,19 @@ def main() -> None:
                 "python": sys.version.split()[0],
                 "outside_repository": True,
                 "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
-                "docker_usage": "outer test container only; no Docker CLI/socket in Studio",
+                "docker_usage": "CLI excluded from child PATH; no fixture execution"
+                if sys.platform == "win32"
+                else "outer test container only; no Docker CLI/socket in Studio",
                 "github_operations": False,
                 "real_application_evaluation": False,
                 "remote_inference": False,
-                "uid": os.getuid(),
+                "uid": os.getuid() if sys.platform != "win32" else None,
+                "shutdown_signal": "CTRL_BREAK_EVENT" if sys.platform == "win32" else "SIGINT",
+                "shutdown_port_closed": "passed",
+                "shutdown_workspace_released": "passed"
+                if sys.platform == "win32"
+                else "verified_by_restart",
+                "fresh_machine_or_user": False if sys.platform == "win32" else None,
                 "empty_cache_required": args.expect_empty_cache,
                 "first_start_seconds_including_install": first_start_seconds,
                 "missing_uv_guidance": "passed",
@@ -200,6 +306,7 @@ def main() -> None:
                 "persistence_and_token_rotation": "passed",
                 "model_execution": False,
                 "gpu_execution": False,
+                "connector": connector,
             }
             if args.output:
                 args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")

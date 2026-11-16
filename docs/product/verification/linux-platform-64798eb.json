@@ -1,0 +1,50 @@
+{
+  "source_commit": "64798eb7d33e30cf779b7064e3b2b9231d42e1a1",
+  "source_dirty": false,
+  "package_version": "0.1.0",
+  "bundle_sha256": "405ad1c75b46a8022d0eb67078c60e7f454cd444e993e4abe52889e9f53f28bf",
+  "platform": "linux",
+  "python": "3.12.12",
+  "outside_repository": true,
+  "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
+  "docker_usage": "outer test container only; no Docker CLI/socket in Studio",
+  "github_operations": false,
+  "real_application_evaluation": false,
+  "remote_inference": false,
+  "uid": 10001,
+  "shutdown_signal": "SIGINT",
+  "shutdown_port_closed": "passed",
+  "shutdown_workspace_released": "verified_by_restart",
+  "fresh_machine_or_user": null,
+  "empty_cache_required": true,
+  "first_start_seconds_including_install": 118.12,
+  "missing_uv_guidance": "passed",
+  "workspace_without_docker": "passed",
+  "installed_module_assets": "passed",
+  "guided_example_and_export": "passed",
+  "persistence_and_token_rotation": "passed",
+  "model_execution": false,
+  "gpu_execution": false,
+  "connector": {
+    "http_test_server_only": true,
+    "installed_api_checks": "passed",
+    "browser": {
+      "engine": "153.0.8010.12",
+      "checks": "passed",
+      "human_comprehension": "not_tested",
+      "bfcache_use": "not_asserted",
+      "persisted_pageshow_failure_recovery": "synthetic_event_passed",
+      "attempt_history": "failed_attempt_inspected_without_execution; retained_after_retry_and_configuration_edit; project_scoped; exported",
+      "case_import": "invalid_and_delayed_reads_safe; stale_replace_refused; explicit_replace_reset_statuses; kit_jsonl_round_trip"
+    },
+    "saved_run_id": "5da77b37d1914f94bccbb8cc0107448a",
+    "saved_history_ids": [
+      "479e244450754296ac9b4cfc973db558",
+      "a406fefd472548aa8c6cb9a6902493c7",
+      "2eeb21829d064b7bad93a185ed73093d",
+      "5da77b37d1914f94bccbb8cc0107448a"
+    ],
+    "actual_http_requests": 16,
+    "restart_disconnected_and_evidence_preserved": "passed"
+  }
+}

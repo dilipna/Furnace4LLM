@@ -37,7 +37,9 @@ start, readiness, inference, authenticated access, logs, evaluations, restart an
 3. Package a downloadable local preview (implemented). Exercise isolated execution,
    lifecycle, failures, evaluation evidence and recovery with a clearly labeled framework
    fixture before connecting a real model (current local milestone).
-4. Select one model from the researched support paths; implement its isolated adapter
+4. Prepare the [local-server connection workflow](local-model-endpoint.md) before model
+   selection (implemented locally; HTTP test-server validation only). Then select one
+   model from the researched support paths; implement its isolated adapter if needed
    and validate the complete lifecycle. Add the second model after that path works.
 5. Review public website download, native installation and managed-service release.
    Billing and provisioning activation require a concrete, separately reviewed action.

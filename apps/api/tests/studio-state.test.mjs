@@ -1,6 +1,45 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {countsFor, journeyFor, runtimeState, mergeProjectRecord, requestOutputFor, updateKnownProject} from "../furnace_api/studio_assets/studio-state.mjs";
+import {parseCaseSuite} from "../furnace_api/studio_assets/case-import.mjs";
+
+const importedCase = () => ({name:"Research case", input:"  preserve whitespace\n", expected_behavior:"Author-reviewed behavior"});
+const parseSuite = source => parseCaseSuite(new TextEncoder().encode(source));
+test("case import round-trips exported JSONL without treating labels as evidence", () => {
+  const item = {...importedCase(), status:"framework_pass", recorded_status:"exact_pass"};
+  assert.deepEqual(parseSuite("\ufeff\r\n" + JSON.stringify(item) + "\r\n"), {cases:[{...importedCase(), expected_output:null}], discardedStatuses:1});
+});
+test("case import preserves exact whitespace, Unicode code points and empty exact outputs", () => {
+  const item = {...importedCase(), name:"🧪".repeat(100), expected_output:""};
+  assert.deepEqual(parseSuite(JSON.stringify(item)).cases, [item]);
+  assert.throws(() => parseSuite(JSON.stringify({...item, name:"🧪".repeat(101)})), /name.*invalid length/);
+});
+test("case import rejects malformed records without echoing their sensitive content", () => {
+  for (const value of ["null", "[]", "1", '"text"', "{PRIVATE BROKEN INPUT"]) {
+    assert.throws(() => parseSuite("\n" + value), error => error.message.includes("Line 2:") && !error.message.includes("PRIVATE"));
+  }
+  assert.throws(() => parseSuite("\n\t"), /No cases found/);
+});
+test("case import requires bounded typed fields and rejects unknown fields", () => {
+  for (const patch of [{input:42}, {name:""}, {expected_behavior:null}, {expected_output:false}, {input:"x".repeat(4001)}, {expected_output:"x".repeat(8001)}, {api_key:"do-not-accept"}, {input:"\ud800"}]) {
+    assert.throws(() => parseSuite(JSON.stringify({...importedCase(), ...patch})));
+  }
+});
+test("case import enforces 30 cases, valid UTF-8 and the file byte limit", () => {
+  const row = JSON.stringify(importedCase());
+  assert.equal(parseSuite(Array(30).fill(row).join("\n")).cases.length, 30);
+  assert.throws(() => parseSuite(Array(31).fill(row).join("\n")), /Line 31:.*30 cases/);
+  assert.throws(() => parseCaseSuite(new Uint8Array([0xff, 0xfe])), /valid UTF-8/);
+  assert.throws(() => parseCaseSuite(new Uint8Array(65537)), /exceeds 64 KiB/);
+});
+test("case import accounts for the normalized conditional save request size", () => {
+  const items = Array.from({length:8}, () => ({name:"x", input:"i".repeat(4000), expected_behavior:"b".repeat(4000)}));
+  let source = items.map(JSON.stringify).join("\n");
+  items[0].expected_output = "z".repeat(65500 - source.length - ',"expected_output":""'.length);
+  source = items.map(JSON.stringify).join("\n");
+  assert.ok(new TextEncoder().encode(source).byteLength <= 65536);
+  assert.throws(() => parseSuite(source), /normalized suite exceeds/);
+});
 
 const evidenceFor = cases => cases.map((item, case_index) => ({case_index, status: item.status}));
 const bind = (project, evaluation) => ({...evaluation, project_id: project.id, configuration_sha256: project.configuration_sha256});
