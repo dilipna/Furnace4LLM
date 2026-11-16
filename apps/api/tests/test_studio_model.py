@@ -426,7 +426,7 @@ def test_history_retention_is_chronological_for_failures_and_successes(tmp_path,
     with TestClient(create_app(tmp_path, TOKEN), **args) as client:
         pid = client.post("/api/examples/framework").json()["id"]
         add_cases(client, pid)
-        configure(client, pid, config)
+        endpoint = configure(client, pid, config)["model_endpoint"]
         for index in range(12):
             connect(client, pid)
             state.mode = "error" if index % 3 == 0 else "normal"
