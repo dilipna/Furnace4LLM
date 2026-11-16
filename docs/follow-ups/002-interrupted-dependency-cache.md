@@ -3,6 +3,8 @@
 Status: implemented locally on `fix/dependency-cache-recovery`; not merged or published.
 The original reproduction below describes the old implementation. See
 [the recovery contract](../dependency-cache.md) for the fix and verification scope.
+Before/after evidence and final committed-tree checks are in the
+[verification record](002-cache-verification.md).
 
 Affected path: `packages/furnace/src/furnace/sandbox/docker_sandbox.py`, `_deps_volume`.
 

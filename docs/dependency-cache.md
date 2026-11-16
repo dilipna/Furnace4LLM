@@ -74,5 +74,5 @@ and volume state, imports, and staged-file cleanup:
 
 Mocked orchestration also covers nonzero exit, CLI exceptions, ambiguous publication,
 marker timeout, legacy caches, image changes and corrupt markers. New results belong
-in the verification record; historical benchmark claims and acceptance thresholds
-are unchanged.
+in the [verification record](follow-ups/002-cache-verification.md); historical benchmark
+claims and acceptance thresholds are unchanged.
