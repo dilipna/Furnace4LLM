@@ -81,3 +81,7 @@ Actual owner comprehension, native file-picker usability, fresh Windows/macOS in
 other browser engines and actual BFCache usage remain unverified. The restoration
 handler test uses a synthetic event. Real-model/reference validation remains pending;
 no model was selected, downloaded or executed for this application-first milestone.
+
+Subsequent native Windows installed-API verification and the updated Linux verifier
+run are recorded [separately](native-windows-verification.md). They use the same
+application ZIP and do not establish a fresh Windows user-profile result.
