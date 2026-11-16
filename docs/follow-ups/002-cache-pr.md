@@ -1,7 +1,10 @@
 # Publish dependency caches only after successful isolated installation
 
 Prepared PR description for local `fix/dependency-cache-recovery`, based on main.
-This branch has not been pushed and no PR has been opened.
+Publication is now authorized after integration checks. Main, including #7's normal
+merge `09427b15f07e23ae395225b76ce221d1919cd504`, has been merged into this branch
+without conflicts or history rewriting. Fresh local/hosted results will be attached
+to the PR; the older 527-test result below belongs to its explicitly named source.
 
 A pip timeout or Docker CLI exception previously left a named dependency volume
 behind. Retry accepted its existence as success and skipped installation, exposing
