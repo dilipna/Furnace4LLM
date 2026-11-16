@@ -55,6 +55,7 @@ def main() -> None:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
         base = f"http://127.0.0.1:{port}"
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         workspace = root / "workspace"
         process: subprocess.Popen | None = None
         session = ""
@@ -111,7 +112,7 @@ def main() -> None:
                         request = urllib.request.Request(  # noqa: S310 -- generated loopback URL only
                             base + "/api/projects", headers={"X-Furnace-Session": match[1]}
                         )
-                        with urllib.request.urlopen(request, timeout=2) as response:  # noqa: S310 -- generated loopback URL only
+                        with opener.open(request, timeout=3) as response:  # noqa: S310 -- generated loopback URL only
                             if response.status == 200:
                                 return match[1]
                     except OSError:
@@ -148,7 +149,9 @@ def main() -> None:
             deadline = time.monotonic() + 20
             while True:
                 try:
-                    with urllib.request.urlopen(base + "/healthz", timeout=0.5) as response:  # noqa: S310 -- generated loopback URL
+                    with opener.open(
+                        base + "/healthz", timeout=3 if sys.platform == "win32" else 0.5
+                    ) as response:  # noqa: S310 -- generated loopback URL
                         response.read()
                     listening = True
                 except urllib.error.HTTPError:
@@ -187,7 +190,7 @@ def main() -> None:
                     "Origin": base,
                 },
             )
-            with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(request, timeout=20) as response:  # noqa: S310 -- generated loopback URL only
                 raw = response.read()
                 return (
                     raw
@@ -206,7 +209,7 @@ def main() -> None:
                 system["workspace"] == "available" and system["runtime"]["status"] == "unavailable"
             )
             assert system["runtime"]["code"] == "docker_unavailable"
-            with urllib.request.urlopen(base + "/assets/studio-state.mjs", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(base + "/assets/studio-state.mjs", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
                 assert "javascript" in response.headers["content-type"]
                 assert b"journeyFor" in response.read()
             example = api("examples/framework", "POST")
@@ -232,7 +235,7 @@ def main() -> None:
                 assert snapshot["provenance"]["project_id"] == pid
                 assert snapshot["provenance"]["verification_status"] == "no_current_evidence"
                 assert snapshot["provenance"]["model_inference"] is False
-            with urllib.request.urlopen(base + "/guide", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
+            with opener.open(base + "/guide", timeout=5) as response:  # noqa: S310 -- generated loopback URL only
                 assert b"YOUR_PINNED_MODEL_ID" in response.read()
             old_token = session
             connector = None
