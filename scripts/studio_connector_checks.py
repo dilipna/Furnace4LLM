@@ -152,7 +152,7 @@ def verify_connector(base, session, api, pid, root, *, browser=False, screenshot
         return report
 
 
-def verify_case_import(page, base, session, api, pid, other_id, probe):
+def verify_case_import(page, base, session, api, pid, other_id, probe, screenshots):
     from playwright.sync_api import expect
 
     page.goto(base + "/#session=" + session)
@@ -212,6 +212,15 @@ def verify_case_import(page, base, session, api, pid, other_id, probe):
     assert api(f"projects/{pid}/model")["cases"] == before["cases"]
     assert api(f"projects/{pid}/model")["revision"] == before["revision"]
     # A different window edits after preview; the backend must reject the stale save.
+    if screenshots:
+        screenshots.mkdir(parents=True, exist_ok=True)
+        page.evaluate("scrollTo(0, 0)")
+        page.screenshot(path=str(screenshots / "case-import-desktop.png"), full_page=True)
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.evaluate("scrollTo(0, 0)")
+        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+        page.screenshot(path=str(screenshots / "case-import-mobile.png"), full_page=True)
+        page.set_viewport_size({"width": 1440, "height": 1000})
     api(
         f"projects/{pid}/contract",
         "PUT",
@@ -264,7 +273,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
         page = context.new_page()
         page.on("pageerror", lambda error: errors.append(str(error)))
         try:
-            verify_case_import(page, base, session, api, pid, other_id, probe)
+            verify_case_import(page, base, session, api, pid, other_id, probe, screenshots)
             page.goto(base + "/model#session=" + session)
             selector = page.get_by_label("Workspace project")
             expect(selector).to_have_value(pid)
