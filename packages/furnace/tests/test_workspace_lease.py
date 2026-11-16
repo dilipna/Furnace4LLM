@@ -19,24 +19,19 @@ def test_another_process_cannot_open_a_live_workspace(tmp_path):
 
 
 def test_crashed_process_releases_ownership(tmp_path):
-    code = "from pathlib import Path; from furnace.runtime.lease import WorkspaceLease; import sys,time; lease=WorkspaceLease(Path(sys.argv[1])); lease.__enter__(); print('owned',flush=True); time.sleep(60)"
-    child = subprocess.Popen(
+    # Exit the interpreter abruptly, without context-manager/finalizer cleanup.
+    # Killing Windows' venv launcher alone can return before its interpreter exits.
+    code = "from pathlib import Path; from furnace.runtime.lease import WorkspaceLease; import os,sys; lease=WorkspaceLease(Path(sys.argv[1])); lease.__enter__(); print('owned',flush=True); os._exit(17)"
+    crashed = subprocess.run(
         [sys.executable, "-c", code, str(tmp_path)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         text=True,
+        timeout=10,
+        check=False,
     )
-    try:
-        assert child.stdout is not None
-        assert child.stdout.readline().strip() == "owned"
-        child.kill()
-        child.wait(timeout=10)
-        with WorkspaceLease(tmp_path):
-            pass
-    finally:
-        if child.poll() is None:
-            child.kill()
-            child.wait(timeout=10)
+    assert crashed.stdout.strip() == "owned" and crashed.returncode == 17, crashed.stderr
+    with WorkspaceLease(tmp_path):
+        pass
 
 
 def test_exception_releases_workspace_lease(tmp_path):
