@@ -23,6 +23,11 @@ new paid service, learned inference or new GPU experiment was performed.
   it still needs its own integration review/checks before publication.
 - The independent `fix/dependency-cache-recovery` branch is based on main and has
   its own contract/tests. It is not bundled into the Studio branch or PR #7.
+  Executable/test commit `d5768c0290997becf04fa0cc66310ad08b6074f1` passed 527
+  local Linux Python tests plus lint/types/imports/migrations and API image build/import.
+  Its branch contains the before/after record and prepared PR description under
+  `docs/follow-ups/002-cache-*`. The Python run uses the same documented Node
+  workaround; its results must not be added to Studio's different-branch test count.
 
 ## Local preview and practical review
 
