@@ -86,7 +86,12 @@ function render() {
   $("#model-history-state").textContent = refreshing
     ? "Reconfirming saved history…"
     : history.length + " retained attempts (limit " + endpoint.history_limit + "). Newest first; opening an attempt sends no request.";
-  const archive = $("#model-history"); archive.replaceChildren();
+  const archive = $("#model-history");
+  const historyIdentity = JSON.stringify([p.id, history]);
+  // Preserve native disclosure state and keyboard focus during unrelated updates.
+  if (archive.dataset.historyIdentity === historyIdentity) return;
+  archive.dataset.historyIdentity = historyIdentity;
+  archive.replaceChildren();
   for (const attempt of history.slice().reverse()) {
     const entry = document.createElement("details"), heading = document.createElement("summary");
     const binding = attempt.matches_current_configuration ? "Current saved configuration" : "Earlier or unbound configuration";

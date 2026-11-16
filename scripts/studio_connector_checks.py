@@ -223,6 +223,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             history = page.locator("#model-history")
             failed_attempt = history.locator("details").filter(has_text="interrupted")
             expect(failed_attempt).to_have_count(1)
+            expect(page.get_by_role("button", name="Send to local server")).to_be_enabled()
             before_inspection = len(probe.requests)
             failed_attempt.locator("summary").focus()
             page.keyboard.press("Enter")
@@ -230,6 +231,9 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             expect(failed_attempt).to_contain_text("error: 1")
             expect(failed_attempt).to_contain_text("not_run: 1")
             assert len(probe.requests) == before_inspection
+            page.get_by_role("button", name="Send to local server").click()
+            expect(page.get_by_role("button", name="Send to local server")).to_be_enabled()
+            expect(failed_attempt).to_have_attribute("open", "")
             with page.expect_download() as download:
                 page.get_by_role("button", name="Export kit with both evidence types").click()
             with zipfile.ZipFile(download.value.path()) as archive:
