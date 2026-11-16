@@ -1,6 +1,8 @@
 # Local issue 002: dependency-cache reuse after interrupted installation
 
-Status: open; recorded during the Guard retry review, not implemented in that change.
+Status: implemented locally on `fix/dependency-cache-recovery`; not merged or published.
+The original reproduction below describes the old implementation. See
+[the recovery contract](../dependency-cache.md) for the fix and verification scope.
 
 Affected path: `packages/furnace/src/furnace/sandbox/docker_sandbox.py`, `_deps_volume`.
 
@@ -42,7 +44,7 @@ with tempfile.TemporaryDirectory() as td:
         print(sb._deps_volume(root), state)
 ```
 
-Observed: the retry returns a cache volume with `installs == 1`, despite installation having timed out. The function creates the volume before pip runs, treats existence as success, and does not handle timeout cleanup. This confirms host control flow with a mocked failure; an actual container installation timeout was not induced. Concurrent initialization is suspected from inspection and is not claimed as reproduced.
+Original observation: the retry returns a cache volume with `installs == 1`, despite installation having timed out. The function creates the volume before pip runs, treats existence as success, and does not handle timeout cleanup. At the time this issue was recorded, this confirmed host control flow with a mocked failure only. The subsequent fix adds real Docker interruption and concurrent-initialization coverage; those results are recorded separately.
 
 Expected: a dependency cache is reusable only after successful installation. Interrupted initialization must leave a retryable state, and installation resources must be cleaned up even when subprocess execution raises.
 
