@@ -1,4 +1,4 @@
-"""Installed-bundle onboarding smoke. Run in a disposable Linux Python/uv environment."""
+"""Installed-bundle smoke: disposable Linux container or isolated native Windows run."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import io
 import json
 import os
 import re
+import shutil
 import signal
 import socket
 import subprocess
@@ -29,8 +30,8 @@ def main() -> None:
     parser.add_argument("--browser", action="store_true", help="Also run isolated Chromium checks")
     parser.add_argument("--screenshots", type=Path)
     args = parser.parse_args()
-    if sys.platform != "linux":
-        raise SystemExit("Run this clean-environment smoke inside a disposable Linux container")
+    if sys.platform not in {"linux", "win32"}:
+        raise SystemExit("This verifier currently supports Linux and Windows only")
     if args.expect_empty_cache:
         cache = Path(os.environ["UV_CACHE_DIR"])
         if cache.exists() and any(cache.iterdir()):
@@ -57,12 +58,25 @@ def main() -> None:
         workspace = root / "workspace"
         process: subprocess.Popen | None = None
         session = ""
+        launch_env = {**os.environ, "PYTHONNOUSERSITE": "1", "PYTHONUTF8": "1"}
+        launch_env.pop("PYTHONPATH", None)
+        if sys.platform == "win32":
+            uv = shutil.which("uv")
+            if uv is None:
+                raise SystemExit("Install uv before running the Windows verifier")
+            # Exercise the workspace without Docker discovery; do not alter system PATH.
+            launch_env["PATH"] = os.pathsep.join(
+                [str(Path(uv).parent), str(Path(sys.executable).parent)]
+            )
 
         def launch(label: str) -> str:
             nonlocal process
             stdout = root / (label + ".out")
             stderr = root / (label + ".err")
-            with stdout.open("w") as out, stderr.open("w") as err:
+            with (
+                stdout.open("w", encoding="utf-8") as out,
+                stderr.open("w", encoding="utf-8") as err,
+            ):
                 process = subprocess.Popen(  # noqa: S603 -- own generated launcher; no shell
                     [
                         sys.executable,
@@ -76,12 +90,22 @@ def main() -> None:
                     cwd=install,
                     stdout=out,
                     stderr=err,
-                    start_new_session=True,
+                    env=launch_env,
+                    start_new_session=sys.platform != "win32",
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
+                    if sys.platform == "win32"
+                    else 0,
                 )
             for _ in range(360):
                 if process.poll() is not None:
-                    raise RuntimeError("Installed launch failed: " + stderr.read_text()[-4000:])
-                match = re.search(r"#session=([a-zA-Z0-9_-]+)", stdout.read_text())
+                    raise RuntimeError(
+                        "Installed launch failed: "
+                        + stderr.read_text(encoding="utf-8", errors="replace")[-4000:]
+                    )
+                match = re.search(
+                    r"#session=([a-zA-Z0-9_-]+)",
+                    stdout.read_text(encoding="utf-8", errors="replace"),
+                )
                 if match:
                     try:
                         request = urllib.request.Request(  # noqa: S310 -- generated loopback URL only
@@ -93,17 +117,64 @@ def main() -> None:
                     except OSError:
                         pass
                 time.sleep(0.5)
-            raise RuntimeError("Installed startup timed out: " + stderr.read_text()[-4000:])
+            raise RuntimeError(
+                "Installed startup timed out: "
+                + stderr.read_text(encoding="utf-8", errors="replace")[-4000:]
+            )
 
         def stop() -> None:
-            if process is not None and process.poll() is None:
-                os.killpg(process.pid, signal.SIGINT)
+            if process is None:
+                return
+            if process.poll() is None:
+                if sys.platform == "win32":
+                    process.send_signal(signal.CTRL_BREAK_EVENT)
+                else:
+                    os.killpg(process.pid, signal.SIGINT)
                 try:
                     process.wait(timeout=20)
                 except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
+                    if sys.platform == "win32":
+                        taskkill = shutil.which("taskkill")
+                        if taskkill:
+                            subprocess.run(  # noqa: S603 -- only the process created above and its descendants
+                                [taskkill, "/PID", str(process.pid), "/T", "/F"],
+                                check=False,
+                                capture_output=True,
+                            )
+                    else:
+                        os.killpg(process.pid, signal.SIGKILL)
                     process.wait(timeout=5)
                     raise RuntimeError("Installed application did not shut down normally") from None
+            deadline = time.monotonic() + 20
+            while True:
+                try:
+                    with urllib.request.urlopen(base + "/healthz", timeout=0.5) as response:  # noqa: S310 -- generated loopback URL
+                        response.read()
+                    listening = True
+                except urllib.error.HTTPError:
+                    listening = True  # Any HTTP response proves the listener still exists.
+                except urllib.error.URLError as error:
+                    listening = not isinstance(error.reason, ConnectionRefusedError)
+                except OSError:
+                    listening = True  # Timeout/reset does not prove the port has closed.
+                released = True
+                if sys.platform == "win32" and (workspace / "studio.lock").exists():
+                    import msvcrt
+
+                    try:
+                        with (workspace / "studio.lock").open("r+b") as lease:
+                            msvcrt.locking(lease.fileno(), msvcrt.LK_NBLCK, 1)
+                            lease.seek(0)
+                            msvcrt.locking(lease.fileno(), msvcrt.LK_UNLCK, 1)
+                    except OSError:
+                        released = False
+                if not listening and released:
+                    break
+                if time.monotonic() >= deadline:
+                    raise RuntimeError(
+                        "Installed server or workspace lease remained active after shutdown"
+                    )
+                time.sleep(0.1)
 
         def api(path: str, method: str = "GET", data: dict | None = None, token: str | None = None):
             request = urllib.request.Request(  # noqa: S310 -- generated loopback URL only
@@ -210,11 +281,19 @@ def main() -> None:
                 "python": sys.version.split()[0],
                 "outside_repository": True,
                 "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
-                "docker_usage": "outer test container only; no Docker CLI/socket in Studio",
+                "docker_usage": "CLI excluded from child PATH; no fixture execution"
+                if sys.platform == "win32"
+                else "outer test container only; no Docker CLI/socket in Studio",
                 "github_operations": False,
                 "real_application_evaluation": False,
                 "remote_inference": False,
-                "uid": os.getuid(),
+                "uid": os.getuid() if sys.platform != "win32" else None,
+                "shutdown_signal": "CTRL_BREAK_EVENT" if sys.platform == "win32" else "SIGINT",
+                "shutdown_port_closed": "passed",
+                "shutdown_workspace_released": "passed"
+                if sys.platform == "win32"
+                else "verified_by_restart",
+                "fresh_machine_or_user": False if sys.platform == "win32" else None,
                 "empty_cache_required": args.expect_empty_cache,
                 "first_start_seconds_including_install": first_start_seconds,
                 "missing_uv_guidance": "passed",
