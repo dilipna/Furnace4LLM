@@ -1,5 +1,41 @@
 # Furnace
 
+## Researcher-platform direction (local development branch)
+
+Furnace is being developed for model researchers who need the operational infrastructure
+around their models, including new architectures. The owner-defined product is a free
+starter kit followed by a $20/month managed-infrastructure subscription, supporting
+both Furnace-provided and customer-provided compute. Application development precedes model selection/testing. This branch
+implements local assessment, the Studio application and an isolated Docker framework runtime.
+The runnable fixture verifies infrastructure only; it is not a model and supports no model-quality claims. A wheel-based downloadable
+preview requires Python/uv; a native installer, paid checkout and provisioned model service
+are not yet available.
+
+```bash
+uv sync --frozen
+uv run furnace studio
+# Build the local downloadable preview:
+uv run python scripts/build_studio_bundle.py
+# Or use the assessment command directly:
+uv run furnace starter /path/to/model-project --output /path/to/new-starter-kit
+```
+
+Open the guided example to explore without a model folder or GPU. A read-only environment
+check distinguishes workspace availability from optional local Docker readiness; saved
+preparation and executed framework results stay separate.
+
+Studio setup, privacy boundaries and download instructions: [application guide](docs/product/studio.md).
+
+The assessment command reads bounded local metadata and file names without importing model code, loading
+weights or contacting a service. The kit includes an assessment, a model-author contract,
+evaluation-case template and operations checklist. All runtime/security/evaluation
+capabilities remain unverified until executed. Output must be a new directory outside
+the source project. Unsupported or missing configuration is reported without assuming
+vLLM, transformers or a text-only model. See [the product direction](docs/product/researcher-platform.md).
+
+The pre-merge workflow and recorded evidence below describe existing components. They
+are preserved as reusable engineering foundations, not the complete researcher platform.
+
 [![ci](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml/badge.svg)](https://github.com/dilipna/Furnace4LLM/actions/workflows/ci.yml)
 
 **Try it without setup:** [browser prompt-prefix checker](https://furnace-5h6.pages.dev/prefix-check).
