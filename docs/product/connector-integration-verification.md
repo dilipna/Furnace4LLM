@@ -39,3 +39,29 @@ threshold or historical performance measurement is changed by this correction.
 Native Windows fresh-profile onboarding, actual participant comprehension, native
 file-picker usability and real-model/server compatibility remain unverified. All
 authored HTTP responses are protocol fixtures, not learned model output.
+
+## Fresh installed evidence after the correction
+
+Clean executable/verifier source: `49d8dc383c66b4c8ded43c3ab207ba2591955cc7`.
+ZIP SHA-256: `b61fe3055de57c04c227bd14dcab077c28fb957bead61155da2e4237e4c0e80a`.
+
+The corrected ZIP passed both installed journeys outside the checkout, each using
+an initially empty dedicated cache:
+
+- [Native Windows receipt](verification/connector-integrated-windows.json): Python
+  3.12.13, existing user/Python/uv; 8 actual authored HTTP calls, malformed Unicode
+  refused, HTTP failure/retry, export, restart, token rotation, listener closure and
+  workspace lease release passed. No Windows browser or fresh-profile claim.
+- [Linux Chromium receipt](verification/connector-integrated-linux.json): Python
+  3.12.12, uid 10001, read-only root, no Docker CLI/socket in Studio; 18 actual authored
+  HTTP calls. The new rejection plus existing browser identity, case import, history,
+  retry, export and restart journeys passed. Chromium version and startup duration
+  are in the receipt; synthetic persisted-pageshow handling does not establish BFCache use.
+
+Windows first install/start took 28.28 seconds for this run; Linux took 34.63 seconds.
+Earlier 121.56-second Windows timing remains in its original receipt. None is a
+benchmark or model latency; no unfavorable result was removed. Later documentation-only
+commits can retain this executable evidence, but must run the repository's full
+pre-push checks on their exact final head before publication. Final-head local/hosted
+workflow results will be recorded in the PR rather than relabeling the older
+596-test check as current.

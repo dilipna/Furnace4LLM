@@ -22,6 +22,14 @@ the project lock. Import and export make no inference calls.
 
 Validation:
 
+- Integration review reproduced malformed Unicode crashing an evaluation and leaving
+  it running. Strict UTF-8 output validation now uses the existing sanitized failure
+  path. Four regressions failed before; all 37 focused API/identity/import checks passed
+  after. New installed Windows and Linux Chromium checks passed at `49d8dc3`, ZIP
+  SHA-256 `b61fe3055de57c04c227bd14dcab077c28fb957bead61155da2e4237e4c0e80a`.
+  The earlier results below retain their original source boundaries. See
+  [integration verification](../product/connector-integration-verification.md).
+
 - Clean application `64798eb` passed 596 local Linux Python tests, lint, formatting,
   import boundaries, types and real Postgres migrations. The runner uses the documented
   preinstalled-Node workaround; this is local Linux evidence, not hosted CI.

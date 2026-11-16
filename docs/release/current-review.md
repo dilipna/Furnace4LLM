@@ -83,3 +83,11 @@ refer to that clean application ZIP. Later verifier/documentation commits do not
 change executable application code. Windows first install/start took 121.56 seconds;
 this is installation overhead, not TTFT. Historical saved measurements retain their
 original provenance and were not regenerated as new model-performance evidence.
+
+Integration review subsequently reproduced and corrected malformed upstream Unicode
+leaving endpoint evaluations running. That executable change and its new clean ZIP,
+native Windows and Linux Chromium receipts are recorded in
+[connector integration verification](../product/connector-integration-verification.md).
+The older application/ZIP results above remain historical; fresh exact-head pre-push
+and hosted checks are required for the corrected branch. Main's post-merge CI and
+saved-evidence workflows also passed at `09427b15f07e23ae395225b76ce221d1919cd504`.
