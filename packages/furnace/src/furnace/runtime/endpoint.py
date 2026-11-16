@@ -130,6 +130,9 @@ class LocalChatEndpoint:
             finish = choices[0]["finish_reason"]
             if not isinstance(output, str) or not output.strip() or len(output) > 8000:
                 raise ValueError
+            # JSON escapes can decode to lone surrogates: reject before hashing,
+            # persistence or HTTP serialization can leave an attempt stuck running.
+            output.encode("utf-8")
             if finish not in {"stop", "length"}:
                 raise ValueError
         except (KeyError, TypeError, ValueError, IndexError):

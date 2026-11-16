@@ -82,7 +82,13 @@ def server():
                     "model": "different" if state.mode == "mismatch" else "transport-test",
                     "choices": [
                         {
-                            "message": {"content": "answer"},
+                            "message": {
+                                "content": {
+                                    "surrogate_high": "\ud800",
+                                    "surrogate_low": "\udfff",
+                                    "unicode": "answer \U0001f642",
+                                }.get(state.mode, "answer")
+                            },
                             "finish_reason": "length" if state.mode == "truncated" else "stop",
                         }
                     ],
@@ -141,13 +147,23 @@ def test_transport_ignores_proxies_and_never_follows_redirects(server, monkeypat
     assert len(state.requests) == 2
 
 
-@pytest.mark.parametrize("mode", ["error", "malformed", "oversized", "mismatch"])
+@pytest.mark.parametrize(
+    "mode", ["error", "malformed", "oversized", "mismatch", "surrogate_high", "surrogate_low"]
+)
 def test_bad_responses_cannot_become_success_or_leak_upstream_errors(server, mode):
     state, config = server
     state.mode = mode
     with pytest.raises(RuntimeFault) as failure:
         LocalChatEndpoint().predict(config, "sanitized input", 1)
     assert "PRIVATE" not in str(failure.value)
+
+
+def test_valid_non_bmp_output_is_preserved(server):
+    state, config = server
+    state.mode = "unicode"
+    result = LocalChatEndpoint().predict(config, "bounded", 1)
+    assert result["output"] == "answer \U0001f642"
+    assert len(state.requests) == 1
 
 
 @pytest.mark.parametrize("mode", ["slow", "drip"])
@@ -193,6 +209,47 @@ def add_cases(client, pid):
         ).status_code
         == 200
     )
+
+
+@pytest.mark.parametrize("mode", ["surrogate_high", "surrogate_low"])
+def test_invalid_unicode_interrupts_persisted_run_and_requires_explicit_retry(
+    tmp_path, server, mode
+):
+    state, config = server
+    with TestClient(
+        create_app(tmp_path, TOKEN),
+        base_url="http://localhost",
+        headers={"x-furnace-session": TOKEN},
+    ) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        add_cases(client, pid)
+        configure(client, pid, config)
+        connect(client, pid)
+        state.mode = mode
+        response = client.post(f"/api/projects/{pid}/model/evaluate")
+        assert response.status_code == 200
+        saved = client.get(f"/api/projects/{pid}/model").json()["model_endpoint"]
+        assert saved["state"]["status"] == "failed"
+        assert saved["evaluation"]["status"] == "interrupted"
+        assert saved["evaluation"]["results"] == [
+            {
+                "case_index": 0,
+                "status": "error",
+                "reason": "endpoint_invalid_or_mismatched_completion",
+            }
+        ]
+        assert len(state.requests) == 2  # Readiness plus one completion; second case never ran.
+        assert client.post(f"/api/projects/{pid}/model/evaluate").status_code == 409
+        assert len(state.requests) == 2
+        state.mode = "normal"
+        connect(client, pid)
+        retried = client.post(f"/api/projects/{pid}/model/evaluate").json()["model_endpoint"]
+        assert len(state.requests) == 5  # Reconnect and both cases really execute.
+        assert [run["status"] for run in retried["history"]] == ["interrupted", "completed"]
+        assert [result["status"] for result in retried["evaluation"]["results"]] == [
+            "exact_pass",
+            "unscored",
+        ]
 
 
 def test_actual_requests_state_identity_export_and_failure_then_explicit_retry(tmp_path, server):

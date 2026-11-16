@@ -49,7 +49,14 @@ class Probe:
                 self.reply(
                     {
                         "model": MODEL,
-                        "choices": [{"message": {"content": ANSWER}, "finish_reason": "stop"}],
+                        "choices": [
+                            {
+                                "message": {
+                                    "content": "\ud800" if probe.mode == "surrogate" else ANSWER
+                                },
+                                "finish_reason": "stop",
+                            }
+                        ],
                     }
                 )
 
@@ -107,6 +114,18 @@ def verify_connector(base, session, api, pid, root, *, browser=False, screenshot
         assert result["output"] == ANSWER
         body = probe.requests[-1][1]
         assert body is not None and body["messages"] == [{"role": "user", "content": "test"}]
+        probe.mode = "surrogate"
+        before_invalid = len(probe.requests)
+        try:
+            api(path + "/predict", "POST", {"input": "test"})
+            raise AssertionError("Invalid upstream Unicode accepted")
+        except urllib.error.HTTPError as error:
+            assert error.code == 409
+            assert json.loads(error.read())["detail"] == "endpoint_invalid_or_mismatched_completion"
+        assert len(probe.requests) == before_invalid + 1
+        assert api(path)["model_endpoint"]["state"]["status"] == "failed"
+        probe.mode = "normal"
+        api(path + "/connect", "POST", {"consent": True})
         probe.mode = "error"
         failed = api(path + "/evaluate", "POST")["model_endpoint"]
         assert failed["state"]["status"] == "failed"
@@ -132,7 +151,11 @@ def verify_connector(base, session, api, pid, root, *, browser=False, screenshot
             "completed",
         ]
         assert completed["model_endpoint"]["history"][0]["run_id"] == failed["evaluation"]["run_id"]
-        report = {"http_test_server_only": True, "installed_api_checks": "passed"}
+        report = {
+            "http_test_server_only": True,
+            "installed_api_checks": "passed",
+            "malformed_unicode_refused": "passed",
+        }
         if browser:
             report["browser"] = verify_browser(
                 base, session, api, pid, root, probe, screenshots=screenshots
