@@ -335,7 +335,9 @@ def test_requirements_cache_key_is_unchanged_for_a_single_root_file(tmp_path):
     (tmp_path / "requirements.txt").write_text("httpx==0.27.0\n")
     _, files = requirements_set(tmp_path) or ("", {})
     want = hashlib.sha256((tmp_path / "requirements.txt").read_bytes()).hexdigest()[:16]
-    assert _requirements_digest(files) == want  # existing cached volumes stay valid
+    assert (
+        _requirements_digest(files) == want
+    )  # Legacy-key identification stays stable; v2 does not trust it.
 
 
 @pytest.mark.parametrize(

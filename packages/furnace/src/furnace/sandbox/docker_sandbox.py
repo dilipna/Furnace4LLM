@@ -27,6 +27,8 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
+from furnace.sandbox import dependency_cache
+
 IMAGE = "furnace-sandbox-py:0.1"
 DOCKERFILE = Path(__file__).parent / "images" / "Dockerfile.python"
 LAB_NETWORK = "furnace_furnace-sbx"  # compose network `furnace-sbx` (internal: true)
@@ -133,50 +135,16 @@ def stage_requirements(files: dict[str, bytes]) -> Path:
     return req_dir
 
 
-def _deps_volume(repo: Path) -> str | None:
+def _deps_volume(repo: Path, *, image: str | None = None) -> str | None:
     found = requirements_set(repo)
     if found is None:
         return None
     entry, files = found
-    vol = f"furnace-deps-{_requirements_digest(files)}"
-    if _docker("volume", "inspect", vol, check=False).returncode == 0:
-        return vol
-    _docker("volume", "create", vol)
-    req_dir = stage_requirements(files)
-    # Install phase: network allowed, still unprivileged and resource-limited.
-    proc = _docker(
-        "run",
-        "--rm",
-        "--cap-drop",
-        "ALL",
-        "--security-opt",
-        "no-new-privileges",
-        "--memory",
-        "2g",
-        "--cpus",
-        "2",
-        "--pids-limit",
-        "512",
-        "-v",
-        f"{req_dir.resolve()}:/req:ro",
-        "-v",
-        f"{vol}:/deps",
-        IMAGE,
-        "pip",
-        "install",
-        "--no-cache-dir",
-        "--target",
-        "/deps",
-        "-r",
-        f"/req/{entry}",
-        timeout=900,
-        check=False,
-    )
-    shutil.rmtree(req_dir, ignore_errors=True)
-    if proc.returncode != 0:
-        _docker("volume", "rm", "-f", vol, check=False)
-        raise SandboxError(f"dependency install failed: {proc.stderr.strip()[-800:]}")
-    return vol
+    try:
+        pinned = image or dependency_cache.image_identity(IMAGE, _docker)
+        return dependency_cache.prepare(entry, files, pinned, _docker, stage_requirements)
+    except dependency_cache.CacheError as exc:
+        raise SandboxError(str(exc)) from exc
 
 
 def open_to_sandbox_user(root: Path) -> None:
@@ -213,7 +181,11 @@ def run_in_sandbox(
     if network not in ("none", LAB_NETWORK):
         raise SandboxError(f"network {network!r} is not allowed")
     ensure_image()
-    vol = _deps_volume(repo)
+    try:
+        image = dependency_cache.image_identity(IMAGE, _docker)
+    except dependency_cache.CacheError as exc:
+        raise SandboxError(str(exc)) from exc
+    vol = _deps_volume(repo, image=image)
     work = Path(tempfile.mkdtemp(prefix="furnace-sbx-"))
     shutil.copytree(
         repo,
@@ -263,7 +235,7 @@ def run_in_sandbox(
         args += ["-v", f"{vol}:/deps:ro"]
     for k, v in (env or {}).items():
         args += ["-e", f"{k}={v}"]
-    args += [IMAGE, *cmd]
+    args += [image, *cmd]
     start = time.monotonic()
     timed_out = False
     try:
