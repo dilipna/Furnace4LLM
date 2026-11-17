@@ -1,4 +1,9 @@
-# Integration and release handoff — 2026-11-16
+# Earlier integration and release handoff — 2026-11-16
+
+This is a historical checkpoint. PR #8 and #9 subsequently merged; the local
+interface redesign and newer verification state are recorded in
+[the simple-interface handoff](simple-interface-review.md). Draft/base/head statements
+below describe the earlier checkpoint, not the current repository state.
 
 This is a review checklist, not a release announcement. No deployment, release,
 new paid service, learned inference or new GPU experiment was performed.

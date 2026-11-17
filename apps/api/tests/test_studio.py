@@ -198,7 +198,7 @@ def test_startup_and_assets_are_real_local_application(setup):
         "model_runtime": "not_connected",
         "billing": "inactive",
     }
-    assert "Your model is the research" in client.get("/").text
+    assert "What would you like to work on?" in client.get("/").text
     assert client.get("/assets/studio.js").status_code == 200
     assert client.get("/assets/studio.css").status_code == 200
     with pytest.raises(ValueError, match="strong"):

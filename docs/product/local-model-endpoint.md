@@ -43,7 +43,7 @@ dedicated local test instance. No API keys belong in these forms or exports.
    list; it does not run inference or attest to which weights are loaded.
 3. Send a sanitized text request. Inspect actual returned text, completion termination
    and client-observed round trip. This timing is not streaming TTFT.
-4. Save representative cases in Workspace → Evaluations, reconnect after the edit,
+4. Save representative cases in Workspace → Checks, reconnect after the edit,
    then run endpoint cases. Guided fixture expectations must be replaced with cases
    appropriate to your server. Descriptions without exact expectations stay unscored.
 5. Export the kit and inspect `workspace-plan.json` → `model_endpoint`. Fixture

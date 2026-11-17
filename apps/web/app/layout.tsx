@@ -21,9 +21,9 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Furnace — LLM inference regression testing",
+  title: "Furnace — A workspace for your model",
   description:
-    "Check whether a change slows your Python AI app before merging. Watch the recorded vLLM demonstration, inspect its evidence and check prerequisites for your own evaluation.",
+    "Prepare a local workspace for your research model. Get started with a free kit, explore a guided example, and inspect recorded research and its limitations.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

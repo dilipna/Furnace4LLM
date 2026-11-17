@@ -33,6 +33,12 @@ open/create the database. See [ownership verification](workspace-ownership-verif
 
 ## First visit and guided example
 
+The welcome screen offers **Open guided example** and **Add my model project**.
+Folder entry and the example explanation expand on demand. Project tabs are **Overview**,
+**Model details**, **Setup**, **Checks** and **History**. The overview keeps its next
+action and export visible; expand **Review infrastructure needs** for the six-area
+metadata assessment. These layout choices do not turn preparation into verified execution.
+
 Choose **Open guided example** to explore without selecting a research model or entering
 a folder path. The bundled metadata-only project contains a contract, local compute
 preferences and two cases. Opening it never starts Docker or executes a model. Reopening
@@ -107,7 +113,7 @@ by opening the guided example. No mock is substituted for a requested real-model
 7. Run framework evaluations. Exact equality gives framework_pass/framework_fail;
    descriptive-only cases are unscored. Error/interruption leaves missing cases not_run.
 8. Inject error/timeout/crash, confirm failed status, then explicitly restart. Stop before
-   editing configuration/cases. Activity records real request IDs/durations, not raw
+   editing configuration/cases. History records real request IDs/durations, not raw
    request/response contents. Downloaded kits include the saved evaluation snapshot.
 9. Stop or remove the workspace record. Removal first confirms owned-worker cleanup and
    preserves model files/exports. The demo has two project slots.
@@ -130,7 +136,7 @@ promoted. Configuration changes invalidate evaluation results. Each explicit run
 again with a new run/request identity. A workspace OS lock prevents concurrent app owners.
 
 Memory and retention form values are future managed-demo preferences; the fixture uses
-the fixed limits above. Activity retains at most 100 events, not the selected day-based
+the fixed limits above. History retains at most 100 events, not the selected day-based
 retention policy. Inputs/case expectations are stored locally and included in exports;
 only ad-hoc request inputs/outputs are excluded from activity logs. No remote log collector,
 GPU monitor, hosted authentication, payment flow or production SLA is implemented.
