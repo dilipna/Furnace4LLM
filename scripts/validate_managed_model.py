@@ -84,6 +84,14 @@ def environment() -> dict[str, Any]:
     }
 
 
+def gpu_memory_mib() -> int | None:
+    value = run("nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits")
+    try:
+        return int(value.splitlines()[0])
+    except (ValueError, IndexError):
+        return None
+
+
 class Studio:
     def __init__(self, workspace: Path, artifacts: Path, port: int):
         self.workspace, self.artifacts, self.port = workspace, artifacts, port
@@ -284,9 +292,12 @@ def main() -> int:
 
         # Start, readiness and automatic connection.
         step = steps["start"] = {}
+        gpu_before = gpu_memory_mib()
         began = time.monotonic()
         started = studio.api("POST", f"projects/{pid}/managed/start", json={"consent": True})
         step["seconds"] = round(time.monotonic() - began, 2)
+        gpu_after = gpu_memory_mib()
+        step["host_gpu_memory_mib"] = {"before_start": gpu_before, "after_ready": gpu_after}
         view = started.json()
         check(started.status_code == 200 and view.get("status") == "ready", "server ready", step)
         step.update(start_seconds=view.get("start_seconds"), load_seconds=view.get("load_seconds"))
@@ -381,16 +392,15 @@ def main() -> int:
         check(bool(observed.get("metrics")), "server metrics collected", step)
         check(suite["cases"][0]["input"] not in logs, "server log omits prompt text", step)
         check(key not in logs, "server log omits the key", step)
-        offload = re.findall(r"offloaded (\d+)/(\d+) layers to GPU", logs)
-        if not offload:
-            all_logs = run("docker", "logs", model_name, timeout=30) + run(
-                "docker", "logs", model_name, timeout=30
-            )
-            offload = re.findall(r"offloaded (\d+)/(\d+) layers to GPU", all_logs)
-        step["gpu_offload"] = [f"{a}/{b}" for a, b in offload[:1]]
+        # b12004 no longer logs per-layer offload at default verbosity, so GPU use is
+        # measured directly: host GPU memory must grow by at least half the weights.
+        memory = steps["start"]["host_gpu_memory_mib"]
+        if None not in memory.values():
+            step["gpu_memory_growth_mib"] = memory["after_ready"] - memory["before_start"]
         if args.accelerator == "nvidia":
-            check(bool(offload) and offload[0][0] == offload[0][1] and offload[0][0] != "0",
-                  "all layers offloaded to GPU", step)  # fmt: skip
+            threshold = recipe.weights.size / 2**20 / 2
+            check(step.get("gpu_memory_growth_mib", 0) >= threshold,
+                  "model weights resident in GPU memory", step)  # fmt: skip
 
         # Failure: kill the server container while an evaluation is running.
         step = steps["crash_during_evaluation"] = {}

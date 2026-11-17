@@ -33,6 +33,18 @@ def test_numeric_uses_the_last_number(output, status):
     assert score(rule(method="numeric", number=42), output, None)[0] == status
 
 
+def test_numeric_ignores_numbers_copied_from_the_question():
+    # Observed false negative (Granite 4.0 H 350M, 2026-11-17): a correct answer that
+    # restated the question was read as "3" under the plain last-number convention.
+    convert = rule(method="numeric", number=180)
+    question = "How many minutes are in 3 hours? Reply with only the number."
+    assert score(convert, "There are 180 minutes in 3 hours.", None, question)[0] == "pass"
+    assert score(convert, "3 hours", None, question) == ("fail", "number_mismatch")
+    times = rule(method="numeric", number=5)
+    assert score(times, "5", None, "What is 5 times 1?")[0] == "pass"
+    assert score(times, "5 times 1 is 5", None, "What is 5 times 1?")[0] == "pass"
+
+
 def test_numeric_tolerance_and_missing_number():
     assert (
         score(rule(method="numeric", number=3.14, tolerance=0.01), "about 3.141", None)[0] == "pass"

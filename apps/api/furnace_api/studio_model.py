@@ -19,7 +19,7 @@ from typing import Any
 from furnace.runtime.endpoint import MAX_TIMEOUT_SECONDS, LocalChatEndpoint, endpoint_port
 from furnace.runtime.manager import RuntimeFault, RuntimeManager
 from furnace.runtime.oplog import OperationsLog
-from furnace.runtime.scoring import ScoringRule, score
+from furnace.runtime.scoring import SCORER_VERSION, ScoringRule, score
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from furnace_api.studio_evidence import case_input
@@ -84,7 +84,9 @@ def case_status(case: dict[str, Any], result: dict[str, Any]) -> tuple[str, str,
     )
     if result["finish_reason"] == "length":
         return "incomplete", method, "token_limit_reached"
-    outcome, reason = score(rule, result["output"], case.get("expected_output"))
+    outcome, reason = score(
+        rule, result["output"], case.get("expected_output"), case.get("input") or ""
+    )
     if outcome == "unscored":
         return "unscored", method, reason
     prefix = "exact" if method == "exact" else "check"
@@ -285,6 +287,7 @@ class ModelService:
                 "case_count": len(project["cases"]),
                 "suite_sha256": suite_digest(project["cases"]),
                 "sampling": {"temperature": 0, "max_tokens": config["max_tokens"]},
+                "scorer": SCORER_VERSION,
                 "budget_seconds": budget,
                 "server": config.get("server"),
                 "launch_id": config.get("launch_id"),

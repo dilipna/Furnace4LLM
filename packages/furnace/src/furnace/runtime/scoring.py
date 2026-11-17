@@ -14,6 +14,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+# Bump when any rule changes its verdict for the same output; runs record it.
+SCORER_VERSION = "furnace-rules-v2"
 Method = Literal["exact", "normalized", "contains", "regex", "numeric", "choice", "json_fields"]
 JsonScalar = str | int | float | bool | None
 MAX_OUTPUT_FOR_REGEX = 16000
@@ -83,7 +85,12 @@ def _json_object(text: str) -> Any:
     return json.loads(stripped[start : end + 1])
 
 
-def score(rule: ScoringRule | None, output: str, expected_output: str | None) -> tuple[str, str]:
+def score(
+    rule: ScoringRule | None,
+    output: str,
+    expected_output: str | None,
+    prompt: str = "",
+) -> tuple[str, str]:
     """Return (status, reason). Status is pass, fail or unscored."""
     if rule is None:
         if expected_output is None:
@@ -113,8 +120,12 @@ def score(rule: ScoringRule | None, output: str, expected_output: str | None) ->
         found = _numbers(output)
         if not found:
             return "fail", "no_number_found"
-        # The last number is the answer convention (e.g. "17 + 25 = 42").
-        ok = abs(found[-1] - float(rule.number or 0)) <= rule.tolerance
+        # The answer is the last number the model did not copy from the question
+        # ("17 + 25 = 42", "There are 180 minutes in 3 hours"); if every number was
+        # copied, the last one counts ("What is 5 times 1?" -> "5").
+        asked = set(_numbers(prompt))
+        fresh = [n for n in found if n not in asked] or found
+        ok = abs(fresh[-1] - float(rule.number or 0)) <= rule.tolerance
         return ("pass", "number_within_tolerance") if ok else ("fail", "number_mismatch")
     if method == "choice":
         text = normalize(output)
