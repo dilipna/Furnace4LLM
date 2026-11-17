@@ -13,6 +13,7 @@ import logging
 import re
 import shutil
 import subprocess
+import time
 import uuid
 from collections.abc import Callable
 from pathlib import Path
@@ -201,7 +202,8 @@ def prepare(
         # This metadata container is never started. Its name publishes one completed
         # volume atomically, and its read-only mount keeps Docker's volume reference.
         publication_attempted = True
-        docker(
+        deadline = time.monotonic() + 30
+        publication = docker(
             "create",
             "--name",
             "furnace-deps-v2-ready-" + key,
@@ -225,9 +227,18 @@ def prepare(
             timeout=30,
             check=False,
         )
+        # A competing create can reserve the name before its reference becomes
+        # inspectable. Confirm publication within the same bounded create budget;
+        # never reuse either candidate without the existing identity/marker checks.
         selected = ready_volume(key, image, docker)
+        while selected is None and time.monotonic() < deadline:
+            time.sleep(0.1)
+            selected = ready_volume(key, image, docker)
         if selected is None:
-            raise CacheError("dependency cache publication could not be confirmed")
+            raise CacheError(
+                "dependency cache publication could not be confirmed: "
+                f"create exited {publication.returncode}: {publication.stderr.strip()[-800:]}"
+            )
         published = selected == candidate
         if not published:
             publication_attempted = (
