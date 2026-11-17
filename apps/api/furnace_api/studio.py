@@ -562,7 +562,13 @@ def launch(workspace: Path, port: int, open_browser: bool = True) -> None:
         "Demo mode: $20/month offer; no billing or cloud provisioning. Docker infrastructure fixture is optional; no model adapter is validated.",
         flush=True,
     )
-    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, access_log=False))
+    # A stalled body/transport must not postpone lifespan cleanup and retain the
+    # workspace lease forever. Owned workers are still reconciled by lifespan.
+    server = uvicorn.Server(
+        uvicorn.Config(
+            app, host="127.0.0.1", port=port, access_log=False, timeout_graceful_shutdown=5
+        )
+    )
     done = threading.Event()
 
     def open_when_ready() -> None:

@@ -26,6 +26,11 @@ Do not expose the port, share session links or enter secrets. Tokens rotate on r
 open the newly printed link in stale tabs. This is local-session security, not hosted
 multi-tenant authentication. Local SQLite/case/kit content is not encrypted by Furnace.
 
+HTTP connection/task draining is limited to five seconds during shutdown so an
+incomplete request cannot indefinitely postpone workspace/worker cleanup. Lifespan
+still reconciles owned work before releasing the lease; this is not a claim that
+external model generation can be cancelled or that all cleanup takes five seconds.
+
 Database initialization and recovery happen only after startup acquires the workspace
 lease. A rejected second application does not initialize the database. Custom ASGI
 hosting must enable lifespan handling; constructing the application alone does not
