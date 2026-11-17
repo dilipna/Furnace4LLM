@@ -82,7 +82,35 @@ the subsequent isolated serial run above completed. No thresholds were relaxed.
 Earlier combined ZIP verification at `0828912` and historical GPU measurements are
 separate evidence, not new UI or model-inference results.
 
-Current interface verification results are recorded below after running the checks.
+## Interface verification at `900e7fc107397944a3ee70b740212887b3643972`
+
+- Clean-source Windows headless Chrome `157.0.8103.79`: desktop/mobile navigation,
+  guide search (match/no match/clear), self-reported prerequisites, clipboard success
+  and denial stubs, recorded demo labeling, metadata inspection, guided-example
+  persistence, assessment disclosure, keyboard navigation, local-server request,
+  case import, attempt history and export all passed. The authored HTTP server
+  received 18 actual requests; it is not a model. Docker calls were prohibited
+  during this metadata/connector journey. Late project/configuration responses,
+  out-of-order refreshes and synthetic persisted-pageshow failure/recovery passed.
+  No actual back/forward-cache use or human comprehension is inferred.
+- `bash scripts/ci_linux.sh web` passed on the committed tree, using the unchanged
+  `node:24-bookworm` runner: frozen installation, ESLint, route types/TypeScript,
+  production build, four range tests, 17 prefix-checker tests, 18 Studio state tests,
+  and recorded-only static export. Node emitted existing module-type warnings;
+  no test failed. This is local Linux verification, not hosted PR CI.
+- Ruff lint/format and explicit verifier-script Pyright passed. Local affected
+  API/ownership/identity/case-import tests passed: 19 tests, with the existing
+  Starlette TestClient/httpx deprecation warning.
+- All three saved-evidence workflow commands passed locally: raw-record review,
+  website snapshot comparison and structural Guard replay. These rechecked saved
+  results, without inference. Expected negative replay cases remained failures.
+
+The source-bound browser receipt is [retained here](evidence/900e7fc-interface.json).
+Local detailed logs are `work/simple-interface-browser.log` and
+`work/simple-interface-linux-web.log` relative to the task workspace. The new UI
+was tested from source; a newly packaged installed ZIP and hosted exact-head checks
+have not been run. The earlier 619-test run belongs to the separate corrections
+commit and is not relabeled as a full Python suite on the UI commit.
 
 ## Human review — leave observations blank until participation
 
