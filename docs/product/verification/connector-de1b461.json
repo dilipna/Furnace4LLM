@@ -1,0 +1,38 @@
+{
+  "source_commit": "de1b461a72e19e56e6973284e8b9bfa64b79e596",
+  "source_dirty": false,
+  "package_version": "0.1.0",
+  "bundle_sha256": "de7c48280c2117053f4d2c4a4874eda4bb9926b7d6b85918f485a202b6872ad9",
+  "platform": "linux",
+  "python": "3.12.12",
+  "outside_repository": true,
+  "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
+  "docker_usage": "outer test container only; no Docker CLI/socket in Studio",
+  "github_operations": false,
+  "real_application_evaluation": false,
+  "remote_inference": false,
+  "uid": 10001,
+  "empty_cache_required": true,
+  "first_start_seconds_including_install": 24.16,
+  "missing_uv_guidance": "passed",
+  "workspace_without_docker": "passed",
+  "installed_module_assets": "passed",
+  "guided_example_and_export": "passed",
+  "persistence_and_token_rotation": "passed",
+  "model_execution": false,
+  "gpu_execution": false,
+  "connector": {
+    "http_test_server_only": true,
+    "installed_api_checks": "passed",
+    "browser": {
+      "engine": "153.0.8010.12",
+      "checks": "passed",
+      "human_comprehension": "not_tested",
+      "bfcache_use": "not_asserted",
+      "persisted_pageshow_failure_recovery": "synthetic_event_passed"
+    },
+    "saved_run_id": "24a41e1810104ec1945c816820cdd99f",
+    "actual_http_requests": 15,
+    "restart_disconnected_and_evidence_preserved": "passed"
+  }
+}

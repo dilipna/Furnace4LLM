@@ -1,0 +1,45 @@
+{
+  "source_commit": "6b932052b8f7e7a3adf75153e194e77de3cda56f",
+  "source_dirty": false,
+  "package_version": "0.1.0",
+  "bundle_sha256": "1b1e11fcdacb9b66535373af27a28b8457c7b1340d7783ba40df923e9ee5c806",
+  "platform": "linux",
+  "python": "3.12.12",
+  "outside_repository": true,
+  "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
+  "docker_usage": "outer test container only; no Docker CLI/socket in Studio",
+  "github_operations": false,
+  "real_application_evaluation": false,
+  "remote_inference": false,
+  "uid": 10001,
+  "empty_cache_required": true,
+  "first_start_seconds_including_install": 26.14,
+  "missing_uv_guidance": "passed",
+  "workspace_without_docker": "passed",
+  "installed_module_assets": "passed",
+  "guided_example_and_export": "passed",
+  "persistence_and_token_rotation": "passed",
+  "model_execution": false,
+  "gpu_execution": false,
+  "connector": {
+    "http_test_server_only": true,
+    "installed_api_checks": "passed",
+    "browser": {
+      "engine": "153.0.8010.12",
+      "checks": "passed",
+      "human_comprehension": "not_tested",
+      "bfcache_use": "not_asserted",
+      "persisted_pageshow_failure_recovery": "synthetic_event_passed",
+      "attempt_history": "failed_attempt_inspected_without_execution; retained_after_retry_and_configuration_edit; project_scoped; exported"
+    },
+    "saved_run_id": "1a9b5248977d4819b20007419473ab1a",
+    "saved_history_ids": [
+      "1f8d72149b8b4eab9cf9b8ec7364770c",
+      "517ff5352afe4bdc8b4be0257f51b8d7",
+      "1d6172ead6724a8f9219019dfa7bc26d",
+      "1a9b5248977d4819b20007419473ab1a"
+    ],
+    "actual_http_requests": 16,
+    "restart_disconnected_and_evidence_preserved": "passed"
+  }
+}

@@ -5,7 +5,7 @@ around their models. The free kit and local workspace work without Docker. An op
 Docker runtime exercises the infrastructure using a deterministic fixture. **It is not
 a learned model, does not load user code/weights, and provides no model-quality evidence.**
 The $20/month offer and both compute ownership choices are represented in configuration;
-billing, cloud provisioning and actual research-model adapters remain inactive.
+billing and cloud provisioning remain inactive. A separate [local-server connector](local-model-endpoint.md) sends bounded requests to a server you already operate. Native research-model loading is unimplemented; no model/server combination has been validated.
 
 ## Run from source
 
@@ -77,7 +77,7 @@ If a back-cache restoration cannot reconnect, results stay unconfirmed and navig
 Refresh status remain available. Automated Back navigation does not by itself establish
 that a particular browser actually used its back/forward cache.
 
-Choose **Evaluate your own model** in the app header (or open `/guide`). It separates
+Choose **Connect a local model server** in the header (or open `/model`) for the optional HTTP connector. Choose **Model validation guide** (`/guide`) for validation requirements. The guide separates
 validated fixture infrastructure, implemented CLI endpoint adapters and planned Studio
 research-model adapters. The exact bounded real-endpoint CLI procedure requires an
 identified authorized live model server and author-reference output. Neither is supplied
@@ -90,6 +90,9 @@ by opening the guided example. No mock is substituted for a requested real-model
 2. Download the free kit. Save the architecture/task/revision/license/device contract.
 3. Save compute ownership and demo preferences. Saving does not buy or provision anything.
 4. Add sanitized cases and optional exact expected outputs. Descriptions alone are unscored.
+   Existing suites can be [previewed and imported from JSONL](case-suite-import.md),
+   including the kit's exported cases. Imported status labels are discarded; replacement
+   requires an explicit action and refuses a preview made before a concurrent edit.
 5. For **infrastructure testing only**, install/start local Linux Docker (Docker Desktop
    with Linux containers on Windows). Choose Prepare local test environment. It builds the
    existing reviewed Python sandbox image if absent; public packages/images may download.

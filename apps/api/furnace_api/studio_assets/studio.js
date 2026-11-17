@@ -1,4 +1,5 @@
 import {activeStates, caseStatus, countsFor, mergeProjectRecord, updateKnownProject, requestOutputFor, journeyFor, runtimeState, toneFor} from "./studio-state.mjs";
+import {parseCaseSuite, MAX_CASE_FILE_BYTES} from "./case-import.mjs";
 
 const $ = selector => document.querySelector(selector);
 const token = new URLSearchParams(location.hash.slice(1)).get("session") || sessionStorage.getItem("furnace-session");
@@ -12,6 +13,7 @@ window.addEventListener("hashchange", () => {
 
 let projects = [], current = null, view = "overview", polling = false, renderedProjectId = null, evidenceFresh = true;
 const pending = new Set(), drafts = new Map(), baselines = new Map(), outputs = new Map(), checked = new Map();
+const caseImports = new Map();
 const formNames = {"contract-form": "contract", "plan-form": "plan", "case-form": "case", "predict-form": "predict"};
 const formKey = (id, name) => `${id}:${name}`;
 const isPending = (kind, id = current?.id) => pending.has(formKey(id, kind));
@@ -154,8 +156,50 @@ for (const [formId, name] of Object.entries(formNames)) {
   $("#" + formId).addEventListener("change", capture);
 }
 window.addEventListener("beforeunload", event => {
-  if ([...drafts.keys()].some(key => !key.endsWith(":predict"))) { event.preventDefault(); event.returnValue = ""; }
+  if ([...drafts.keys()].some(key => !key.endsWith(":predict")) || [...caseImports.values()].some(value => value.reading || value.cases)) { event.preventDefault(); event.returnValue = ""; }
 });
+function renderCaseImport() {
+  const preview = current && caseImports.get(current.id), list = $("#case-import-preview");
+  list.replaceChildren();
+  let message = "Choose a case file to preview; saved cases remain unchanged.";
+  if (!evidenceFresh) message = "Saved state is unconfirmed. Refresh before importing.";
+  else if (preview?.reading) message = "Reading the selected file locally…";
+  else if (preview?.error) message = preview.error;
+  else if (preview?.cases) {
+    message = preview.fileName + " · " + preview.cases.length + " cases ready for review. " + preview.discardedStatuses + " imported result labels discarded. Nothing saved or executed.";
+    if (preview.identity !== current.configuration_sha256) message += " Project changed after preview; choose the file again after refreshing.";
+    for (const item of preview.cases) list.append(text("li", item.name + " · " + (item.expected_output === null ? "descriptive only; unscored" : "exact assertion")));
+  }
+  $("#case-import-status").textContent = message;
+}
+$("#case-import-file").onchange = async event => {
+  const file = event.target.files[0]; event.target.value = "";
+  if (!file || !current) return;
+  const id = current.id, preview = {reading:true, identity:current.configuration_sha256, fileName:file.name};
+  caseImports.set(id, preview); renderCaseImport(); syncControls();
+  try {
+    if (file.size > MAX_CASE_FILE_BYTES) throw new Error("The case file exceeds 64 KiB.");
+    const bytes = await file.arrayBuffer();
+    if (caseImports.get(id) !== preview || !projects.some(project => project.id === id)) return;
+    Object.assign(preview, parseCaseSuite(bytes));
+  } catch (error) { if (caseImports.get(id) === preview) preview.error = error.message; }
+  finally {
+    preview.reading = false;
+    if (current?.id === id) { renderCaseImport(); syncControls(); }
+  }
+};
+$("#case-import-cancel").onclick = () => { caseImports.delete(current?.id); renderCaseImport(); syncControls(); };
+$("#case-import-form").onsubmit = event => {
+  event.preventDefault();
+  const id = current?.id, preview = caseImports.get(id);
+  if (!preview?.cases || !evidenceFresh || preview.identity !== current.configuration_sha256) return;
+  action($("#case-import-save"), "save-case", async () => {
+    const saved = await api(`projects/${id}/cases`, "PUT", {cases:preview.cases, expected_configuration_sha256:preview.identity});
+    if (caseImports.get(id) === preview) caseImports.delete(id);
+    acceptProject(saved);
+    if (current?.id === id) { renderCaseImport(); notice("Imported cases saved. Result labels were discarded; nothing was executed.", "success"); }
+  }, id);
+};
 function syncEntryControls() {
   $("#project-limit").hidden = projects.length < 2;
   $("#open-example").disabled = isPending("example", null) || (projects.length >= 2 && !projects.some(p => p.origin === "guided_example"));
@@ -169,6 +213,7 @@ function syncControls() {
   if (!evidenceFresh) {
     document.querySelectorAll("#workspace button,#workspace input,#workspace textarea,#workspace select").forEach(control => control.disabled = true);
     document.querySelectorAll("#sections button,#refresh-runtime").forEach(control => control.disabled = false);
+    $("#case-import-cancel").disabled = !caseImports.has(current.id);
     return;
   }
   document.querySelectorAll("#workspace button").forEach(button => button.disabled = false);
@@ -186,6 +231,10 @@ function syncControls() {
   $("#adapter").disabled = active;
   $("#runtime-consent").disabled = active;
   document.querySelectorAll("[data-remove-case]").forEach(button => button.disabled = active || isPending("save-case"));
+  const preview = caseImports.get(current.id);
+  $("#case-import-file").disabled = active || isPending("save-case");
+  $("#case-import-cancel").disabled = !preview || isPending("save-case");
+  $("#case-import-save").disabled = active || isPending("save-case") || !preview?.cases || preview.reading || preview.identity !== current.configuration_sha256;
   document.querySelectorAll('#workspace button[aria-busy="true"]').forEach(button => button.disabled = true);
 }
 function renderJourney() {
@@ -259,7 +308,7 @@ function render() {
   if (state.adapter) $("#adapter").value = state.adapter;
   else $("#adapter").value = "";
   $("#prediction-output").textContent = evidenceFresh ? requestOutputFor(current, outputs.get(current.id)) : "Reconnect to confirm the current project configuration.";
-  renderJourney(); renderEvaluation();
+  renderJourney(); renderEvaluation(); renderCaseImport();
   $("#events").replaceChildren(...[...current.events].reverse().map(event => { const li = text("li", event.message), time = text("time", new Date(event.at).toLocaleString()); time.dateTime = event.at; li.prepend(time); return li; }));
   $("#remove-confirm").hidden = true; renderPanels(); syncControls();
   if (projectFocus) document.querySelector(`[data-project="${projectFocus}"]`)?.focus({preventScroll: true});
@@ -349,6 +398,7 @@ $("#remove-no").onclick = () => { $("#remove-confirm").hidden = true; $("#remove
 $("#remove-yes").onclick = event => action(event.currentTarget, "remove", async id => {
   await api("projects/" + id, "DELETE"); projects = projects.filter(project => project.id !== id);
   for (const key of drafts.keys()) if (key.startsWith(id + ":")) drafts.delete(key);
+  caseImports.delete(id);
   outputs.delete(id); if (current?.id === id) { current = projects[0] || null; view = "overview"; }
   render(); notice("Workspace record removed. Model files and exported kits stay untouched.", "success");
 });

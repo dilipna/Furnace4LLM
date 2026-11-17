@@ -1,5 +1,9 @@
 # Participant test — observations not yet collected
 
+Updated for the local `product/local-model-endpoint` branch. PR #7's earlier
+onboarding preview contains the fixture only; this local branch additionally has
+an opt-in connector to an externally operated loopback server. Neither is deployed.
+
 Use separate sessions with one nontechnical participant and one developer unfamiliar
 with Furnace. Allow about 15 minutes each. Ask them to think aloud; do not supply the
 answers below. Record exact words, actions, hesitation, assistance and skipped tasks.
@@ -27,7 +31,9 @@ Facilitator rubric, withheld until afterward: metadata opening does not execute;
 fixture uses deterministic uppercase output in Docker, not learned inference; saved
 results retain their time/identity and reopening does not rerun them; exact equality is
 not semantic quality, descriptions stay unscored, and duration includes Docker overhead.
-Studio has no real-model adapter or active paid infrastructure service.
+Studio's optional connector sends requests to an already running local text-chat
+server; it does not load weights or provision a server. No model/server combination
+has been validated, and there is no active paid infrastructure service.
 
 ## Unfamiliar developer: prerequisites and execution
 
@@ -48,12 +54,13 @@ Ctrl+C stops Studio and its owned workers.
 | Start Studio, open the example and identify what has and has not executed. | |
 | When Docker is available, prepare/start the fixture with consent, run its cases, and explain one exact pass plus one unscored result. | |
 | Export the kit; locate project/configuration/execution provenance. Stop the worker, reload and explain the saved result. | |
-| Find the real-model limitation and distinguish the existing endpoint CLI from Studio functionality. | |
+| Find the local-server connector and explain what must already be running. Identify the limits on model loading, validated compatibility and managed hosting. | |
 
 The smallest remaining clean-install coverage is a fresh native Windows or macOS user
 environment with Python 3.12 + uv, registry access and empty uv cache, using the exact
 hashed preview ZIP outside the checkout. Expected: launch, metadata example, export and
 restart persistence without Docker. Fixture execution is a separate test requiring local
-Linux Docker. Debian 12 clean installation was tested previously; native coverage and
-these participant observations remain uncollected. Documentation commands alone are not
-verification.
+Linux Docker. Native Windows installed-API execution with an existing user/Python/uv
+and empty cache is now [recorded](../../product/native-windows-verification.md).
+Fresh-profile coverage, native file-picker usability and these participant observations
+remain uncollected. Documentation commands alone are not verification.

@@ -24,6 +24,8 @@ Open the guided example to explore without a model folder or GPU. A read-only en
 check distinguishes workspace availability from optional local Docker readiness; saved
 preparation and executed framework results stay separate.
 
+For an already-running local text-chat server, the separate [Studio endpoint connector](docs/product/local-model-endpoint.md) provides explicit connection, bounded requests and identity-bound evaluation exports. No real model has been validated with this connector yet.
+
 Studio setup, privacy boundaries and download instructions: [application guide](docs/product/studio.md).
 
 The assessment command reads bounded local metadata and file names without importing model code, loading
