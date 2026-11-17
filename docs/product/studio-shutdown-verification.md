@@ -28,8 +28,17 @@ cleanup still runs. In-flight external model generation cannot be forcibly
 cancelled. The five seconds are not an end-to-end shutdown or model-latency claim.
 
 Reproduce with `uv run pytest -q apps/api/tests/test_studio_shutdown.py`.
-The newly packaged application must additionally rerun the installed Windows/Linux
-journeys. Earlier ZIP receipts remain bound to their original source and archive.
+The corrected ZIP at `d62ceb15048ec927863c39adcd433b334e89275d` subsequently passed
+the original warm-cache Windows connector/restart journey (eight authored HTTP
+requests, real port closure and lease release), and the fresh-cache non-root Linux
+Chromium journey (18 authored HTTP requests, browser identity/import/history/export,
+restart and token rotation). Its archive SHA-256 is
+`1e9e9a57cc7d992c52ac61b7368e61b24f0d8b5e2c8d99848f8f61fe27edd3d0`.
+The [Windows](../release/evidence/d62ceb1-installed-windows.json) and
+[Linux](../release/evidence/d62ceb1-installed-linux.json) receipts are retained.
+The stronger explicit connection-refusal regression also passed on Windows.
+Earlier ZIP receipts remain bound to their original source and archive; the
+failed warm-cache result is not reclassified as a pass.
 
 The full Linux run at ancestry-only merge `dab4fc2` separately reported 618 passes
 and one existing inference-client timing failure: level-16 median overhead was

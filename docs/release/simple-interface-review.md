@@ -163,6 +163,16 @@ no host Git trust setting was changed. This is not a native fresh-user or browse
 
 ## Human review — leave observations blank until participation
 
+The final integration review found and corrected a shutdown blocker after the
+earlier installation successes. See [the before/after record](../product/studio-shutdown-verification.md).
+The latest verified ZIP is bound to `d62ceb1`, SHA-256
+`1e9e9a57cc7d992c52ac61b7368e61b24f0d8b5e2c8d99848f8f61fe27edd3d0`.
+Its Windows warm-cache and Linux fresh-cache installed journeys passed. The
+earlier source/ZIP results above remain historical. An existing level-16 timing
+test failed on `dab4fc2` (618 passed, one failed), with the original threshold
+unchanged; that failure is retained in the shutdown record. Final-head local
+and hosted checks must be reported separately, not inferred from those older runs.
+
 Open the public preview first; a nontechnical participant need not install Docker.
 Record whether the session was independent or assisted. Do not count automated browser
 checks as human understanding.

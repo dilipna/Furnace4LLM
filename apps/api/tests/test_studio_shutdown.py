@@ -66,8 +66,8 @@ def test_partial_request_cannot_hold_workspace_after_shutdown(tmp_path, monkeypa
         assert not errors, errors
         with WorkspaceLease(workspace), sqlite3.connect(workspace / "studio.sqlite3") as database:
             assert database.execute("SELECT COUNT(*) FROM projects").fetchone()[0] == 0
-        with pytest.raises(OSError):
-            socket.create_connection(("127.0.0.1", port), timeout=0.5)
+        with pytest.raises(ConnectionRefusedError):
+            socket.create_connection(("127.0.0.1", port), timeout=3)
     finally:
         if partial is not None:
             partial.close()
