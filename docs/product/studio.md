@@ -5,7 +5,7 @@ around their models. The free kit and local workspace work without Docker. An op
 Docker runtime exercises the infrastructure using a deterministic fixture. **It is not
 a learned model, does not load user code/weights, and provides no model-quality evidence.**
 The $20/month offer and both compute ownership choices are represented in configuration;
-billing and cloud provisioning remain inactive. A separate [local-server connector](local-model-endpoint.md) sends bounded requests to a server you already operate. Native research-model loading is unimplemented; no model/server combination has been validated.
+billing and cloud provisioning remain inactive. Studio can [prepare and operate a pinned model server](managed-local-runtime.md) in an isolated local container (two models validated end to end: [results](real-model-validation.md)), or [connect to a server you already operate](local-model-endpoint.md).
 
 ## Run from source
 

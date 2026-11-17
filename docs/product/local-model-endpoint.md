@@ -1,9 +1,9 @@
 # Studio local-server connection preview
 
-This local development branch adds a connection workflow before model selection.
-It has not been published, and no real model/server combination has been validated.
-The connector observes HTTP responses; it does not install, load, sandbox or manage
-the external server. Native research-model loading remains unimplemented. A server
+This page covers connecting a server **you** operate. Studio can also prepare and operate a
+pinned server itself; see [Furnace-operated local model servers](managed-local-runtime.md), where
+the real-model validation is recorded. For a server you operate, the connector observes HTTP
+responses; it does not install, load, sandbox or manage that server. A server
 can implement the protocol while running any architecture, or no model at all.
 Protocol compatibility alone cannot establish model compatibility or quality.
 
@@ -80,10 +80,10 @@ before/after reproduction, retention and legacy checks, and installed-browser ev
 
 ## Failure, identity and privacy contract
 
-Each request has a 1–10 second deadline, including a slowly trickling body. The
-response limit is 64 KiB and completion text is limited to 8000 characters. Ad-hoc
-inputs are limited to 4000 characters; generated tokens to 1–256. A batch has at most
-30 cases and a 30-second request budget. It stops at the first request error,
+Each request has a 1–120 second deadline, including a slowly trickling body. The
+response limit is 256 KiB and completion text is limited to 16 000 characters. Ad-hoc
+inputs are limited to 4000 characters; generated tokens to 1–1024. A batch has at most
+30 cases and a configurable evaluation budget of 5–1800 seconds (default 120). It stops at the first request error,
 disconnect or exhausted budget. Unexecuted cases remain `not_run` in the UI.
 
 `completed` means all requests were recorded, not that their answers passed.

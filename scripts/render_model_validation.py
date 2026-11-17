@@ -22,6 +22,11 @@ def load() -> list[tuple[str, dict]]:
     ]
 
 
+def label(r: dict) -> str:
+    fresh = " · fresh download" if r["steps"].get("prepare", {}).get("fresh_download") else ""
+    return f"{r['model']} · {r['accelerator']}{fresh}"
+
+
 def fmt(value, suffix=""):
     return "—" if value is None else f"{value}{suffix}"
 
@@ -68,7 +73,7 @@ def main() -> None:
         outs = s.get("outputs", {})
         crash = s.get("crash_during_evaluation", {})
         lines.append(
-            f"| [{r['model']} · {r['accelerator']}](verification/{name}) | **{r['result']}** | "
+            f"| [{label(r)}](verification/{name}) | **{r['result']}** | "
             f"{sum(checks.values())}/{len(checks)} | {fmt(s.get('start', {}).get('start_seconds'))} | "
             f"{fmt(s.get('restart', {}).get('seconds'))} | {e1.get('passed', '—')}/{len(e1.get('per_case', []))} | "
             f"{fmt(e1.get('elapsed_seconds'))} | {rep2.get('identical', '—')}/{rep2.get('compared', '—')} · "
@@ -82,16 +87,28 @@ def main() -> None:
         "infrastructure. Reproducibility compares SHA-256 hashes of outputs: a second run, a run after",
         "the server was killed and relaunched, and independent ad-hoc re-execution of each case.",
         "",
-        "## What every run checked",
+        "## Checks recorded",
         "",
     ]
-    first = runs[0][1]["steps"]
-    for step, value in first.items():
-        if isinstance(value, dict) and value.get("checks"):
-            lines.append(f"- **{step.replace('_', ' ')}**: " + "; ".join(value["checks"]))
+    union: dict[str, dict[str, int]] = {}
+    for _name, r in runs:
+        for step, value in r["steps"].items():
+            if isinstance(value, dict):
+                for check in value.get("checks", {}):
+                    union.setdefault(step, {}).setdefault(check, 0)
+                    union[step][check] += 1
+    for step, checks in union.items():
+        items = [
+            c if n == len(runs) else f"{c} ({n} of {len(runs)} runs)" for c, n in checks.items()
+        ]
+        lines.append(f"- **{step.replace('_', ' ')}**: " + "; ".join(items))
+    lines.append("")
+    lines.append(
+        "The download checks apply to the fresh-download run; the GPU memory check to NVIDIA runs."
+    )
     for _name, r in runs:
         s = r["steps"]
-        lines += ["", f"## {r['model']} · {r['accelerator']}", ""]
+        lines += ["", f"## {label(r)}", ""]
         lines.append(
             f"Recipe: `{r['recipe']['repository']}@{r['recipe']['revision'][:12]}`, weights SHA-256 "
             f"`{r['recipe']['weights_sha256'][:16]}…`, {r['recipe']['architecture']}, {r['recipe']['license']}. "
