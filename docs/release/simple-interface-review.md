@@ -14,8 +14,12 @@ is preserved. This branch does not overwrite either merged branch.
 
 `design/simple-interface` combines that main, the preserved website work at
 `07ccfff90f025b9452a603be0a517c20deeefcef`, and local startup/CI corrections.
-Those corrections remain separately reviewable on `fix/studio-startup-ci` at
-`e582deaa04c02011c979cf114677f221f2a81def`; neither new branch has been published.
+Those corrections are separately reviewable in [draft PR #10](https://github.com/dilipna/Furnace4LLM/pull/10)
+on `fix/studio-startup-ci` at `e582deaa04c02011c979cf114677f221f2a81def`.
+Its Python, Web, image and saved-evidence hosted checks passed on that exact head:
+[CI](https://github.com/dilipna/Furnace4LLM/actions/runs/44152893877),
+[evidence](https://github.com/dilipna/Furnace4LLM/actions/runs/44152893946).
+The UI branch depends on that PR and must retain a child-only review diff.
 
 ## What changed
 
@@ -108,9 +112,43 @@ separate evidence, not new UI or model-inference results.
 The source-bound browser receipt is [retained here](evidence/900e7fc-interface.json).
 Local detailed logs are `work/simple-interface-browser.log` and
 `work/simple-interface-linux-web.log` relative to the task workspace. The new UI
-was tested from source; a newly packaged installed ZIP and hosted exact-head checks
-have not been run. The earlier 619-test run belongs to the separate corrections
+was tested from source. The earlier 619-test run belongs to the separate corrections
 commit and is not relabeled as a full Python suite on the UI commit.
+
+## Packaged redesign verification — 2026-11-17
+
+Clean bundle source: `18d56183d1f8930392dccba2bc569fb40bebdb4c`.
+ZIP SHA-256: `acff7924765961861a1812e836a1f9e8d9a9399cbb97c7f60c9acbfd0661c119`.
+This is a wheel-based preview requiring Python/uv, not a native installer or a
+published release. The build also corrects packaged removal instructions to **History**.
+
+- [Linux receipt](evidence/18d5618-installed-linux.json): initially empty cache,
+  uid 10001, read-only container root, Python 3.12.12, Chromium 153.0.8010.12;
+  installed API/browser journeys, 18 authored HTTP requests, import/export,
+  history, late-response handling, restart and token rotation passed.
+- [Windows receipt](evidence/18d5618-installed-windows.json): initially empty
+  dedicated cache, existing Python 3.12.13/user, eight authored HTTP requests,
+  missing-uv guidance, metadata/export, recovery, token rotation, listener closure
+  and workspace lease release passed. This was not a fresh Windows user profile
+  or a Windows browser test.
+
+First install/start took 54.12 seconds on Linux and 26.22 seconds on Windows for
+these runs. These are setup observations, not model performance. No Docker socket
+was exposed to the installed Linux app; Windows excluded Docker from the child PATH.
+No model, GPU or managed infrastructure executed.
+
+The onboarding verifier additionally supports a source checkout so source commands
+need not be inferred from wheel installation:
+
+```sh
+python scripts/verify_studio_onboarding.py --source /path/to/clean/checkout --expect-empty-cache --output source-onboarding.json
+```
+
+Run in a disposable environment with Git/Python 3.12/uv, a dedicated empty
+`UV_CACHE_DIR`, and no preexisting checkout `.venv`. It executes `uv sync --frozen`
+then `uv run furnace studio --no-browser`, and reuses the actual session, example,
+export, restart and removal assertions. This is automated source setup evidence;
+it does not establish human comprehension or fresh native OS-profile compatibility.
 
 ## Human review — leave observations blank until participation
 
@@ -137,7 +175,7 @@ developer-environment success does not establish fresh-profile onboarding. macOS
 unverified; native Windows file-picker selection also remains unverified because the
 computer-use helper could not establish the browser URL safely.
 
-Before release: review and publish the local corrections/UI branches with approval,
-obtain exact-head hosted checks, complete human/fresh-profile onboarding, and separately
+Before release: review the corrections/UI changes, obtain exact-head hosted checks
+for the UI branch, complete human/fresh-profile onboarding, and separately
 approve deployment. Model support needs an identified real server and reference outputs;
 no new model/GPU run or managed provisioning was performed here.

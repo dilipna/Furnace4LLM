@@ -1,4 +1,4 @@
-"""Installed-bundle smoke: disposable Linux container or isolated native Windows run."""
+"""Bundle/source onboarding: disposable Linux container or isolated native Windows run."""
 
 from __future__ import annotations
 
@@ -23,13 +23,18 @@ from pathlib import Path
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("bundle", type=Path)
+    parser.add_argument("bundle", type=Path, nargs="?")
+    parser.add_argument(
+        "--source", type=Path, help="Checkout to sync and launch using documented uv commands"
+    )
     parser.add_argument("--output", type=Path)
     parser.add_argument("--expect-empty-cache", action="store_true")
     parser.add_argument("--connector", action="store_true", help="Exercise installed endpoint API")
     parser.add_argument("--browser", action="store_true", help="Also run isolated Chromium checks")
     parser.add_argument("--screenshots", type=Path)
     args = parser.parse_args()
+    if (args.bundle is None) == (args.source is None):
+        parser.error("Choose a bundle ZIP or --source CHECKOUT")
     if sys.platform not in {"linux", "win32"}:
         raise SystemExit("This verifier currently supports Linux and Windows only")
     if args.expect_empty_cache:
@@ -38,19 +43,40 @@ def main() -> None:
             raise SystemExit("The requested clean uv cache is not empty")
     with tempfile.TemporaryDirectory(prefix="furnace-onboarding-") as directory:
         root = Path(directory)
-        install = root / "installed"
-        with zipfile.ZipFile(args.bundle) as archive:
-            archive.extractall(install)
-        manifest = json.loads((install / "manifest.json").read_text(encoding="utf-8"))
-        missing_uv = subprocess.run(  # noqa: S603 -- own generated launcher; empty executable path
-            [sys.executable, str(install / "launch.py")],
-            env={**os.environ, "PATH": ""},
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        assert missing_uv.returncode != 0 and "Furnace needs uv" in missing_uv.stderr
-        assert "Traceback" not in missing_uv.stderr
+        if args.source:
+            install = args.source.resolve()
+            if args.expect_empty_cache and (install / ".venv").exists():
+                raise SystemExit("Clean source verification needs a checkout without .venv")
+            git = shutil.which("git")
+            uv = shutil.which("uv")
+            if not git or not uv:
+                raise SystemExit("Source setup requires Git and uv")
+            manifest = {
+                "source_commit": subprocess.check_output(  # noqa: S603 -- resolved Git, fixed read-only arguments
+                    [git, "rev-parse", "HEAD"], cwd=install, text=True
+                ).strip(),
+                "source_dirty": bool(
+                    subprocess.check_output(  # noqa: S603 -- resolved Git, fixed read-only arguments
+                        [git, "status", "--porcelain"], cwd=install, text=True
+                    ).strip()
+                ),
+            }
+            launch_prefix = [uv, "run", "furnace", "studio"]
+        else:
+            install = root / "installed"
+            with zipfile.ZipFile(args.bundle) as archive:
+                archive.extractall(install)
+            manifest = json.loads((install / "manifest.json").read_text(encoding="utf-8"))
+            missing_uv = subprocess.run(  # noqa: S603 -- own generated launcher; empty executable path
+                [sys.executable, str(install / "launch.py")],
+                env={**os.environ, "PATH": ""},
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            assert missing_uv.returncode != 0 and "Furnace needs uv" in missing_uv.stderr
+            assert "Traceback" not in missing_uv.stderr
+            launch_prefix = [sys.executable, str(install / "launch.py")]
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
@@ -72,6 +98,14 @@ def main() -> None:
 
         def launch(label: str) -> str:
             nonlocal process
+            if args.source and label == "first":
+                subprocess.run(  # noqa: S603 -- resolved uv, documented fixed setup command
+                    [launch_prefix[0], "sync", "--frozen"],
+                    cwd=install,
+                    env=launch_env,
+                    check=True,
+                    timeout=180,
+                )
             stdout = root / (label + ".out")
             stderr = root / (label + ".err")
             with (
@@ -80,8 +114,7 @@ def main() -> None:
             ):
                 process = subprocess.Popen(  # noqa: S603 -- own generated launcher; no shell
                     [
-                        sys.executable,
-                        str(install / "launch.py"),
+                        *launch_prefix,
                         "--no-browser",
                         "--workspace",
                         str(workspace),
@@ -279,10 +312,14 @@ def main() -> None:
                 "source_commit": manifest.get("source_commit"),
                 "source_dirty": manifest.get("source_dirty"),
                 "package_version": manifest.get("package_version"),
-                "bundle_sha256": hashlib.sha256(args.bundle.read_bytes()).hexdigest(),
+                "bundle_sha256": hashlib.sha256(args.bundle.read_bytes()).hexdigest()
+                if args.bundle
+                else None,
+                "delivery": "source" if args.source else "bundle",
+                "source_sync_frozen": "passed" if args.source else None,
                 "platform": sys.platform,
                 "python": sys.version.split()[0],
-                "outside_repository": True,
+                "outside_repository": args.source is None,
                 "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
                 "docker_usage": "CLI excluded from child PATH; no fixture execution"
                 if sys.platform == "win32"
@@ -299,7 +336,9 @@ def main() -> None:
                 "fresh_machine_or_user": False if sys.platform == "win32" else None,
                 "empty_cache_required": args.expect_empty_cache,
                 "first_start_seconds_including_install": first_start_seconds,
-                "missing_uv_guidance": "passed",
+                "missing_uv_guidance": "not_applicable_source_requires_uv"
+                if args.source
+                else "passed",
                 "workspace_without_docker": "passed",
                 "installed_module_assets": "passed",
                 "guided_example_and_export": "passed",
