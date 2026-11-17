@@ -110,7 +110,7 @@ examples are saved locally and included in starter-kit exports. Workspace activi
 records configuration and framework request metadata, not raw request/output logs. Source file detection is not security,
 quality or architecture verification. Test with real models after application review.
 
-Remove a project through Activity to delete only its workspace record. Uninstall:
+Remove a project through History to delete only its workspace record. Uninstall:
 stop the process, remove this extracted folder and (if desired) the dedicated workspace
 folder after reviewing retention. Do not delete shared model folders or uv caches.
 """

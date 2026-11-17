@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="dark"><meta name="description" content="A local workspace for the infrastructure around your research model.">
+  <meta name="color-scheme" content="light"><meta name="description" content="A local workspace for the infrastructure around your research model.">
   <title>Furnace Studio — Researcher workspace</title>
   <link rel="stylesheet" href="/assets/studio.css"><script type="module" src="/assets/studio.js"></script>
 </head>
@@ -10,13 +10,13 @@
 <noscript><p>Furnace Studio needs JavaScript enabled in your local browser. No project data is loaded without the local session.</p></noscript>
 <a class="skip" href="#main">Skip to workspace</a>
 <header class="app-header">
-  <a class="brand" href="/" aria-label="Furnace Studio home"><span class="brand-mark" aria-hidden="true">F</span>FURNACE <span class="brand-edition">STUDIO</span></a>
+  <a class="brand" href="/" aria-label="Furnace Studio home"><span class="brand-mark" aria-hidden="true">F</span>Furnace <span class="brand-edition">Studio</span></a>
   <a class="text-button" href="/model">Connect a local model server ↗</a><a class="text-button" href="/guide">Model validation guide ↗</a><div class="header-meta"><span class="local"><i aria-hidden="true"></i> Local workspace</span><span class="preview-label">Development preview</span></div>
 </header>
 <div class="layout">
 <aside aria-label="Projects">
   <div class="side-title"><h2>WORKSPACE</h2><span id="count">0 / 2</span></div>
-  <div id="projects"></div><button id="new-project" class="secondary wide">＋ Add model project</button><p id="project-limit" class="hint" hidden>Both project slots are in use. Remove a workspace record in Activity to add another.</p>
+  <div id="projects"></div><button id="new-project" class="secondary wide">＋ Add model project</button><p id="project-limit" class="hint" hidden>Both project slots are in use. Remove a workspace record in History to add another.</p>
   <div class="side-note"><span class="eyebrow">BUILT FOR RESEARCH</span><p>Keep your focus on the model.<br>Give everything around it a home.</p><div class="privacy-note">Your files stay on this machine.<br>No cloud account required.</div></div>
   <button id="system-nav" class="text-button">Environment &amp; compatibility ↗</button>
 </aside>
@@ -24,27 +24,30 @@
   <div id="notice" role="status" aria-live="polite"></div>
   <section id="welcome">
     <div class="welcome-grid">
-      <div class="welcome-copy"><p class="eyebrow">THE INFRASTRUCTURE AROUND YOUR MODEL</p><h1>Your model is the research.<br><span>Build what surrounds it.</span></h1><p class="intro">One workspace for serving, security, evaluations and operations. Start with a free infrastructure kit for your model project.</p><div class="hero-actions"><button id="hero-example" class="primary">Try guided example →</button><button id="hero-project" class="secondary">Use my model project ↓</button></div><div class="hero-facts"><span>No model uploads</span><span>Custom architectures welcome</span><span>Free starter kit</span></div></div>
-      <div class="system-map" aria-label="Product direction: a researcher supplies the model; Furnace supplies the surrounding infrastructure. Only a local infrastructure fixture is executable in this preview."><div class="map-top"><span class="mini-label">YOUR RESEARCH</span><strong>Model + architecture</strong><span class="map-line" aria-hidden="true"></span></div><div class="map-platform"><div class="map-platform-title"><span class="brand-mark small" aria-hidden="true">F</span> FURNACE <span>Infrastructure layer</span></div><div class="map-grid"><span>Serving &amp; harness</span><span>Security</span><span>Evaluations</span><span>Logs &amp; recovery</span></div></div><p class="map-caption"><span class="status-dot" aria-hidden="true"></span> Available now: local workspace + test runtime<br>Research-model adapters are the next validation step.</p></div>
+      <div class="welcome-copy"><span class="welcome-icon" aria-hidden="true">F</span><p class="eyebrow">YOUR LOCAL WORKSPACE</p><h1>What would you like to work on?</h1><p class="intro">Explore an example, or bring your model project.<br>We’ll help you prepare what comes next.</p><div class="hero-actions"><button id="hero-example" class="primary">Open guided example →</button><button id="hero-project" class="secondary">Add my model project</button></div><p class="hint">No model, GPU or Docker needed to look around.</p></div>
     </div>
     <div class="onboarding-grid">
+      <details id="project-entry" class="onboarding-choice"><summary>Add a model project</summary>
       <form id="add-form" class="card onboarding-card"><div class="card-heading"><span class="step-number">01</span><div><h2>Start with your model</h2><p>Inspect a local folder and see what comes next.</p></div></div><label>Project name<input name="name" maxlength="80" required placeholder="e.g. Sequence research" autocomplete="off"></label><label>Local model project folder<input name="path" maxlength="2048" required placeholder="Absolute path on this machine" spellcheck="false" autocomplete="off"></label><p class="hint">Reads file names and selected configuration metadata. No model imports, checkpoint loading or source changes.</p><button class="primary" type="submit">Inspect project →</button></form>
-      <div class="card example-card"><div class="card-heading"><span class="step-number">↗</span><div><h2>Explore without a model</h2><p>A guided infrastructure walkthrough.</p></div></div><p>Open an example with a saved interface, compute preferences and two evaluation cases. Download the kit, then try the real local worker lifecycle.</p><ul class="check-list"><li>No project folder or GPU needed</li><li>Workspace and kit work without Docker</li><li>Docker is optional for running the test fixture</li></ul><button id="open-example" class="secondary">Open guided example →</button><p class="hint">Not a trained model. No weights, cloud resources or payment. Opening this example only creates metadata. After explicit start, a deterministic fixture runs live in Docker; it is not simulated timing or model inference.</p></div>
+      </details>
+      <details class="onboarding-choice"><summary>What happens in the example?</summary><div class="card example-card"><div class="card-heading"><div><h2>Explore without a model</h2><p>A guided infrastructure walkthrough.</p></div></div><p>Inspect a saved setup and two evaluation cases, then export a kit. Nothing executes when you open the example.</p><button id="open-example" class="secondary">Open guided example →</button><p class="hint">Optional execution needs local Docker and explicit consent. It runs a deterministic uppercase fixture, not an LLM. Exact agreement is not semantic quality, descriptions remain unscored, and durations include Docker overhead.</p></div></details>
     </div>
-    <div class="offer-strip"><div><span class="mini-label">FREE STARTER KIT</span><p>Assessment · model contract · evaluation template · operations checklist</p></div><div><span class="mini-label">MANAGED INFRASTRUCTURE</span><p><strong>$20/month</strong> planned offer · our compute or yours · billing inactive</p></div></div>
+    <details class="preview-information"><summary>About this preview</summary><p>The local workspace and starter kit are free. The planned $20/month managed service is not available yet; billing and cloud provisioning are inactive. Furnace does not load model weights.</p></details>
   </section>
   <section id="workspace" hidden>
     <div class="project-head"><div><p id="project-kind" class="eyebrow">RESEARCHER WORKSPACE</p><h1 id="project-title"></h1><p id="project-path" class="hint"></p></div><span id="project-state" class="state">MODEL NOT CONNECTED</span></div>
     <div id="example-note" class="context-note" hidden><strong>Guided example · not a model</strong><span>This metadata-only project is bundled with Studio. Its fixture tests infrastructure; results say nothing about model quality.</span></div>
     <div class="next-step"><div><span class="mini-label">YOUR NEXT STEP</span><h2 id="next-title"></h2><p id="next-description"></p></div><button id="next-action" class="primary"></button></div>
-    <nav id="sections" aria-label="Project sections"><button data-view="overview" aria-current="page">Overview &amp; kit</button><button data-view="contract">Model contract</button><button data-view="infrastructure">Infrastructure</button><button data-view="evaluations">Evaluations</button><button data-view="activity">Activity</button></nav>
+    <nav id="sections" aria-label="Project sections"><button data-view="overview" aria-current="page">Overview</button><button data-view="contract">Model details</button><button data-view="infrastructure">Setup</button><button data-view="evaluations">Checks</button><button data-view="activity">History</button></nav>
     <section data-panel="overview">
       <div class="section-head"><div><p class="eyebrow">PROJECT FOUNDATION</p><h2>A clear path from files to operations.</h2><p>Track preparation separately from executed evidence.</p></div><button id="download" class="primary">Download free starter kit ↓</button></div>
       <ol id="progress" class="progress-list" aria-label="Project preparation"></ol>
       <div id="project-metrics" class="metrics"></div>
-      <div class="section-head compact"><div><h3>What your project needs</h3><p>Detected files are evidence of presence. They do not establish that a capability works.</p></div><span class="hint">6 infrastructure areas</span></div>
+      <details class="assessment-details"><summary>Review infrastructure needs · 6 areas</summary>
+      <div class="section-head compact"><div><h3>What your project needs</h3><p>Detected files are evidence of presence. They do not establish that a capability works.</p></div></div>
       <div id="evidence" class="evidence"></div><div id="capabilities" class="cards"></div><div id="warnings" class="warning" hidden></div>
       <details class="card"><summary>Understand this assessment</summary><p>Furnace inspected file names and bounded configuration metadata. No model weights, custom code, inference, security audit or quality evaluation ran. Architecture compatibility needs a reviewed adapter and real acceptance tests. Fixture execution is separately labeled and recorded.</p></details>
+      </details>
     </section>
     <section data-panel="contract" hidden>
       <div class="section-head"><div><p class="eyebrow">MODEL INTERFACE</p><h2>Describe how your model works.</h2><p>A transformer is not required. Capture the contract a reviewed adapter will need.</p></div><span id="contract-draft" class="draft-label"></span></div>

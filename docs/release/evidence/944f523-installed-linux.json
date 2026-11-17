@@ -1,0 +1,53 @@
+{
+  "source_commit": "944f5232ae4747563c9b99e6da7ec4c66a8aec1d",
+  "source_dirty": false,
+  "package_version": "0.1.0",
+  "bundle_sha256": "4485aad81a494ca6aa15beccb6fe6b04b227939808cc098c7c8ad9d47ef59da2",
+  "delivery": "bundle",
+  "source_sync_frozen": null,
+  "platform": "linux",
+  "python": "3.12.12",
+  "outside_repository": true,
+  "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
+  "docker_usage": "outer test container only; no Docker CLI/socket in Studio",
+  "github_operations": false,
+  "real_application_evaluation": false,
+  "remote_inference": false,
+  "uid": 10001,
+  "shutdown_signal": "SIGINT",
+  "shutdown_port_closed": "passed",
+  "shutdown_workspace_released": "verified_by_restart",
+  "fresh_machine_or_user": null,
+  "empty_cache_required": true,
+  "first_start_seconds_including_install": 17.1,
+  "missing_uv_guidance": "passed",
+  "workspace_without_docker": "passed",
+  "installed_module_assets": "passed",
+  "guided_example_and_export": "passed",
+  "persistence_and_token_rotation": "passed",
+  "model_execution": false,
+  "gpu_execution": false,
+  "connector": {
+    "http_test_server_only": true,
+    "installed_api_checks": "passed",
+    "malformed_unicode_refused": "passed",
+    "browser": {
+      "engine": "153.0.8010.12",
+      "checks": "passed",
+      "human_comprehension": "not_tested",
+      "bfcache_use": "not_asserted",
+      "persisted_pageshow_failure_recovery": "synthetic_event_passed",
+      "attempt_history": "failed_attempt_inspected_without_execution; retained_after_retry_and_configuration_edit; project_scoped; exported",
+      "case_import": "invalid_and_delayed_reads_safe; stale_replace_refused; explicit_replace_reset_statuses; kit_jsonl_round_trip"
+    },
+    "saved_run_id": "c553afb868c74a97a86de1f9af63a2f7",
+    "saved_history_ids": [
+      "5bbd893db56542a98bf6f0a568f2bb69",
+      "e8ca970961db4fab8e18b3d29a690dba",
+      "a15f79ce481a4c3ab6cde56d3b43738e",
+      "c553afb868c74a97a86de1f9af63a2f7"
+    ],
+    "actual_http_requests": 18,
+    "restart_disconnected_and_evidence_preserved": "passed"
+  }
+}

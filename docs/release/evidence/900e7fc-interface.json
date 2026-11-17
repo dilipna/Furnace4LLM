@@ -1,0 +1,43 @@
+{
+  "source_commit": "900e7fc107397944a3ee70b740212887b3643972",
+  "source_dirty": false,
+  "public": {
+    "engine": "157.0.8103.79",
+    "desktop_mobile": "passed",
+    "help_search": "matched_unmatched_and_clear",
+    "navigation": "passed",
+    "prerequisites": "self_report_not_machine_verification",
+    "clipboard": "browser_local_success_denial_stubs; OS_clipboard_not_tested",
+    "public_post_requests": 0
+  },
+  "studio": {
+    "welcome_project_disclosure": "passed",
+    "metadata_project_and_guided_example": "actual_API_persistence_no_execution",
+    "docker_calls": 0,
+    "connector": {
+      "http_test_server_only": true,
+      "installed_api_checks": "passed",
+      "malformed_unicode_refused": "passed",
+      "browser": {
+        "engine": "157.0.8103.79",
+        "checks": "passed",
+        "human_comprehension": "not_tested",
+        "bfcache_use": "not_asserted",
+        "persisted_pageshow_failure_recovery": "synthetic_event_passed",
+        "attempt_history": "failed_attempt_inspected_without_execution; retained_after_retry_and_configuration_edit; project_scoped; exported",
+        "case_import": "invalid_and_delayed_reads_safe; stale_replace_refused; explicit_replace_reset_statuses; kit_jsonl_round_trip"
+      },
+      "saved_run_id": "227c9f5f039c46349cdda41800f8d867",
+      "saved_history_ids": [
+        "0509d8bb1d894d2e90218dee452d78df",
+        "cb44cb04ee5d49e1a7bb117a85e06c73",
+        "f83c4960a00641f69e3ebea37327f290",
+        "227c9f5f039c46349cdda41800f8d867"
+      ],
+      "actual_http_requests": 18
+    }
+  },
+  "model_inference": false,
+  "human_comprehension": "not_tested",
+  "native_file_picker": "not_tested"
+}

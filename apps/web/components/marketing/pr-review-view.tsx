@@ -157,7 +157,7 @@ export function PrReviewView({
         <Step n={1} title={<>The change <span className="num text-[11px] font-normal text-fg-3">app/prompts.py · build_messages</span></>}>
           {prDiff ? <DiffLines lines={prDiff} /> : null}
           <p className="text-[12px] text-fg-2">
-            Answers stay the same, so output-quality evals pass. But every request now starts with different text,
+            Functional tests can stay green; answer equivalence was not established. Every request now starts with different text,
             so the server can no longer reuse its cached prompt prefix.
           </p>
         </Step>

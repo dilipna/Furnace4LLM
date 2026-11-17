@@ -43,5 +43,5 @@ The existing separate-process live-owner rejection test remains unchanged.
 
 The focused metadata/onboarding/identity/import/real-HTTP suite passed 56 tests after
 the startup change. Final affected/full checks and exact commits are recorded with
-the PR's current-head verification, separately from earlier results. No learned
+the [local integration handoff](../release/simple-interface-review.md), separately from earlier results. No learned
 inference, GPU experiment, fresh-profile installation or human observation is claimed.

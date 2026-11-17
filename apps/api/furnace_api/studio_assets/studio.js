@@ -96,7 +96,7 @@ function navigation() {
     return button;
   }));
   $("#new-project").disabled = projects.length >= 2;
-  $("#new-project").title = projects.length >= 2 ? "Two project slots are in use. Remove a workspace record in Activity to add another." : "Inspect a local model folder";
+  $("#new-project").title = projects.length >= 2 ? "Two project slots are in use. Remove a workspace record in History to add another." : "Inspect a local model folder";
   $("#open-example").disabled = isPending("example", null) || (projects.length >= 2 && !projects.some(p => p.origin === "guided_example"));
 }
 function changeView(next, focus = false) {
@@ -318,7 +318,11 @@ $(".brand").onclick = event => {
   if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   event.preventDefault(); current = null; notice(""); render(); $("#welcome h1").tabIndex = -1; $("#welcome h1").focus();
 };
-$("#new-project").onclick = () => { current = null; notice(""); render(); $("#add-form input").focus(); };
+function showProjectEntry() {
+  $("#project-entry").open = true;
+  $("#add-form input").focus();
+}
+$("#new-project").onclick = () => { current = null; notice(""); render(); showProjectEntry(); };
 $("#sections").onclick = event => { const button = event.target.closest("[data-view]"); if (button) changeView(button.dataset.view); };
 $("#add-form").onsubmit = event => {
   event.preventDefault(); const form = event.currentTarget, data = readForm(form);
@@ -332,7 +336,7 @@ function openExample(button) { return action(button, "example", async () => {
 }, null); }
 $("#open-example").onclick = event => openExample(event.currentTarget);
 $("#hero-example").onclick = event => openExample(event.currentTarget);
-$("#hero-project").onclick = () => $("#add-form input").focus();
+$("#hero-project").onclick = showProjectEntry;
 for (const name of ["contract", "plan", "case"]) {
   const form = $("#" + Object.keys(formNames).find(key => formNames[key] === name));
   form.onsubmit = event => {
