@@ -5,6 +5,7 @@ const token = fragment || sessionStorage.getItem("furnace-session") || "";
 if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", "/model"); }
 let projects = [], selected = null, busy = false, refreshing = false;
 let refreshGeneration = 0;
+let catalog = null, managedPoll = null;
 const drafts = new Map(), outputs = new Map(), prompts = new Map();
 function notice(value) { $("#model-notice").textContent = value; }
 function readableError(reason) {
@@ -22,7 +23,26 @@ function readableError(reason) {
     endpoint_disconnected: "The request was discarded because Furnace disconnected.",
     endpoint_evaluation_cancelled_or_budget_exhausted: "Evaluation stopped after disconnect or its 30-second request budget. Missing cases did not pass.",
     add_evaluation_cases_first: "Add and save evaluation cases in the workspace first.",
+    managed_server_not_running: "The Furnace-operated server is not running. Start it again; its per-launch key is never saved.",
+    choose_a_managed_model_first: "Save a model selection first.",
+    prepare_managed_model_first: "Prepare the model first: its pinned image and verified weights are not present yet.",
+    stop_managed_server_first: "Stop the managed server before changing its selection.",
+    preparation_in_progress: "Preparation is still running. Wait for it or cancel it.",
+    managed_server_already_running: "The managed server is already running.",
+    server_out_of_memory: "The server ran out of its container memory. Raise the memory limit or lower the context size, then start again.",
+    server_load_timeout: "The server did not become ready in time. Check its logs, then start again.",
+    server_load_failed: "The server reported that loading failed. Check its logs.",
+    image_not_prepared: "The pinned server image is missing. Prepare again.",
+    docker_unavailable: "Docker is not reachable. Start Docker Desktop (Linux containers) and try again.",
+    docker_operation_failed: "A Docker operation failed. Check that Docker is running and has enough memory and disk.",
+    artifact_digest_mismatch: "The stored weights no longer match their pinned SHA-256 and were quarantined. Prepare again.",
+    download_digest_mismatch: "The downloaded weights did not match the pinned SHA-256 and were discarded. Prepare again.",
+    insufficient_disk_space: "Not enough free disk space for the weights.",
+    download_cancelled: "Preparation was cancelled. Prepare again to resume the download.",
+    reference_suite_digest_mismatch: "The packaged reference suite does not match its pinned digest; it was not loaded.",
   };
+  if (/^server_exited_\d+$/.test(reason)) return "The server process exited (code " + reason.split("_").pop() + "). Check its logs, then start again explicitly.";
+  if (/^download_(http_\d{3}|network_error)$/.test(reason)) return "The download failed (" + reason.slice(9) + "). Prepare again to resume.";
   if (/^endpoint_http_\d{3}$/.test(reason)) return "The local server returned HTTP " + reason.slice(-3) + ". Redirects are not followed; upstream error text is withheld. Check your server, then reconnect.";
   return messages[reason] || reason;
 }
@@ -45,7 +65,7 @@ function accept(incoming) {
 }
 function formData() {
   const value = Object.fromEntries(new FormData($("#connection-form")));
-  value.timeout_seconds = Number(value.timeout_seconds); value.max_tokens = Number(value.max_tokens);
+  for (const key of ["timeout_seconds", "max_tokens", "evaluation_budget_seconds"]) value[key] = Number(value[key]);
   return value;
 }
 function render() {
@@ -55,7 +75,7 @@ function render() {
   if (!p) return;
   const endpoint = p.model_endpoint;
   $("#model-prompt-form").elements.namedItem("input").value = prompts.get(p.id) || "";
-  const saved = drafts.get(p.id) || endpoint.connection || {timeout_seconds:5, max_tokens:128};
+  const saved = drafts.get(p.id) || (endpoint.connection?.managed ? null : endpoint.connection) || {timeout_seconds:30, max_tokens:256, evaluation_budget_seconds:120};
   const form = $("#connection-form");
   form.reset();
   for (const [key,value] of Object.entries(saved)) if (form.elements.namedItem(key)) form.elements.namedItem(key).value = value;
@@ -65,6 +85,7 @@ function render() {
   for (const button of document.querySelectorAll("#model-workspace button")) button.disabled = busy || refreshing;
   $("#model-connect").disabled = busy || refreshing || !endpoint.connection;
   $("#model-disconnect").disabled = !endpoint.connection;
+  renderManaged(p);
   $("#model-prompt-form button").disabled ||= !ready;
   $("#model-evaluate").disabled ||= !ready || !p.cases.length;
   const record = outputs.get(p.id);
@@ -73,13 +94,18 @@ function render() {
     : "No confirmed endpoint response in this tab.";
   const run = !refreshing && endpoint.verification === "current_endpoint_observation" ? endpoint.evaluation : null;
   $("#model-run").textContent = run
-    ? "Saved endpoint attempt: " + run.status + " · " + new Date(run.at).toLocaleString() + ". Reopening does not rerun it. Model identity not independently verified."
+    ? "Saved endpoint attempt: " + run.status + " · " + new Date(run.at).toLocaleString() + (run.elapsed_seconds !== undefined ? " · " + run.elapsed_seconds + " s" : "") + ". Reopening does not rerun it. " + (endpoint.weights_verified_before_launch ? "Weights SHA-256 verified before launch." : "Model identity not independently verified.")
     : "No endpoint evidence for this current project/configuration.";
+  const repro = run ? endpoint.reproducibility : null;
+  $("#model-repro").textContent = !repro ? "" : repro.status === "no_earlier_run"
+    ? "Reproducibility: no earlier completed attempt with this configuration to compare."
+    : "Reproducibility: " + repro.identical + " of " + repro.compared + " outputs identical to attempt " + repro.reference_run_id.slice(0, 8) + (repro.reference_launch_id && repro.reference_launch_id !== repro.current_launch_id ? " (an earlier server launch)" : "") + ".";
   const list = $("#model-results"); list.replaceChildren();
   for (const [index,item] of p.cases.entries()) {
     const result = run?.results?.find(r => r.case_index === index);
     const row = document.createElement("p");
-    row.textContent = item.name + " — " + (result?.status || "not_run") + (result?.duration_ms !== undefined ? " · HTTP round trip " + result.duration_ms + " ms (not TTFT)" : "") + (result?.reason ? " · " + result.reason : "");
+    const rule = result?.scoring_method && result.scoring_method !== "none" ? " · " + result.scoring_method + " rule" : "";
+    row.textContent = item.name + " — " + (result?.status || "not_run") + rule + (result?.duration_ms !== undefined ? " · HTTP round trip " + result.duration_ms + " ms (not TTFT)" : "") + (result?.reason ? " · " + result.reason : "");
     list.append(row);
   }
   const history = refreshing ? [] : endpoint.history || [];
@@ -100,7 +126,7 @@ function render() {
     identification.textContent = "Attempt " + attempt.run_id + " · Model ID: " + (attempt.model_id || "not recorded") + " · Declared revision: " + (attempt.declared_revision || "not recorded");
     const counts = document.createElement("p");
     const results = attempt.results || [];
-    counts.textContent = ["exact_pass", "exact_fail", "unscored", "incomplete", "error"].map(status => status + ": " + results.filter(r => r.status === status).length).join(" · ")
+    counts.textContent = ["exact_pass", "exact_fail", "check_pass", "check_fail", "unscored", "incomplete", "error"].map(status => status + ": " + results.filter(r => r.status === status).length).join(" · ")
       + (Number.isInteger(attempt.case_count) ? " · not_run: " + Math.max(0, attempt.case_count - results.length) : " · original case count not recorded");
     const record = document.createElement("pre"); record.className = "guide-code";
     record.textContent = JSON.stringify(attempt, null, 2);
@@ -164,7 +190,101 @@ $("#model-export").onclick = () => action(async pid => {
   const url = URL.createObjectURL(blob), link = document.createElement("a");
   link.href = url; link.download = "furnace-starter-kit.zip"; link.click(); URL.revokeObjectURL(url);
 });
+
+function describeRecipe(id) {
+  const recipe = catalog?.models.find(m => m.id === id);
+  if (!recipe) return "Choose a reviewed recipe. Every input that decides what runs is pinned.";
+  const local = recipe.local?.state === "present" ? "weights already verified locally" : recipe.local?.state === "partial" ? "partial download present (resumes)" : (recipe.download_bytes / 1048576).toFixed(0) + " MiB to download";
+  return recipe.name + " · " + recipe.architecture + " · " + recipe.parameters + " parameters · license " + recipe.license + " · " + recipe.repository + "@" + recipe.revision.slice(0, 12) + " · weights sha256 " + recipe.weights.sha256.slice(0, 12) + "… · " + local + ". " + recipe.hardware;
+}
+function renderManaged(p) {
+  const managed = p.managed_server || {status: "not_configured"};
+  const form = $("#managed-form");
+  const selection = drafts.get(p.id + ":managed") || managed.selection;
+  if (selection) for (const [key, value] of Object.entries(selection)) if (form.elements.namedItem(key)) form.elements.namedItem(key).value = value;
+  $("#managed-recipe").textContent = describeRecipe(form.elements.namedItem("model").value);
+  const status = managed.status;
+  const job = managed.preparation;
+  let text = {
+    not_configured: "No managed model selected for this project.",
+    configured: "Selection saved. Prepare to download and verify; nothing has run.",
+    preparing: "Preparing…",
+    prepared: "Prepared: images pulled by digest and weights SHA-256 verified. Start when ready.",
+    starting: "Starting the isolated container…",
+    loading: "Loading model weights…",
+    ready: "Ready" + (managed.start_seconds ? " in " + managed.start_seconds + " s" : "") + " · connected for evaluation below.",
+    stopped: "Stopped. Start again explicitly.",
+    interrupted: "The previous Studio session ended; its container was removed. Start again explicitly.",
+    failed: "Failed: " + readableError(managed.reason || "unknown"),
+    unknown: "Cleanup could not be confirmed: " + (managed.reason || "") + ". Check Docker, then stop again.",
+  }[status] || status;
+  if (job?.phase === "image") text = "Pulling pinned image " + job.image.split("@")[0] + "…";
+  if (job?.phase === "weights") text = "Downloading and verifying " + job.file + "…";
+  if (managed.manifest_sha256 && ["prepared", "ready", "stopped"].includes(status)) text += " Manifest " + managed.manifest_sha256.slice(0, 12) + ".";
+  $("#managed-status").textContent = text;
+  const progress = $("#managed-progress");
+  progress.hidden = !(job?.phase === "weights" && job.size);
+  if (!progress.hidden) progress.value = job.bytes / job.size;
+  const active = ["starting", "loading", "ready"].includes(status);
+  const consent = $("#managed-consent").checked;
+  $("#managed-save").disabled = busy || active || status === "preparing";
+  $("#managed-prepare").disabled = busy || !managed.selection || active || status === "preparing" || !consent;
+  $("#managed-cancel").disabled = status !== "preparing";
+  $("#managed-start").disabled = busy || !managed.selection || active || status === "preparing" || !consent;
+  $("#managed-stop").disabled = !active && status !== "unknown" && status !== "failed";
+  $("#managed-suite").disabled = busy || !managed.selection || active;
+  const gpu = catalog?.docker?.gpu_runtime;
+  form.elements.namedItem("accelerator").querySelector("option[value=nvidia]").disabled = gpu === false;
+  if (status === "preparing" && !managedPoll) managedPoll = setTimeout(pollManaged, 1000);
+}
+async function pollManaged() {
+  managedPoll = null;
+  const pid = selected;
+  if (!pid) return;
+  try {
+    const view = await api("projects/" + pid + "/managed");
+    const p = projects.find(item => item.id === pid);
+    if (p) { p.managed_server = view; if (selected === pid) render(); }
+    if (view.status !== "preparing") accept(await api("projects/" + pid + "/model"));
+  } catch (error) { notice(error.message); }
+}
+function managedSelection() {
+  const value = Object.fromEntries(new FormData($("#managed-form")));
+  for (const key of ["threads", "memory_mb", "context_tokens", "request_timeout_seconds", "max_tokens", "evaluation_budget_seconds"]) value[key] = Number(value[key]);
+  return value;
+}
+async function loadCatalog() {
+  try {
+    catalog = await api("managed/catalog");
+    const select = $("#managed-model"); select.replaceChildren();
+    for (const recipe of catalog.models) { const option = document.createElement("option"); option.value = recipe.id; option.textContent = recipe.name; select.append(option); }
+    render();
+  } catch (error) { $("#managed-recipe").textContent = "Recipes unavailable: " + error.message; }
+}
+$("#managed-form").oninput = () => { if (selected) { drafts.set(selected + ":managed", managedSelection()); $("#managed-recipe").textContent = describeRecipe($("#managed-model").value); } };
+$("#managed-form").onsubmit = event => { event.preventDefault(); const value = managedSelection(); action(async pid => { const saved = await api("projects/" + pid + "/managed", "PUT", value); drafts.delete(pid + ":managed"); accept(saved); }); };
+$("#managed-consent").onchange = () => render();
+$("#managed-prepare").onclick = () => action(async pid => { const view = await api("projects/" + pid + "/managed/prepare", "POST", {consent: true}); const p = current(); if (p) p.managed_server = view; });
+$("#managed-cancel").onclick = async () => { try { await api("projects/" + selected + "/managed/cancel", "POST"); notice("Cancelling; the partial download is kept and resumes next time."); } catch (error) { notice(error.message); } };
+$("#managed-start").onclick = () => action(async pid => { notice("Starting the server and waiting for it to report ready. Loading can take a minute."); await api("projects/" + pid + "/managed/start", "POST", {consent: true}); });
+$("#managed-stop").onclick = async () => { const pid = selected; try { await api("projects/" + pid + "/managed/stop", "POST"); accept(await api("projects/" + pid + "/model")); notice("Managed server stopped and its container removed."); } catch (error) { notice(error.message); } };
+$("#managed-suite").onclick = () => action(async pid => accept(await api("projects/" + pid + "/managed/suite", "POST")));
+$("#managed-observe-refresh").onclick = async () => {
+  const out = $("#managed-observe");
+  try {
+    const data = await api("projects/" + selected + "/managed/observe");
+    const lines = ["Status: " + data.managed_server.status];
+    if (data.container) lines.push("Container " + data.container.container_id + " · running " + data.container.running + " · networks " + data.container.networks.join(", "));
+    if (data.resources?.memory) lines.push("Resources: CPU " + data.resources.cpu_percent + " · memory " + data.resources.memory + " · processes " + data.resources.pids);
+    const metrics = Object.entries(data.metrics || {}).filter(([k]) => /tokens|requests/.test(k)).map(([k, v]) => k.replace("llamacpp:", "") + "=" + v);
+    if (metrics.length) lines.push("Server metrics: " + metrics.join(" · "));
+    lines.push("", "Recent operations (no prompts or outputs):", ...data.operations.slice(-12).map(e => e.at.slice(11, 19) + " " + e.kind + (e.duration_ms !== undefined ? " " + e.duration_ms + " ms" : "") + (e.reason ? " " + e.reason : "")));
+    if (data.logs) lines.push("", "Server log tail:", data.logs.split("\n").slice(-25).join("\n"));
+    out.textContent = lines.join("\n"); out.hidden = false;
+  } catch (error) { out.textContent = error.message; out.hidden = false; }
+};
 $("#model-refresh").onclick = refresh;
 window.addEventListener("pageshow", event => { if (event.persisted) { $("#model-consent").checked = false; refresh(); } });
 window.addEventListener("beforeunload", event => { if (drafts.size) { event.preventDefault(); event.returnValue = ""; } });
 refresh();
+loadCatalog();

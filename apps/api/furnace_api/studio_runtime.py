@@ -103,7 +103,14 @@ class RuntimeService:
             return self._runtime(project_id, "stopped", reason)
 
     def status(self, project_id: str) -> dict[str, Any]:
-        self.store.get(project_id)
+        saved = self.store.get(project_id).get("runtime")
+        if not isinstance(saved, dict) or saved.get("status") not in {
+            "ready",
+            "starting",
+            "unknown",
+        }:
+            # Nothing to reconcile: never wait behind a long endpoint batch holding the lock.
+            return self.store.get(project_id)
         with self.manager.lock_for(project_id):
             project = self.store.get(project_id)
             runtime = project.get("runtime")

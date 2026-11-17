@@ -160,3 +160,11 @@ test("late updates cannot recreate a deleted project or change another project",
   assert.equal(updated[0].revision, 4);
   assert.equal(updated[1], second);
 });
+test("case import keeps scoring rules and refuses unsupported scoring methods", () => {
+  const rule = {method:"numeric", number:42};
+  const {cases} = parseSuite(JSON.stringify({...importedCase(), expected_output:null, scoring:rule}) + "\n");
+  assert.deepEqual(cases[0].scoring, rule);
+  assert.equal(cases[0].expected_output, null);
+  assert.throws(() => parseSuite(JSON.stringify({...importedCase(), scoring:{method:"judge"}})), /supported method/);
+  assert.throws(() => parseSuite(JSON.stringify({...importedCase(), scoring:["numeric"]})), /supported method/);
+});
