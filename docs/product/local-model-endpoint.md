@@ -1,7 +1,7 @@
 # Studio local-server connection preview
 
-This local development branch adds a connection workflow before model selection.
-It has not been published, and no real model/server combination has been validated.
+The source preview includes a connection workflow before model selection.
+No real model/server combination has been validated; it is not a released managed service.
 The connector observes HTTP responses; it does not install, load, sandbox or manage
 the external server. Native research-model loading remains unimplemented. A server
 can implement the protocol while running any architecture, or no model at all.

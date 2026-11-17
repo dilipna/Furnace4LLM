@@ -150,6 +150,17 @@ then `uv run furnace studio --no-browser`, and reuses the actual session, exampl
 export, restart and removal assertions. This is automated source setup evidence;
 it does not establish human comprehension or fresh native OS-profile compatibility.
 
+At `a29f523`, that source mode passed with a clean, shallow local-Git clone inside
+a new non-root Linux container, empty uv cache, no checkout virtual environment,
+no Docker socket and a separate temporary workspace. Frozen sync, startup,
+metadata/example/export, restart/token rotation, removal and shutdown passed.
+First sync/start took 37.62 seconds. The [source receipt](evidence/a29f523-source-linux.json)
+records the exact commit. Clone transport was a read-only local repository, not a
+fresh GitHub download; network access was exercised by pinned package installation.
+The first clone attempt stopped at Git's ownership guard before setup. The retry
+trusted only that specific mounted repository inside the disposable container;
+no host Git trust setting was changed. This is not a native fresh-user or browser test.
+
 ## Human review — leave observations blank until participation
 
 Open the public preview first; a nontechnical participant need not install Docker.
