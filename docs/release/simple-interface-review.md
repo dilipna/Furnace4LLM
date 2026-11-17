@@ -163,9 +163,19 @@ no host Git trust setting was changed. This is not a native fresh-user or browse
 
 ## Human review — leave observations blank until participation
 
+Current draft review: [PR #12](https://github.com/dilipna/Furnace4LLM/pull/12), based
+on #10. Its first hosted Python failure uncovered a cache publication-confirmation
+gap; the distinct correction, retained failure and newest installed receipts are
+in [the publication review](cache-publication-visibility.md). The latest verified
+ZIP source is `944f523`, SHA-256
+`4485aad81a494ca6aa15beccb6fe6b04b227939808cc098c7c8ad9d47ef59da2`.
+Use the PR's exact-head checks for current integration status. Concurrent #11's
+managed-model work and its claimed validation receipts require separate review;
+they have not been included in this candidate.
+
 The final integration review found and corrected a shutdown blocker after the
 earlier installation successes. See [the before/after record](../product/studio-shutdown-verification.md).
-The latest verified ZIP is bound to `d62ceb1`, SHA-256
+The earlier shutdown-corrected ZIP is bound to `d62ceb1`, SHA-256
 `1e9e9a57cc7d992c52ac61b7368e61b24f0d8b5e2c8d99848f8f61fe27edd3d0`.
 Its Windows warm-cache and Linux fresh-cache installed journeys passed. The
 earlier source/ZIP results above remain historical. An existing level-16 timing
