@@ -439,6 +439,43 @@ def test_disconnect_during_request_stops_batch_and_retry_reexecutes(tmp_path, se
         assert len(state.requests) == 5  # Recheck + both cases execute again.
 
 
+def test_shutdown_recovery_never_rewrites_a_batch_that_ended_while_it_waited(tmp_path, server):
+    # Recovery used to read every project before taking its lock. A batch finishing in
+    # the meantime was then overwritten by that stale "running" copy as interrupted,
+    # silently dropping recorded cases from the current result and from history.
+    state, config = server
+    app = create_app(tmp_path, TOKEN)
+    with TestClient(
+        app, base_url="http://localhost", headers={"x-furnace-session": TOKEN}
+    ) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        add_cases(client, pid)
+        configure(client, pid, {**config, "timeout_seconds": 3})
+        connect(client, pid)
+        state.mode = "hold"
+        replies = []
+        worker = threading.Thread(
+            target=lambda: replies.append(client.post(f"/api/projects/{pid}/model/evaluate"))
+        )
+        worker.start()
+        assert state.entered.wait(timeout=2)
+        recovering = threading.Thread(target=app.state.model.recover)
+        recovering.start()
+        threading.Event().wait(0.2)  # recovery is now waiting for the project lock
+        state.release.set()
+        worker.join(timeout=5)
+        recovering.join(timeout=5)
+        assert not worker.is_alive()
+        assert not recovering.is_alive()
+        returned = replies[0].json()["model_endpoint"]["evaluation"]
+        saved = client.get(f"/api/projects/{pid}/model").json()["model_endpoint"]
+        assert saved["evaluation"]["status"] == returned["status"]
+        assert saved["evaluation"]["results"] == returned["results"]
+        retained = [run for run in saved["history"] if run["run_id"] == returned["run_id"]]
+        assert retained[0]["results"] == returned["results"]
+        assert saved["state"]["status"] == "disconnected"
+
+
 def test_restart_retains_partial_run_without_reusing_it_for_another_project(tmp_path, server):
     state, config = server
     args = {"base_url": "http://localhost", "headers": {"x-furnace-session": TOKEN}}

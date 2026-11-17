@@ -256,9 +256,13 @@ class ModelService:
             )
 
     def recover(self) -> None:
-        for project in self.store.all():
-            pid = project["id"]
+        for listed in self.store.all():
+            pid = listed["id"]
+            # Stop an in-flight batch after its bounded call, then read under the lock:
+            # a copy read before waiting could overwrite the batch's final record.
+            self.flag(pid).set()
             with self.manager.lock_for(pid):
+                project = self.store.get(pid)
                 run = project.get("model_evaluation")
                 if run and run.get("status") == "running":
                     self.save_run(
