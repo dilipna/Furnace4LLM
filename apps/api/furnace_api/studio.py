@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import io
 import json
+import os
 import platform
 import secrets
 import sqlite3
@@ -22,11 +23,15 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response
 from furnace.runtime.lease import WorkspaceLease
 from furnace.runtime.manager import RuntimeFault, RuntimeManager
+from furnace.runtime.oplog import OperationsLog
+from furnace.runtime.scoring import ScoringRule
 from furnace.starter import assess_model, write_starter_files
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from furnace_api.studio_evidence import project_view, provenance
+from furnace_api.studio_managed import ACTIVE as MANAGED_ACTIVE
+from furnace_api.studio_managed import ManagedConsent, ManagedSelection, ManagedService
 from furnace_api.studio_model import ConnectionInput, ConsentInput, ModelPrompt, ModelService
 from furnace_api.studio_runtime import RuntimeService
 
@@ -65,6 +70,7 @@ class Case(BaseModel):
     input: str = Field(min_length=1, max_length=4000)
     expected_behavior: str = Field(min_length=1, max_length=4000)
     expected_output: str | None = Field(default=None, max_length=8000)
+    scoring: ScoringRule | None = None
 
 
 class Cases(BaseModel):
@@ -181,21 +187,44 @@ async def payload(request: Request, schema: type[BaseModel]) -> Any:
         ) from None
 
 
-def create_app(workspace: Path, token: str) -> FastAPI:
+def artifacts_root(workspace: Path) -> Path:
+    """Verified weights are shared by content digest; FURNACE_ARTIFACTS relocates them."""
+    configured = os.environ.get("FURNACE_ARTIFACTS")
+    return Path(configured).expanduser() if configured else workspace / "artifacts"
+
+
+def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> FastAPI:
     if len(token) < 32:
         raise ValueError("Studio requires a strong local session token")
     store = Store(workspace)
     runtime = RuntimeService(store, RuntimeManager(workspace))
-    model = ModelService(store, runtime.manager)
+    oplog = OperationsLog(workspace / "logs")
+    model = ModelService(store, runtime.manager, oplog)
+    managed = ManagedService(
+        store, runtime.manager, model, workspace, artifacts or artifacts_root(workspace), oplog
+    )
+
+    def needs_container_recovery() -> bool:
+        pending = MANAGED_ACTIVE | {"preparing", "unknown"}
+        return any((p.get("managed_server") or {}).get("status") in pending for p in store.all())
+
+    def startup() -> None:
+        runtime.recover()
+        model.recover()
+        if needs_container_recovery():
+            managed.recover()
+        oplog.prune(
+            {p["id"]: (p.get("plan") or {}).get("log_retention_days", 7) for p in store.all()}
+        )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         with WorkspaceLease(workspace):
-            await asyncio.to_thread(runtime.recover)
-            await asyncio.to_thread(model.recover)
+            await asyncio.to_thread(startup)
             try:
                 yield
             finally:
+                await asyncio.to_thread(managed.close)
                 await asyncio.to_thread(model.recover)
                 await asyncio.to_thread(runtime.close)
 
@@ -204,6 +233,8 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     )
     app.state.runtime = runtime
     app.state.model = model
+    app.state.managed = managed
+    app.state.oplog = oplog
 
     @app.exception_handler(RuntimeFault)
     async def runtime_error(request: Request, exc: RuntimeFault):
@@ -215,7 +246,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                 "detail": "The project changed after preview. Refresh its saved state, then preview the suite again."
                 if exc.code == "configuration_changed_before_case_import"
                 else exc.code
-                if "/model/" in request.url.path
+                if "/model/" in request.url.path or "/managed" in request.url.path
                 else "Framework runtime: "
                 + exc.code.replace("_", " ")
                 + ". No model validation is implied."
@@ -265,7 +296,12 @@ def create_app(workspace: Path, token: str) -> FastAPI:
 
     @app.get("/healthz")
     def health():
-        return {"studio": "ready", "model_runtime": "not_connected", "billing": "inactive"}
+        states = [(p.get("managed_server") or {}).get("status") for p in store.all()]
+        return {
+            "studio": "ready",
+            "managed_servers": {s: states.count(s) for s in sorted({s for s in states if s})},
+            "billing": "inactive",
+        }
 
     @app.get("/api/projects")
     def projects():
@@ -409,7 +445,13 @@ def create_app(workspace: Path, token: str) -> FastAPI:
             runtime.update,
             project_id,
             "cases",
-            [{**case.model_dump(), "status": "not_run"} for case in value.cases],
+            [
+                {
+                    **case.model_dump(exclude={"scoring"} if case.scoring is None else set()),
+                    "status": "not_run",
+                }
+                for case in value.cases
+            ],
             "Evaluation cases saved; no model evaluation has run",
             value.expected_configuration_sha256,
         )
@@ -479,6 +521,8 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                         "runtime": project["runtime"],
                         "evaluation": project.get("evaluation"),
                         "model_endpoint": project["model_endpoint"],
+                        "managed_server": managed.view(project_id),
+                        "operations": oplog.read(project_id, 200),
                         "provenance": provenance(project),
                         "assessment_sha256": hashlib.sha256(
                             json.dumps(project["assessment"], sort_keys=True).encode()
@@ -488,6 +532,11 @@ def create_app(workspace: Path, token: str) -> FastAPI:
                 ),
                 encoding="utf-8",
             )
+            if (project.get("managed_server") or {}).get("manifest"):
+                (folder / "serving-manifest.json").write_text(
+                    json.dumps(project["managed_server"]["manifest"], indent=2, sort_keys=True),
+                    encoding="utf-8",
+                )
             with (folder / "README.md").open("a", encoding="utf-8") as readme:
                 readme.write(
                     "\n## Studio evidence\n\nSee workspace-plan.json provenance for the project, configuration and verification status.\nFixture execution checks deterministic output against a saved expected string. There is no measured model baseline or base/head comparison.\nRound-trip timings include Docker control and are not model latency. Fixture evidence supplies no model inference, GPU result or model-quality verification.\nLegacy/unbound records are retained but do not verify the current configuration.\nFor a real-model validation procedure, open /guide in Studio.\n"
@@ -508,8 +557,55 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     @app.delete("/api/projects/{project_id}", status_code=204)
     def remove(project_id: str):
         model.flag(project_id).set()
+        status = (store.get(project_id).get("managed_server") or {}).get("status")
+        if status in MANAGED_ACTIVE | {"unknown"}:
+            managed.stop(project_id, "Managed server stopped before project removal")
         runtime.remove(project_id)
         return Response(status_code=204)
+
+    @app.get("/api/managed/catalog")
+    def managed_catalog():
+        return managed.catalog()
+
+    @app.put("/api/projects/{project_id}/managed")
+    async def managed_select(project_id: str, request: Request):
+        value = await payload(request, ManagedSelection)
+        return await asyncio.to_thread(managed.configure, project_id, value)
+
+    @app.get("/api/projects/{project_id}/managed")
+    def managed_view(project_id: str):
+        return managed.refresh(project_id)
+
+    @app.post("/api/projects/{project_id}/managed/prepare")
+    async def managed_prepare(project_id: str, request: Request):
+        await payload(request, ManagedConsent)
+        return await asyncio.to_thread(managed.prepare, project_id)
+
+    @app.post("/api/projects/{project_id}/managed/cancel")
+    def managed_cancel(project_id: str):
+        return managed.cancel(project_id)
+
+    @app.post("/api/projects/{project_id}/managed/start")
+    async def managed_start(project_id: str, request: Request):
+        await payload(request, ManagedConsent)
+        return await asyncio.to_thread(managed.start, project_id)
+
+    @app.post("/api/projects/{project_id}/managed/stop")
+    def managed_stop(project_id: str):
+        return managed.stop(project_id)
+
+    @app.get("/api/projects/{project_id}/managed/observe")
+    def managed_observe(project_id: str):
+        return managed.observe(project_id)
+
+    @app.post("/api/projects/{project_id}/managed/suite")
+    def managed_suite(project_id: str):
+        return managed.load_suite(project_id, runtime.update)
+
+    @app.get("/api/projects/{project_id}/operations")
+    def operations(project_id: str):
+        store.get(project_id)
+        return oplog.read(project_id, 200)
 
     @app.put("/api/projects/{project_id}/model/connection")
     async def model_connection(project_id: str, request: Request):
@@ -543,7 +639,9 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     return app
 
 
-def launch(workspace: Path, port: int, open_browser: bool = True) -> None:
+def launch(
+    workspace: Path, port: int, open_browser: bool = True, artifacts: Path | None = None
+) -> None:
     import threading
     import webbrowser
 
@@ -552,11 +650,11 @@ def launch(workspace: Path, port: int, open_browser: bool = True) -> None:
     if not 1024 <= port <= 65535:
         raise ValueError("Choose a port from 1024 to 65535")
     token = secrets.token_urlsafe(32)
-    app = create_app(workspace, token)
+    app = create_app(workspace, token, artifacts)
     url = f"http://127.0.0.1:{port}/#session={token}"
     print(f"Furnace Studio local session: {url}", flush=True)
     print(
-        "Demo mode: $20/month offer; no billing or cloud provisioning. Docker infrastructure fixture is optional; no model adapter is validated.",
+        "Demo mode: $20/month offer; no billing or cloud provisioning. Docker is optional; it runs the infrastructure fixture and Furnace-operated local model servers.",
         flush=True,
     )
     server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, access_log=False))
@@ -591,5 +689,6 @@ def main() -> None:
     parser.add_argument("--workspace", type=Path, default=Path.home() / ".furnace" / "studio")
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--artifacts", type=Path, default=None)
     args = parser.parse_args()
-    launch(args.workspace, args.port, open_browser=not args.no_browser)
+    launch(args.workspace, args.port, open_browser=not args.no_browser, artifacts=args.artifacts)

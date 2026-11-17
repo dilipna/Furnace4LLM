@@ -1,0 +1,661 @@
+{
+  "schema": "furnace-real-model-validation-v1",
+  "model": "granite-4.0-h-350m-q8_0",
+  "accelerator": "nvidia",
+  "recipe": {
+    "repository": "ibm-granite/granite-4.0-h-350m-GGUF",
+    "revision": "a864f823cce6e6048b5752e2816fe7a23987d790",
+    "weights_sha256": "c7d9873640dc303b6773dcc44e72e5bdf533e1c95ca8421e6191fbff5c94c942",
+    "architecture": "granitehybrid (Mamba-2 state-space layers with some attention)",
+    "license": "apache-2.0"
+  },
+  "environment": {
+    "recorded_at": "2026-11-17T19:16:45.091096+00:00",
+    "furnace_commit": "0bf926f958ec2071026deb2989b1282c223fc6b8",
+    "working_tree_clean": true,
+    "os": "Windows 11 (10.0.26300)",
+    "machine": "AMD64",
+    "python": "3.12.13",
+    "docker_server": "29.6.1",
+    "docker_os": "Docker Desktop",
+    "docker_vm_cpus": 20,
+    "docker_vm_memory_bytes": 8150228992,
+    "docker_gpu_runtime": true,
+    "host_gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 610.91, 4096 MiB",
+    "host_cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel"
+  },
+  "steps": {
+    "studio_start": {
+      "seconds": 1.28
+    },
+    "select": {
+      "checks": {
+        "selection saved": true
+      }
+    },
+    "prepare": {
+      "fresh_download": false,
+      "seconds": 1.0,
+      "checks": {
+        "images pulled and weights verified": true
+      },
+      "manifest_sha256": "7427fb144dad5cb7dd0463cfcff8f51e5af589670a8f9522792bbf984ee1ce51"
+    },
+    "suite": {
+      "cases": 12
+    },
+    "start": {
+      "seconds": 6.42,
+      "host_gpu_memory_mib": {
+        "before_start": 197,
+        "after_ready": 710
+      },
+      "checks": {
+        "server ready": true,
+        "connected automatically": true,
+        "container hardened": true,
+        "per-launch key generated": true,
+        "server refuses requests without the key": true,
+        "model network has no internet route": true
+      },
+      "start_seconds": 6.34,
+      "load_seconds": 3.78,
+      "isolation": {
+        "user": "10001:10001",
+        "read_only_root": true,
+        "cap_drop": [
+          "ALL"
+        ],
+        "memory_bytes": 2147483648,
+        "networks": [
+          "furnace-net-cc30f5ae2175ce0c-0d2da0e61c2b4bc38b596f5ab5e94721"
+        ],
+        "gpus_requested": true
+      }
+    },
+    "inference": {
+      "output": "The answer to 17 + 25 is 42.",
+      "finish": "stop",
+      "duration_ms": 188,
+      "usage": {
+        "prompt_tokens": 44.0,
+        "completion_tokens": 13.0
+      },
+      "server_timings": {
+        "prompt_ms": 110.646,
+        "predicted_ms": 68.238,
+        "predicted_per_second": 175.855
+      },
+      "checks": {
+        "real completion returned": true
+      }
+    },
+    "evaluation_1": {
+      "status": "completed",
+      "elapsed_seconds": 1.58,
+      "passed": 6,
+      "failed": 6,
+      "incomplete": 0,
+      "errors": 0,
+      "per_case": [
+        {
+          "status": "check_pass",
+          "scoring_method": "numeric",
+          "reason": "number_within_tolerance",
+          "duration_ms": 125,
+          "usage": {
+            "prompt_tokens": 44.0,
+            "completion_tokens": 13.0
+          },
+          "server_timings": {
+            "prompt_ms": 29.666,
+            "predicted_ms": 67.464,
+            "predicted_per_second": 177.873
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "numeric",
+          "reason": "number_mismatch",
+          "duration_ms": 94,
+          "usage": {
+            "prompt_tokens": 44.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 54.278,
+            "predicted_ms": 10.02,
+            "predicted_per_second": 99.8
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "numeric",
+          "reason": "number_within_tolerance",
+          "duration_ms": 125,
+          "usage": {
+            "prompt_tokens": 45.0,
+            "completion_tokens": 11.0
+          },
+          "server_timings": {
+            "prompt_ms": 44.615,
+            "predicted_ms": 55.702,
+            "predicted_per_second": 179.527
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "contains",
+          "reason": "missing_required_text",
+          "duration_ms": 125,
+          "usage": {
+            "prompt_tokens": 42.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 47.433,
+            "predicted_ms": 12.881,
+            "predicted_per_second": 77.634
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "contains",
+          "reason": "missing_required_text",
+          "duration_ms": 78,
+          "usage": {
+            "prompt_tokens": 42.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 40.476,
+            "predicted_ms": 11.496,
+            "predicted_per_second": 86.987
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "choice",
+          "reason": "wrong_choice",
+          "duration_ms": 78,
+          "usage": {
+            "prompt_tokens": 58.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 44.693,
+            "predicted_ms": 11.113,
+            "predicted_per_second": 89.985
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "choice",
+          "reason": "choice_match",
+          "duration_ms": 110,
+          "usage": {
+            "prompt_tokens": 59.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 50.164,
+            "predicted_ms": 13.645,
+            "predicted_per_second": 73.287
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "choice",
+          "reason": "wrong_choice",
+          "duration_ms": 157,
+          "usage": {
+            "prompt_tokens": 42.0,
+            "completion_tokens": 11.0
+          },
+          "server_timings": {
+            "prompt_ms": 43.2,
+            "predicted_ms": 54.257,
+            "predicted_per_second": 184.308
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "normalized",
+          "reason": "normalized_match",
+          "duration_ms": 125,
+          "usage": {
+            "prompt_tokens": 37.0,
+            "completion_tokens": 4.0
+          },
+          "server_timings": {
+            "prompt_ms": 42.593,
+            "predicted_ms": 23.122,
+            "predicted_per_second": 129.747
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "json_fields",
+          "reason": "json_fields_match",
+          "duration_ms": 156,
+          "usage": {
+            "prompt_tokens": 60.0,
+            "completion_tokens": 17.0
+          },
+          "server_timings": {
+            "prompt_ms": 45.768,
+            "predicted_ms": 87.193,
+            "predicted_per_second": 183.501
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "regex",
+          "reason": "regex_match",
+          "duration_ms": 140,
+          "usage": {
+            "prompt_tokens": 54.0,
+            "completion_tokens": 5.0
+          },
+          "server_timings": {
+            "prompt_ms": 43.708,
+            "predicted_ms": 24.925,
+            "predicted_per_second": 160.481
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "normalized",
+          "reason": "normalized_mismatch",
+          "duration_ms": 157,
+          "usage": {
+            "prompt_tokens": 45.0,
+            "completion_tokens": 4.0
+          },
+          "server_timings": {
+            "prompt_ms": 55.711,
+            "predicted_ms": 26.05,
+            "predicted_per_second": 115.163
+          }
+        }
+      ],
+      "reproducibility": {
+        "status": "no_earlier_run",
+        "compared": 0,
+        "identical": 0
+      },
+      "checks": {
+        "evaluation 1 completed every case": true
+      }
+    },
+    "evaluation_2": {
+      "status": "completed",
+      "elapsed_seconds": 1.31,
+      "passed": 6,
+      "failed": 6,
+      "incomplete": 0,
+      "errors": 0,
+      "per_case": [
+        {
+          "status": "check_pass",
+          "scoring_method": "numeric",
+          "reason": "number_within_tolerance",
+          "duration_ms": 125,
+          "usage": {
+            "prompt_tokens": 44.0,
+            "completion_tokens": 13.0
+          },
+          "server_timings": {
+            "prompt_ms": 50.114,
+            "predicted_ms": 69.031,
+            "predicted_per_second": 173.835
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "numeric",
+          "reason": "number_mismatch",
+          "duration_ms": 63,
+          "usage": {
+            "prompt_tokens": 44.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 39.274,
+            "predicted_ms": 15.383,
+            "predicted_per_second": 65.007
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "numeric",
+          "reason": "number_within_tolerance",
+          "duration_ms": 94,
+          "usage": {
+            "prompt_tokens": 45.0,
+            "completion_tokens": 11.0
+          },
+          "server_timings": {
+            "prompt_ms": 40.621,
+            "predicted_ms": 55.435,
+            "predicted_per_second": 180.391
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "contains",
+          "reason": "missing_required_text",
+          "duration_ms": 62,
+          "usage": {
+            "prompt_tokens": 42.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 46.621,
+            "predicted_ms": 14.418,
+            "predicted_per_second": 69.358
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "contains",
+          "reason": "missing_required_text",
+          "duration_ms": 62,
+          "usage": {
+            "prompt_tokens": 42.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 36.538,
+            "predicted_ms": 10.137,
+            "predicted_per_second": 98.649
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "choice",
+          "reason": "wrong_choice",
+          "duration_ms": 62,
+          "usage": {
+            "prompt_tokens": 58.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 41.877,
+            "predicted_ms": 11.566,
+            "predicted_per_second": 86.46
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "choice",
+          "reason": "choice_match",
+          "duration_ms": 31,
+          "usage": {
+            "prompt_tokens": 59.0,
+            "completion_tokens": 2.0
+          },
+          "server_timings": {
+            "prompt_ms": 21.563,
+            "predicted_ms": 12.202,
+            "predicted_per_second": 81.954
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "choice",
+          "reason": "wrong_choice",
+          "duration_ms": 109,
+          "usage": {
+            "prompt_tokens": 42.0,
+            "completion_tokens": 11.0
+          },
+          "server_timings": {
+            "prompt_ms": 22.265,
+            "predicted_ms": 73.039,
+            "predicted_per_second": 136.913
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "normalized",
+          "reason": "normalized_match",
+          "duration_ms": 94,
+          "usage": {
+            "prompt_tokens": 37.0,
+            "completion_tokens": 4.0
+          },
+          "server_timings": {
+            "prompt_ms": 45.147,
+            "predicted_ms": 26.861,
+            "predicted_per_second": 111.686
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "json_fields",
+          "reason": "json_fields_match",
+          "duration_ms": 172,
+          "usage": {
+            "prompt_tokens": 60.0,
+            "completion_tokens": 17.0
+          },
+          "server_timings": {
+            "prompt_ms": 59.604,
+            "predicted_ms": 116.195,
+            "predicted_per_second": 137.7
+          }
+        },
+        {
+          "status": "check_pass",
+          "scoring_method": "regex",
+          "reason": "regex_match",
+          "duration_ms": 109,
+          "usage": {
+            "prompt_tokens": 54.0,
+            "completion_tokens": 5.0
+          },
+          "server_timings": {
+            "prompt_ms": 54.353,
+            "predicted_ms": 32.415,
+            "predicted_per_second": 123.4
+          }
+        },
+        {
+          "status": "check_fail",
+          "scoring_method": "normalized",
+          "reason": "normalized_mismatch",
+          "duration_ms": 140,
+          "usage": {
+            "prompt_tokens": 45.0,
+            "completion_tokens": 4.0
+          },
+          "server_timings": {
+            "prompt_ms": 44.907,
+            "predicted_ms": 25.015,
+            "predicted_per_second": 119.928
+          }
+        }
+      ],
+      "reproducibility": {
+        "status": "identical",
+        "reference_run_id": "421794a351ea45ab9cba0b1aaaca5b58",
+        "reference_launch_id": "cb9e8f6c230a4bd282ac62011a4dc642",
+        "current_launch_id": "cb9e8f6c230a4bd282ac62011a4dc642",
+        "compared": 12,
+        "identical": 12
+      },
+      "checks": {
+        "evaluation 2 completed every case": true,
+        "second run reproduced every output": true
+      }
+    },
+    "outputs": {
+      "cases": [
+        {
+          "case": "Addition",
+          "output": "The answer to 17 + 25 is 42.",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Multiplication",
+          "output": "54",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Unit conversion",
+          "output": "There are 180 minutes in 3 hours.",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Capital of France",
+          "output": "France",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Capital of Japan",
+          "output": "Japan",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Multiple choice",
+          "output": "D",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Sentiment",
+          "output": "Negative",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Yes or no",
+          "output": "No, 17 is not a prime number.",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Instruction following",
+          "output": "acknowledged",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "JSON output",
+          "output": "{\n  \"name\": \"Ana\",\n  \"age\": 30\n}",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Hex color format",
+          "output": "#FF0000",
+          "matches_evaluated_hash": true
+        },
+        {
+          "case": "Reverse a word",
+          "output": "The result is",
+          "matches_evaluated_hash": true
+        }
+      ],
+      "identical_to_evaluation": 12
+    },
+    "observe": {
+      "resources": {
+        "cpu_percent": "0.11%",
+        "memory": "1.034GiB / 2GiB",
+        "memory_percent": "51.70%",
+        "pids": "27"
+      },
+      "metrics": {
+        "llamacpp:prompt_tokens_total": 852.0,
+        "llamacpp:prompt_tokens_cached_total": 908.0,
+        "llamacpp:prompt_seconds_total": 1.28384,
+        "llamacpp:tokens_predicted_total": 238.0,
+        "llamacpp:tokens_predicted_seconds_total": 1.45397,
+        "llamacpp:n_decode_total": 271.0,
+        "llamacpp:spec_decode_num_draft_tokens_total": 0.0,
+        "llamacpp:spec_decode_num_accepted_tokens_total": 0.0,
+        "llamacpp:spec_decode_num_drafts_total": 0.0,
+        "llamacpp:requests_processing": 0.0
+      },
+      "operations": 44,
+      "checks": {
+        "server metrics collected": true,
+        "server log omits prompt text": true,
+        "server log omits the key": true,
+        "model weights resident in GPU memory": true
+      },
+      "gpu_memory_growth_mib": 513
+    },
+    "crash_during_evaluation": {
+      "status": "interrupted",
+      "recorded": 4,
+      "last": {
+        "case_index": 3,
+        "status": "error",
+        "reason": "endpoint_unavailable_or_invalid"
+      },
+      "checks": {
+        "crash interrupts the run with an error, never a pass": true,
+        "server exit detected and recorded": true,
+        "no hidden retry after the crash": true,
+        "crashed server cleaned up": true
+      },
+      "managed_status": "failed",
+      "reason": "server_exited_137"
+    },
+    "restart": {
+      "seconds": 12.58,
+      "checks": {
+        "explicit restart ready": true,
+        "evaluation after restart completed": true,
+        "outputs identical across server launches": true
+      },
+      "reproducibility": {
+        "status": "identical",
+        "reference_run_id": "8faf8a4927d14cd88d83d875a471091b",
+        "reference_launch_id": "cb9e8f6c230a4bd282ac62011a4dc642",
+        "current_launch_id": "f1544ebd00624a11b4231f356ce82ea8",
+        "compared": 12,
+        "identical": 12
+      }
+    },
+    "studio_crash": {
+      "containers_after_crash": 2,
+      "checks": {
+        "Docker-owned server outlives the crashed Studio": true,
+        "reopen marks the launch interrupted": true,
+        "reopen removed the orphaned containers": true,
+        "reopen never reconnects by itself": true,
+        "start after reopen ready": true
+      },
+      "status_after_reopen": "interrupted"
+    },
+    "studio_reopen": {
+      "seconds": 4.41
+    },
+    "export": {
+      "files": [
+        "README.md",
+        "assessment.json",
+        "evaluation-cases.example.jsonl",
+        "model-contract.json",
+        "operations.md",
+        "serving-manifest.json",
+        "workspace-plan.json"
+      ],
+      "history": 4,
+      "operations": 69,
+      "checks": {
+        "exported manifest matches its recorded digest": true,
+        "export omits keys": true,
+        "database omits keys": true,
+        "operations log omits keys": true,
+        "operations log omits prompts": true
+      }
+    },
+    "stop": {
+      "checks": {
+        "stop removed every container": true
+      }
+    }
+  },
+  "failures": [],
+  "result": "passed"
+}

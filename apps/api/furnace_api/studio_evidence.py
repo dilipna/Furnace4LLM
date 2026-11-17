@@ -6,13 +6,12 @@ import hashlib
 import json
 from typing import Any
 
+from furnace_api.studio_model_evidence import case_input
 from furnace_api.studio_model_evidence import view as model_view
 
+__all__ = ["PROTOCOL", "case_input", "configuration_identity", "project_view", "provenance"]
+
 PROTOCOL = "framework-v2"
-
-
-def case_input(case: dict[str, Any]) -> dict[str, Any]:
-    return {key: case.get(key) for key in ("name", "input", "expected_behavior", "expected_output")}
 
 
 def configuration_identity(project: dict[str, Any]) -> str:

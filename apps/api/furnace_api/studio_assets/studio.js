@@ -17,7 +17,9 @@ const caseImports = new Map();
 const formNames = {"contract-form": "contract", "plan-form": "plan", "case-form": "case", "predict-form": "predict"};
 const formKey = (id, name) => `${id}:${name}`;
 const isPending = (kind, id = current?.id) => pending.has(formKey(id, kind));
-const casePayload = c => ({name: c.name, input: c.input, expected_behavior: c.expected_behavior, expected_output: c.expected_output ?? null});
+// Scoring rules must survive re-saving the list (e.g. removing another case).
+const casePayload = c => ({name: c.name, input: c.input, expected_behavior: c.expected_behavior, expected_output: c.expected_output ?? null, ...(c.scoring ? {scoring: c.scoring} : {})});
+const ruleText = rule => rule.method + (rule.number !== undefined && rule.number !== null ? " " + rule.number : "") + (rule.value ? " " + rule.value : "") + (rule.values ? " " + rule.values.join(", ") : "") + (rule.fields ? " " + JSON.stringify(rule.fields) : "");
 
 function text(tag, content, className) {
   const element = document.createElement(tag);
@@ -168,7 +170,7 @@ function renderCaseImport() {
   else if (preview?.cases) {
     message = preview.fileName + " · " + preview.cases.length + " cases ready for review. " + preview.discardedStatuses + " imported result labels discarded. Nothing saved or executed.";
     if (preview.identity !== current.configuration_sha256) message += " Project changed after preview; choose the file again after refreshing.";
-    for (const item of preview.cases) list.append(text("li", item.name + " · " + (item.expected_output === null ? "descriptive only; unscored" : "exact assertion")));
+    for (const item of preview.cases) list.append(text("li", item.name + " · " + (item.scoring ? item.scoring.method + " rule" : item.expected_output === null ? "descriptive only; unscored" : "exact assertion")));
   }
   $("#case-import-status").textContent = message;
 }
@@ -269,7 +271,7 @@ function renderEvaluation() {
   $("#cases").replaceChildren(...current.cases.map((item, index) => {
     const card = text("article", "", "case"), status = caseStatus(current, index);
     const badge = text("span", status.replaceAll("_", " ").toUpperCase(), "state"); badge.dataset.tone = toneFor(status);
-    card.append(badge, text("h3", item.name), text("p", "Input: " + item.input), text("p", "Expected behavior: " + item.expected_behavior), text("p", item.expected_output == null ? "Scoring: no exact assertion — an executed case remains unscored." : "Exact output: " + item.expected_output));
+    card.append(badge, text("h3", item.name), text("p", "Input: " + item.input), text("p", "Expected behavior: " + item.expected_behavior), text("p", item.scoring ? "Scoring rule (endpoint runs): " + ruleText(item.scoring) : item.expected_output == null ? "Scoring: no exact assertion — an executed case remains unscored." : "Exact output: " + item.expected_output));
     const evidence = evaluation?.results?.find(result => result.case_index === index);
     const footer = text("div", "", "case-footer");
     footer.append(text("span", evidence?.request_id ? `Request ${evidence.request_id} · worker round trip ${evidence.duration_ms} ms (not model latency)` : evidence?.reason ? `Execution note: ${evidence.reason.replaceAll("_", " ")}` : "No execution evidence for this case."));

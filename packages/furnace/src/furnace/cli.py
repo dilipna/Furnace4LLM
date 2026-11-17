@@ -89,6 +89,9 @@ def main(argv: list[str] | None = None) -> int:
     studio.add_argument("--workspace", type=Path, default=Path.home() / ".furnace" / "studio")
     studio.add_argument("--port", type=int, default=8787)
     studio.add_argument("--no-browser", action="store_true")
+    studio.add_argument(
+        "--artifacts", type=Path, default=None, help="shared verified-weights directory"
+    )
     starter = sub.add_parser(
         "starter",
         help="assess a local model project and export a free researcher starter kit (no code execution)",
@@ -154,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 1
         try:
-            launch(a.workspace, a.port, open_browser=not a.no_browser)
+            launch(a.workspace, a.port, open_browser=not a.no_browser, artifacts=a.artifacts)
         except (OSError, ValueError) as exc:
             print(f"Studio could not start: {exc}", file=sys.stderr)
             return 1
