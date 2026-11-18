@@ -315,7 +315,12 @@ def verify_browser(
             page.goto(base + "/model#session=" + session)
             selector = page.get_by_label("Workspace project")
             expect(selector).to_have_value(pid)
-            expect(page.get_by_role("heading", name="2. Describe your server")).to_be_visible()
+            expect(
+                page.get_by_role("heading", name="Or describe a server you operate")
+            ).to_be_visible()
+            # The Furnace-operated panel is checked separately; collapsed, only its summary is
+            # in the tab order, so this walk covers the connection controls as before.
+            page.locator("#managed-settings").evaluate("details => { details.open = false; }")
             assert "session=" not in page.url
             page.keyboard.press("Tab")
             expect(page.get_by_role("link", name="Skip to model connection")).to_be_focused()
@@ -324,12 +329,14 @@ def verify_browser(
             for control in [
                 selector,
                 page.get_by_role("button", name="Refresh saved state"),
+                page.locator("#managed-settings > summary"),
                 page.locator("#connection-settings > summary"),
                 page.get_by_label("Local API base URL"),
                 page.get_by_label("Exact advertised model ID"),
                 page.get_by_label("Declared code/checkpoint or server revision"),
-                page.get_by_label("Request timeout, seconds"),
-                page.get_by_label("Maximum generated tokens"),
+                page.get_by_label("Request timeout, seconds", exact=True),
+                page.get_by_label("Maximum generated tokens", exact=True),
+                page.get_by_label("Evaluation budget, seconds", exact=True),
                 page.get_by_role("button", name="Save connection settings"),
                 page.locator("#model-consent"),
             ]:

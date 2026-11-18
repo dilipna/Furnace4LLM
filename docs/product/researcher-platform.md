@@ -38,7 +38,9 @@ start, readiness, inference, authenticated access, logs, evaluations, restart an
    lifecycle, failures, evaluation evidence and recovery with a clearly labeled framework
    fixture before connecting a real model (current local milestone).
 4. Prepare the [local-server connection workflow](local-model-endpoint.md) before model
-   selection (implemented locally; HTTP test-server validation only). Then select one
+   selection (implemented). Furnace-operated local servers with pinned recipes, an adapter
+   contract and rule-scored evaluations are implemented, and two models are validated end to
+   end locally ([runtime](managed-local-runtime.md), [results](real-model-validation.md)). Then select one
    model from the researched support paths; implement its isolated adapter if needed
    and validate the complete lifecycle. Add the second model after that path works.
 5. Review public website download, native installation and managed-service release.

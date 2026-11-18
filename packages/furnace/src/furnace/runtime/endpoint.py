@@ -1,4 +1,8 @@
-"""Bounded, unauthenticated literal-loopback chat endpoint. Never loads model code."""
+"""Bounded literal-loopback chat endpoint. Never loads model code.
+
+User-operated servers are called without credentials. A server Furnace operates
+is called with its per-launch key, which callers keep in memory only.
+"""
 
 from __future__ import annotations
 
@@ -14,7 +18,9 @@ from urllib.parse import urlsplit
 
 from furnace.runtime.manager import RuntimeFault
 
-MAX_RESPONSE = 65536
+MAX_RESPONSE = 262144
+MAX_OUTPUT_CHARS = 16000
+MAX_TIMEOUT_SECONDS = 120
 
 
 def endpoint_port(base_url: str) -> int:
@@ -40,13 +46,23 @@ def endpoint_port(base_url: str) -> int:
 
 
 class LocalChatEndpoint:
-    def request(self, base_url: str, path: str, timeout: float, data: dict | None = None) -> dict:
+    def request(
+        self,
+        base_url: str,
+        path: str,
+        timeout: float,
+        data: dict | None = None,
+        api_key: str | None = None,
+    ) -> dict:
         port = endpoint_port(base_url)
         if path not in {"/models", "/chat/completions"}:
             raise RuntimeFault("endpoint_path_refused")
-        if not 0 < timeout <= 10:
+        if not 0 < timeout <= MAX_TIMEOUT_SECONDS:
             raise RuntimeFault("invalid_endpoint_timeout")
-        # Literal IP, no DNS, environment proxies, redirects, cookies or credentials.
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        if api_key is not None:
+            headers["Authorization"] = f"Bearer {api_key}"
+        # Literal IP, no DNS, environment proxies, redirects or cookies.
         connection = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
         expired = threading.Event()
         active_socket: socket.socket | None = None
@@ -71,7 +87,7 @@ class LocalChatEndpoint:
                 "POST" if data is not None else "GET",
                 "/v1" + path,
                 body=json.dumps(data).encode() if data is not None else None,
-                headers={"Content-Type": "application/json", "Accept": "application/json"},
+                headers=headers,
             )
             response = connection.getresponse()
             if response.status != 200:
@@ -96,15 +112,19 @@ class LocalChatEndpoint:
             timer.cancel()
             connection.close()
 
-    def check(self, config: dict[str, Any]) -> None:
-        response = self.request(config["base_url"], "/models", config["timeout_seconds"])
+    def check(self, config: dict[str, Any], api_key: str | None = None) -> None:
+        response = self.request(
+            config["base_url"], "/models", config["timeout_seconds"], api_key=api_key
+        )
         models = response.get("data")
         if not isinstance(models, list) or not any(
             isinstance(item, dict) and item.get("id") == config["model_id"] for item in models
         ):
             raise RuntimeFault("configured_model_not_advertised")
 
-    def predict(self, config: dict[str, Any], value: str, timeout: float) -> dict[str, Any]:
+    def predict(
+        self, config: dict[str, Any], value: str, timeout: float, api_key: str | None = None
+    ) -> dict[str, Any]:
         began = time.monotonic()
         response = self.request(
             config["base_url"],
@@ -117,6 +137,7 @@ class LocalChatEndpoint:
                 "temperature": 0,
                 "max_tokens": config["max_tokens"],
             },
+            api_key=api_key,
         )
         try:
             choices = response["choices"]
@@ -128,7 +149,7 @@ class LocalChatEndpoint:
                 raise ValueError
             output = choices[0]["message"]["content"]
             finish = choices[0]["finish_reason"]
-            if not isinstance(output, str) or not output.strip() or len(output) > 8000:
+            if not isinstance(output, str) or not output.strip() or len(output) > MAX_OUTPUT_CHARS:
                 raise ValueError
             # JSON escapes can decode to lone surrogates: reject before hashing,
             # persistence or HTTP serialization can leave an attempt stuck running.
@@ -143,6 +164,23 @@ class LocalChatEndpoint:
             "model_id": response["model"],
             "request_id": uuid.uuid4().hex,
             "duration_ms": round((time.monotonic() - began) * 1000),
+            "usage": _numbers(response.get("usage"), ("prompt_tokens", "completion_tokens")),
+            "server_timings": _numbers(
+                response.get("timings"), ("prompt_ms", "predicted_ms", "predicted_per_second")
+            ),
             "execution_kind": "local_endpoint_response",
             "model_identity_independently_verified": False,
         }
+
+
+def _numbers(value: Any, keys: tuple[str, ...]) -> dict[str, float]:
+    """Server-reported counters, kept only when they are plain finite numbers."""
+    if not isinstance(value, dict):
+        return {}
+    return {
+        key: round(float(value[key]), 3)
+        for key in keys
+        if isinstance(value.get(key), int | float)
+        and not isinstance(value.get(key), bool)
+        and abs(float(value[key])) < 1e12
+    }

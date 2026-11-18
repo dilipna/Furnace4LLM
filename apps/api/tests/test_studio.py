@@ -195,7 +195,7 @@ def test_startup_and_assets_are_real_local_application(setup):
     client, _, _ = setup
     assert client.get("/healthz").json() == {
         "studio": "ready",
-        "model_runtime": "not_connected",
+        "managed_servers": {},
         "billing": "inactive",
     }
     assert "What would you like to work on?" in client.get("/").text
