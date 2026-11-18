@@ -213,6 +213,8 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
                     page.set_viewport_size({"width": 390, "height": 844})
                     page.goto(base + "/#session=" + token)
                     expect(page.locator("#project-title")).to_be_visible()
+                    # The session link rewrites the URL after load; measure once it settles.
+                    page.wait_for_load_state("networkidle")
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                     page.screenshot(
                         path=str(screenshots / "studio-workspace-mobile.png"), full_page=True
