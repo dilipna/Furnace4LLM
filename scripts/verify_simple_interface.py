@@ -127,7 +127,6 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
 
         app.state.runtime.manager._docker = no_docker
         app.state.managed.supervisor._docker = no_docker
-        app.state.managed.supervisor.image_present = lambda _image: False
         app.state.managed.supervisor.daemon = lambda: {
             "status": "unavailable",
             "gpu_runtime": False,

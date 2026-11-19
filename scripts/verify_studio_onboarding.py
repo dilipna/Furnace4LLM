@@ -242,6 +242,14 @@ def main() -> None:
                 system["workspace"] == "available" and system["runtime"]["status"] == "unavailable"
             )
             assert system["runtime"]["code"] == "docker_unavailable"
+            catalog = api("managed/catalog")
+            assert catalog["docker"]["status"] == "unavailable"
+            assert catalog["models"]
+            assert all(
+                present is None
+                for model in catalog["models"]
+                for present in model["images_present"].values()
+            )
             with opener.open(base + "/assets/studio-state.mjs", timeout=5) as response:
                 assert "javascript" in response.headers["content-type"]
                 assert b"journeyFor" in response.read()
@@ -340,6 +348,7 @@ def main() -> None:
                 if args.source
                 else "passed",
                 "workspace_without_docker": "passed",
+                "catalog_without_docker": "passed; image availability unknown, no execution",
                 "installed_module_assets": "passed",
                 "guided_example_and_export": "passed",
                 "persistence_and_token_rotation": "passed",

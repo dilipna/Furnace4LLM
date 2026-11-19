@@ -9,6 +9,11 @@ Validation results for the two pinned models are in [real-model-validation.md](r
 
 Open **Connect a local model server** (`/model`) and pick a project.
 
+Browsing recipe metadata does not require Docker. If the CLI/daemon is unavailable or
+inspection times out, the catalog remains readable, reports Docker unavailable and uses
+`null` for unconfirmed image presence. It creates no preparation job or model execution.
+Preparing and starting still require working local Linux-container Docker and consent.
+
 1. **Choose a reviewed recipe** and accelerator (CPU or NVIDIA), with container memory,
    CPU threads, context size, request timeout, tokens per request and an evaluation budget.
    Saving downloads nothing.

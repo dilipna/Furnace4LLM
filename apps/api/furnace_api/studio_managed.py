@@ -123,14 +123,20 @@ class ManagedService:
 
     def catalog(self) -> dict[str, Any]:
         value = public_catalog()
+        docker = self.supervisor.daemon()
+        value["docker"] = docker
         for item in value["models"]:
             recipe = MODELS[item["id"]]
             item["local"] = self.artifacts.status(recipe.weights)
-            item["images_present"] = {
-                acc: self.supervisor.image_present(image)
-                for acc, image in LlamaCppAdapter(recipe).engine.images.items()
-            }
-        value["docker"] = self.supervisor.daemon()
+            item["images_present"] = {}
+            for accelerator, image in LlamaCppAdapter(recipe).engine.images.items():
+                present = None  # Unknown while Docker cannot be inspected, not confirmed absent.
+                if docker["status"] == "ready":
+                    try:
+                        present = self.supervisor.image_present(image)
+                    except ServingFault as exc:
+                        docker.update(status="unavailable", gpu_runtime=False, code=exc.code)
+                item["images_present"][accelerator] = present
         return value
 
     # -- selection and preparation ---------------------------------------------------
