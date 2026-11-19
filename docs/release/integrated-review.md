@@ -44,8 +44,30 @@ Application/test source: `5dd3c1f2abbeef3180298d19aebdbb78309021a4`, clean tree.
   both with explicit regression coverage (10 direct tests passed). Tests were not weakened
   or retried unchanged to obtain a pass.
 
-Machine-readable receipts accompany this handoff in `integration-verification/`.
-Local Linux and exact-head hosted results are recorded separately below after completion.
+## Corrected candidate execution
+
+At clean source `d70292c228e6fde53cce576a7b6e7f63b2119fb1`, the public/Studio browser
+journey and both Windows and empty-cache non-root Linux ZIP checks passed again after
+the Docker error correction. Current machine-readable receipts are in
+`integration-verification/`; they name that exact source. The rebuilt ZIP SHA-256 is
+`d82a6ee67abf560313f0c4da3bb9ee6f598b4653e88e39803815ab927953370a`.
+It was not substituted for the owner's original test ZIP.
+
+Hosted checks on that head passed: Python **688 passed, 1 skipped**, Web (including
+Studio state tests and recorded-only static build), API image and saved evidence.
+[CI run](https://github.com/dilipna/Furnace4LLM/actions/runs/44460512498),
+[evidence run](https://github.com/dilipna/Furnace4LLM/actions/runs/44460512635).
+The final documentation/receipt-only commit requires its own hosted checks; consult
+the PR's exact-head result rather than relabeling these runs.
+
+Local Linux is separate: Web/static and API-image jobs passed at `5dd3c1f`. The full
+corrected rerun at `d70292c` passed lint, formatting, import contracts, types and database
+migrations, then stopped after test progress reached 52%, without a final test result.
+Afterward the Docker named pipe was absent and no Docker Desktop processes were present;
+the cause of their disappearance was not established. This run is **incomplete**, not a
+Linux pass. Hosted Ubuntu checks above completed independently. The local Python runner
+used the previously documented preinstalled-Node toolchain workaround; comparison showed
+only the runner image differed from `scripts/ci_linux.sh`, with checks unchanged.
 
 ## Reproduce without changing the owner's test
 

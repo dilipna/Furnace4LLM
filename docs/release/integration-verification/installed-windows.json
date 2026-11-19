@@ -1,8 +1,8 @@
 {
-  "source_commit": "5dd3c1f2abbeef3180298d19aebdbb78309021a4",
+  "source_commit": "d70292c228e6fde53cce576a7b6e7f63b2119fb1",
   "source_dirty": false,
   "package_version": "0.1.0",
-  "bundle_sha256": "dc184d2f85b40e3537fd1bebf077d416742ba5550ba20da15b9ab921311396ce",
+  "bundle_sha256": "d82a6ee67abf560313f0c4da3bb9ee6f598b4653e88e39803815ab927953370a",
   "delivery": "bundle",
   "source_sync_frozen": null,
   "platform": "win32",
@@ -19,7 +19,7 @@
   "shutdown_workspace_released": "passed",
   "fresh_machine_or_user": false,
   "empty_cache_required": false,
-  "first_start_seconds_including_install": 8.2,
+  "first_start_seconds_including_install": 6.25,
   "missing_uv_guidance": "passed",
   "workspace_without_docker": "passed",
   "installed_module_assets": "passed",
@@ -31,10 +31,10 @@
     "http_test_server_only": true,
     "installed_api_checks": "passed",
     "malformed_unicode_refused": "passed",
-    "saved_run_id": "25200ba945344ca29510530b5752cac1",
+    "saved_run_id": "67139fe6ca444b5d843744b55852bef0",
     "saved_history_ids": [
-      "5d23b3d8398845ca818694b04a8e3da7",
-      "25200ba945344ca29510530b5752cac1"
+      "b72e81b413334c6c936c30ea6caa2f0c",
+      "67139fe6ca444b5d843744b55852bef0"
     ],
     "actual_http_requests": 8,
     "restart_disconnected_and_evidence_preserved": "passed"
