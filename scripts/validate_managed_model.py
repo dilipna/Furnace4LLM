@@ -225,6 +225,7 @@ def main() -> int:
         },
         "environment": environment(),
         "steps": {},
+        "completed": False,
     }
     steps = record["steps"]
     scope = f"label=furnace.managed.workspace={workspace_scope(workspace)}"
@@ -503,6 +504,12 @@ def main() -> int:
         check(stopped.get("status") == "stopped" and model_container(scope) == [],
               "stop removed every container", step)  # fmt: skip
         studio.stop_gracefully()
+        record["completed"] = True
+    except BaseException as exc:
+        # Preserve the original exit/traceback, but never leave successful evidence
+        # after an exception or Ctrl+C. Error messages can contain private data.
+        FAILURES.append(f"validation_aborted:{type(exc).__name__}")
+        raise
     finally:
         with contextlib.suppress(Exception):
             if studio.process and studio.process.poll() is None:
@@ -514,7 +521,7 @@ def main() -> int:
         ).split():
             run("docker", "network", "rm", name)
         record["failures"] = FAILURES
-        record["result"] = "passed" if not FAILURES else "failed"
+        record["result"] = "passed" if record["completed"] and not FAILURES else "failed"
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(record, indent=2, sort_keys=False) + "\n", encoding="utf-8")
         shutil.rmtree(workspace, ignore_errors=True)

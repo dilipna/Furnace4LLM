@@ -39,7 +39,12 @@ def load() -> list[tuple[str, dict]]:
         ]
         if any(type(value) is not bool for value in checks):
             raise ValueError(f"Model checks must be booleans: {path.name}")
-        if record["result"] == "passed" and (not checks or not all(checks) or record["failures"]):
+        if record["result"] == "passed" and (
+            not checks
+            or not all(checks)
+            or record["failures"]
+            or record.get("completed", True) is not True
+        ):
             raise ValueError(f"Contradictory passed model record: {path.name}")
         for name in ("evaluation_1", "evaluation_2"):
             evaluation = record["steps"].get(name)

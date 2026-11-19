@@ -26,13 +26,15 @@ def review(tmp_path):
     return module, record, path
 
 
-@pytest.mark.parametrize("fault", ["false_check", "count", "nonfinite"])
+@pytest.mark.parametrize("fault", ["false_check", "count", "nonfinite", "aborted"])
 def test_contradictory_or_nonfinite_records_are_refused(review, fault):
     module, record, path = review
     if fault == "false_check":
         record["steps"]["select"]["checks"]["selection saved"] = False
     elif fault == "count":
         record["steps"]["evaluation_1"]["passed"] += 1
+    elif fault == "aborted":
+        record["completed"] = False
     else:
         record["steps"]["start"]["seconds"] = float("nan")
     path.write_text(json.dumps(record))
