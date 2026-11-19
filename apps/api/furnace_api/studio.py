@@ -89,8 +89,10 @@ class PredictInput(BaseModel):
 
 class Store:
     def __init__(self, directory: Path):
-        directory.mkdir(parents=True, exist_ok=True)
         self.path = directory / "studio.sqlite3"
+
+    def initialize(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS projects (id TEXT PRIMARY KEY, path TEXT UNIQUE, data TEXT NOT NULL)"
@@ -191,6 +193,7 @@ def create_app(workspace: Path, token: str) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         with WorkspaceLease(workspace):
+            store.initialize()
             await asyncio.to_thread(runtime.recover)
             await asyncio.to_thread(model.recover)
             try:

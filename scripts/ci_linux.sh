@@ -21,7 +21,8 @@ cd "$ROOT"
 JOBS=${*:-python web image}
 TAG=furnace-ci-$$
 VMDIR=/tmp/$TAG
-SHA=$(git rev-parse --short HEAD)
+COMMIT=$(git rev-parse HEAD)
+SHA=$(git rev-parse --short "$COMMIT")
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   echo "note: uncommitted changes are NOT tested; this checks HEAD $SHA as committed" >&2
 fi
@@ -34,7 +35,7 @@ cleanup() {
 trap cleanup EXIT
 
 stage_tree() {
-  git archive HEAD | docker run --rm -i -v "$VMDIR:$VMDIR" alpine \
+  git archive "$COMMIT" | docker run --rm -i -v "$VMDIR:$VMDIR" alpine \
     sh -c "mkdir -p $VMDIR/src $VMDIR/tmp && tar -x -C $VMDIR/src && chown -R 1001:1001 $VMDIR"
 }
 
@@ -71,7 +72,7 @@ run_python() {
 run_web() {
   echo "== web job at $SHA"
   # Its own filesystem, not the shared VM path: node_modules does not fit the VM's small /tmp.
-  git archive HEAD apps/web experiments/prefix-cache apps/api/tests/studio-state.test.mjs apps/api/furnace_api/studio_assets/studio-state.mjs apps/api/furnace_api/studio_assets/case-import.mjs | docker run --rm -i node:24-bookworm bash -euo pipefail -c '
+  git archive "$COMMIT" apps/web experiments/prefix-cache apps/api/tests/studio-state.test.mjs apps/api/furnace_api/studio_assets/studio-state.mjs apps/api/furnace_api/studio_assets/case-import.mjs | docker run --rm -i node:24-bookworm bash -euo pipefail -c '
     mkdir -p /src && tar -x -C /src && cd /src/apps/web
     corepack enable >/dev/null
     pnpm install --frozen-lockfile
@@ -87,7 +88,7 @@ run_web() {
 run_image() {
   echo "== image job at $SHA"
   # the committed tree as the build context (a tar on stdin; -f is a path inside it)
-  git archive HEAD | docker build -q -f apps/api/Dockerfile -t "$TAG-api" - >/dev/null
+  git archive "$COMMIT" | docker build -q -f apps/api/Dockerfile -t "$TAG-api" - >/dev/null
   docker run --rm --entrypoint uv "$TAG-api" run --no-sync python -c "import furnace_api.main"
   docker rmi "$TAG-api" >/dev/null
 }
@@ -99,4 +100,4 @@ for job in $JOBS; do
 done
 echo "CI (Linux) passed at $SHA: $JOBS"
 # the pre-push hook (scripts/hooks/pre-push) allows only commits recorded here, after all jobs
-if [ "$JOBS" = "python web image" ]; then git rev-parse HEAD >> "$(git rev-parse --git-dir)/ci-linux-passed"; fi
+if [ "$JOBS" = "python web image" ]; then echo "$COMMIT" >> "$(git rev-parse --git-dir)/ci-linux-passed"; fi
