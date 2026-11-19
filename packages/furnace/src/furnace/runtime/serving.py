@@ -346,7 +346,9 @@ class Supervisor:
         found = self._docker(kind, "inspect", "--format", "{{json .Labels}}" if kind == "network"
                              else "{{json .Config.Labels}}", name, check=False)  # fmt: skip
         if found.returncode:
-            if re.search(r"No such (?:container|network|object):", found.stderr):
+            if re.search(r"No such (?:container|network|object):", found.stderr) or (
+                kind == "network" and f"network {name} not found" in found.stderr
+            ):
                 return
             raise ServingFault("cleanup_unconfirmed")
         try:

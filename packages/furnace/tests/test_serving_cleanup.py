@@ -40,6 +40,23 @@ def test_missing_resource_is_confirmed_absent(tmp_path, monkeypatch, kind):
     supervisor._remove_owned("container" if kind == "object" else kind, "test", "a" * 32)
 
 
+@pytest.mark.parametrize("reported_name", ["test", "another-network"])
+def test_daemon_network_not_found_requires_matching_name(tmp_path, monkeypatch, reported_name):
+    supervisor = Supervisor(tmp_path, lambda: {})
+    monkeypatch.setattr(
+        supervisor,
+        "_docker",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            args, 1, "", f"Error response from daemon: network {reported_name} not found"
+        ),
+    )
+    if reported_name == "test":
+        supervisor._remove_owned("network", "test", "a" * 32)
+    else:
+        with pytest.raises(ServingFault, match="cleanup_unconfirmed"):
+            supervisor._remove_owned("network", "test", "a" * 32)
+
+
 def test_cancelling_cli_reaps_the_actual_child(tmp_path, monkeypatch):
     processes, errors = [], []
     original = subprocess.Popen
