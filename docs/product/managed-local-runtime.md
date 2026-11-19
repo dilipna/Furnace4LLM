@@ -52,7 +52,7 @@ discovered or downloaded from an unpinned source.
 
 Per project, Furnace creates:
 
-- an `--internal` Docker network (no route to the internet or the host);
+- an `--internal` Docker network (external routes restricted; this does not guarantee isolation from host bridge services);
 - the **model container**, attached only to that network: user `10001:10001`, read-only root
   filesystem, 64 MiB `noexec` tmpfs, all capabilities dropped, `no-new-privileges`, memory
   limit with swap disabled, CPU share, 256-process limit, open-file limit, weights bind-mounted
@@ -62,10 +62,19 @@ Per project, Furnace creates:
 
 Each launch generates a random API key. It is passed to the server through the Docker CLI's
 environment (not the command line), required by the server for completions, metrics and the
-model list, and held only in Studio's memory. It is never written to the workspace database,
-the operations log or exports, and it disappears with the launch. Anyone with access to the
+model list. Studio keeps its copy in memory; Docker retains it in container configuration.
+It is never written to the workspace database,
+the operations log or exports. Studio discards its copy on stop; Docker's copy is
+removed with the container. Anyone with access to the
 Docker daemon can still read container environments; the daemon is trusted host
 infrastructure, as for the existing fixture.
+
+Docker's [internal-network documentation](https://docs.docker.com/reference/cli/docker/network/create/#network-internal-mode---internal)
+allows communication with the gateway address and appropriately configured host
+services. This implementation does not use isolated gateway mode. Docker also
+[stores container environment variables in configuration](https://docs.docker.com/engine/cli/proxy/#configure-the-docker-client).
+Treat the local Docker administrator and host services as trusted; this preview
+is not a multi-tenant boundary for hostile model code.
 
 Not covered: Furnace does not attest the code inside the pinned engine image beyond its
 digest, does not sandbox the Docker daemon itself, and does not encrypt local workspace files.

@@ -126,6 +126,12 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
             raise AssertionError("The metadata/connector journey must not contact Docker")
 
         app.state.runtime.manager._docker = no_docker
+        app.state.managed.supervisor._docker = no_docker
+        app.state.managed.supervisor.image_present = lambda _image: False
+        app.state.managed.supervisor.daemon = lambda: {
+            "status": "unavailable",
+            "gpu_runtime": False,
+        }
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
@@ -219,6 +225,21 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
                     page.screenshot(
                         path=str(screenshots / "studio-workspace-mobile.png"), full_page=True
                     )
+                    page.goto(base + "/model#session=" + token)
+                    page.locator("#managed-model").select_option("qwen2.5-0.5b-instruct-q8_0")
+                    expect(page.get_by_label("CPU threads", exact=True)).not_to_be_visible()
+                    page.locator("#managed-advanced > summary").click()
+                    page.get_by_label("CPU threads", exact=True).fill("2")
+                    page.locator("#managed-advanced > summary").click()
+                    page.get_by_role("button", name="Save model selection", exact=True).click()
+                    expect(page.locator("#managed-status")).to_contain_text("Selection saved")
+                    saved = api(f"projects/{guided['id']}/managed")
+                    assert isinstance(saved, dict)
+                    assert saved["selection"]["threads"] == 2
+                    assert saved["status"] == "configured"
+                    assert not (root / "workspace" / "artifacts").exists()
+                    assert not page.locator("#managed-consent").is_checked()
+                    expect(page.locator("#managed-prepare")).to_be_disabled()
                 finally:
                     browser.close()
             result = verify_connector(
@@ -235,6 +256,8 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
                 "welcome_project_disclosure": "passed",
                 "metadata_project_and_guided_example": "actual_API_persistence_no_execution",
                 "docker_calls": 0,
+                "managed_selection": "persisted_without_consent_download_or_execution; advanced_values_preserved",
+                "hardware_catalog": "mocked_unavailable; no_machine_compatibility_claim",
                 "connector": result,
             }
         finally:

@@ -16,6 +16,7 @@ import pytest
 from fastapi.testclient import TestClient
 from furnace.runtime import pyserve
 from furnace.runtime.artifacts import ArtifactError
+from furnace.runtime.lease import WorkspaceBusy, WorkspaceLease
 from furnace.runtime.serving import ServingFault
 from furnace_api.studio import create_app
 
@@ -61,7 +62,7 @@ class FakeSupervisor:
     def image_present(self, image):
         return True
 
-    def pull(self, image, timeout=1800):
+    def pull(self, image, timeout=1800, cancel=None):
         pass
 
     def start(self, pid, spec, labels):
@@ -421,3 +422,100 @@ def test_managed_actions_require_the_session(tmp_path, path):
     with TestClient(app, base_url="http://localhost") as client:
         pid = "0" * 32
         assert client.post(f"/api/projects/{pid}/{path}", json={"consent": True}).status_code == 401
+
+
+def test_unreachable_cleanup_remains_pending_and_retries_on_reopen(tmp_path):
+    artifacts = FakeArtifacts(tmp_path)
+    app, fake = build(tmp_path, artifacts=artifacts)
+    original_stop = fake.stop
+    try:
+        with client_for(app) as client:
+            pid = ready_project(client)
+            app.state.managed.close = lambda: None  # crashed process, owned server survives
+        offline, _ = build(tmp_path, fake=fake, artifacts=artifacts)
+        offline.state.managed._docker_reachable = lambda: False
+
+        def unavailable_stop(pid):
+            raise ServingFault("docker_unavailable")
+
+        fake.stop = unavailable_stop
+        with client_for(offline) as client:
+            assert client.get(f"/api/projects/{pid}/managed").json()["status"] == "unknown"
+            assert pid in fake.servers
+            assert (
+                client.put(f"/api/projects/{pid}/managed", json={"model": MODEL}).status_code == 409
+            )
+        fake.stop = original_stop
+        online, _ = build(tmp_path, fake=fake, artifacts=artifacts)
+        online.state.managed._docker_reachable = lambda: True
+        with client_for(online) as client:
+            assert client.get(f"/api/projects/{pid}/managed").json()["status"] == "interrupted"
+            assert fake.servers == {}
+            assert client.post(f"/api/projects/{pid}/model/evaluate").status_code == 409
+    finally:
+        fake.stop = original_stop
+        fake.recover()
+
+
+def test_shutdown_retains_workspace_ownership_until_preparation_exits(tmp_path):
+    entered, release, close_requested, exited = (threading.Event() for _ in range(4))
+    errors = []
+
+    class BlockedPull(FakeSupervisor):
+        def pull(self, image, timeout=1800, cancel=None):
+            entered.set()
+            assert release.wait(20)
+
+    app, _ = build(tmp_path, fake=BlockedPull())
+
+    def own_workspace():
+        try:
+            with client_for(app) as client:
+                pid = client.post("/api/examples/framework").json()["id"]
+                client.put(f"/api/projects/{pid}/managed", json={"model": MODEL})
+                client.post(f"/api/projects/{pid}/managed/prepare", json={"consent": True})
+                assert close_requested.wait(20)
+        except Exception as exc:
+            errors.append(exc)
+        finally:
+            exited.set()
+
+    owner = threading.Thread(target=own_workspace, daemon=True)
+    owner.start()
+    try:
+        assert entered.wait(5), errors
+        close_requested.set()
+        assert not exited.wait(11), "Workspace ownership ended while preparation was still running"
+        with pytest.raises(WorkspaceBusy), WorkspaceLease(tmp_path / "ws"):
+            pytest.fail("Another Studio could own the still-active preparation workspace")
+    finally:
+        release.set()
+        close_requested.set()
+        owner.join(timeout=5)
+    assert not owner.is_alive() and not errors
+    assert app.state.managed.jobs == {}
+    assert app.state.managed.store.all()[0]["managed_server"]["status"] == "failed"
+    with WorkspaceLease(tmp_path / "ws"):
+        pass
+
+
+def test_removal_cancels_and_drains_preparation_before_deleting_record(tmp_path):
+    entered = threading.Event()
+
+    class WaitingArtifacts(FakeArtifacts):
+        def fetch(self, artifact, progress=None, cancel=None):
+            entered.set()
+            return super().fetch(artifact, progress, cancel)
+
+    artifacts = WaitingArtifacts(tmp_path)
+    artifacts.block.clear()
+    app, _ = build(tmp_path, artifacts=artifacts)
+    with client_for(app) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        client.put(f"/api/projects/{pid}/managed", json={"model": MODEL})
+        client.post(f"/api/projects/{pid}/managed/prepare", json={"consent": True})
+        assert entered.wait(2)
+        assert client.delete(f"/api/projects/{pid}").status_code == 204
+        assert app.state.managed.jobs == {}, "Deletion returned with a live preparation writer"
+        assert client.get("/api/projects").json() == []
+        assert not artifacts.file.exists()

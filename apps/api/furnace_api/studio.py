@@ -561,10 +561,11 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
     @app.delete("/api/projects/{project_id}", status_code=204)
     def remove(project_id: str):
         model.flag(project_id).set()
-        status = (store.get(project_id).get("managed_server") or {}).get("status")
-        if status in MANAGED_ACTIVE | {"unknown"}:
-            managed.stop(project_id, "Managed server stopped before project removal")
-        runtime.remove(project_id)
+        with managed.lock(project_id):
+            status = (store.get(project_id).get("managed_server") or {}).get("status")
+            if status in MANAGED_ACTIVE | {"preparing", "unknown"}:
+                managed.stop(project_id, "Managed server stopped before project removal")
+            runtime.remove(project_id)
         return Response(status_code=204)
 
     @app.get("/api/managed/catalog")

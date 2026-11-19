@@ -1,12 +1,12 @@
 """Operate an adapter's model server in an isolated local Docker container.
 
 Topology per project: the model container sits alone on an `--internal` Docker
-network (no route to the internet or the host). A minimal relay container joins
+network (external routes restricted; bridge host services are not fully isolated). A minimal relay container joins
 that network and the default bridge and is the only thing published, on
 127.0.0.1 with a Docker-assigned port. The model container runs as a non-root
 user with a read-only root filesystem, no capabilities, a memory limit without
-swap, CPU and PID limits, read-only weights and a per-launch API key that exists
-only in this process's memory.
+swap, CPU and PID limits, read-only weights and a per-launch API key excluded
+from Studio's database/logs/exports. Docker also retains it in container configuration.
 
 Docker owns the containers, so they outlive a crashed Studio; `recover()` removes
 every container and network labelled for this workspace on the next start.
@@ -51,6 +51,40 @@ def workspace_scope(workspace: Path) -> str:
     return hashlib.sha256(os.path.normcase(str(workspace.resolve())).encode()).hexdigest()[:16]
 
 
+def _run_cancellable(
+    command: list[str], env: dict[str, str], timeout: float, cancel: threading.Event
+) -> subprocess.CompletedProcess[str]:
+    """Cancel only our CLI process and reap it before its preparation worker exits."""
+    if cancel.is_set():
+        raise ServingFault("preparation_cancelled")
+    deadline = time.monotonic() + timeout
+    with subprocess.Popen(  # noqa: S603 -- resolved executable and authored argument list
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        env=env,
+    ) as process:
+        try:
+            while True:
+                if cancel.is_set():
+                    raise ServingFault("preparation_cancelled")
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise ServingFault("docker_timeout")
+                try:
+                    stdout, stderr = process.communicate(timeout=min(0.2, remaining))
+                    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+                except subprocess.TimeoutExpired:
+                    continue
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate(timeout=5)
+
+
 class Supervisor:
     def __init__(self, workspace: Path, docker_env: Callable[[], dict[str, str]]):
         self.scope = workspace_scope(workspace)
@@ -76,6 +110,7 @@ class Supervisor:
         timeout: float = 30,
         check: bool = True,
         extra_env: dict[str, str] | None = None,
+        cancel: threading.Event | None = None,
     ) -> subprocess.CompletedProcess[str]:
         executable = shutil.which("docker")
         if executable is None:
@@ -83,16 +118,19 @@ class Supervisor:
         env = dict(self._docker_env())
         env.update(extra_env or {})
         try:
-            result = subprocess.run(  # noqa: S603 -- resolved Docker, fixed argv, never a shell
-                [executable, *args],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=timeout,
-                check=False,
-                env=env,
-            )
+            if cancel is not None:
+                result = _run_cancellable([executable, *args], env, timeout, cancel)
+            else:
+                result = subprocess.run(  # noqa: S603 -- resolved Docker, fixed argv, never a shell
+                    [executable, *args],
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=timeout,
+                    check=False,
+                    env=env,
+                )
         except subprocess.TimeoutExpired:
             raise ServingFault("docker_timeout") from None
         except OSError:
@@ -127,11 +165,13 @@ class Supervisor:
     def image_present(self, image: str) -> bool:
         return self._docker("image", "inspect", image, check=False, timeout=15).returncode == 0
 
-    def pull(self, image: str, timeout: float = 1800) -> None:
+    def pull(
+        self, image: str, timeout: float = 1800, cancel: threading.Event | None = None
+    ) -> None:
         if "@sha256:" not in image:
             raise ServingFault("image_not_pinned")
         if not self.image_present(image):
-            self._docker("pull", "--quiet", image, timeout=timeout)
+            self._docker("pull", "--quiet", image, timeout=timeout, cancel=cancel)
         if not self.image_present(image):
             raise ServingFault("image_pull_unconfirmed")
 
@@ -227,6 +267,8 @@ class Supervisor:
             raise ServingFault("server_not_started")
         reported = ""
         while True:
+            if cancel is not None and cancel.is_set():
+                raise ServingFault("start_cancelled")
             state = self.container_state(pid)
             if not state["running"]:
                 raise ServingFault(state["failure"] or "server_exited", state)
@@ -304,7 +346,9 @@ class Supervisor:
         found = self._docker(kind, "inspect", "--format", "{{json .Labels}}" if kind == "network"
                              else "{{json .Config.Labels}}", name, check=False)  # fmt: skip
         if found.returncode:
-            return
+            if re.search(r"No such (?:container|network|object):", found.stderr):
+                return
+            raise ServingFault("cleanup_unconfirmed")
         try:
             labels = json.loads(found.stdout) or {}
         except ValueError:

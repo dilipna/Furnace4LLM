@@ -28,6 +28,9 @@ function readableError(reason) {
     prepare_managed_model_first: "Prepare the model first: its pinned image and verified weights are not present yet.",
     stop_managed_server_first: "Stop the managed server before changing its selection.",
     preparation_in_progress: "Preparation is still running. Wait for it or cancel it.",
+    managed_cleanup_unconfirmed_stop_first: "Cleanup is unconfirmed. Restore Docker, then stop the managed server before changing or starting it.",
+    cleanup_unconfirmed: "Docker could not confirm cleanup. Restore Docker and stop again.",
+    studio_shutting_down: "Studio is shutting down. Reopen it before starting new work.",
     managed_server_already_running: "The managed server is already running.",
     server_out_of_memory: "The server ran out of its container memory. Raise the memory limit or lower the context size, then start again.",
     server_load_timeout: "The server did not become ready in time. Check its logs, then start again.",
@@ -225,7 +228,7 @@ function renderManaged(p) {
   const progress = $("#managed-progress");
   progress.hidden = !(job?.phase === "weights" && job.size);
   if (!progress.hidden) progress.value = job.bytes / job.size;
-  const active = ["starting", "loading", "ready"].includes(status);
+  const active = ["starting", "loading", "ready", "unknown"].includes(status);
   const consent = $("#managed-consent").checked;
   $("#managed-save").disabled = busy || active || status === "preparing";
   $("#managed-prepare").disabled = busy || !managed.selection || active || status === "preparing" || !consent;

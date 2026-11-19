@@ -95,6 +95,7 @@ class ManagedService:
         self.jobs: dict[str, dict[str, Any]] = {}
         self._locks: dict[str, threading.RLock] = {}
         self._guard = threading.Lock()
+        self._closing = False
 
     # -- helpers ---------------------------------------------------------------------
     def lock(self, pid: str) -> threading.RLock:
@@ -108,6 +109,8 @@ class ManagedService:
         return self.store.change(pid, "managed_server", current, event)
 
     def _selection(self, project: dict[str, Any]) -> ManagedSelection:
+        if (project.get("managed_server") or {}).get("status") == "unknown":
+            raise RuntimeFault("managed_cleanup_unconfirmed_stop_first")
         saved = (project.get("managed_server") or {}).get("selection")
         if not saved:
             raise RuntimeFault("choose_a_managed_model_first")
@@ -134,6 +137,8 @@ class ManagedService:
     def configure(self, pid: str, selection: ManagedSelection) -> dict[str, Any]:
         with self.lock(pid):
             project = self.store.get(pid)
+            if (project.get("managed_server") or {}).get("status") == "unknown":
+                raise RuntimeFault("managed_cleanup_unconfirmed_stop_first")
             if (project.get("managed_server") or {}).get("status") in ACTIVE:
                 raise RuntimeFault("stop_managed_server_first")
             if pid in self.jobs:
@@ -160,15 +165,19 @@ class ManagedService:
             if (project.get("managed_server") or {}).get("status") in ACTIVE:
                 raise RuntimeFault("stop_managed_server_first")
             with self._guard:
+                if self._closing:
+                    raise RuntimeFault("studio_shutting_down")
                 if pid in self.jobs:
                     return self.view(pid)
                 cancel = threading.Event()
                 job: dict[str, Any] = {"cancel": cancel, "progress": {"phase": "queued"}}
                 self.jobs[pid] = job
-            self._save(pid, "Preparation started", status="preparing", reason="Preparing")
-            thread = threading.Thread(target=self._prepare, args=(pid, selection, job), daemon=True)
-            job["thread"] = thread
-            thread.start()
+                self._save(pid, "Preparation started", status="preparing", reason="Preparing")
+                thread = threading.Thread(
+                    target=self._prepare, args=(pid, selection, job), daemon=True
+                )
+                job["thread"] = thread
+                thread.start()
             return self.view(pid)
 
     def _prepare(self, pid: str, selection: ManagedSelection, job: dict[str, Any]) -> None:
@@ -178,7 +187,7 @@ class ManagedService:
         try:
             for image in adapter.images(selection.settings()):
                 job["progress"] = {"phase": "image", "image": image}
-                self.supervisor.pull(image)
+                self.supervisor.pull(image, cancel=cancel)
                 if cancel.is_set():
                     raise ArtifactError("preparation_cancelled")
             for artifact in adapter.artifacts():
@@ -193,6 +202,8 @@ class ManagedService:
 
                 job["progress"] = {"phase": "weights", "file": artifact.filename, "bytes": 0}
                 self.artifacts.fetch(artifact, progress=progress, cancel=cancel)
+            if cancel.is_set():
+                raise ArtifactError("preparation_cancelled")
             elapsed = round(time.monotonic() - began, 1)
             self._save(
                 pid,
@@ -238,6 +249,10 @@ class ManagedService:
                     "prepare_managed_model_first" if exc.code == "artifact_missing" else exc.code
                 ) from None
             spec = adapter.launch(files, settings)
+            with self._guard:
+                if self._closing:
+                    raise RuntimeFault("studio_shutting_down")
+                self.model.flag(pid).clear()
             self._save(
                 pid,
                 "Managed server starting; weights SHA-256 verified before launch",
@@ -255,7 +270,7 @@ class ManagedService:
                     reason="Loading model weights",
                     launch=launch,
                 )
-                ready = self.supervisor.wait_ready(pid, spec)
+                ready = self.supervisor.wait_ready(pid, spec, cancel=self.model.flag(pid))
             except ServingFault as exc:
                 with contextlib.suppress(ServingFault):
                     self.supervisor.stop(pid)
@@ -313,6 +328,12 @@ class ManagedService:
     def stop(self, pid: str, reason: str = "Managed server stopped") -> dict[str, Any]:
         self.model.flag(pid).set()  # stop issuing requests before waiting for any lock
         with self.lock(pid):
+            with self._guard:
+                job = self.jobs.get(pid)
+                if job is not None:
+                    job["cancel"].set()
+            if job is not None and job.get("thread") is not None:
+                job["thread"].join()
             project = self.store.get(pid)
             if (project.get("model_connection") or {}).get("managed"):
                 self.model.disconnect(pid)
@@ -401,17 +422,27 @@ class ManagedService:
 
     # -- application lifecycle -------------------------------------------------------
     def recover(self) -> list[str]:
-        removed = self.supervisor.recover() if self._docker_reachable() else []
+        pending = ACTIVE | {"preparing", "unknown"}
+        failure = None
+        removed = []
+        if not self._docker_reachable():
+            failure = "docker_unavailable"
+        else:
+            try:
+                removed = self.supervisor.recover()
+            except ServingFault as exc:
+                failure = exc.code
         for project in self.store.all():
             saved = project.get("managed_server") or {}
-            if saved.get("status") in ACTIVE | {"preparing"}:
+            if saved.get("status") in pending:
                 self._save(
                     project["id"],
-                    "Previous Studio session ended; managed server removed, start explicitly",
-                    status="interrupted",
-                    reason="Studio restarted; containers from the previous session were removed"
-                    if removed
-                    else "Studio restarted; start explicitly",
+                    "Managed cleanup unconfirmed; restore Docker and stop again"
+                    if failure
+                    else "Previous Studio session ended; cleanup confirmed, start explicitly",
+                    status="unknown" if failure else "interrupted",
+                    reason=failure
+                    or "Studio restarted; owned container cleanup confirmed; start explicitly",
                 )
         if removed:
             self.oplog.append(None, "orphans_removed", names=removed)
@@ -425,13 +456,21 @@ class ManagedService:
         return self.supervisor.daemon()["status"] == "ready"
 
     def close(self) -> None:
-        for job in list(self.jobs.values()):
-            job["cancel"].set()
-        for job in list(self.jobs.values()):
+        with self._guard:
+            self._closing = True
+            jobs = list(self.jobs.values())
+            for job in jobs:
+                job["cancel"].set()
+            for project in self.store.all():
+                self.model.flag(project["id"]).set()
+        for job in jobs:
             thread = job.get("thread")
             if thread is not None:
-                thread.join(timeout=10)
+                # Never release the workspace lease while a preparation can still
+                # write to its database/artifacts. Pulls are actively cancellable;
+                # bounded HTTP reads finish before their workers can be discarded.
+                thread.join()
         for project in self.store.all():
-            if (project.get("managed_server") or {}).get("status") in ACTIVE:
+            if (project.get("managed_server") or {}).get("status") in ACTIVE | {"unknown"}:
                 with contextlib.suppress(RuntimeFault):
                     self.stop(project["id"], "Managed server stopped with the application")

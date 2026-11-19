@@ -41,7 +41,7 @@ and its Docker tests exist; the interface lists only reviewed llama.cpp recipes)
 | --- | --- |
 | logs, metrics, health | operations log (structured, retention-bound, refuses content), server Prometheus counters, container resources, log tail, health states |
 | resource limits, timeouts, recovery | container memory/CPU/PID limits without swap, request and evaluation budgets, server timeouts, explicit restart, crash recovery |
-| secure configuration and secrets | per-launch key in memory only, passed by environment, required by the server; never in database, logs or exports (checked in the validation run) |
+| secure configuration and secrets | per-launch key excluded from Studio database, logs and exports; passed in Docker environment and inspectable by Docker administrators |
 | durable model/config/version records | pinned recipes, serving-manifest digest cited by each run, export of the manifest |
 | reproducible runs with identified references | suite digest, sampling, manifest, weights digest and launch per run; automatic reproducibility comparison |
 | quality beyond exact strings | normalized, contains, regex, numeric, choice and JSON-field rules |
@@ -90,11 +90,13 @@ artifacts is an outward-facing release step that needs owner approval.
 Verified operating systems for the managed model path: **Windows 11 with Docker Desktop
 (WSL2 engine) only**. The Docker-level isolation tests also run on Ubuntu 24.04 in CI.
 
-## 8. Website — not started in this pass
+## 8. Website — combined candidate under review, not deployed
 
-The site at furnace-5h6.pages.dev remains the recorded demonstration. Reconciling the
-visitor-journeys work and describing the free kit, local application and managed
-subscription accurately should follow items 5–7; publishing needs owner approval.
+The public site remains the recorded demonstration. The combined review candidate
+contains a simpler public website and local Studio journey, including the managed
+local-model path. These are distinct interfaces; local work is not publicly deployed.
+The older visitor-journeys branch remains preserved separately. Publication needs
+owner approval and human comprehension testing; browser automation is not that evidence.
 
 ## 9. User testing and operational readiness — blocked on people
 

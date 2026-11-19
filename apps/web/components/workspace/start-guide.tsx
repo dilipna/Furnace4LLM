@@ -97,7 +97,19 @@ export default function StartGuide() {
                 endpoint and model ID, then explicitly connect and send a sanitized request.</p>
               <p className={s.small}>Only unauthenticated <code>http://127.0.0.1:PORT/v1</code>
                 text-chat servers are accepted. Furnace does not start that server or verify its
-                weights. No model/server combination has been validated yet.</p>
+                weights. This manual connector is separate from Furnace-operated models.</p>
+            </article>
+            <article id="managed-model"><h3>Want Furnace to run a model locally?</h3>
+              <p>Open <strong>Connect a local model server</strong> in Studio and expand
+                <strong> Let Furnace run a pinned model</strong>. Choose a recipe and accelerator,
+                save the selection, review its download and resource limits, then approve
+                <strong> Prepare (download and verify)</strong>. Once prepared, choose
+                <strong> Start server</strong>. You can then try a sanitized message or load
+                the reference suite and run its checks.</p>
+              <p className={s.small}>Requires local Docker with Linux containers, disk space,
+                sufficient memory and internet for the first preparation. CPU recipes are available;
+                the NVIDIA option additionally requires GPU support in Docker. This runs on your
+                machine and does not activate paid cloud hosting. <a href="https://github.com/dilipna/Furnace4LLM/blob/aa24843d6907c99d8810534980fa1e7767f8d223/docs/product/real-model-validation.md">Read the recorded model results and their limits.</a></p>
             </article>
           </div>
         </div>

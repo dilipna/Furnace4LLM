@@ -8,6 +8,7 @@ import s from "./simple-workspace.module.css";
 const guides = [
   { title: "Set up Furnace", description: "Check what you need and open your local workspace.", href: "/start", words: "install download start setup windows linux mac python uv computer" },
   { title: "Explore without a model", description: "Open the guided example and prepare your first kit.", href: "/start#example", words: "example demo explore model project free starter kit docker fixture" },
+  { title: "Let Furnace run a model locally", description: "Prepare a pinned model and start its local server in Studio.", href: "/start#managed-model", words: "run download weights prepare docker cpu gpu model local server" },
   { title: "Connect a running model server", description: "Learn what the local connector supports and how to use it.", href: "/start#server", words: "connect server endpoint llm model inference local api" },
   { title: "Understand the recorded example", description: "See the saved demonstration and what its results establish.", href: "/demo", words: "recorded demo video results performance evidence latency" },
   { title: "What does Furnace cost?", description: "The local preview is free. Managed hosting is planned.", href: "/pricing", words: "price pricing subscription cost paid hosting infrastructure monthly" },
@@ -66,16 +67,18 @@ export default function SimpleHome() {
           <summary>What can I do with Furnace?</summary>
           <p>Inspect a model project, save its setup and evaluation cases, and export a starter kit
             in the local Studio application. An optional Docker example checks the infrastructure.
-            A separate connector sends requests to a local model server you already operate.</p>
-          <p>The Docker example is deterministic and does not run an LLM. Model loading and
-            managed hosting are not provided by this preview.</p>
+            Studio can also prepare and run a pinned model in local Docker, or connect
+            a server you already operate.</p>
+          <p>The Docker example is deterministic and does not run an LLM. The separate
+            model-server path runs real inference. Cloud hosting and billing remain inactive.</p>
           <Link href="/start">See the setup steps →</Link>
         </details>
         <details id="faq">
           <summary>Do I need a model or a GPU to start?</summary>
           <p>No. You can explore the guided example and export a kit without a model, GPU or Docker.
-            Running the infrastructure fixture needs local Linux-container Docker. Real inference
-            needs your own compatible server; model/server combinations remain unvalidated.</p>
+            Running the fixture or a Furnace-operated model needs local Linux-container Docker.
+            Reviewed recipes include CPU options; NVIDIA execution additionally needs GPU support
+            in Docker. Recorded model validation has specific hardware and version limits.</p>
         </details>
         <a id="experiment" href="/research#experiment">Looking for the prefix-cache experiment? Read the research ↗</a>
       </section>

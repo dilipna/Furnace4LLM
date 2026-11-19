@@ -11,9 +11,11 @@ export default function PricingPage() {
       <span className={s.stepNumber}>✓</span><div>
         <h2 id="free-title">Local preview · Free</h2>
         <p>Inspect model metadata, save your setup and cases, export a starter kit, and
-          try the optional infrastructure example. Connect a local text-chat server you already operate.</p>
+          try the optional infrastructure example. Run a reviewed model recipe locally in Docker,
+          or connect a text-chat server you already operate.</p>
         <p className={s.small}>Requires Python 3.12 and uv. The fixture needs Docker;
-          the connector needs your own running server. Model compatibility remains unvalidated.</p>
+          the manual connector needs your own running server. Model support is limited to
+          the recorded recipe, version and hardware combinations; it is not universal compatibility.</p>
         <Link href="/start" className={s.topAction}>Get started →</Link>
       </div>
     </section>
