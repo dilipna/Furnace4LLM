@@ -58,9 +58,9 @@ benchmarks or establish that a proposed architecture beats transformers generall
 
 | Path | Appropriate case | Required proof | Current Furnace status |
 | --- | --- | --- | --- |
-| Reviewed native adapter | Author provides custom Python/framework model implementation | Pin code/deps/checkpoint; reference inference; state/reset contract; bounded isolated execution | Contract capture only; execution not connected |
+| Reviewed native adapter | Author provides custom Python/framework model implementation | Pin code/deps/checkpoint; reference inference; state/reset contract; bounded isolated execution | Runtime implemented: `PythonAdapter` + `pyserve` host in an isolated container, tested on real Docker with a deterministic test adapter; not yet offered in the Studio interface; no researcher model validated |
 | Reviewed framework adapter | Compatible Transformers/custom-model API | Pin revisions; explicitly review custom code; tokenizer/input/output and device checks | No compatibility claim yet |
-| Supported engine adapter | Exact model/revision supported by vLLM or another engine | Engine/model match, launch flags, readiness, inference, cancellation and telemetry | Prior endpoint benchmarks exist; no new research-model validation |
+| Supported engine adapter | Exact model/revision supported by vLLM or another engine | Engine/model match, launch flags, readiness, inference, cancellation and telemetry | Implemented for llama.cpp b12004 (GGUF). Validated end to end on Windows/Docker Desktop for Qwen2.5 0.5B Instruct and Granite 4.0 H 350M (Mamba-2 hybrid), CPU and CUDA ([results](real-model-validation.md)) |
 | Existing endpoint connector | Researcher already runs a server | Explicit request/response schema, auth, timeout, errors and task evaluation | Implemented literal-loopback text-chat connector; no auth/remote endpoints; no model combination validated |
 
 Support is a versioned registry entry: proposed → adapter implemented → acceptance passed.

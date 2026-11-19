@@ -78,7 +78,9 @@ class Probe:
         self.thread.join(timeout=3)
 
 
-def verify_connector(base, session, api, pid, root, *, browser=False, screenshots=None):
+def verify_connector(
+    base, session, api, pid, root, *, browser=False, screenshots=None, browser_channel=None
+):
     with Probe() as probe:
         path = f"projects/{pid}/model"
         api(
@@ -158,7 +160,14 @@ def verify_connector(base, session, api, pid, root, *, browser=False, screenshot
         }
         if browser:
             report["browser"] = verify_browser(
-                base, session, api, pid, root, probe, screenshots=screenshots
+                base,
+                session,
+                api,
+                pid,
+                root,
+                probe,
+                screenshots=screenshots,
+                browser_channel=browser_channel,
             )
         saved = api(path)
         with zipfile.ZipFile(io.BytesIO(api(f"projects/{pid}/kit", "POST"))) as archive:
@@ -282,8 +291,14 @@ def verify_case_import(page, base, session, api, pid, other_id, probe, screensho
     expect(preview.locator("li")).to_have_count(0)
 
 
-def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | None):
+def verify_browser(
+    base, session, api, pid, root, probe, *, screenshots: Path | None, browser_channel=None
+):
     from playwright.sync_api import expect, sync_playwright
+
+    def reveal_panel(page, selector):
+        if page.locator(selector).get_attribute("open") is None:
+            page.locator(selector + " > summary").click()
 
     other = root / "other-project"
     other.mkdir()
@@ -291,7 +306,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
     other_id = second["id"]
     errors = []
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
+        browser = playwright.chromium.launch(channel=browser_channel)
         context = browser.new_context(viewport={"width": 1440, "height": 1000})
         page = context.new_page()
         page.on("pageerror", lambda error: errors.append(str(error)))
@@ -300,7 +315,12 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             page.goto(base + "/model#session=" + session)
             selector = page.get_by_label("Workspace project")
             expect(selector).to_have_value(pid)
-            expect(page.get_by_role("heading", name="2. Describe your server")).to_be_visible()
+            expect(
+                page.get_by_role("heading", name="Or describe a server you operate")
+            ).to_be_visible()
+            # The Furnace-operated panel is checked separately; collapsed, only its summary is
+            # in the tab order, so this walk covers the connection controls as before.
+            page.locator("#managed-settings").evaluate("details => { details.open = false; }")
             assert "session=" not in page.url
             page.keyboard.press("Tab")
             expect(page.get_by_role("link", name="Skip to model connection")).to_be_focused()
@@ -309,11 +329,14 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             for control in [
                 selector,
                 page.get_by_role("button", name="Refresh saved state"),
+                page.locator("#managed-settings > summary"),
+                page.locator("#connection-settings > summary"),
                 page.get_by_label("Local API base URL"),
                 page.get_by_label("Exact advertised model ID"),
                 page.get_by_label("Declared code/checkpoint or server revision"),
-                page.get_by_label("Request timeout, seconds"),
-                page.get_by_label("Maximum generated tokens"),
+                page.get_by_label("Request timeout, seconds", exact=True),
+                page.get_by_label("Maximum generated tokens", exact=True),
+                page.get_by_label("Evaluation budget, seconds", exact=True),
                 page.get_by_role("button", name="Save connection settings"),
                 page.locator("#model-consent"),
             ]:
@@ -347,10 +370,17 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             expect(page.locator("#model-state")).to_contain_text("connected")
             page.get_by_role("button", name="Send to local server").click()
             expect(page.locator("#model-output")).to_contain_text(ANSWER)
+            page.locator("#connection-settings > summary").click()
+            expect(page.get_by_label("Local API base URL")).not_to_be_visible()
+            expect(page.get_by_role("button", name="Send to local server")).to_be_enabled()
+            if screenshots:
+                page.screenshot(path=str(screenshots / "connector-message.png"), full_page=True)
+            reveal_panel(page, "#endpoint-checks")
             page.get_by_role("button", name="Run endpoint cases").click()
             expect(page.locator("#model-results")).to_contain_text("exact_pass")
             expect(page.locator("#model-results")).to_contain_text("unscored")
             expect(page.locator("#model-run")).to_contain_text("completed")
+            reveal_panel(page, "#endpoint-history")
             history = page.locator("#model-history")
             failed_attempt = history.locator("details").filter(has_text="interrupted")
             expect(failed_attempt).to_have_count(1)
@@ -498,6 +528,7 @@ def verify_browser(base, session, api, pid, root, probe, *, screenshots: Path | 
             assert len(probe.requests) == count
             consent.check()
             page.get_by_role("button", name="Check and connect").click()
+            reveal_panel(page, "#endpoint-checks")
             expect(page.get_by_role("button", name="Run endpoint cases")).to_be_enabled()
             page.get_by_role("button", name="Run endpoint cases").click()
             expect(page.locator("#model-run")).to_contain_text("completed")

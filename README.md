@@ -7,9 +7,18 @@ around their models, including new architectures. The owner-defined product is a
 starter kit followed by a $20/month managed-infrastructure subscription, supporting
 both Furnace-provided and customer-provided compute. Application development precedes model selection/testing. This branch
 implements local assessment, the Studio application and an isolated Docker framework runtime.
-The runnable fixture verifies infrastructure only; it is not a model and supports no model-quality claims. A wheel-based downloadable
-preview requires Python/uv; a native installer, paid checkout and provisioned model service
-are not yet available.
+The runnable fixture verifies infrastructure only; it is not a model and supports no model-quality claims.
+
+**Real models, operated by Furnace (local).** Studio can prepare and run a pinned model server
+in an isolated local Docker container (no internet route, non-root, memory-limited, per-launch
+key), connect evaluations to it, score cases by rule and check reproducibility. Two pinned
+models passed the full local journey on CPU and GPU, including injected crashes and recovery:
+Qwen2.5 0.5B Instruct and IBM Granite 4.0 H 350M (a Mamba-2 hybrid), on Windows 11 with
+Docker Desktop and an RTX 3050 Ti 4 GiB. [Runtime contract](docs/product/managed-local-runtime.md) ·
+[validation results](docs/product/real-model-validation.md) · [roadmap status](docs/release/roadmap-status.md).
+
+A wheel-based downloadable preview requires Python/uv; a native installer, paid checkout and a
+hosted managed service are not yet available.
 
 ```bash
 uv sync --frozen

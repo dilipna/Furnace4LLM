@@ -1,0 +1,42 @@
+{
+  "source_commit": "d70292c228e6fde53cce576a7b6e7f63b2119fb1",
+  "source_dirty": false,
+  "package_version": "0.1.0",
+  "bundle_sha256": "d82a6ee67abf560313f0c4da3bb9ee6f598b4653e88e39803815ab927953370a",
+  "delivery": "bundle",
+  "source_sync_frozen": null,
+  "platform": "win32",
+  "python": "3.12.13",
+  "outside_repository": true,
+  "guided_workflow": "metadata, contract edit and kit export; no fixture execution",
+  "docker_usage": "CLI excluded from child PATH; no fixture execution",
+  "github_operations": false,
+  "real_application_evaluation": false,
+  "remote_inference": false,
+  "uid": null,
+  "shutdown_signal": "CTRL_BREAK_EVENT",
+  "shutdown_port_closed": "passed",
+  "shutdown_workspace_released": "passed",
+  "fresh_machine_or_user": false,
+  "empty_cache_required": false,
+  "first_start_seconds_including_install": 6.25,
+  "missing_uv_guidance": "passed",
+  "workspace_without_docker": "passed",
+  "installed_module_assets": "passed",
+  "guided_example_and_export": "passed",
+  "persistence_and_token_rotation": "passed",
+  "model_execution": false,
+  "gpu_execution": false,
+  "connector": {
+    "http_test_server_only": true,
+    "installed_api_checks": "passed",
+    "malformed_unicode_refused": "passed",
+    "saved_run_id": "67139fe6ca444b5d843744b55852bef0",
+    "saved_history_ids": [
+      "b72e81b413334c6c936c30ea6caa2f0c",
+      "67139fe6ca444b5d843744b55852bef0"
+    ],
+    "actual_http_requests": 8,
+    "restart_disconnected_and_evidence_preserved": "passed"
+  }
+}

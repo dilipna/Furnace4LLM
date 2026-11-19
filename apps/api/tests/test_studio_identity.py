@@ -66,4 +66,7 @@ def test_project_identity_export_revision_and_relevant_input_invalidation(tmp_pa
             assert provenance["execution_kind"] == "not_run"
             assert b"not model latency" in archive.read("README.md")
         assert client.get(f"/api/projects/{other['id']}").json()["revision"] == 0
-        assert "Native research-model loading is not implemented" in client.get("/guide").text
+        guide = client.get("/guide").text
+        assert "Studio managed local models" in guide
+        assert "Arbitrary research architectures still need a reviewed adapter" in guide
+        assert "those results do not validate this build or your hardware" in guide

@@ -1,7 +1,8 @@
 // Pure, bounded parsing. Imported status labels never become execution evidence.
 export const MAX_CASE_FILE_BYTES = 65536;
 const limits = {name:100, input:4000, expected_behavior:4000, expected_output:8000};
-const allowed = new Set([...Object.keys(limits), "status", "recorded_status"]);
+const allowed = new Set([...Object.keys(limits), "status", "recorded_status", "scoring"]);
+const methods = new Set(["exact", "normalized", "contains", "regex", "numeric", "choice", "json_fields"]);
 export function parseCaseSuite(bytes) {
   if (bytes.byteLength > MAX_CASE_FILE_BYTES) throw new Error("The case file exceeds 64 KiB.");
   let source;
@@ -26,6 +27,11 @@ export function parseCaseSuite(bytes) {
       if (characters.length > limit || (key !== "expected_output" && !characters.length)) fail(key + " has an invalid length (maximum " + limit + ").");
       if (characters.some(char => { const point = char.codePointAt(0); return point >= 0xd800 && point <= 0xdfff; })) fail(key + " contains an invalid Unicode character.");
       result[key] = value; // Exact whitespace and empty exact expectations are significant.
+    }
+    if (item.scoring != null) {
+      // Shape check only; Studio validates the complete rule before saving.
+      if (typeof item.scoring !== "object" || Array.isArray(item.scoring) || !methods.has(item.scoring.method)) fail("scoring must be an object with a supported method.");
+      result.scoring = item.scoring;
     }
     if (Object.hasOwn(item, "status") || Object.hasOwn(item, "recorded_status")) discardedStatuses++;
     cases.push(result);

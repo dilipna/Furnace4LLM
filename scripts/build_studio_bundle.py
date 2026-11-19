@@ -84,33 +84,44 @@ other demonstrates why descriptive expectations remain unscored. The environment
 check is read-only: it never downloads images, starts workers or verifies a model.
 You can inspect and export the example even without Docker installed.
 
-The separate Connect a local model server page sends bounded requests to an already
+On Connect a local model server, you can also choose Let Furnace run a pinned model.
+This requires local Docker, explicit download consent and a separate Start action.
+No weights are bundled. Review the recipe, license, disk and memory requirements;
+NVIDIA execution additionally needs working Docker GPU support. Historical results
+for two small pinned models are documented in docs/product/real-model-validation.md
+in the source repository. They do not establish compatibility on your machine or
+validate this newly built ZIP. Preparation and startup are not quality verification.
+
+The separate existing-server connector sends bounded requests to an already
 running, unauthenticated OpenAI-compatible text-chat server on literal 127.0.0.1.
-You supply and operate that server; Furnace does not install or start it. No model
-combination is validated yet. Saving settings is not execution. Endpoint observations
+You supply and operate that server; Furnace does not install or start it. Your own
+server combination needs validation. Saving settings is not execution. Endpoint observations
 stay separate from fixture evidence; exact equality is not semantic quality and HTTP
 round-trip timing is not TTFT. Disconnecting never stops the external model server.
 
 This is a wheel-based preview requiring Python/uv, not a native one-click installer.
 Free assessment, starter-kit export and local workspace persistence are implemented.
 The $20/month managed-service offer supports both compute ownership choices in
-configuration. Billing and cloud provisioning are inactive. No research-model adapter
-is validated. Optional local Docker execution runs ONLY a deterministic infrastructure
-fixture, not a learned model. Prepare the local test environment, save preferences,
+configuration. Billing and cloud provisioning are inactive. Arbitrary research-model
+architectures are not certified. The optional infrastructure fixture is separate
+from managed model execution. Prepare the local test environment, save preferences,
 select the fixture and approve its execution. It uses 256 MiB, one CPU, no network,
 no ports, a read-only root and no model-folder or credential mounts. Preparation may
 download public image/dependency packages. Remote Docker contexts are refused.
 Exact-output evaluations execute against this fixture; descriptive cases are unscored.
 Failures/timeouts stop the worker; restart explicitly. Stop Studio normally for cleanup;
 after a crash reopen the same workspace to reconcile its owned worker. One Studio
-process may own a workspace. No real model inference or quality evidence is included.
+process may own a workspace. Shutdown retains workspace ownership until preparation
+workers exit; bounded network operations can delay it. If model cleanup is unknown,
+restore Docker and Stop before restarting or changing the selection. Building this
+ZIP performs no model inference and creates no new quality evidence.
 
 Do not enter secrets or production input data. Project configuration and evaluation
 examples are saved locally and included in starter-kit exports. Workspace activity
 records configuration and framework request metadata, not raw request/output logs. Source file detection is not security,
 quality or architecture verification. Test with real models after application review.
 
-Remove a project through Activity to delete only its workspace record. Uninstall:
+Remove a project through History to delete only its workspace record. Uninstall:
 stop the process, remove this extracted folder and (if desired) the dedicated workspace
 folder after reviewing retention. Do not delete shared model folders or uv caches.
 """
@@ -126,6 +137,8 @@ folder after reviewing retention. Do not delete shared model folders or uv cache
         "package_version": "0.1.0",
         "kind": "local_application_preview",
         "model_execution": False,
+        "model_execution_note": "Building this archive performed no inference; explicit local managed-model execution is available at runtime.",
+        "weights_bundled": False,
         "billing": "inactive",
         "wheel_sha256": {
             name: hashlib.sha256((wheels / name).read_bytes()).hexdigest() for name in names
