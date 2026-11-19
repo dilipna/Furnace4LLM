@@ -17,7 +17,7 @@ DIR = ROOT / "docs" / "product" / "verification"
 OUT = ROOT / "docs" / "product" / "real-model-validation.md"
 
 
-def load() -> list[tuple[str, dict]]:
+def load(directory: Path | None = None) -> list[tuple[str, dict]]:
     def finite(value: str) -> float:
         result = float(value)
         if not math.isfinite(result):
@@ -25,7 +25,7 @@ def load() -> list[tuple[str, dict]]:
         return result
 
     runs = []
-    for path in sorted(DIR.glob("real-model-*.json")):
+    for path in sorted((directory or DIR).glob("real-model-*.json")):
         record = json.loads(
             path.read_text(encoding="utf-8"), parse_float=finite, parse_constant=finite
         )
@@ -238,7 +238,14 @@ def main() -> None:
     parser.add_argument(
         "--check", action="store_true", help="Validate records and refuse a stale report"
     )
+    parser.add_argument(
+        "--records-only", type=Path, help="Validate a record directory without rendering a report"
+    )
     args = parser.parse_args()
+    if args.records_only is not None:
+        runs = load(args.records_only)
+        print(f"PASS: {len(runs)} model records are consistent; no inference performed")
+        return
     content = render()
     if args.check:
         if not OUT.exists() or OUT.read_text(encoding="utf-8") != content:

@@ -1,0 +1,88 @@
+Local Linux source: 85575fa38fc14200b6fbbc3515816ca1a7ba0f59
+Runner: ci_linux.sh with the previously documented preinstalled-Node Python image only.
+
+=================================== FAILURES ===================================
+_______ test_managed_server_is_isolated_keyed_observable_and_recoverable _______
+
+supervisor = (<furnace.runtime.serving.Supervisor object at 0x7829f94e4770>, <furnace.runtime.adapter.PythonAdapter object at 0x782...530>, LaunchSettings(accelerator='cpu', context_tokens=4096, threads=4, memory_mb=256, cpus=1.0, max_output_tokens=64))
+
+    def test_managed_server_is_isolated_keyed_observable_and_recoverable(supervisor):
+        sup, adapter, settings = supervisor
+        spec = adapter.launch({}, settings)
+        launch = sup.start(PID, spec, {"furnace.managed.manifest": "test"})
+>       sup.wait_ready(PID, spec)
+
+packages/furnace/tests/test_serving_docker.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <furnace.runtime.serving.Supervisor object at 0x7829f94e4770>
+pid = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+spec = LaunchSpec(image='python@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704', command=('-I', '/fu... gpu=False, secret_env='FURNACE_API_KEY', memory_mb=256, cpus=1.0, pids=256, tmpfs_mb=64, load_timeout_s=60, labels={})
+cancel = None, on_state = None
+
+    def wait_ready(
+        self,
+        pid: str,
+        spec: LaunchSpec,
+        cancel: threading.Event | None = None,
+        on_state: Callable[[str], None] | None = None,
+    ) -> dict[str, Any]:
+        began = time.monotonic()
+        port = self.port(pid)
+        if port is None:
+            raise ServingFault("server_not_started")
+        reported = ""
+        while True:
+            if cancel is not None and cancel.is_set():
+                raise ServingFault("start_cancelled")
+            state = self.container_state(pid)
+            if not state["running"]:
+                raise ServingFault(state["failure"] or "server_exited", state)
+            try:
+                response = httpx.get(
+                    f"http://127.0.0.1:{port}{spec.health_path}", timeout=2, trust_env=False
+                )
+                if response.status_code == 200 and response.json().get("status") == "ok":
+                    return {"load_seconds": round(time.monotonic() - began, 2)}
+                if response.status_code == 500:
+                    raise ServingFault("server_load_failed", {"health_status": 500})
+                phase = "loading" if response.status_code == 503 else "starting"
+            except (httpx.HTTPError, ValueError):
+                phase = "starting"
+            if phase != reported and on_state is not None:
+                on_state(phase)
+                reported = phase
+            if cancel is not None and cancel.is_set():
+                raise ServingFault("start_cancelled")
+            if time.monotonic() - began > spec.load_timeout_s:
+>               raise ServingFault("server_load_timeout")
+E               furnace.runtime.serving.ServingFault: server_load_timeout
+
+packages/furnace/src/furnace/runtime/serving.py:292: ServingFault
+_____ test_failed_load_is_reported_and_cleanup_refuses_foreign_containers ______
+
+supervisor = (<furnace.runtime.serving.Supervisor object at 0x7829f955c200>, <furnace.runtime.adapter.PythonAdapter object at 0x782...c20>, LaunchSettings(accelerator='cpu', context_tokens=4096, threads=4, memory_mb=256, cpus=1.0, max_output_tokens=64))
+tmp_path = PosixPath('/tmp/furnace-ci-661/tmp/pytest-of-runner/pytest-0/test_failed_load_is_reported_a0')
+
+    def test_failed_load_is_reported_and_cleanup_refuses_foreign_containers(supervisor, tmp_path):
+        sup, _, settings = supervisor
+        broken = PythonAdapter(IMAGE, FIXTURE, "toy_adapter:Broken", "toy", load_timeout_s=30)
+        spec = broken.launch({}, settings)
+        sup.start(PID, spec, {})
+>       with pytest.raises(ServingFault, match="server_load_failed"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'server_load_failed'
+E         Actual message: 'server_load_timeout'
+
+packages/furnace/tests/test_serving_docker.py:102: AssertionError
+=============================== warnings summary ===============================
+../../../home/runner/venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /home/runner/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED packages/furnace/tests/test_serving_docker.py::test_managed_server_is_isolated_keyed_observable_and_recoverable
+FAILED packages/furnace/tests/test_serving_docker.py::test_failed_load_is_reported_and_cleanup_refuses_foreign_containers
+2 failed, 687 passed, 1 warning in 272.83s (0:04:32)

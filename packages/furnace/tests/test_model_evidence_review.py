@@ -62,3 +62,17 @@ def test_check_refuses_stale_report_without_overwriting(review, monkeypatch):
     with pytest.raises(SystemExit, match="stale"):
         module.main()
     assert report.read_text() == "stale evidence"
+
+
+def test_records_only_preserves_separate_historical_report(review, monkeypatch, capsys):
+    module, record, path = review
+    path.write_text(json.dumps(record))
+    report = path.parent / "historical.md"
+    report.write_text("historical report")
+    monkeypatch.setattr(module, "OUT", report)
+    monkeypatch.setattr(
+        sys, "argv", ["render_model_validation.py", "--records-only", str(path.parent)]
+    )
+    module.main()
+    assert "1 model records are consistent" in capsys.readouterr().out
+    assert report.read_text() == "historical report"
