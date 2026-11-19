@@ -12,8 +12,8 @@ supervisor = (<furnace.runtime.serving.Supervisor object at 0x7829f94e4770>, <fu
         launch = sup.start(PID, spec, {"furnace.managed.manifest": "test"})
 >       sup.wait_ready(PID, spec)
 
-packages/furnace/tests/test_serving_docker.py:48: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+packages/furnace/tests/test_serving_docker.py:48:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = <furnace.runtime.serving.Supervisor object at 0x7829f94e4770>
 pid = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
