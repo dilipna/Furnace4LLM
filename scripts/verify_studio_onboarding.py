@@ -266,7 +266,9 @@ def main() -> None:
                 {"architecture": "Preserved metadata only", "notes": "No inference has run"},
             )
             with zipfile.ZipFile(io.BytesIO(api(f"projects/{pid}/kit", "POST"))) as kit:
-                assert len(kit.namelist()) == 6
+                assert len(kit.namelist()) == 7
+                summary = kit.read("evidence-summary.md").decode()
+                assert pid in summary and "No saved attempt" in summary
                 assert (
                     json.loads(kit.read("model-contract.json"))["architecture"]
                     == "Preserved metadata only"

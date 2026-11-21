@@ -64,7 +64,10 @@ def test_complete_workspace_roundtrip_export_and_removal(setup):
     result = client.post(f"/api/projects/{pid}/kit")
     assert result.status_code == 200
     with zipfile.ZipFile(io.BytesIO(result.content)) as kit:
-        assert len(kit.namelist()) == 6
+        assert len(kit.namelist()) == 7
+        summary = kit.read("evidence-summary.md").decode()
+        assert pid in summary and "No saved attempt" in summary
+        assert "not a live health check" in summary
         assert json.loads(kit.read("assessment.json")) == project["assessment"]
         assert (
             json.loads(kit.read("model-contract.json"))["architecture"] == "Experimental recurrent"

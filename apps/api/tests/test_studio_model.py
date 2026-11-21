@@ -309,6 +309,12 @@ def test_actual_requests_state_identity_export_and_failure_then_explicit_retry(t
             assert exported["evaluation"]["project_id"] == pid
             assert exported["evaluation"]["execution_kind"] == "local_endpoint_response"
             assert exported["history"] == endpoint["history"]
+            summary = archive.read("evidence-summary.md").decode()
+            assert "| exact_pass | 1 |" in summary
+            assert "| unscored | 1 |" in summary
+            assert "Missing result rows: 0" in summary
+            assert endpoint["configuration_sha256"] in summary
+            assert "No saved attempt" in summary  # The fixture did not run.
         changed = client.put(f"/api/projects/{pid}/contract", json={"notes": "changed"}).json()
         assert changed["model_endpoint"]["verification"] == "no_current_endpoint_evidence"
         assert len(changed["model_endpoint"]["history"]) == 2
