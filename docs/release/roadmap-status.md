@@ -32,8 +32,10 @@ Prepare (pull pinned images, resumable verified download), start, readiness, sto
 detection, orphan recovery after a crash, and the adapter contract for other architectures
 (engine adapter plus a Python adapter host for researcher code).
 Contract: [managed-local-runtime.md](../product/managed-local-runtime.md).
-Remaining: offering a researcher-supplied adapter image in the Studio interface (the runtime
-and its Docker tests exist; the interface lists only reviewed llama.cpp recipes).
+Researcher-supplied adapters are offered in Studio ("Your own Python adapter"): pinned or
+local image, read-only code folder digested by content, honest weights evidence; tested end
+to end through Studio on real Docker with a deterministic test adapter. No researcher's own
+model has been validated yet.
 
 ## 4. Infrastructure around the model — done for the local scope
 
@@ -46,8 +48,11 @@ and its Docker tests exist; the interface lists only reviewed llama.cpp recipes)
 | reproducible runs with identified references | suite digest, sampling, manifest, weights digest and launch per run; automatic reproducibility comparison |
 | quality beyond exact strings | normalized, contains, regex, numeric, choice and JSON-field rules |
 
-Not built: remote log shipping, alerting, GPU telemetry inside Studio (the validation records
-nvidia-smi separately), encrypted local storage, semantic/LLM-judge scoring.
+GPU telemetry (memory, utilisation, temperature) is shown for NVIDIA launches; preflight
+refuses launches Docker cannot satisfy (missing engine or GPU runtime, memory or CPUs above
+Docker's limits) with actionable codes.
+
+Not built: remote log shipping, alerting, encrypted local storage, semantic/LLM-judge scoring.
 
 ## 5. Managed service for the first one or two demo models — blocked on owner decisions
 
@@ -61,7 +66,8 @@ hosted service exists. Before engineering it, the owner needs to decide:
 
 Engineering that follows those decisions: authenticated multi-user access, per-tenant
 isolation on shared hosts, storage and backups, update and cleanup procedures, a public
-endpoint with TLS, and a demonstrated recovery drill.
+endpoint with TLS, and a demonstrated recovery drill. A design proposal mapping the verified
+local components onto a hosted demo is in [hosted-service-design.md](hosted-service-design.md).
 
 ## 6. Subscription — proposal; billing and accounts inactive
 
@@ -84,9 +90,15 @@ until the owner approves activation.
 Done: wheel-based preview (`scripts/build_studio_bundle.py`), compatibility information in
 Studio (Docker engine type, GPU runtime availability in the recipe catalog, actionable
 errors for missing Docker, out-of-memory, disk space, digest mismatches).
-Not done: fresh Windows/macOS user-profile installation test, native installer, update and
-uninstall tooling, signed public artifacts with published SHA-256 sums. Publishing download
-artifacts is an outward-facing release step that needs owner approval.
+Also done: preflight refusals before preparing or starting; `furnace studio-cleanup` (dry run
+by default, refused while Studio runs) removes this workspace's containers and networks and,
+optionally, the weights store and pinned images; `scripts/package_release.py` builds a
+versioned candidate (`furnace-studio-<version>+<commit>.zip`) with `SHA256SUMS` and
+`release.json` (commit, hashes, verified platforms read from the recorded runs) and refuses a
+dirty tree. Procedure: [release-procedure.md](../operations/release-procedure.md).
+Not done: fresh Windows/macOS user-profile installation test, native installer, automatic
+updates, publisher signing, and publication itself (an outward-facing step that needs owner
+approval).
 Verified operating systems for the managed model path: **Windows 11 with Docker Desktop
 (WSL2 engine) only**. The Docker-level isolation tests also run on Ubuntu 24.04 in CI.
 
@@ -98,12 +110,14 @@ local-model path. These are distinct interfaces; local work is not publicly depl
 The older visitor-journeys branch remains preserved separately. Publication needs
 owner approval and human comprehension testing; browser automation is not that evidence.
 
-## 9. User testing and operational readiness — blocked on people
+## 9. User testing and operational readiness — procedures written; people still needed
 
-Needs the owner's own walkthrough, then an unfamiliar developer. Automated browser tests and
-the validation script do not replace that. Support, privacy, retention and release procedures
-should be written once the hosting and subscription decisions exist; the local retention and
-privacy behaviour is documented in the runtime contract.
+Written for the local application: [recovery runbook](../operations/recovery-runbook.md),
+[privacy and retention](../operations/privacy-and-retention.md),
+[support](../operations/support.md) and [release procedure](../operations/release-procedure.md).
+They describe tested behaviour only and must be revised once a hosted service exists.
+Still needed: the owner's own walkthrough, then an unfamiliar developer. Automated browser
+tests and the validation script do not replace that.
 
 ## What is needed from the owner next
 
