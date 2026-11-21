@@ -19,6 +19,8 @@ Python adapter that hosts a researcher's own `load`/`generate` implementation
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -36,7 +38,41 @@ from furnace.runtime.catalog import (
 
 PROTOCOL = "furnace-chat-v1"
 PYSERVE = Path(__file__).with_name("pyserve.py")
-_IMAGE = re.compile(r"^[a-z0-9][a-z0-9._/:-]*@sha256:[a-f0-9]{64}$")
+# A registry image pinned by digest, or a locally built image by its content ID.
+_IMAGE = re.compile(r"^(?:[a-z0-9][a-z0-9._/:-]*@sha256:[a-f0-9]{64}|sha256:[a-f0-9]{64})$")
+TREE_FILE_LIMIT = 5000
+TREE_BYTE_LIMIT = 256 * 1024 * 1024
+
+
+class AdapterError(ValueError):
+    pass
+
+
+def tree_digest(root: Path, *, content: bool) -> dict[str, Any]:
+    """Digest of a directory: file contents (code) or names and sizes only (weights).
+
+    Symlinks are refused so the digest describes exactly what the container sees.
+    """
+    files: list[tuple[str, int, str]] = []
+    total = 0
+    for path in sorted(root.rglob("*")):
+        if path.is_symlink():
+            raise AdapterError("adapter_folder_contains_symlink")
+        if not path.is_file() or "__pycache__" in path.parts:
+            continue
+        size = path.stat().st_size
+        total += size
+        if len(files) >= TREE_FILE_LIMIT or (content and total > TREE_BYTE_LIMIT):
+            raise AdapterError("adapter_folder_too_large_to_digest")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest() if content else ""
+        files.append((path.relative_to(root).as_posix(), size, digest))
+    encoded = json.dumps(files).encode()
+    return {
+        "sha256": hashlib.sha256(encoded).hexdigest(),
+        "files": len(files),
+        "bytes": total,
+        "basis": "file contents" if content else "file names and sizes",
+    }
 
 
 @dataclass(frozen=True)
@@ -165,9 +201,9 @@ class PythonAdapter:
         load_timeout_s: float = 300.0,
     ):
         if not _IMAGE.fullmatch(image):
-            raise ValueError("pin the adapter image by digest (name@sha256:...)")
+            raise AdapterError("pin the adapter image by digest (name@sha256:...) or local ID")
         if not re.fullmatch(r"[A-Za-z_][\w.]*:[A-Za-z_]\w*", entrypoint):
-            raise ValueError("entrypoint must look like package.module:factory")
+            raise AdapterError("entrypoint must look like package.module:factory")
         self.image, self.code, self.entrypoint = image, code.resolve(), entrypoint
         self.model_id, self.weights, self.load_timeout_s = model_id, weights, load_timeout_s
 
@@ -178,9 +214,18 @@ class PythonAdapter:
         return [self.image, RELAY_IMAGE]
 
     def manifest(self, settings: LaunchSettings) -> dict[str, Any]:
+        # Code is digested by content so an edit changes the configuration identity;
+        # weights by names and sizes only (content hashing large checkpoints is costly
+        # and is not claimed as verification).
         return {
             "schema": "furnace-serving-manifest-v1",
-            "adapter": {"kind": self.kind, "image": self.image, "entrypoint": self.entrypoint},
+            "adapter": {
+                "kind": self.kind,
+                "image": self.image,
+                "entrypoint": self.entrypoint,
+                "code": tree_digest(self.code, content=True),
+                "weights": tree_digest(self.weights, content=False) if self.weights else None,
+            },
             "model": {"alias": self.model_id},
             "relay_image": RELAY_IMAGE,
             "settings": dict(sorted(settings.as_dict().items())),

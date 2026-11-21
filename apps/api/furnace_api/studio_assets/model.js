@@ -43,6 +43,14 @@ function readableError(reason) {
     insufficient_disk_space: "Not enough free disk space for the weights.",
     download_cancelled: "Preparation was cancelled. Prepare again to resume the download.",
     reference_suite_digest_mismatch: "The packaged reference suite does not match its pinned digest; it was not loaded.",
+    gpu_runtime_unavailable: "Docker does not offer an NVIDIA GPU runtime here. Choose CPU, or enable GPU support in Docker Desktop (WSL2) with a current NVIDIA driver.",
+    memory_exceeds_docker_limit: "The memory limit is larger than Docker can provide. Lower it, or raise the memory available to Docker Desktop.",
+    cpus_exceed_docker_limit: "More CPUs were requested than Docker can provide. Lower the CPU setting.",
+    linux_containers_required: "Switch Docker Desktop to Linux containers.",
+    local_image_not_present: "That local image ID is not present in Docker. Build or load the image first.",
+    adapter_image_not_pinned: "Pin the adapter image by digest (name@sha256:…) or use a local image ID (sha256:…).",
+    adapter_folder_contains_symlink: "The adapter folder contains a symbolic link. Replace it with real files so the digest matches what runs.",
+    adapter_folder_too_large_to_digest: "The adapter code folder is too large to digest (over 5,000 files or 256 MiB). Point it at the code only, and put weights in the weights folder.",
   };
   if (/^server_exited_\d+$/.test(reason)) return "The server process exited (code " + reason.split("_").pop() + "). Check its logs, then start again explicitly.";
   if (/^download_(http_\d{3}|network_error)$/.test(reason)) return "The download failed (" + reason.slice(9) + "). Prepare again to resume.";
@@ -195,6 +203,7 @@ $("#model-export").onclick = () => action(async pid => {
 });
 
 function describeRecipe(id) {
+  if (id === "python-adapter") return "Your own Python adapter: " + (catalog?.custom_adapter?.requires || "") + " Weights: " + (catalog?.custom_adapter?.weights_verification || "") + ".";
   const recipe = catalog?.models.find(m => m.id === id);
   if (!recipe) return "Choose a reviewed recipe. Every input that decides what runs is pinned.";
   const local = recipe.local?.state === "present" ? "weights already verified locally" : recipe.local?.state === "partial" ? "partial download present (resumes)" : (recipe.download_bytes / 1048576).toFixed(0) + " MiB to download";
@@ -204,7 +213,9 @@ function renderManaged(p) {
   const managed = p.managed_server || {status: "not_configured"};
   const form = $("#managed-form");
   const selection = drafts.get(p.id + ":managed") || managed.selection;
-  if (selection) for (const [key, value] of Object.entries(selection)) if (form.elements.namedItem(key)) form.elements.namedItem(key).value = value;
+  if (selection) for (const [key, value] of Object.entries(selection)) if (key !== "python" && form.elements.namedItem(key)) form.elements.namedItem(key).value = value;
+  for (const [key, value] of Object.entries(selection?.python || {})) if (form.elements.namedItem("python_" + key)) form.elements.namedItem("python_" + key).value = value ?? "";
+  $("#custom-adapter").hidden = form.elements.namedItem("model").value !== "python-adapter";
   $("#managed-recipe").textContent = describeRecipe(form.elements.namedItem("model").value);
   const status = managed.status;
   const job = managed.preparation;
@@ -253,6 +264,9 @@ async function pollManaged() {
 }
 function managedSelection() {
   const value = Object.fromEntries(new FormData($("#managed-form")));
+  const python = {};
+  for (const key of Object.keys(value)) if (key.startsWith("python_")) { python[key.slice(7)] = value[key]; delete value[key]; }
+  if (value.model === "python-adapter") value.python = {...python, weights_path: python.weights_path || null};
   for (const key of ["threads", "memory_mb", "context_tokens", "request_timeout_seconds", "max_tokens", "evaluation_budget_seconds"]) value[key] = Number(value[key]);
   return value;
 }
@@ -261,10 +275,11 @@ async function loadCatalog() {
     catalog = await api("managed/catalog");
     const select = $("#managed-model"); select.replaceChildren();
     for (const recipe of catalog.models) { const option = document.createElement("option"); option.value = recipe.id; option.textContent = recipe.name; select.append(option); }
+    const custom = document.createElement("option"); custom.value = "python-adapter"; custom.textContent = "Your own Python adapter (advanced)"; select.append(custom);
     render();
   } catch (error) { $("#managed-recipe").textContent = "Recipes unavailable: " + error.message; }
 }
-$("#managed-form").oninput = () => { if (selected) { drafts.set(selected + ":managed", managedSelection()); $("#managed-recipe").textContent = describeRecipe($("#managed-model").value); } };
+$("#managed-form").oninput = () => { if (selected) { drafts.set(selected + ":managed", managedSelection()); $("#managed-recipe").textContent = describeRecipe($("#managed-model").value); $("#custom-adapter").hidden = $("#managed-model").value !== "python-adapter"; } };
 $("#managed-form").onsubmit = event => { event.preventDefault(); const value = managedSelection(); action(async pid => { const saved = await api("projects/" + pid + "/managed", "PUT", value); drafts.delete(pid + ":managed"); accept(saved); }); };
 $("#managed-consent").onchange = () => render();
 $("#managed-prepare").onclick = () => action(async pid => { const view = await api("projects/" + pid + "/managed/prepare", "POST", {consent: true}); const p = current(); if (p) p.managed_server = view; });
@@ -278,6 +293,7 @@ $("#managed-observe-refresh").onclick = async () => {
     const data = await api("projects/" + selected + "/managed/observe");
     const lines = ["Status: " + data.managed_server.status];
     if (data.container) lines.push("Container " + data.container.container_id + " · running " + data.container.running + " · networks " + data.container.networks.join(", "));
+    if (data.gpu?.name) lines.push("GPU: " + data.gpu.name + " · memory " + data.gpu.memory_used_mib + "/" + data.gpu.memory_total_mib + " MiB · utilization " + data.gpu.utilization_percent + "% · " + data.gpu.temperature_c + " °C");
     if (data.resources?.memory) lines.push("Resources: CPU " + data.resources.cpu_percent + " · memory " + data.resources.memory + " · processes " + data.resources.pids);
     const metrics = Object.entries(data.metrics || {}).filter(([k]) => /tokens|requests/.test(k)).map(([k, v]) => k.replace("llamacpp:", "") + "=" + v);
     if (metrics.length) lines.push("Server metrics: " + metrics.join(" · "));

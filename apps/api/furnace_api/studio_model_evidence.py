@@ -105,6 +105,10 @@ def view(project: dict[str, Any]) -> dict[str, Any]:
     current = bool(evaluation and matches(project, evaluation, digest))
     connection = project.get("model_connection")
     managed = bool(connection and connection.get("managed"))
+    # Older managed records predate the flag; they always came from pinned recipes.
+    verified = managed and bool(
+        ((connection or {}).get("server") or {}).get("weights_verified", True)
+    )
     state = project.get("model_connection_state") or {"status": "disconnected"}
     # A saved ready label never establishes readiness of a changed configuration.
     if state.get("configuration_sha256") != digest:
@@ -124,11 +128,14 @@ def view(project: dict[str, Any]) -> dict[str, Any]:
         if current
         else "no_current_endpoint_evidence",
         "model_identity_independently_verified": False,
-        "weights_verified_before_launch": managed,
+        "weights_verified_before_launch": verified,
         "server_managed_by_furnace": managed,
         "limits": (
             "Furnace launched this pinned manifest and verified the weights' SHA-256 before "
             "mounting them read-only; it does not attest the running process further. "
+            if verified
+            else "Furnace launched your adapter image and digested its code; weights are recorded "
+            "by name and size, not hash-verified. "
             if managed
             else "HTTP protocol observation only. Declared revision is not independently attested. "
         )

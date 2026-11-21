@@ -93,7 +93,7 @@ digest, does not sandbox the Docker daemon itself, and does not encrypt local wo
   becomes `failed` with `server_out_of_memory` or `server_exited_<code>`, the connection is
   marked failed, the containers are removed and nothing restarts on its own.
 - **Observation** (`/managed/observe`): container state and networks, CPU/memory/process
-  counts from `docker stats`, the server's Prometheus counters (prompt and generated tokens,
+  counts from `docker stats`, host GPU memory, utilisation and temperature for NVIDIA launches, the server's Prometheus counters (prompt and generated tokens,
   seconds, requests processing), a bounded server log tail with the key redacted, and the
   project's recent operations.
 - **Operations log** (`<workspace>/logs/operations.jsonl`): one JSON line per event —
@@ -183,7 +183,51 @@ Two adapters ship:
   serves one request at a time, enforces the key, reports load failures through `/health`,
   and never returns adapter error text to callers.
 
-The Python adapter is exercised in tests against real Docker with a deterministic test
-adapter (not a model). Studio currently offers only the reviewed llama.cpp recipes in its
-interface; wiring a researcher image into the Studio form is the next step and needs its own
-review of the image and code being run.
+In Studio, choose **Your own Python adapter (advanced)** in the model list and supply the
+image (`name@sha256:…`, or `sha256:…` for a locally built image that is already present), the
+absolute code folder, `module:factory`, the model ID to advertise and, optionally, a weights
+folder. The code folder is digested by content into the serving manifest, so editing the code
+changes the configuration identity and older runs no longer count as current; symbolic links
+in it are refused. The weights folder is recorded by file names and sizes only, and the
+evidence says so (`weights_verified_before_launch: false`). Preparation only confirms the
+image is present (registry images are pulled by digest); there are no pinned weights to
+download. The reference suite can be loaded for any adapter.
+
+The same isolation applies as for recipes. The code runs as the researcher wrote it, inside
+the container: Furnace bounds what it can reach (no network route, read-only mounts, resource
+limits), but does not review the code. Tested end to end through Studio on real Docker with a
+deterministic test adapter (`apps/api/tests/test_studio_adapter_docker.py`); no researcher's
+own model has been validated yet.
+
+## Preflight checks
+
+Before preparing or starting, Studio checks the local Docker engine and refuses with an
+actionable reason instead of failing later:
+
+| code | meaning and fix |
+| --- | --- |
+| `docker_unavailable` | Docker is not reachable: start Docker Desktop |
+| `linux_containers_required` | switch Docker Desktop to Linux containers |
+| `gpu_runtime_unavailable` | NVIDIA chosen but Docker offers no GPU runtime: choose CPU or enable GPU support (WSL2, current driver) |
+| `memory_exceeds_docker_limit` | the memory limit exceeds what Docker can provide (keeping 512 MiB headroom): lower it or raise Docker's memory |
+| `cpus_exceed_docker_limit` | more CPUs than Docker has: lower the CPU setting |
+| `insufficient_disk_space` | not enough free space for the weights (checked by the download) |
+
+## Cleanup and uninstall
+
+`furnace studio-cleanup` removes what Furnace-operated servers left on the machine, and
+nothing else. It refuses while Studio owns the workspace, and is a dry run unless `--yes`
+is given:
+
+```sh
+uv run furnace studio-cleanup --workspace ~/.furnace/studio                 # list
+uv run furnace studio-cleanup --workspace ~/.furnace/studio --yes           # remove containers and networks
+uv run furnace studio-cleanup --workspace ~/.furnace/studio --artifacts ~/.furnace/studio/artifacts --images --yes
+```
+
+It removes only containers and networks labelled for that workspace; with `--artifacts`
+only the store's `blobs`, `partial` and `quarantine` folders; with `--images` only the pinned
+engine and relay images (an image still used by another container is left in place). Model
+folders, project files, exports and unrelated Docker resources are never touched.
+To uninstall Studio completely, run the cleanup with `--artifacts --images --yes`, then delete
+the extracted bundle and the dedicated workspace folder.

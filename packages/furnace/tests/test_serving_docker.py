@@ -118,3 +118,33 @@ def test_failed_load_is_reported_and_cleanup_refuses_foreign_containers(supervis
             sup.stop(PID)
     finally:
         docker("rm", "-f", name, check=False)
+
+
+def test_cleanup_dry_run_then_removes_only_this_workspace(supervisor, tmp_path):
+    from furnace.runtime.cleanup import cleanup
+    from furnace.runtime.lease import WorkspaceBusy, WorkspaceLease
+
+    sup, adapter, settings = supervisor
+    sup.start(PID, adapter.launch({}, settings), {})
+    store = tmp_path / "artifacts"
+    (store / "blobs" / "sha256").mkdir(parents=True)
+    blob = store / "blobs" / "sha256" / ("b" * 64)
+    blob.write_bytes(b"weights")
+    blob.chmod(0o444)
+    (store / "keep-me.txt").write_text("not part of the store", encoding="utf-8")
+    other = tmp_path / "other-workspace"
+    other_sup = Supervisor(other, RuntimeManager(other).docker_environment)
+    other_sup.start(PID, adapter.launch({}, settings), {})
+    try:
+        with WorkspaceLease(tmp_path), pytest.raises(WorkspaceBusy):
+            cleanup(tmp_path, store)
+        planned = cleanup(tmp_path, store, dry_run=True)
+        assert len(planned["containers"]) == 2 and len(planned["networks"]) == 1
+        assert sup.container_state(PID)["running"] and blob.exists()
+        done = cleanup(tmp_path, store, dry_run=False)
+        assert done["artifacts"]["bytes"] == len(b"weights")
+        assert sup.container_state(PID)["present"] is False
+        assert not (store / "blobs").exists() and (store / "keep-me.txt").exists()
+        assert other_sup.container_state(PID)["running"]  # another workspace is untouched
+    finally:
+        other_sup.recover()

@@ -519,3 +519,76 @@ def test_removal_cancels_and_drains_preparation_before_deleting_record(tmp_path)
         assert app.state.managed.jobs == {}, "Deletion returned with a live preparation writer"
         assert client.get("/api/projects").json() == []
         assert not artifacts.file.exists()
+
+
+FIXTURE_CODE = str(
+    (
+        __import__("pathlib").Path(__file__).parents[3] / "packages/furnace/tests/adapter_fixture"
+    ).resolve()
+)
+PY_IMAGE = "python@sha256:a0f57064cbdcd6285fa45f51237ab0b35ea8ebaed06a1f5973e89e19dfb86704"
+
+
+def custom(**overrides):
+    python = {
+        "image": PY_IMAGE,
+        "code_path": FIXTURE_CODE,
+        "entrypoint": "toy_adapter:Reverser",
+        "model_id": "toy-reverser",
+        "weights_path": None,
+    }
+    python.update(overrides)
+    return {"model": "python-adapter", "python": python}
+
+
+def test_custom_adapter_selection_is_validated_and_bound_to_its_code(tmp_path):
+    app, _ = build(tmp_path)
+    code = tmp_path / "adapter"
+    code.mkdir()
+    (code / "toy_adapter.py").write_text(
+        (__import__("pathlib").Path(FIXTURE_CODE) / "toy_adapter.py").read_text(), encoding="utf-8"
+    )
+    with client_for(app) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        url = f"/api/projects/{pid}/managed"
+        assert client.put(url, json={"model": "python-adapter"}).status_code == 422
+        assert client.put(url, json={**custom(), "model": MODEL}).status_code == 422
+        assert client.put(url, json=custom(code_path="relative/path")).status_code == 422
+        assert client.put(url, json=custom(entrypoint="x; rm -rf /")).status_code == 422
+        refused = client.put(url, json=custom(image="python:3.12-slim"))
+        assert refused.status_code == 409 and refused.json()["detail"] == "adapter_image_not_pinned"
+        first = client.put(url, json=custom(code_path=str(code))).json()["managed_server"]
+        adapter = first["manifest"]["adapter"]
+        assert adapter["code"]["basis"] == "file contents" and adapter["weights"] is None
+        (code / "toy_adapter.py").write_text("# changed\n", encoding="utf-8")
+        second = client.put(url, json=custom(code_path=str(code))).json()["managed_server"]
+        assert second["manifest_sha256"] != first["manifest_sha256"]
+
+
+def test_preflight_refuses_unavailable_gpu_and_oversized_limits(tmp_path):
+    fake = FakeSupervisor()
+    fake.daemon = lambda: {
+        "status": "ready",
+        "gpu_runtime": False,
+        "cpus": 4,
+        "memory_bytes": 4 * 2**30,
+    }
+    app, _ = build(tmp_path, fake=fake)
+    with client_for(app) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        url = f"/api/projects/{pid}/managed"
+        for selection, code in [
+            ({"model": MODEL, "accelerator": "nvidia"}, "gpu_runtime_unavailable"),
+            ({"model": MODEL, "memory_mb": 4096}, "memory_exceeds_docker_limit"),
+            ({"model": MODEL, "cpus": 8}, "cpus_exceed_docker_limit"),
+        ]:
+            assert client.put(url, json=selection).status_code == 200
+            refused = client.post(f"{url}/prepare", json={"consent": True})
+            assert refused.status_code == 409 and refused.json()["detail"] == code
+            assert client.get(url).json()["reason"] == code
+        fake.daemon = lambda: {"status": "unavailable", "gpu_runtime": False}
+        client.put(url, json={"model": MODEL})
+        assert (
+            client.post(f"{url}/prepare", json={"consent": True}).json()["detail"]
+            == "docker_unavailable"
+        )
