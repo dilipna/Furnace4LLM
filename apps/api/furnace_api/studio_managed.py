@@ -16,7 +16,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
-from furnace.runtime.adapter import LaunchSettings, LlamaCppAdapter
+from furnace.runtime.adapter import (
+    PROTOCOL,
+    AdapterError,
+    LaunchSettings,
+    LlamaCppAdapter,
+    PythonAdapter,
+    ServingAdapter,
+)
 from furnace.runtime.artifacts import ArtifactError, ArtifactStore
 from furnace.runtime.catalog import (
     MODELS,
@@ -30,12 +37,36 @@ from furnace.runtime.catalog import (
 from furnace.runtime.manager import RuntimeFault, RuntimeManager
 from furnace.runtime.oplog import OperationsLog
 from furnace.runtime.serving import ServingFault, Supervisor
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from furnace_api.studio_model import ModelService
 from furnace_api.studio_runtime import WorkspaceStore
 
 ACTIVE = {"starting", "loading", "ready"}
+CUSTOM = "python-adapter"
+DEFAULT_SUITE = "general-tasks-v1"
+
+
+class PythonAdapterInput(BaseModel):
+    """A researcher's own loading/inference code, run behind the Furnace protocol."""
+
+    model_config = ConfigDict(extra="forbid")
+    image: str = Field(max_length=300)
+    code_path: str = Field(min_length=1, max_length=2048)
+    entrypoint: str = Field(max_length=200, pattern=r"^[A-Za-z_][\w.]*:[A-Za-z_]\w*$")
+    model_id: str = Field(min_length=1, max_length=200, pattern=r"^[\w./:@+-]+$")
+    weights_path: str | None = Field(default=None, max_length=2048)
+
+    @model_validator(mode="after")
+    def folders(self) -> PythonAdapterInput:
+        for name in ("code_path", "weights_path"):
+            value = getattr(self, name)
+            if value is None:
+                continue
+            path = Path(value)
+            if not path.is_absolute() or not path.is_dir() or "," in value:
+                raise ValueError(f"{name} must be an existing absolute folder without commas")
+        return self
 
 
 class ManagedSelection(BaseModel):
@@ -51,12 +82,20 @@ class ManagedSelection(BaseModel):
     max_tokens: int = Field(ge=1, le=1024, default=256)
     evaluation_budget_seconds: int = Field(ge=10, le=1800, default=600)
 
+    python: PythonAdapterInput | None = None
+
     @field_validator("model")
     @classmethod
     def known_model(cls, value: str) -> str:
-        if value not in MODELS:
-            raise ValueError("choose a reviewed model recipe")
+        if value not in MODELS and value != CUSTOM:
+            raise ValueError("choose a reviewed model recipe or your own Python adapter")
         return value
+
+    @model_validator(mode="after")
+    def adapter_fields(self) -> ManagedSelection:
+        if (self.model == CUSTOM) != (self.python is not None):
+            raise ValueError("Python adapter settings go with the python-adapter choice only")
+        return self
 
     def settings(self) -> LaunchSettings:
         return LaunchSettings(
@@ -76,6 +115,24 @@ class ManagedConsent(BaseModel):
 
 def now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def adapter_for(selection: ManagedSelection) -> ServingAdapter:
+    if selection.python is None:
+        return LlamaCppAdapter.for_model(selection.model)
+    custom = selection.python
+    try:
+        return PythonAdapter(
+            image=custom.image,
+            code=Path(custom.code_path),
+            entrypoint=custom.entrypoint,
+            model_id=custom.model_id,
+            weights=Path(custom.weights_path) if custom.weights_path else None,
+        )
+    except AdapterError as exc:
+        raise RuntimeFault(
+            "adapter_image_not_pinned" if "digest" in str(exc) else str(exc)
+        ) from None
 
 
 class ManagedService:
@@ -118,8 +175,34 @@ class ManagedService:
 
     @staticmethod
     def _manifest(selection: ManagedSelection) -> tuple[dict[str, Any], str]:
-        value = LlamaCppAdapter.for_model(selection.model).manifest(selection.settings())
+        try:
+            value = adapter_for(selection).manifest(selection.settings())
+        except AdapterError as exc:
+            raise RuntimeFault(str(exc)) from None
         return value, manifest_digest(value)
+
+    def preflight(self, selection: ManagedSelection) -> list[str]:
+        """Blocking problems with actionable codes, checked before downloading or starting."""
+        daemon = self.supervisor.daemon()
+        if daemon["status"] != "ready":
+            return ["docker_unavailable" if daemon["status"] == "unavailable" else daemon["status"]]
+        problems = []
+        if selection.accelerator == "nvidia" and not daemon.get("gpu_runtime"):
+            problems.append("gpu_runtime_unavailable")
+        vm_memory = daemon.get("memory_bytes") or 0
+        if vm_memory and selection.memory_mb * 2**20 > vm_memory - 512 * 2**20:
+            problems.append("memory_exceeds_docker_limit")
+        if daemon.get("cpus") and selection.cpus > daemon["cpus"]:
+            problems.append("cpus_exceed_docker_limit")
+        return problems
+
+    def _require_preflight(self, pid: str, selection: ManagedSelection) -> None:
+        problems = self.preflight(selection)
+        if problems:
+            self._save(
+                pid, f"Preflight refused: {problems[0]}", status="failed", reason=problems[0]
+            )
+            raise RuntimeFault(problems[0])
 
     def catalog(self) -> dict[str, Any]:
         value = public_catalog()
@@ -137,6 +220,13 @@ class ManagedService:
                     except ServingFault as exc:
                         docker.update(status="unavailable", gpu_runtime=False, code=exc.code)
                 item["images_present"][accelerator] = present
+        value["custom_adapter"] = {
+            "id": CUSTOM,
+            "protocol": PROTOCOL,
+            "requires": "An image pinned by digest (or a local image ID) with your dependencies, "
+            "a code folder mounted read-only, and module:factory returning load/generate/reset.",
+            "weights_verification": "names and sizes recorded; contents not hash-verified",
+        }
         return value
 
     # -- selection and preparation ---------------------------------------------------
@@ -150,6 +240,7 @@ class ManagedService:
             if pid in self.jobs:
                 raise RuntimeFault("preparation_in_progress")
             value, digest = self._manifest(selection)
+            label = selection.python.model_id if selection.python else selection.model
             return self.store.change(
                 pid,
                 "managed_server",
@@ -161,7 +252,7 @@ class ManagedService:
                     "manifest_sha256": digest,
                     "updated_at": now(),
                 },
-                f"Managed model selected: {selection.model} on {selection.accelerator}",
+                f"Managed model selected: {label} on {selection.accelerator}",
             )
 
     def prepare(self, pid: str) -> dict[str, Any]:
@@ -170,6 +261,7 @@ class ManagedService:
             selection = self._selection(project)
             if (project.get("managed_server") or {}).get("status") in ACTIVE:
                 raise RuntimeFault("stop_managed_server_first")
+            self._require_preflight(pid, selection)
             with self._guard:
                 if self._closing:
                     raise RuntimeFault("studio_shutting_down")
@@ -187,10 +279,10 @@ class ManagedService:
             return self.view(pid)
 
     def _prepare(self, pid: str, selection: ManagedSelection, job: dict[str, Any]) -> None:
-        adapter = LlamaCppAdapter.for_model(selection.model)
         began = time.monotonic()
         cancel: threading.Event = job["cancel"]
         try:
+            adapter = adapter_for(selection)
             for image in adapter.images(selection.settings()):
                 job["progress"] = {"phase": "image", "image": image}
                 self.supervisor.pull(image, cancel=cancel)
@@ -215,7 +307,9 @@ class ManagedService:
                 pid,
                 f"Managed model prepared and verified in {elapsed} s",
                 status="prepared",
-                reason="Images pulled by digest; weights SHA-256 verified",
+                reason="Images pulled by digest; weights SHA-256 verified"
+                if adapter.artifacts()
+                else "Adapter image present; no pinned weights to download",
                 prepared_at=now(),
             )
             self.oplog.append(pid, "prepared", model=selection.model, seconds=elapsed)
@@ -243,7 +337,8 @@ class ManagedService:
                 raise RuntimeFault("managed_server_already_running")
             if pid in self.jobs:
                 raise RuntimeFault("preparation_in_progress")
-            adapter = LlamaCppAdapter.for_model(selection.model)
+            self._require_preflight(pid, selection)
+            adapter = adapter_for(selection)
             settings = selection.settings()
             value, digest = self._manifest(selection)
             began = time.monotonic()
@@ -259,9 +354,15 @@ class ManagedService:
                 if self._closing:
                     raise RuntimeFault("studio_shutting_down")
                 self.model.flag(pid).clear()
+            for image in adapter.images(settings):
+                if not self.supervisor.image_present(image):
+                    raise RuntimeFault("prepare_managed_model_first")
+            verified = bool(adapter.artifacts())
             self._save(
                 pid,
-                "Managed server starting; weights SHA-256 verified before launch",
+                "Managed server starting; weights SHA-256 verified before launch"
+                if verified
+                else "Managed adapter server starting; adapter code digested",
                 status="starting",
                 reason="Starting isolated server container",
                 manifest=value,
@@ -299,7 +400,6 @@ class ManagedService:
                 start_seconds=seconds,
                 load_seconds=ready["load_seconds"],
             )
-            recipe = MODELS[selection.model]
             self.oplog.append(
                 pid,
                 "ready",
@@ -308,23 +408,34 @@ class ManagedService:
                 start_seconds=seconds,
                 accelerator=selection.accelerator,
             )
+            if selection.python is None:
+                recipe = MODELS[selection.model]
+                revision = (
+                    f"{recipe.repository}@{recipe.revision[:12]} "
+                    f"weights sha256:{recipe.weights.sha256[:16]}"
+                )
+                server = {"model": recipe.id, "engine": recipe.engine,
+                          "weights_sha256": recipe.weights.sha256}  # fmt: skip
+            else:
+                code = value["adapter"]["code"]["sha256"]
+                revision = f"python adapter {selection.python.entrypoint} code sha256:{code[:16]}"
+                server = {"model": selection.python.model_id, "engine": "python-adapter",
+                          "code_sha256": code}  # fmt: skip
             config = {
                 "managed": True,
                 "base_url": launch["base_url"],
                 "model_id": spec.model_id,
-                "declared_revision": f"{recipe.repository}@{recipe.revision[:12]} "
-                f"weights sha256:{recipe.weights.sha256[:16]}",
+                "declared_revision": revision[:120],
                 "timeout_seconds": selection.request_timeout_seconds,
                 "max_tokens": selection.max_tokens,
                 "evaluation_budget_seconds": selection.evaluation_budget_seconds,
                 "launch_id": launch["launch_id"],
                 "server": {
+                    **server,
                     "manifest_sha256": digest,
-                    "model": recipe.id,
-                    "engine": recipe.engine,
                     "accelerator": selection.accelerator,
                     "image": spec.image,
-                    "weights_sha256": recipe.weights.sha256,
+                    "weights_verified": verified,
                 },
             }
             self.model.configure(pid, config, own_port=None)
@@ -401,8 +512,10 @@ class ManagedService:
     def observe(self, pid: str, tail: int = 120) -> dict[str, Any]:
         view = self.refresh(pid)
         running = view.get("status") == "ready"
+        accelerator = (view.get("selection") or {}).get("accelerator")
         return {
             "managed_server": view,
+            "gpu": self.supervisor.gpu() if running and accelerator == "nvidia" else {},
             "container": self.supervisor.container_state(pid) if running else None,
             "resources": self.supervisor.stats(pid) if running else {},
             "metrics": self.supervisor.metrics(pid) if running else {},
@@ -413,7 +526,7 @@ class ManagedService:
     def load_suite(self, pid: str, runtime_update: Any) -> dict[str, Any]:
         project = self.store.get(pid)
         selection = self._selection(project)
-        suite_id = MODELS[selection.model].suite
+        suite_id = MODELS[selection.model].suite if selection.python is None else DEFAULT_SUITE
         try:
             cases = [{**case, "status": "not_run"} for case in suite_cases(suite_id)]
         except CatalogError:

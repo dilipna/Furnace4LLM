@@ -190,6 +190,9 @@ class ModelService:
                 "connected",
                 "Furnace-operated server is ready; weights were SHA-256 verified before launch."
                 if config.get("managed")
+                and (config.get("server") or {}).get("weights_verified", True)
+                else "Furnace-operated adapter server is ready; adapter code was digested."
+                if config.get("managed")
                 else "Local server advertises this model ID. No inference or weight identity is verified.",
             )
 
@@ -293,7 +296,8 @@ class ModelService:
                 "launch_id": config.get("launch_id"),
             }
             if config.get("managed"):
-                run["weights_verified_before_launch"] = True
+                server = config.get("server") or {}
+                run["weights_verified_before_launch"] = bool(server.get("weights_verified", True))
             self.save_run(pid, run, "Local endpoint evaluation started")
             self.log(pid, "evaluation_started", run_id=run["run_id"], cases=run["case_count"])
             began = time.monotonic()
