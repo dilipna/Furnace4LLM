@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import threading
 from itertools import pairwise
+from types import SimpleNamespace
 
 import pytest
 from furnace.sandbox import dependency_cache as cache
@@ -218,3 +219,61 @@ def test_other_initializer_winning_publication_is_kept_and_own_candidate_removed
     monkeypatch.setattr(sb, "_docker", competing)
     assert sb._deps_volume(tmp_path) == other
     assert set(docker.volumes) == {other}
+
+
+def test_competing_publication_can_become_visible_after_name_conflict(tmp_path, monkeypatch):
+    files = {"requirements.txt": b"example==1.0\n"}
+    (tmp_path / "requirements.txt").write_bytes(files["requirements.txt"])
+    docker = Docker()
+    key = cache.cache_key("requirements.txt", files, IMAGE_ID)
+    other = f"furnace-deps-v2-{key}-" + "e" * 32
+    pending = None
+    probes = 0
+
+    def delayed(*args, **kwargs):
+        nonlocal pending, probes
+        if args[0] == "create":
+            docker.volumes[other] = {"complete": True, "marker": True}
+            reference = [
+                f"furnace.cache.volume={other}"
+                if value.startswith("furnace.cache.volume=")
+                else other + ":/deps:ro"
+                if value.endswith(":/deps:ro")
+                else value
+                for value in args
+            ]
+            docker(*reference, **kwargs)
+            name = args[args.index("--name") + 1]
+            pending = (name, docker.containers.pop(name))
+            return subprocess.CompletedProcess(args, 1, "", "container name is reserved")
+        if args[:2] == ("container", "inspect") and pending:
+            probes += 1
+            if probes == 3:
+                docker.containers[pending[0]] = pending[1]
+        return docker(*args, **kwargs)
+
+    monkeypatch.setattr(sb, "_docker", delayed)
+    assert sb._deps_volume(tmp_path) == other
+    assert probes >= 3 and docker.installs == 1
+    assert set(docker.volumes) == {other}
+
+
+def test_unconfirmed_publication_expires_without_reinstalling_or_reusing(tmp_path, monkeypatch):
+    (tmp_path / "requirements.txt").write_text("example==1.0\n")
+    docker = Docker()
+
+    def unavailable(*args, **kwargs):
+        if args[0] == "create":
+            return subprocess.CompletedProcess(args, 1, "", "controlled create failure")
+        return docker(*args, **kwargs)
+
+    ticks = iter((0, 31))
+    monkeypatch.setattr(
+        cache, "time", SimpleNamespace(monotonic=lambda: next(ticks), sleep=lambda _: pytest.fail())
+    )
+    monkeypatch.setattr(sb, "_docker", unavailable)
+    with pytest.raises(sb.SandboxError, match="create exited 1: controlled create failure"):
+        sb._deps_volume(tmp_path)
+    assert docker.installs == 1
+    assert len(docker.volumes) == 1  # Ambiguous publication does not destroy its candidate.
+    assert not any(name.startswith("furnace-deps-v2-ready-") for name in docker.containers)

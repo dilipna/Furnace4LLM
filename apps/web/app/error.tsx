@@ -1,5 +1,6 @@
 "use client";
 
+import { RECORDED_ONLY } from "@/lib/site";
 import Link from "next/link";
 import { useEffect } from "react";
 import { Wordmark } from "@/components/ui/wordmark";
@@ -21,13 +22,14 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         </div>
       </header>
       <main className="mx-auto w-full max-w-[720px] flex-1 px-4 py-20 sm:px-6">
-        <p className="num text-[11.5px] tracking-[0.08em] text-ember uppercase">Results service unavailable</p>
+        <p className="num text-[11.5px] tracking-[0.08em] text-ember uppercase">Page unavailable</p>
         <h1 className="mt-3 font-display text-[30px] leading-tight font-semibold tracking-[-0.02em]">
           This page could not load its data.
         </h1>
         <p className="mt-4 text-[14px] leading-relaxed text-fg-2">
-          The page reads its figures from Furnace’s API, which did not answer. On a free hosted plan the API sleeps
-          when idle and takes about a minute to wake, so trying again usually works.
+          {RECORDED_ONLY
+            ? "The recorded page could not be displayed. No live evaluation is running. Try again or read the evidence files below."
+            : "The page could not display evaluation results. Check the API and runner logs, then try again."}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <button

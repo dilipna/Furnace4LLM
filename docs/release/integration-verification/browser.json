@@ -1,0 +1,45 @@
+{
+  "source_commit": "d70292c228e6fde53cce576a7b6e7f63b2119fb1",
+  "source_dirty": false,
+  "public": {
+    "engine": "157.0.4341.60",
+    "desktop_mobile": "passed",
+    "help_search": "matched_unmatched_and_clear",
+    "navigation": "passed",
+    "prerequisites": "self_report_not_machine_verification",
+    "clipboard": "browser_local_success_denial_stubs; OS_clipboard_not_tested",
+    "public_post_requests": 0
+  },
+  "studio": {
+    "welcome_project_disclosure": "passed",
+    "metadata_project_and_guided_example": "actual_API_persistence_no_execution",
+    "docker_calls": 0,
+    "managed_selection": "persisted_without_consent_download_or_execution; advanced_values_preserved",
+    "hardware_catalog": "mocked_unavailable; no_machine_compatibility_claim",
+    "connector": {
+      "http_test_server_only": true,
+      "installed_api_checks": "passed",
+      "malformed_unicode_refused": "passed",
+      "browser": {
+        "engine": "157.0.4341.60",
+        "checks": "passed",
+        "human_comprehension": "not_tested",
+        "bfcache_use": "not_asserted",
+        "persisted_pageshow_failure_recovery": "synthetic_event_passed",
+        "attempt_history": "failed_attempt_inspected_without_execution; retained_after_retry_and_configuration_edit; project_scoped; exported",
+        "case_import": "invalid_and_delayed_reads_safe; stale_replace_refused; explicit_replace_reset_statuses; kit_jsonl_round_trip"
+      },
+      "saved_run_id": "27d17be732874f698e19f5d96f2a9636",
+      "saved_history_ids": [
+        "fb1dd321e7894c34ba8a755592c00e51",
+        "3fea258a294d46218304e780a30eecec",
+        "30cd56e93ddc4299bf55cd5f1fb63d2e",
+        "27d17be732874f698e19f5d96f2a9636"
+      ],
+      "actual_http_requests": 18
+    }
+  },
+  "model_inference": false,
+  "human_comprehension": "not_tested",
+  "native_file_picker": "not_tested"
+}

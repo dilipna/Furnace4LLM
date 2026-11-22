@@ -5,8 +5,8 @@
   --bg-3: #deded3;
   --fg-0: #252b25;
   --fg-1: #424b40;
-  --fg-2: #60685d;
-  --fg-3: #70776c;
+  --fg-2: #535d50;
+  --fg-3: #5c6557;
   --line: #d8dacf;
   --line-strong: #bfc4b6;
   --ember: #b64422;
@@ -97,7 +97,7 @@
   flex-shrink: 0;
 }
 .hero h1 {
-  font: 600 clamp(48px, 5.8vw, 78px) / 1.02 var(--font-display);
+  font: 600 clamp(44px, 4.8vw, 68px) / 1.08 var(--font-display);
   letter-spacing: -0.065em;
   margin-block: 25px;
 }
@@ -147,8 +147,9 @@
   border-color: var(--ember);
 }
 .heroNote {
-  font-size: 11px;
-  color: var(--fg-3);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--fg-2);
   margin-top: 24px;
 }
 .heroNote a {
@@ -840,8 +841,8 @@
     gap: 18px;
     font-size: 11px;
   }
-  .nav > a:nth-child(2),
-  .nav > a:nth-child(3) {
+  .nav > a:nth-child(3),
+  .nav > a:nth-child(4) {
     display: none;
   }
   .sourceLink {
@@ -854,7 +855,7 @@
     gap: 37px;
   }
   .hero h1 {
-    font-size: clamp(48px, 10vw, 70px);
+    font-size: clamp(42px, 10vw, 64px);
     letter-spacing: -0.06em;
     margin-block: 22px;
   }

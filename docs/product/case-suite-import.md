@@ -1,6 +1,6 @@
 # Import evaluation cases into Studio
 
-In a saved project, open **Evaluations → Import an evaluation suite**. This workflow
+In a saved project, open **Checks → Import an evaluation suite**. This workflow
 works without Docker or a model. It prepares cases; it does not execute them.
 
 1. Choose a sanitized UTF-8 JSONL file: one case object per line, up to 30 cases and

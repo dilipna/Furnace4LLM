@@ -1,1 +1,1 @@
-export { default } from "@/components/marketing/evidence-home";
+export { default } from "@/components/workspace/simple-home";
