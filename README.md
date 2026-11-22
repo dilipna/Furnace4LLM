@@ -1,4 +1,28 @@
 # Furnace
+Furnace turns a supported research model into an isolated local service with evaluations, logs and crash recovery.
+For researchers who have a model but need the infrastructure around it. Studio is the front door; the hosted service remains a proposal.
+
+**Quickstart** — Git, Python 3.12 and uv; Docker with Linux containers for model serving:
+1. `git clone -c core.longpaths=true https://github.com/dilipna/Furnace4LLM.git`
+2. In the `Furnace4LLM` folder, run `uv sync --frozen`.
+3. Run `uv run furnace studio`. Open its private link, open the guided example (metadata only), then **Connect a local model server** to select Qwen. Review and approve preparation/start explicitly.
+![Studio model setup](docs/assets/studio-model-setup.png)
+*Recorded setup snapshot from PR #14; no model running. [Capture source](docs/assets/studio-model-setup.json). The guided fixture is not an LLM.*
+
+| Historical Windows/Docker CPU trial | Operational checks | Model rule score |
+| --- | --- | --- |
+| [Qwen2.5 0.5B](docs/release/integration-verification/real-model-qwen-cpu-584e1b9.json) | 33/33 | 11/12 |
+| [Granite 4.0 H 350M, Mamba-2 hybrid](docs/product/verification/real-model-granite-cpu.json) | 33/33 | 7/12 |
+Rule scores are not semantic quality; failures remain recorded. These are source-bound trials on one machine, not verification of every new checkout.
+[Architecture and bug stories](docs/interview-guide.md) · [Pilot checklist](docs/operations/pilot-checklist.md) · [Results and limits](docs/product/real-model-validation.md)
+
+## Earlier work
+Guard, Scan, Forge, FurnaceBench and the kernel lab are earlier engineering work. The original project notes and measurements are preserved below.
+
+<details>
+<summary>Expand earlier project notes, tooling and research</summary>
+
+# Furnace
 
 ## Researcher-platform direction (local development branch)
 
@@ -242,3 +266,6 @@ GPU numbers depend on the laptop's power state and on the clock the driver picks
 serving load (780 MHz on Oct 6-9, ~1,960 MHz on Oct 11 after a reboot; never throttled), so every
 result records its clock and comparisons are made only inside a set that shares one
 (`bench/results/2026-10-11-live-clock/`). FurnaceBench GPU drivers refuse to run on battery.
+
+
+</details>

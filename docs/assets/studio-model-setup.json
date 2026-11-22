@@ -1,0 +1,7 @@
+{
+  "source_commit": "9056f93225af97fcca2d553842c1e9ed314dd280",
+  "capture": "actual Studio setup screen; saved recipe; no preparation or inference",
+  "execution": "metadata only",
+  "human_comprehension": "not tested",
+  "cleanup": "disposable Studio stopped"
+}
