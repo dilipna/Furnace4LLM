@@ -12,14 +12,18 @@ All changes arrive by pull request with hosted CI green (`python`, `web`, `image
 ## 2. Re-run the real-model validation on that commit
 
 ```sh
-uv run python scripts/validate_managed_model.py --model qwen2.5-0.5b-instruct-q8_0 --accelerator cpu --out docs/product/verification/real-model-qwen-cpu.json
-uv run python scripts/validate_managed_model.py --model granite-4.0-h-350m-q8_0 --accelerator cpu --out docs/product/verification/real-model-granite-cpu.json
+uv run python scripts/validate_managed_model.py --model qwen2.5-0.5b-instruct-q8_0 --accelerator cpu --out docs/release/validation/COMMIT/real-model-qwen-cpu.json
+uv run python scripts/validate_managed_model.py --model granite-4.0-h-350m-q8_0 --accelerator cpu --out docs/release/validation/COMMIT/real-model-granite-cpu.json
 # and --accelerator nvidia on a machine with an NVIDIA GPU
-uv run python scripts/render_model_validation.py
+uv run python scripts/render_model_validation.py --records-only docs/release/validation/COMMIT
 ```
 
-Run from a clean tree (the record states the commit and whether the tree was clean). Any
-failed check blocks the release; record it, fix it, rerun. Do not edit thresholds or suite
+Run from a clean tree (the record states the commit and whether the tree was clean).
+Replace COMMIT with the source SHA and use a new directory for each attempt; keep failed
+records and the historical table. Run only the models/accelerators selected for this release.
+An operational pass and the model's rule score are separate results.
+
+Any failed operational check blocks the release; record it, fix it, rerun. Do not edit thresholds or suite
 expectations to make a run pass: a changed suite is a new suite version with a new digest.
 
 ## 3. Check the installed bundle outside the checkout
@@ -37,6 +41,12 @@ Writes `dist/release/furnace-studio-<version>+<commit>.zip`, `SHA256SUMS` and
 `release.json` (version, commit, file and wheel hashes, verified platforms read from the
 recorded runs). It refuses a dirty tree and checks that the packaged reference suite matches
 its pinned digest.
+With `--skip-build`, the existing bundle must match this commit, dirty state, version and
+wheel bytes. Stale or altered inputs are refused before existing release output is replaced.
+Untracked source files also make the checkout dirty. `--allow-dirty` is for labelled local
+experiments, not a way to relabel a bundle from another commit.
+Platform records include their original evidence commits and are historical observations,
+not proof that this newly built ZIP has passed those tests. Install and validate it separately.
 
 ## 5. Review the candidate
 

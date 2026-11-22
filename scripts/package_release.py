@@ -59,8 +59,44 @@ def verified_platforms() -> list[dict[str, str]]:
             "docker": f"{env.get('docker_os')} {env.get('docker_server')}",
             "accelerator": data["accelerator"],
             "evidence": record.relative_to(ROOT).as_posix(),
+            "evidence_commit": env.get("furnace_commit", "not recorded"),
         }
     return list(seen.values())
+
+
+def validate_bundle(
+    bundle: Path, wheels: list[Path], commit: str, dirty: bool, version: str
+) -> None:
+    """Refuse stale or inconsistent inputs before replacing any release output."""
+    try:
+        with zipfile.ZipFile(bundle) as archive:
+            manifest = json.loads(archive.read("manifest.json"))
+            if not isinstance(manifest, dict):
+                raise ValueError("manifest must be an object")
+            if (
+                manifest.get("source_commit") != commit
+                or type(manifest.get("source_dirty")) is not bool
+                or manifest["source_dirty"] != dirty
+                or manifest.get("package_version") != version
+            ):
+                raise SystemExit(
+                    "Preview source/version differs from this checkout; rebuild first."
+                )
+            expected = manifest.get("wheel_sha256")
+            if (
+                not isinstance(expected, dict)
+                or not expected
+                or set(expected) != {w.name for w in wheels}
+            ):
+                raise SystemExit(
+                    "Preview wheel inventory differs from dist/studio-wheels; rebuild first."
+                )
+            for wheel in wheels:
+                embedded = hashlib.sha256(archive.read("wheels/" + wheel.name)).hexdigest()
+                if embedded != expected[wheel.name] or sha256(wheel) != expected[wheel.name]:
+                    raise SystemExit("Preview wheel integrity mismatch; rebuild first.")
+    except (OSError, KeyError, ValueError, zipfile.BadZipFile):
+        raise SystemExit("Preview bundle is missing or invalid; rebuild first.") from None
 
 
 def check_wheel(wheel: Path) -> None:
@@ -80,7 +116,7 @@ def main() -> None:
     parser.add_argument("--skip-build", action="store_true", help="reuse dist/ from a build")
     parser.add_argument("--allow-dirty", action="store_true", help="for local experiments only")
     args = parser.parse_args()
-    dirty = git("status", "--porcelain", "--untracked-files=no") != ""
+    dirty = git("status", "--porcelain") != ""
     if dirty and not args.allow_dirty:
         raise SystemExit("Commit or stash changes first: a release must match one commit.")
     commit = git("rev-parse", "HEAD")
@@ -93,6 +129,7 @@ def main() -> None:
         )
     bundle = DIST / "furnace-studio-preview.zip"
     wheels = sorted((DIST / "studio-wheels").glob("*.whl"))
+    validate_bundle(bundle, wheels, commit, dirty, version)
     check_wheel(next(w for w in wheels if w.name.startswith("furnace-")))
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True)
@@ -115,6 +152,7 @@ def main() -> None:
         "wheels": {w.name: sha256(w) for w in wheels},
         "requires": "Python 3.12 and uv; Docker with Linux containers for model servers",
         "verified_platforms": {
+            "evidence_scope": "Historical recorded runs; not validation of this release ZIP.",
             "workspace_and_free_kit": "Windows 11 and Linux (installed-bundle checks)",
             "furnace_operated_model_servers": verified_platforms(),
             "not_verified": ["macOS", "fresh Windows user profile", "Linux host real-model runs"],
