@@ -168,6 +168,11 @@ class Supervisor:
     def pull(
         self, image: str, timeout: float = 1800, cancel: threading.Event | None = None
     ) -> None:
+        if re.fullmatch(r"sha256:[a-f0-9]{64}", image):
+            # A locally built image cannot be pulled; it must already be present.
+            if not self.image_present(image):
+                raise ServingFault("local_image_not_present")
+            return
         if "@sha256:" not in image:
             raise ServingFault("image_not_pinned")
         if not self.image_present(image):
@@ -401,6 +406,36 @@ class Supervisor:
         if key:
             text = text.replace(key, "[redacted]")
         return text[-LOG_LIMIT:]
+
+    def gpu(self) -> dict[str, Any]:
+        """Host GPU state from the driver's nvidia-smi; empty when no NVIDIA driver is present."""
+        executable = shutil.which("nvidia-smi")
+        if executable is None:
+            return {}
+        try:
+            result = subprocess.run(  # noqa: S603 -- driver tool, fixed read-only query
+                [
+                    executable,
+                    "--query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu",
+                    "--format=csv,noheader,nounits",
+                ],
+                capture_output=True,
+                text=True,
+                timeout=10,
+                check=False,
+            )
+            name, used, total, utilization, temperature = [
+                v.strip() for v in result.stdout.splitlines()[0].split(",")
+            ]
+            return {
+                "name": name,
+                "memory_used_mib": int(used),
+                "memory_total_mib": int(total),
+                "utilization_percent": int(utilization),
+                "temperature_c": int(temperature),
+            }
+        except (OSError, subprocess.TimeoutExpired, ValueError, IndexError):
+            return {}
 
     def stats(self, pid: str) -> dict[str, Any]:
         result = self._docker(

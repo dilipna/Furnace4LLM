@@ -15,7 +15,8 @@ key), connect evaluations to it, score cases by rule and check reproducibility. 
 models passed the full local journey on CPU and GPU, including injected crashes and recovery:
 Qwen2.5 0.5B Instruct and IBM Granite 4.0 H 350M (a Mamba-2 hybrid), on Windows 11 with
 Docker Desktop and an RTX 3050 Ti 4 GiB. [Runtime contract](docs/product/managed-local-runtime.md) ·
-[validation results](docs/product/real-model-validation.md) · [roadmap status](docs/release/roadmap-status.md).
+[validation results](docs/product/real-model-validation.md) · [roadmap status](docs/release/roadmap-status.md) ·
+[recovery runbook](docs/operations/recovery-runbook.md) · [privacy and retention](docs/operations/privacy-and-retention.md).
 
 A wheel-based downloadable preview requires Python/uv; a native installer, paid checkout and a
 hosted managed service are not yet available.

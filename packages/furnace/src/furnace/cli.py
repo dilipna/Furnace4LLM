@@ -83,7 +83,15 @@ def _print(obj: Any) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="furnace")
+    args = sys.argv[1:] if argv is None else argv
+    if args[:1] == ["studio-cleanup"]:
+        # Own argument parser: removes only what Furnace-operated servers left behind.
+        from furnace.runtime.cleanup import main as cleanup_main
+
+        return cleanup_main(args[1:])
+    p = argparse.ArgumentParser(
+        prog="furnace", epilog="furnace studio-cleanup --help: remove managed model servers"
+    )
     sub = p.add_subparsers(dest="cmd", required=True)
     studio = sub.add_parser("studio", help="open the local researcher application")
     studio.add_argument("--workspace", type=Path, default=Path.home() / ".furnace" / "studio")

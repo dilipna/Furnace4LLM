@@ -86,7 +86,10 @@ def test_cancelling_cli_reaps_the_actual_child(tmp_path, monkeypatch):
     thread.start()
     try:
         deadline = time.monotonic() + 5
-        while not started.exists() and time.monotonic() < deadline:
+        # write_text creates the file before writing it: wait for the content itself.
+        while time.monotonic() < deadline:
+            if started.exists() and started.read_text() == "started":
+                break
             time.sleep(0.01)
         assert started.read_text() == "started"
     finally:

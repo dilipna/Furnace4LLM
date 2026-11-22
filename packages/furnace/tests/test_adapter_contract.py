@@ -11,7 +11,13 @@ from pathlib import Path
 
 import pytest
 from furnace.runtime import pyserve
-from furnace.runtime.adapter import LaunchSettings, LlamaCppAdapter, PythonAdapter
+from furnace.runtime.adapter import (
+    AdapterError,
+    LaunchSettings,
+    LlamaCppAdapter,
+    PythonAdapter,
+    tree_digest,
+)
 from furnace.runtime.catalog import MODELS
 from furnace.runtime.endpoint import LocalChatEndpoint
 from furnace.runtime.manager import RuntimeFault
@@ -130,3 +136,29 @@ def test_operations_log_refuses_content_rotates_and_prunes_by_retention(tmp_path
     removed = log.prune({"p": 7})
     assert removed == 2
     assert all(e["at"] != old for e in log.read("p", 1000))
+
+
+def test_tree_digest_tracks_code_content_and_refuses_symlinks(tmp_path):
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "model.py").write_text("A = 1" + chr(10), encoding="utf-8")
+    (tmp_path / "pkg" / "__pycache__").mkdir()
+    (tmp_path / "pkg" / "__pycache__" / "model.pyc").write_bytes(b"cache")
+    first = tree_digest(tmp_path, content=True)
+    assert first["files"] == 1 and first["basis"] == "file contents"
+    (tmp_path / "pkg" / "model.py").write_text("A = 2" + chr(10), encoding="utf-8")
+    assert tree_digest(tmp_path, content=True)["sha256"] != first["sha256"]
+    # Names-and-sizes digests ignore content changes of the same length.
+    listing = tree_digest(tmp_path, content=False)
+    (tmp_path / "pkg" / "model.py").write_text("A = 3" + chr(10), encoding="utf-8")
+    assert tree_digest(tmp_path, content=False)["sha256"] == listing["sha256"]
+    try:
+        (tmp_path / "link.py").symlink_to(tmp_path / "pkg" / "model.py")
+    except OSError:
+        pytest.skip("this account cannot create symbolic links")
+    with pytest.raises(AdapterError, match="symlink"):
+        tree_digest(tmp_path, content=True)
+
+
+def test_local_image_ids_are_accepted_as_pinned(tmp_path):
+    adapter = PythonAdapter("sha256:" + "a" * 64, FIXTURE, "toy_adapter:Reverser", "toy")
+    assert adapter.images(LaunchSettings())[0] == "sha256:" + "a" * 64
