@@ -6,6 +6,7 @@ import hashlib
 import json
 import shutil
 import subprocess
+import tomllib
 import zipfile
 from pathlib import Path
 
@@ -18,14 +19,26 @@ def main() -> None:
     executable = shutil.which("uv")
     if executable is None:
         raise SystemExit("Install uv before building Studio")
-    names = []
-    for package in ("furnace-bench", "furnace", "furnace-api"):
+    projects = {
+        "furnace-bench": "packages/inference",
+        "furnace": "packages/furnace",
+        "furnace-api": "apps/api",
+    }
+    versions = {
+        package: tomllib.loads((ROOT / folder / "pyproject.toml").read_text())["project"]["version"]
+        for package, folder in projects.items()
+    }
+    package_wheels = {}
+    for package in projects:
         subprocess.run(  # noqa: S603 -- resolved uv, authored package names; no shell
             [executable, "build", "--package", package, "--wheel", "--out-dir", str(wheels)],
             cwd=ROOT,
             check=True,
         )
-        names.append(package.replace("-", "_") + "-0.1.0-py3-none-any.whl")
+        package_wheels[package] = (
+            f"{package.replace('-', '_')}-{versions[package]}-py3-none-any.whl"
+        )
+    names = list(package_wheels.values())
     subprocess.run(  # noqa: S603 -- fixed export arguments and workspace path
         [
             executable,
@@ -57,7 +70,8 @@ for name, expected in manifest['wheel_sha256'].items():
 uv = shutil.which('uv')
 if uv is None:
     raise SystemExit('Furnace needs uv to create its isolated environment. Install uv, reopen your terminal and run python launch.py again. See README.md for prerequisites.')
-command = [uv, 'tool', 'run', '--python', '3.12', '--with-requirements', str(root / 'requirements.txt'), '--from', str(wheels / 'furnace_api-0.1.0-py3-none-any.whl'), '--with', str(wheels / 'furnace-0.1.0-py3-none-any.whl'), '--with', str(wheels / 'furnace_bench-0.1.0-py3-none-any.whl'), 'furnace-studio', *sys.argv[1:]]
+packages = manifest['package_wheels']
+command = [uv, 'tool', 'run', '--python', '3.12', '--with-requirements', str(root / 'requirements.txt'), '--from', str(wheels / packages['furnace-api']), '--with', str(wheels / packages['furnace']), '--with', str(wheels / packages['furnace-bench']), 'furnace-studio', *sys.argv[1:]]
 try:
     raise SystemExit(subprocess.call(command))
 except KeyboardInterrupt:
@@ -134,7 +148,8 @@ folder after reviewing retention. Do not delete shared model folders or uv cache
     manifest = {
         "source_commit": source_commit,
         "source_dirty": source_dirty,
-        "package_version": "0.1.0",
+        "package_version": versions["furnace"],
+        "package_wheels": package_wheels,
         "kind": "local_application_preview",
         "model_execution": False,
         "model_execution_note": "Building this archive performed no inference; explicit local managed-model execution is available at runtime.",
