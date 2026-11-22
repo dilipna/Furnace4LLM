@@ -39,6 +39,12 @@ def main() -> None:
             f"{package.replace('-', '_')}-{versions[package]}-py3-none-any.whl"
         )
     names = list(package_wheels.values())
+    # This generated directory may still contain wheels from a previous version.
+    # Remove only superseded outputs for the packages this builder owns.
+    for package in projects:
+        for previous in wheels.glob(f"{package.replace('-', '_')}-*.whl"):
+            if previous.name not in names:
+                previous.unlink()
     subprocess.run(  # noqa: S603 -- fixed export arguments and workspace path
         [
             executable,

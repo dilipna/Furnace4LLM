@@ -31,6 +31,10 @@ def test_version_bump_builds_and_launches_the_declared_package_wheels(
         config = tmp_path / folder / "pyproject.toml"
         config.parent.mkdir(parents=True)
         config.write_text(f'[project]\nname = "{name}"\nversion = "{version}"\n')
+    wheels = tmp_path / "dist/studio-wheels"
+    wheels.mkdir(parents=True)
+    for name in packages:
+        (wheels / f"{name.replace('-', '_')}-0.0.9-py3-none-any.whl").write_bytes(b"previous build")
 
     def uv(args, **kwargs):
         if args[1] == "build":
@@ -53,6 +57,7 @@ def test_version_bump_builds_and_launches_the_declared_package_wheels(
         lambda args, **kwargs: "commit-sha\n" if "rev-parse" in args else "",
     )
     builder.main()
+    assert len(list(wheels.glob("*.whl"))) == len(packages)
     install = tmp_path / "installed"
     with zipfile.ZipFile(tmp_path / "dist/furnace-studio-preview.zip") as archive:
         manifest = json.loads(archive.read("manifest.json"))
