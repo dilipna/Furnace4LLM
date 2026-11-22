@@ -56,3 +56,19 @@ Actual walkthrough, pilot and review dates are not known: the supplied [DAY]/[DA
 values were placeholders. No reminder or timed delivery is scheduled. The pilot sheet
 is prepared to forward; feedback and case-study observations remain blank.
 The recruiter video/site update is a prepared storyboard, not published media.
+
+## November 22 integration follow-up
+
+The checkpoint above is historical. After rechecking unchanged PR #14 head
+`9056f93225af97fcca2d553842c1e9ed314dd280` and its successful checks, the owner
+authorized a normal merge. Main is now `963c48478fc8eda82ffb65006db8adaa8185cc29`;
+[main CI](https://github.com/dilipna/Furnace4LLM/actions/runs/45060489476) and
+[saved evidence](https://github.com/dilipna/Furnace4LLM/actions/runs/45060489597)
+passed. PR #12 was closed as integrated through #13 and labelled `superseded-by-13`;
+its branch remains. Draft PRs #15 and #16 now target main and remain unmerged.
+
+The owner confirmed walkthrough November 24, pilot November 29 and review December 3.
+The [pilot sheet](../operations/pilot-checklist.md) records these planned dates;
+actual observations remain blank. A one-time November 23 reminder will hand off the
+walkthrough sheet. Resume claims now distinguish recorded restart identity from
+answer quality and omit an unsupported count of independently reviewed PRs.

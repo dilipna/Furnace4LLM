@@ -73,6 +73,8 @@ Without reading implementation, explain the purpose, distinguish the fixture fro
 model, identify prerequisites, interpret an exported result and find the next action.
 Record actual confusion and help. Automation does not fill in this observation sheet.
 
-Dilip's walkthrough date: ______  Review/rehearsal date: ______  Pilot date: ______
-Send this sheet the day before the confirmed walkthrough. Placeholder [DAY]/[DATE]
-values are not scheduled dates; no reminder or delivery schedule has been created.
+Dilip's walkthrough: **November 24, 2026**. Pilot: **November 29, 2026**;
+participant confirmation pending. Review/rehearsal: **December 3, 2026**.
+The owner is forwarding prerequisites and will confirm the participant by November 24.
+A one-time reminder is scheduled for November 23 to send this walkthrough sheet.
+These are planned sessions; all observations and participant feedback remain blank.
