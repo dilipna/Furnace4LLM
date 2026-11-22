@@ -1,7 +1,7 @@
 # Assisted deployment pilot
 
-Status: planned. No participant, session date, feedback or successful deployment is
-claimed yet. Dilip will assist one unfamiliar friend/classmate. This is a local research
+Status: planned for November 29, 2026; participant confirmation is pending. No actual
+feedback or successful deployment is claimed. Dilip will assist one unfamiliar friend/classmate. This is a local research
 pilot, not a paid customer or production deployment.
 
 ## Forward this prerequisite sheet
