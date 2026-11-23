@@ -37,6 +37,7 @@ def main() -> None:
         "clean_profile": False,
     }
     checks = record["checks"]
+    completed = False
     env = {
         **os.environ,
         "PATH": os.path.join(os.environ.get("SYSTEMROOT", "C:\\Windows"), "System32"),
@@ -77,11 +78,25 @@ def main() -> None:
             page = browser.new_page(viewport={"width": 1440, "height": 960}, device_scale_factor=1)
             errors = []
             page.on("pageerror", lambda e: errors.append(str(e)))
+            page.on(
+                "console",
+                lambda message: errors.append(message.text) if message.type == "error" else None,
+            )
             page.goto(ready["url"] + "/#session=" + ready["token"])
             expect(
                 page.get_by_role("heading", name="What would you like to work on?")
             ).to_be_visible()
-            expect(page.locator("#first-run")).to_be_visible(timeout=30000)
+            try:
+                expect(page.locator("#first-run")).to_be_visible(timeout=30000)
+            except Exception:
+                record["browser_errors"] = [
+                    message.replace(ready["token"], "<redacted>") for message in errors
+                ]
+                page.screenshot(path=str(args.screenshots / "failed-first-run.png"), full_page=True)
+                record["diagnostic_system_response"] = httpx.get(
+                    ready["url"] + "/api/system", headers=headers, timeout=30, trust_env=False
+                ).status_code
+                raise
             checks["opened_studio_in_browser"] = True
             system = api("system")
             record["preflight"] = system["runtime"]
@@ -104,6 +119,7 @@ def main() -> None:
             checks["no_browser_errors"] = not errors
             browser.close()
         assert all(checks.values()), record
+        completed = True
     finally:
         if child.stdin:
             with contextlib.suppress(OSError):
@@ -115,7 +131,8 @@ def main() -> None:
         )
         if child.returncode:
             raise RuntimeError("Installed Studio probe failed: " + stderr[-1000:])
-        record["result"] = "passed" if all(checks.values()) else "failed"
+        record["completed"] = completed
+        record["result"] = "passed" if completed and all(checks.values()) else "failed"
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     assert record["result"] == "passed"

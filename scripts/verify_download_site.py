@@ -53,7 +53,8 @@ def main() -> None:
         downloaded.unlink()
         # Return to the clean first screen for actual desktop/mobile captures.
         page.get_by_text("Version, build date & SHA-256").click()
-        page.screenshot(path=str(args.screenshots / "home-desktop.png"), full_page=True)
+        page.screenshot(path=str(args.screenshots / "home-desktop.png"))
+        page.screenshot(path=str(args.screenshots / "home-desktop-full.png"), full_page=True)
         links = set()
         for route in (
             "/",
@@ -79,7 +80,9 @@ def main() -> None:
                 if href.startswith("/") and not href.startswith("//"):
                     links.add(href.split("#")[0])
             for image in page.locator("img").all():
-                assert image.evaluate("img => img.complete && img.naturalWidth > 0"), (
+                image.scroll_into_view_if_needed()
+                expect(image).to_have_js_property("complete", True)
+                assert image.evaluate("img => img.naturalWidth > 0"), (
                     route,
                     image.get_attribute("src"),
                 )
@@ -94,12 +97,21 @@ def main() -> None:
         page.get_by_role("button", name="Switch color theme").click()
         expect(page.locator(".download-site")).to_have_attribute("data-theme", "dark")
         checks["theme_toggle"] = True
-        page.set_viewport_size({"width": 390, "height": 844})
-        page.goto(args.url)
-        assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (
+        mobile = browser.new_context(
+            viewport={"width": 390, "height": 844},
+            is_mobile=True,
+            has_touch=True,
+            color_scheme="light",
+            user_agent="Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/134.0.0.0 Mobile Safari/537.36",
+        )
+        mobile_page = mobile.new_page()
+        mobile_page.goto(args.url)
+        expect(mobile_page.get_by_role("link", name="See download options")).to_be_visible()
+        assert mobile_page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (
             "Mobile overflow"
         )
-        page.screenshot(path=str(args.screenshots / "home-mobile.png"), full_page=True)
+        mobile_page.screenshot(path=str(args.screenshots / "home-mobile.png"))
+        mobile_page.screenshot(path=str(args.screenshots / "home-mobile-full.png"), full_page=True)
         checks["mobile_layout"] = True
         mac = browser.new_context(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)")
         mac_page = mac.new_page()

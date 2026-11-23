@@ -1,0 +1,26 @@
+{
+  "schema": "furnace-product-captures-v1",
+  "installed_build": {
+    "schema": "furnace-windows-installer-v1",
+    "version": "0.1.0",
+    "commit": "3d8a93dcee3c52afe53c7fe5daf25f24a249cfa2",
+    "built_at": "2026-11-23T20:05:21.265627+00:00",
+    "published": false,
+    "platform": "windows-x64",
+    "python": "3.12.13",
+    "compiler": "Inno Setup 6.4.3",
+    "signed": false,
+    "wheel_sha256": {
+      "furnace_bench-0.1.0-py3-none-any.whl": "525ffc8f98db594f9b2309e73bbb7c8ebbfc9e0394216ef442d2907f8a7a7bef",
+      "furnace-0.1.0-py3-none-any.whl": "0680baad061600e26a0a62f0c46ce1a5c3e76bc85fb8a36a7e397f94e5ab167f",
+      "furnace_api-0.1.0-py3-none-any.whl": "514396266cf3a15d44d278d79b4b2bf9bc6f53b710d7d6b5212271088b060d4e"
+    },
+    "reproducibility": "Repeatable pinned-input recipe; binary identity is not established (PE timestamps/signing)."
+  },
+  "model_inference": false,
+  "screenshots": {
+    "installer.png": "f1abb9a372ff417f345c434210644d5837b4d533c21068d2c164c49952e4f2fc",
+    "studio-home.png": "f37db7f3f4a443c18f362ec874caf48c01adcd78287695033adf64d01d80d095",
+    "studio-example.png": "92b7959f615e8290939cd040ca7d59d525306f6eacaceac0de31aa8d114d9e15"
+  }
+}

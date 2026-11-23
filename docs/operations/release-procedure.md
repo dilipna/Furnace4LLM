@@ -1,5 +1,9 @@
 # Release procedure (Studio download)
 
+For the self-contained Windows installer and exact artifact/site verification, use
+[Windows download operations](windows-download.md). The wheel-preview procedure below
+still applies to that separate developer-oriented ZIP. Publication remains owner-approved.
+
 How a Studio download goes from a reviewed commit to something people may install. Steps 1–5
 are local and repeatable; step 6 is outward-facing and happens only with the owner's approval.
 

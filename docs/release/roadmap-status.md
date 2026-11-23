@@ -96,7 +96,10 @@ optionally, the weights store and pinned images; `scripts/package_release.py` bu
 versioned candidate (`furnace-studio-<version>+<commit>.zip`) with `SHA256SUMS` and
 `release.json` (commit, hashes, verified platforms read from the recorded runs) and refuses a
 dirty tree. Procedure: [release-procedure.md](../operations/release-procedure.md).
-Not done: fresh Windows/macOS user-profile installation test, native installer, automatic
+New draft milestone: self-contained per-user Windows installer, terminal-free launcher,
+first-run Docker check and a Studio-first download site. See
+[Windows download operations](../operations/windows-download.md) and its linked evidence.
+Not done: manual fresh Windows/macOS consumer-profile installation test, automatic
 updates, publisher signing, and publication itself (an outward-facing step that needs owner
 approval).
 Verified operating systems for the managed model path: **Windows 11 with Docker Desktop

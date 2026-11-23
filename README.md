@@ -18,7 +18,10 @@ Docker Desktop and an RTX 3050 Ti 4 GiB. [Runtime contract](docs/product/managed
 [validation results](docs/product/real-model-validation.md) · [roadmap status](docs/release/roadmap-status.md) ·
 [recovery runbook](docs/operations/recovery-runbook.md) · [privacy and retention](docs/operations/privacy-and-retention.md).
 
-A wheel-based downloadable preview requires Python/uv; a native installer, paid checkout and a
+A wheel-based downloadable preview requires Python/uv. An unpublished, self-contained
+Windows installer is now built by `scripts/build_windows.py`; see the
+[installer and website preview guide](docs/operations/windows-download.md) for build,
+verification, retention and unsigned-download details. Paid checkout and a
 hosted managed service are not yet available.
 
 ```bash
