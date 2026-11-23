@@ -37,6 +37,7 @@ def main() -> None:
         "events": [],
         "result": "failed",
     }
+    record["workspace"] = str(workspace)
     child = subprocess.Popen(  # noqa: S603 -- installed runtime and owned probe
         [
             str(args.app / "runtime/python.exe"),
@@ -80,6 +81,10 @@ def main() -> None:
                 record["events"].append(
                     {"stage": name, "seconds": round(time.monotonic() - began, 2), "caption": text}
                 )
+                (args.out / "progress.json").write_text(
+                    json.dumps(record, indent=2) + "\n", encoding="utf-8"
+                )
+                print("Recorded stage: " + name, flush=True)
                 page.wait_for_timeout(2000)
 
             def wait_state(path: str, predicate, timeout: int = 180):

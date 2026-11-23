@@ -296,7 +296,11 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
     def asset(
         name: Literal["studio.js", "studio.css", "studio-state.mjs", "model.js", "case-import.mjs"],
     ):
-        return FileResponse(ASSETS / name)
+        # Windows registry MIME mappings can label .js/.mjs text/plain. Browsers
+        # then refuse the entire module graph; shipped assets have known types.
+        return FileResponse(
+            ASSETS / name, media_type="text/css" if name.endswith(".css") else "text/javascript"
+        )
 
     @app.get("/healthz")
     def health():
