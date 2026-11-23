@@ -443,6 +443,14 @@ $("#check-environment").onclick = event => action(event.currentTarget, "environm
     projects = await api("projects"); current = projects[0] || null;
     for (const project of projects) checked.set(project.id, new Date());
     render(); if (!token) notice("Open Studio through the private session link printed by furnace studio.");
+    if (token) {
+      api("system").then(system => {
+        const runtime = system.runtime;
+        $("#first-run-detail").textContent = (readinessMessages[runtime.code] || ["Check local Docker", "Open Environment & compatibility to inspect the local engine."]).join(". ");
+        $("#docker-download").hidden = !["docker_unavailable", "docker_context_unavailable"].includes(runtime.code);
+        $("#first-run").hidden = false;
+      }).catch(() => { notice("Environment check was unavailable. You can still inspect projects; retry Environment & compatibility."); });
+    }
   } catch (error) { notice(error.message); }
 })();
 

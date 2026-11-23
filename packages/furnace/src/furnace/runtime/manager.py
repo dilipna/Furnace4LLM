@@ -73,6 +73,7 @@ class RuntimeManager:
                             "--format",
                             "{{json .Endpoints.docker.Host}}",
                         ],
+                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                         capture_output=True,
                         text=True,
                         timeout=5,
@@ -100,6 +101,7 @@ class RuntimeManager:
         try:
             result = subprocess.run(  # noqa: S603 -- resolved Docker, fixed argv; never a shell
                 [executable, *args],
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 input=data,
                 capture_output=True,
                 text=True,
