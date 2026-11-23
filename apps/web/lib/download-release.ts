@@ -14,3 +14,10 @@ export function readInstaller(): Installer | null {
   if (binary.byteLength !== value.bytes || createHash("sha256").update(binary).digest("hex") !== value.sha256) throw new Error("Installer bytes differ from build metadata");
   return value;
 }
+
+export function readReleaseNotes(): { tag_name: string; name: string; published_at: string; html_url: string; body: string }[] {
+  const file = join(process.cwd(), "public/downloads/releases.json");
+  if (!existsSync(file)) return [];
+  const data = JSON.parse(readFileSync(file, "utf8"));
+  return data.releases.filter((item: { html_url: string }) => item.html_url.startsWith("https://github.com/dilipna/Furnace4LLM/releases/"));
+}

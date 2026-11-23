@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -50,6 +51,7 @@ def main() -> None:
     runtime = stage / "runtime"
     base = Path(sys.base_prefix)
     runtime.mkdir(parents=True)
+    shutil.copy2(ROOT / "packaging/windows/furnace.ico", stage / "furnace.ico")
     for name in ("DLLs", "Lib", "tcl"):
         shutil.copytree(
             base / name,
@@ -125,6 +127,7 @@ def main() -> None:
         "commit": commit,
         "built_at": datetime.now(UTC).isoformat(),
         "published": False,
+        "source_dirty": False,
         "platform": "windows-x64",
         "python": sys.version.split()[0],
         "compiler": "Inno Setup 6.4.3",
@@ -144,9 +147,28 @@ def main() -> None:
     if args.sign_command:
         command += ["/DSignBuild", "/Sfurnace=" + args.sign_command]
     command.append(str(ROOT / "packaging/windows/furnace.iss"))
-    run(*command)
+    compiler_output = run(*command)
+    if "6.4.3" not in compiler_output:
+        raise SystemExit("Use the pinned Inno Setup 6.4.3 compiler.")
     installer = OUT / f"Furnace-{version}-{commit[:12]}-windows-x64.exe"
-    manifest.update(file=installer.name, bytes=installer.stat().st_size, sha256=digest(installer))
+    if run("git", "rev-parse", "HEAD") != commit or run("git", "status", "--porcelain"):
+        raise SystemExit("Source changed during the build; rebuild from a clean commit.")
+    os.environ["FURNACE_VERIFY_BINARY"] = str(installer.resolve())
+    signature = run(
+        "powershell",
+        "-NoProfile",
+        "-Command",
+        "(Get-AuthenticodeSignature -LiteralPath $env:FURNACE_VERIFY_BINARY).Status",
+    )
+    if args.sign_command and signature != "Valid":
+        raise SystemExit("Signing was requested but Authenticode is not valid.")
+    manifest.update(
+        file=installer.name,
+        bytes=installer.stat().st_size,
+        sha256=digest(installer),
+        signed=signature == "Valid",
+        signature_status=signature,
+    )
     (OUT / "installer.json").write_text(json.dumps(manifest, indent=2) + "\n")
     (OUT / "SHA256SUMS").write_text(f"{manifest['sha256']}  {installer.name}\n")
     print(json.dumps(manifest, indent=2))

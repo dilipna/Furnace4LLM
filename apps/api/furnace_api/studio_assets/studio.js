@@ -446,7 +446,7 @@ $("#check-environment").onclick = event => action(event.currentTarget, "environm
     if (token) {
       api("system").then(system => {
         const runtime = system.runtime;
-        $("#first-run-detail").textContent = (readinessMessages[runtime.code] || ["Check local Docker", "Open Environment & compatibility to inspect the local engine."]).join(". ");
+        $("#first-run-detail").textContent = (["image_ready", "image_not_prepared"].includes(runtime.code) ? ["Docker with Linux containers is available", "You can prepare a pinned model. The separate fixture image is optional."] : readinessMessages[runtime.code] || ["Check local Docker", "Open Environment & compatibility to inspect the local engine."]).join(". ");
         $("#docker-download").hidden = !["docker_unavailable", "docker_context_unavailable"].includes(runtime.code);
         $("#first-run").hidden = false;
       }).catch(() => { notice("Environment check was unavailable. You can still inspect projects; retry Environment & compatibility."); });

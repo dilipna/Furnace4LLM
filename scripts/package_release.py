@@ -111,10 +111,39 @@ def check_wheel(wheel: Path) -> None:
         archive.getinfo("furnace/runtime/pyserve.py")
 
 
+def validate_windows(metadata: Path, commit: str, version: str) -> tuple[Path, dict]:
+    try:
+        data = json.loads(metadata.read_text())
+        name = data["file"]
+        if (
+            not isinstance(name, str)
+            or Path(name).name != name
+            or not name.endswith("-windows-x64.exe")
+        ):
+            raise ValueError("invalid filename")
+        binary = metadata.parent / name
+        if (
+            data["commit"] != commit
+            or data["version"] != version
+            or data.get("source_dirty") is not False
+        ):
+            raise ValueError("source/version mismatch")
+        if data["bytes"] != binary.stat().st_size or data["sha256"] != sha256(binary):
+            raise ValueError("integrity mismatch")
+        return binary, data
+    except (OSError, ValueError, KeyError, TypeError):
+        raise SystemExit(
+            "Windows installer source/version/integrity is invalid; rebuild first."
+        ) from None
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--skip-build", action="store_true", help="reuse dist/ from a build")
     parser.add_argument("--allow-dirty", action="store_true", help="for local experiments only")
+    parser.add_argument(
+        "--windows", type=Path, help="include this installer.json after verifying source and bytes"
+    )
     args = parser.parse_args()
     dirty = git("status", "--porcelain") != ""
     if dirty and not args.allow_dirty:
@@ -130,6 +159,9 @@ def main() -> None:
     bundle = DIST / "furnace-studio-preview.zip"
     wheels = sorted((DIST / "studio-wheels").glob("*.whl"))
     validate_bundle(bundle, wheels, commit, dirty, version)
+    windows = validate_windows(args.windows, commit, version) if args.windows else None
+    if windows and dirty:
+        raise SystemExit("Windows distribution requires a clean checkout.")
     check_wheel(next(w for w in wheels if w.name.startswith("furnace-")))
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True)
@@ -137,6 +169,11 @@ def main() -> None:
     target = OUT / name
     shutil.copy2(bundle, target)
     files = {name: {"sha256": sha256(target), "bytes": target.stat().st_size}}
+    if windows:
+        binary, info = windows
+        shutil.copy2(binary, OUT / binary.name)
+        shutil.copy2(args.windows, OUT / "installer.json")
+        files[binary.name] = {"sha256": info["sha256"], "bytes": info["bytes"]}
     (OUT / "SHA256SUMS").write_text(
         "".join(f"{info['sha256']}  {file}\n" for file, info in files.items()),
         encoding="utf-8",
@@ -151,6 +188,7 @@ def main() -> None:
         "files": files,
         "wheels": {w.name: sha256(w) for w in wheels},
         "requires": "Python 3.12 and uv; Docker with Linux containers for model servers",
+        "windows_installer": windows[1] if windows else None,
         "verified_platforms": {
             "evidence_scope": "Historical recorded runs; not validation of this release ZIP.",
             "workspace_and_free_kit": "Windows 11 and Linux (installed-bundle checks)",

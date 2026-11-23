@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import secrets
 import socket
+import sys
 import threading
 import time
 import webbrowser
@@ -66,6 +67,10 @@ class DesktopService:
 
 
 def main() -> None:
+    if sys.platform == "win32":
+        import ctypes
+
+        ctypes.windll.user32.SetProcessDPIAware()
     import tkinter as tk
     from tkinter import messagebox, ttk
 
@@ -75,6 +80,9 @@ def main() -> None:
     args = parser.parse_args()
     window = tk.Tk()
     window.title("Furnace")
+    icon = Path(sys.executable).resolve().parents[1] / "furnace.ico"
+    if sys.platform == "win32" and icon.is_file():
+        window.iconbitmap(default=str(icon))
     window.geometry("440x245")
     window.resizable(False, False)
     frame = ttk.Frame(window, padding=28)

@@ -5,18 +5,21 @@ import "./globals.css";
 const display = Schibsted_Grotesk({
   variable: "--font-schibsted",
   subsets: ["latin"],
+  preload: false,
   weight: ["500", "600", "700"],
 });
 
 const sans = IBM_Plex_Sans({
   variable: "--font-plex-sans",
   subsets: ["latin"],
+  preload: false,
   weight: ["400", "500", "600"],
 });
 
 const mono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin"],
+  preload: false,
   weight: ["400", "500"],
 });
 
