@@ -12,15 +12,22 @@ TOKEN = "studio-test-token-" * 3
 
 
 @pytest.mark.parametrize(
-    "name", ["studio.js", "model.js", "studio-state.mjs", "case-import.mjs", "studio.css"]
+    "name",
+    ["studio.js", "model.js", "studio-state.mjs", "case-import.mjs", "studio.css", "favicon.svg"],
 )
 def test_asset_mime_does_not_depend_on_windows_registry(setup, monkeypatch, name):
     mimetypes.init()
-    for extension in (".js", ".mjs", ".css"):
+    for extension in (".js", ".mjs", ".css", ".svg"):
         monkeypatch.setitem(mimetypes.types_map, extension, "text/plain")
     client, _, _ = setup
     response = client.get("/assets/" + name)
-    expected = "text/css" if name.endswith(".css") else "text/javascript"
+    expected = (
+        "image/svg+xml"
+        if name.endswith(".svg")
+        else "text/css"
+        if name.endswith(".css")
+        else "text/javascript"
+    )
     assert response.status_code == 200
     assert response.headers["content-type"].startswith(expected)
     assert response.content

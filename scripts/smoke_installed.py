@@ -117,6 +117,9 @@ def main() -> None:
             )
             checks["kit_export"] = export.status_code == 200 and export.content[:2] == b"PK"
             checks["no_browser_errors"] = not errors
+            record["browser_errors"] = [
+                message.replace(ready["token"], "<redacted>") for message in errors
+            ]
             browser.close()
         assert all(checks.values()), record
         completed = True

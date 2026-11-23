@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from furnace.runtime.lease import WorkspaceLease
 from furnace.runtime.manager import RuntimeFault, RuntimeManager
 from furnace.runtime.oplog import OperationsLog
@@ -294,13 +294,29 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
 
     @app.get("/assets/{name}")
     def asset(
-        name: Literal["studio.js", "studio.css", "studio-state.mjs", "model.js", "case-import.mjs"],
+        name: Literal[
+            "studio.js",
+            "studio.css",
+            "studio-state.mjs",
+            "model.js",
+            "case-import.mjs",
+            "favicon.svg",
+        ],
     ):
         # Windows registry MIME mappings can label .js/.mjs text/plain. Browsers
         # then refuse the entire module graph; shipped assets have known types.
-        return FileResponse(
-            ASSETS / name, media_type="text/css" if name.endswith(".css") else "text/javascript"
+        media = (
+            "image/svg+xml"
+            if name.endswith(".svg")
+            else "text/css"
+            if name.endswith(".css")
+            else "text/javascript"
         )
+        return FileResponse(ASSETS / name, media_type=media)
+
+    @app.get("/favicon.ico")
+    def favicon():
+        return RedirectResponse("/assets/favicon.svg")
 
     @app.get("/healthz")
     def health():
