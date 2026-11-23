@@ -1,6 +1,9 @@
 # Recruiter demo: recording plan
 
 Status: storyboard prepared; final video and public-site update are not published.
+The owner's recording script is [the 90-second Studio demo](operations/demo-script-90s.md).
+Use that script for narration and crash/restart choreography; this page describes
+the recorded-only public-site handoff.
 Use the reviewed candidate after its merge decision. Stay on the existing recorded-only
 site at a zero hosting budget. A public visitor must not start a server or submit a prompt
 to Dilip's machine. Recorded steps and any interactive navigation must be labelled.

@@ -13,7 +13,9 @@ For researchers who have a model but need the infrastructure around it. Studio i
 | --- | --- | --- |
 | [Qwen2.5 0.5B](docs/release/integration-verification/real-model-qwen-cpu-584e1b9.json) | 33/33 | 11/12 |
 | [Granite 4.0 H 350M, Mamba-2 hybrid](docs/product/verification/real-model-granite-cpu.json) | 33/33 | 7/12 |
-Rule scores are not semantic quality; failures remain recorded. These are source-bound trials on one machine, not verification of every new checkout.
+Recorded on one Windows 11 + Docker Desktop machine (RTX 3050 Ti); raw records linked.
+Both models also passed the operational journey on NVIDIA GPU: [Qwen GPU record](docs/product/verification/real-model-qwen-nvidia.json) · [Granite GPU record](docs/product/verification/real-model-granite-nvidia.json).
+Rule scores are not semantic quality; failures remain recorded. [Trial scope and limits](docs/product/real-model-validation.md).
 [Architecture and bug stories](docs/interview-guide.md) · [Pilot checklist](docs/operations/pilot-checklist.md) · [Results and limits](docs/product/real-model-validation.md)
 
 ## Earlier work
