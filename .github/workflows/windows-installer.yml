@@ -30,8 +30,9 @@ jobs:
           $binary = Join-Path (Resolve-Path dist/windows) $metadata.file
           if ((Get-FileHash -LiteralPath $binary).Hash.ToLower() -ne $metadata.sha256) { throw 'Installer digest mismatch' }
           $appDir = Join-Path $env:RUNNER_TEMP 'Furnace-installed'
-          $process = Start-Process $binary -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="'+$appDir+'"'),'/GROUP=Furnace CI','/TASKS=desktopicon') -WindowStyle Hidden -Wait -PassThru
+          $process = Start-Process $binary -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="'+$appDir+'"'),'/GROUP="Furnace CI"','/TASKS=desktopicon') -WindowStyle Hidden -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw "Install failed: $($process.ExitCode)" }
+          if (-not (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{3F41BE5E-54F7-4D62-A03C-187CB6478E72}_is1')) { throw 'Per-user uninstall registration missing' }
           if (-not (Test-Path (Join-Path $env:APPDATA 'Microsoft/Windows/Start Menu/Programs/Furnace CI/Furnace.lnk'))) { throw 'Start shortcut missing' }
           if (-not (Test-Path (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Furnace.lnk'))) { throw 'Desktop shortcut missing' }
           "FURNACE_TEST_APP=$appDir" >> $env:GITHUB_ENV

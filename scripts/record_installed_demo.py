@@ -172,7 +172,7 @@ def main() -> None:
             ]
             docker = shutil.which("docker")
             assert docker
-            names = subprocess.check_output(
+            names = subprocess.check_output(  # noqa: S603 -- exact owned workspace/project/role
                 [
                     docker,
                     "ps",
@@ -186,7 +186,7 @@ def main() -> None:
                     "{{.Names}}",
                 ],
                 text=True,
-            ).split()  # noqa: S603 -- exact owned workspace/project/role
+            ).split()
             assert len(names) == 1 and names[0].startswith("furnace-model-")
             subprocess.run([docker, "kill", names[0]], check=True, capture_output=True)  # noqa: S603 -- deliberate failure injection into the one verified demo container
             interrupted = wait_state(
@@ -203,10 +203,11 @@ def main() -> None:
             )
             # This UI deliberately refreshes health on request; do not pretend it
             # has a live alerting subsystem or restart against stale ready state.
-            with page.expect_response(
-                lambda r: r.url.endswith("/model") and r.request.method == "GET"
-            ):
+            with page.expect_response(lambda r: r.url.endswith("/managed/observe")):
                 page.locator("#managed-observe-refresh").click()
+            with page.expect_response(lambda r: r.url.endswith("/api/projects")):
+                page.locator("#model-refresh").click()
+            page.locator("#managed-consent").check()
             page.locator("#managed-start").click()
             wait_state(f"projects/{pid}/managed", lambda v: v["status"] == "ready", 300)
             page.locator("#model-evaluate").click()
