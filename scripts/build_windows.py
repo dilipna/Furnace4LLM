@@ -158,7 +158,7 @@ def main() -> None:
         "powershell",
         "-NoProfile",
         "-Command",
-        "(Get-AuthenticodeSignature -LiteralPath $env:FURNACE_VERIFY_BINARY).Status",
+        "$env:PSModulePath=Join-Path $PSHOME 'Modules'; Import-Module Microsoft.PowerShell.Security -ErrorAction Stop; (Get-AuthenticodeSignature -LiteralPath $env:FURNACE_VERIFY_BINARY).Status",
     )
     if args.sign_command and signature != "Valid":
         raise SystemExit("Signing was requested but Authenticode is not valid.")

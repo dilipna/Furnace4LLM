@@ -2,11 +2,35 @@
 
 import argparse
 import functools
+import gzip
 import http.server
+import io
 from pathlib import Path
 
 
 class ExportHandler(http.server.SimpleHTTPRequestHandler):
+    def send_head(self):
+        file = Path(self.translate_path(self.path))
+        if (
+            file.is_file()
+            and file.suffix in {".html", ".css", ".js", ".json", ".svg", ".txt"}
+            and "gzip" in self.headers.get("Accept-Encoding", "")
+        ):
+            data = gzip.compress(file.read_bytes(), mtime=0)
+            self.send_response(200)
+            self.send_header("Content-Type", self.guess_type(str(file)))
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Vary", "Accept-Encoding")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            return io.BytesIO(data)
+        return super().send_head()
+
+    def end_headers(self):
+        if self.path.startswith("/_next/static/"):
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+        super().end_headers()
+
     def send_error(self, code: int, message: str | None = None, explain: str | None = None) -> None:
         page = Path(self.directory) / "404.html"
         if code == 404 and page.is_file():

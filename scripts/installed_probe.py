@@ -9,7 +9,7 @@ from furnace_api import desktop
 
 app, workspace = map(Path, sys.argv[1:3])
 assert Path(desktop.__file__).resolve().is_relative_to(app.resolve())
-service = desktop.DesktopService(workspace)
+service = desktop.DesktopService(workspace, Path(sys.argv[3]) if len(sys.argv) > 3 else None)
 service.start()
 # The caller reads this through a private pipe and never persists the session URL/token.
 print(
