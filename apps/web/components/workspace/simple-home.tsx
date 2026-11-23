@@ -80,7 +80,7 @@ export default function SimpleHome() {
             Reviewed recipes include CPU options; NVIDIA execution additionally needs GPU support
             in Docker. Recorded model validation has specific hardware and version limits.</p>
         </details>
-        <a id="experiment" href="/research#experiment">Looking for the prefix-cache experiment? Read the research ↗</a>
+        <Link id="experiment" href="/research#experiment">Looking for the prefix-cache experiment? Read the research ↗</Link>
       </section>
     </SiteShell>
   );

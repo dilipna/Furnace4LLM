@@ -37,3 +37,4 @@ fixtures/apps/*/traces/
 bench/.cache/
 docs/demo-video/
 *.pem
+apps/web/public/downloads/
