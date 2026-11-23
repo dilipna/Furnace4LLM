@@ -1,6 +1,7 @@
 import functools
 import http.server
 import importlib.util
+import mimetypes
 import threading
 from pathlib import Path
 
@@ -14,7 +15,11 @@ preview = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(preview)
 
 
-def test_preview_prefers_exported_route_over_asset_directory_and_serves_real_404(tmp_path):
+def test_preview_prefers_exported_route_over_asset_directory_and_serves_real_404(
+    tmp_path, monkeypatch
+):
+    mimetypes.init()
+    monkeypatch.setitem(mimetypes.types_map, ".js", "text/plain")
     (tmp_path / "demo").mkdir()
     (tmp_path / "demo.html").write_text("<h1>Recorded tour</h1>")
     (tmp_path / "404.html").write_text("<h1>Not found</h1>")
@@ -34,6 +39,7 @@ def test_preview_prefers_exported_route_over_asset_directory_and_serves_real_404
             assert missing.status_code == 404 and "Not found" in missing.text
             asset = client.get("/_next/static/chunk.js")
             assert asset.headers["Content-Encoding"] == "gzip"
+            assert asset.headers["Content-Type"] == "text/javascript"
             assert asset.text == js.read_text()
             assert "immutable" in asset.headers["Cache-Control"]
     finally:

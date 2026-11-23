@@ -187,7 +187,7 @@ def main() -> None:
         "built_at": datetime.now(UTC).isoformat(),
         "files": files,
         "wheels": {w.name: sha256(w) for w in wheels},
-        "requires": "Python 3.12 and uv; Docker with Linux containers for model servers",
+        "requires": "Wheel kit: Python 3.12 and uv. Windows installer: runtime bundled. Model servers: Docker with Linux containers.",
         "windows_installer": windows[1] if windows else None,
         "verified_platforms": {
             "evidence_scope": "Historical recorded runs; not validation of this release ZIP.",

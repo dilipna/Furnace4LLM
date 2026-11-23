@@ -22,5 +22,19 @@
     "installer.png": "f1abb9a372ff417f345c434210644d5837b4d533c21068d2c164c49952e4f2fc",
     "studio-home.png": "f37db7f3f4a443c18f362ec874caf48c01adcd78287695033adf64d01d80d095",
     "studio-example.png": "92b7959f615e8290939cd040ca7d59d525306f6eacaceac0de31aa8d114d9e15"
+  },
+  "dimensions": {
+    "installer.png": [
+      714,
+      579
+    ],
+    "studio-home.png": [
+      1440,
+      1250
+    ],
+    "studio-example.png": [
+      1440,
+      1548
+    ]
   }
 }

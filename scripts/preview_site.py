@@ -9,6 +9,19 @@ from pathlib import Path
 
 
 class ExportHandler(http.server.SimpleHTTPRequestHandler):
+    # Do not inherit Windows registry MIME overrides for executable web assets.
+    extensions_map = {
+        **http.server.SimpleHTTPRequestHandler.extensions_map,
+        ".js": "text/javascript",
+        ".mjs": "text/javascript",
+        ".css": "text/css",
+        ".svg": "image/svg+xml",
+        ".html": "text/html",
+        ".json": "application/json",
+        ".vtt": "text/vtt",
+        ".webm": "video/webm",
+    }
+
     def send_head(self):
         file = Path(self.translate_path(self.path))
         if (

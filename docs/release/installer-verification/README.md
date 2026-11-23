@@ -36,3 +36,20 @@ Clean consumer-account/SmartScreen behavior, interactive uninstall data choices,
 comprehension and an independent pilot require actual people. Browser automation and
 fresh hosted runners are not evidence of those outcomes. Legal drafts and public
 distribution licensing need owner review before publishing.
+
+## Subsequent executed checks
+
+- Windows CI at `a836fc8`: [run 45269076892](https://github.com/dilipna/Furnace4LLM/actions/runs/45269076892)
+  passed native install/window lifecycle, browser preflight/example/export, lease
+  release, uninstall/data retention, actual download/hash and site checks.
+  Lighthouse 13.0.1 measured **97 performance / 100 accessibility / 100 SEO**.
+  The run artifacts contain the raw report and installer-specific receipts.
+- `lighthouse-local-reviewed.json`: local working-tree preview, Lighthouse 13.0.1,
+  **100 / 100 / 100** after recording/build work finished. This is separate from
+  exact-head hosted results and is not a controlled comparison with the initial run.
+- `recording-3d8a93d.json`: actual installed Qwen CPU browser recording receipt.
+  Cached preparation assets; automated interaction, not a human comprehension test.
+  Rule score **11/12**, cross-launch identical outputs **12/12**, deliberate crash,
+  explicit refresh/consent/restart, and clean shutdown/lease release. Media stays
+  local and unpublished in generated preview output. Installation is shown with
+  separate real stills, not continuous installation footage.

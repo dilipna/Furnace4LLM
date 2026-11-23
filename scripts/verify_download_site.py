@@ -94,6 +94,13 @@ def main() -> None:
         page.get_by_role("button", name="3. Explore").click()
         expect(page.get_by_role("heading", name="3. Explore the guided example")).to_be_visible()
         checks["recorded_tour"] = True
+        page.get_by_role("link", name="Docs", exact=True).first.click()
+        expect(page).to_have_url(args.url + "/docs")
+        page.get_by_role("link", name="Tour", exact=True).first.click()
+        expect(
+            page.get_by_role("heading", name="A look inside your local workspace.")
+        ).to_be_visible()
+        checks["header_navigation"] = True
         page.get_by_role("button", name="Switch color theme").click()
         expect(page.locator(".download-site")).to_have_attribute("data-theme", "dark")
         checks["theme_toggle"] = True

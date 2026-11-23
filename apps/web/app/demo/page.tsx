@@ -1,2 +1,3 @@
 import { InstalledTour } from "@/components/download/tour";
-export default function DemoPage() { return <InstalledTour />; }
+import { readRecording } from "@/lib/recording";
+export default function DemoPage() { return <InstalledTour recording={readRecording()} />; }

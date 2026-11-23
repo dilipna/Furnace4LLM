@@ -10,6 +10,8 @@ export function readInstaller(): Installer | null {
   if (!existsSync(metadata)) return null;
   const value: unknown = JSON.parse(readFileSync(metadata, "utf8"));
   if (!validInstaller(value)) throw new Error("Invalid installer metadata");
+  if (value.download_url) return value;
+  if (process.env.FURNACE_PUBLIC_SITE === "true") throw new Error("Stage an approved public release link before deploying; local installers exceed Pages limits");
   const binary = readFileSync(join(root, value.file));
   if (binary.byteLength !== value.bytes || createHash("sha256").update(binary).digest("hex") !== value.sha256) throw new Error("Installer bytes differ from build metadata");
   return value;

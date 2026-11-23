@@ -154,10 +154,32 @@ Only **after explicit approval**, these are the separate outward-facing commands
 ```powershell
 # PUBLIC GITHUB RELEASE — do not run during draft review:
 gh release create TAG dist/release/* --repo dilipna/Furnace4LLM --title 'Furnace VERSION' --generate-notes
+# Prepare the website only AFTER the exact reviewed release is public:
+uv run python scripts/stage_download.py --published-tag TAG
+uv run python scripts/export_release_notes.py
+$env:NEXT_PUBLIC_RECORDED_ONLY='true'
+$env:FURNACE_PUBLIC_SITE='true'
+pnpm --dir apps/web build:static
+uv run python scripts/check_pages_bundle.py
 # WEBSITE DEPLOY — separate approval, existing free Cloudflare Pages project:
-Push-Location apps/web/cloudflare; wrangler pages deploy ../out --project-name furnace --branch main; Pop-Location
+Push-Location apps/web/cloudflare
+wrangler pages deploy ../out --project-name furnace --branch main
+Pop-Location
 ```
 
 Replace TAG/VERSION with the reviewed version; review the release-note preview first.
 The deploy command assumes the owner's existing authenticated Wrangler installation.
 No new account, domain, paid hosting, billing or waitlist backend is created here.
+
+Cloudflare Pages has a [25 MiB per-file limit](https://developers.cloudflare.com/pages/platform/limits/).
+The Windows installer exceeds it. Local previews serve the actual executable; public
+builds link to an already approved GitHub Release asset, verifying its SHA-256 digest,
+size and owned repository URL against the reviewed candidate. The staging command
+never creates a release. The size gate rejects a local preview or oversized files
+before deployment. No paid storage or new account is required. Public-link staging
+has unit coverage with authored release metadata; it has not been exercised against
+a newly published Furnace installer because publication is not authorized.
+
+To stage the executed local recording before building the preview:
+`uv run python scripts/stage_recording.py dist/installed-demo-reviewed`.
+The media stays in ignored generated output; this does not publish it.

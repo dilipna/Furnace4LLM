@@ -10,3 +10,10 @@ test("installer metadata must identify real bounded bytes, source and a safe fil
   assert.ok(validInstaller(data));
   for (const patch of [{file: "../evil.exe"}, {file: "https://evil.test/a.exe"}, {sha256: "invalid"}, {bytes: 0}, {bytes: Infinity}, {bytes: 1.2}, {built_at: "not a date"}, {signed: "yes"}, {commit: "unknown"}]) assert.equal(validInstaller({...data, ...patch}), false);
 });
+
+test("published downloads require the owned release URL, exact name and publication date", () => {
+  const data = {version: "0.1.0", commit: "a".repeat(40), built_at: "2026-11-23T00:00:00Z", file: "Furnace-0.1.0-aaaaaaaaaaaa-windows-x64.exe", bytes: 100, sha256: "b".repeat(64), signed: false, published: true, published_at: "2026-11-23T01:00:00Z"};
+  const url = "https://github.com/dilipna/Furnace4LLM/releases/download/v0.1.0/" + data.file;
+  assert.ok(validInstaller({...data, download_url:url}));
+  for (const patch of [{download_url:url.replace("github.com", "evil.test")}, {download_url:url+"?redirect=evil"}, {download_url:url+"#other"}, {download_url:url.replace("dilipna", "other")}, {download_url:url.replace(data.file, "wrong.exe")}, {download_url:url, published:false}, {download_url:url, published_at:"invalid"}]) assert.equal(validInstaller({...data, ...patch}), false);
+});
