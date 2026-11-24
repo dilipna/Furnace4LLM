@@ -1,0 +1,104 @@
+F
+================================== FAILURES ===================================
+_________________ test_lost_lease_cancels_the_running_handler _________________
+
+ctx = <furnace.jobs.worker.JobContext object at 0x000001F12CD9BB90>
+
+    async def long_job(ctx):
+        try:
+>           await asyncio.sleep(60)
+
+packages\furnace\tests\test_lease_original_reproduction.py:215: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+delay = 60, result = None
+
+    async def sleep(delay, result=None):
+        """Coroutine that completes after a given time (in seconds)."""
+        if delay <= 0:
+            await __sleep0()
+            return result
+    
+        loop = events.get_running_loop()
+        future = loop.create_future()
+        h = loop.call_later(delay,
+                            futures._set_result_unless_cancelled,
+                            future, result)
+        try:
+>           return await future
+                   ^^^^^^^^^^^^
+E           asyncio.exceptions.CancelledError
+
+C:\Users\Dilip\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\tasks.py:665: CancelledError
+
+The above exception was the direct cause of the following exception:
+
+clean_jobs = None, short_lease = None
+
+    @pytest.mark.adversarial
+    async def test_lost_lease_cancels_the_running_handler(clean_jobs, short_lease):
+        """If another claim takes the job (this worker stalled), the heartbeat notices and the
+        handler is cancelled before it can write anything else; the other claim's state stands."""
+        from furnace.jobs import worker
+        from sqlalchemy import text
+    
+        cancelled = asyncio.Event()
+    
+        async def long_job(ctx):
+            try:
+                await asyncio.sleep(60)
+            except asyncio.CancelledError:
+                cancelled.set()
+                raise
+    
+        worker.HANDLERS["test.long"] = long_job
+        try:
+            async with session_scope() as s:
+                job = await queue.enqueue(s, queue="cpu", kind="test.long", max_attempts=3)
+            run = asyncio.create_task(worker.run_one("w-slow", ["cpu"]))
+            await asyncio.sleep(0.5)
+            async with session_scope() as s:  # another worker re-claims it
+                await s.execute(
+                    text("UPDATE jobs SET locked_by='thief', attempts=attempts+1 WHERE id=:i"),
+                    {"i": job.id},
+                )
+>           assert await asyncio.wait_for(run, 15)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+packages\furnace\tests\test_lease_original_reproduction.py:231: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Dilip\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\tasks.py:519: in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <Timeout [expired]>
+exc_type = <class 'asyncio.exceptions.CancelledError'>
+exc_val = CancelledError(), exc_tb = <traceback object at 0x000001F12D62A780>
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
+        assert self._state in (_State.ENTERED, _State.EXPIRING)
+    
+        if self._timeout_handler is not None:
+            self._timeout_handler.cancel()
+            self._timeout_handler = None
+    
+        if self._state is _State.EXPIRING:
+            self._state = _State.EXPIRED
+    
+            if self._task.uncancel() <= self._cancelling and exc_type is exceptions.CancelledError:
+                # Since there are no new cancel requests, we're
+                # handling this.
+>               raise TimeoutError from exc_val
+E               TimeoutError
+
+C:\Users\Dilip\AppData\Roaming\uv\python\cpython-3.12-windows-x86_64-none\Lib\asyncio\timeouts.py:115: TimeoutError
+=========================== short test summary info ===========================
+FAILED packages/furnace/tests/test_lease_original_reproduction.py::test_lost_lease_cancels_the_running_handler
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed in 19.29s
