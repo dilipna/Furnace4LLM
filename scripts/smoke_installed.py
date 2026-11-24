@@ -83,6 +83,9 @@ def main() -> None:
                 lambda message: errors.append(message.text) if message.type == "error" else None,
             )
             page.goto(ready["url"] + "/#session=" + ready["token"])
+            expect(page.get_by_role("heading", name="A little help.", exact=False)).to_be_visible()
+            checks["everyday_home_opened"] = True
+            page.get_by_role("link", name="Advanced / Developers", exact=False).click()
             expect(
                 page.get_by_role("heading", name="What would you like to work on?")
             ).to_be_visible()

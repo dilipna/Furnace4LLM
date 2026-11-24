@@ -40,6 +40,10 @@ jobs:
         shell: powershell
         run: ./scripts/test_windows_window.ps1 -AppDir $env:FURNACE_TEST_APP -Installer (Join-Path (Resolve-Path dist/windows) (Get-Content dist/windows/installer.json -Raw | ConvertFrom-Json).file) -Screenshots dist/captures
       - run: uv run playwright install chromium
+      - name: Bounded extraction and document privacy regressions
+        run: uv run pytest -q apps/api/tests/test_everyday.py
+      - name: Document drop, scripted summary and privacy receipt
+        run: uv run python scripts/verify_everyday.py
       - name: Installed browser journey with developer tools removed from PATH
         run: uv run python scripts/smoke_installed.py --app "$env:FURNACE_TEST_APP" --out dist/installed-smoke.json --screenshots dist/captures
       - name: Uninstall and retain user workspace
@@ -102,6 +106,7 @@ jobs:
             dist/lighthouse.json
             dist/captures/
             dist/site-screenshots/
+            dist/everyday-browser/
             apps/web/out/
           retention-days: 14
           if-no-files-found: error
