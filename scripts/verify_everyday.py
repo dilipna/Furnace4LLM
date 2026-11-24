@@ -100,6 +100,37 @@ def main() -> None:
                 page.get_by_role("button", name="New conversation", exact=False).click()
                 expect(page.locator(".answer")).to_have_count(0)
                 record["checks"]["clear_removes_conversation"] = True
+                code = "CONTEXT-CODE-827"
+                ANSWERS[code] = code
+                page.locator("#question").fill("Remember my code: " + code)
+                page.locator("#send").click()
+                expect(page.locator(".output").last).to_have_text(code)
+                page.locator("#question").fill("What code did I mention?")
+                page.locator("#send").click()
+                expect(page.locator(".output")).to_have_count(2)
+                expect(page.locator(".output").last).to_have_text(code)
+                page.get_by_role("button", name="New conversation", exact=False).click()
+                page.locator("#question").fill("What code did I mention?")
+                page.locator("#send").click()
+                expect(page.locator(".output")).to_have_count(1)
+                expect(page.locator(".output").last).to_have_text("I am not sure.")
+                record["checks"]["recent_chat_context_and_clear"] = True
+                page.get_by_role("button", name="New conversation", exact=False).click()
+                page.evaluate("""() => {
+                  const original=window.fetch;
+                  window.fetch=async (...args)=>{
+                    const response=await original(...args);
+                    if(String(args[0]).endsWith('/answer')) await new Promise(resolve=>setTimeout(resolve,1000));
+                    return response;
+                  };
+                }""")
+                page.locator("#question").fill("Remember my code: " + code)
+                with page.expect_response(lambda response: response.url.endswith("/answer")):
+                    page.locator("#send").click()
+                page.get_by_role("button", name="New conversation", exact=False).click()
+                expect(page.locator("#composer")).to_have_attribute("aria-busy", "false")
+                expect(page.locator(".answer")).to_have_count(0)
+                record["checks"]["late_answer_cannot_restore_cleared_content"] = True
                 mobile = browser.new_page(
                     viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True
                 )

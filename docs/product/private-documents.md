@@ -36,14 +36,16 @@ remain outside the model's Docker boundary.
 ### Tasks and long documents
 
 Summarise, document questions, action items, dates, simplify, draft a reply, translate,
-or an independent chat request. Previous messages are displayed in this tab but are not
-automatically resent as model context. Clear or close the tab to discard them. There is
+or chat. The browser resends only the most recent user/assistant pair for plain chat,
+bounded to 600 UTF-8 bytes. Shortened context is labelled; full answers remain visible
+in this tab. Document tasks do not reuse unrelated chat context. Clear or close the tab
+to discard it. There is
 no persistent conversation history or automatic answer export.
 
 Inputs are split on UTF-8 character boundaries into at most 1,000-byte sections. This
 conservative byte budget supports the configured 4,096-token context; it is not a token
 counter or retrieval index. Section results are combined in bounded stages for summaries,
-questions and extraction. Translation/rewrite joins independently processed sections;
+questions and extraction. Translation, rewriting, actions and dates join independently processed sections;
 cross-section coherence can suffer. The response and UI disclose staging, section count
 and actual request count. Request/time/depth limits stop runaway processing. A token-limit
 ending or a model/configuration change cannot produce a completed answer/receipt.

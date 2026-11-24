@@ -257,3 +257,38 @@ def test_windows_parser_job_enforces_its_memory_limit():
             child.kill()
         child.wait()
         job.close()
+
+
+def test_chat_context_is_bounded_and_ephemeral(tmp_path, monkeypatch):
+    app, fake = build(tmp_path)
+    with client_for(app) as client:
+        pid = ready_project(client)
+        privacy_double(app, fake, pid)
+        marker = "PRIVATE_CHAT_CONTEXT_543987"
+        monkeypatch.setitem(ANSWERS, marker, "context received")
+        response = client.post(
+            f"/api/everyday/projects/{pid}/answer",
+            json={
+                "action": "chat",
+                "question": "What did I say?",
+                "history": [{"role": "user", "content": marker}],
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["output"] == "context received"
+        assert response.json()["processing"]["history_turns"] == 1
+        assert marker not in client.get(f"/api/projects/{pid}").text
+        assert marker.encode() not in (tmp_path / "ws/studio.sqlite3").read_bytes()
+        invalid = client.post(
+            f"/api/everyday/projects/{pid}/answer",
+            json={
+                "action": "chat",
+                "question": "What did I say?",
+                "history": [
+                    {"role": "user", "content": "secret" * 100},
+                    {"role": "assistant", "content": "another secret"},
+                ],
+            },
+        )
+        assert invalid.status_code == 422
+        assert "another secret" not in invalid.text
