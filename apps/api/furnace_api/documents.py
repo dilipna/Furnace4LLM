@@ -15,6 +15,8 @@ from fastapi import HTTPException
 class WindowsJob:
     """Bound the parser's memory/CPU and kill it when its owning handle closes."""
 
+    kernel: ctypes.CDLL
+
     def __init__(self, pid: int):
         if sys.platform != "win32":
             raise OSError("Windows Job Objects are only available on Windows")
