@@ -246,7 +246,7 @@ def test_windows_parser_job_enforces_its_memory_limit():
         stdin=subprocess.PIPE,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NO_WINDOW,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
     )
     job = WindowsJob(child.pid)
     try:
