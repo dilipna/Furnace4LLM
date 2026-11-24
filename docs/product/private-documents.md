@@ -1,0 +1,107 @@
+# Private documents — local product branch
+
+Status: draft development, not the #18 installer walkthrough and not published.
+The new default screen is `/`; existing Studio is intact at `/advanced`, with its model
+workspace at `/model`. No accounts, billing, cloud inference or analytics are added.
+
+## Data flow
+
+```mermaid
+flowchart LR
+  A[File or pasted text in browser memory] -->|authenticated loopback| B[Local extraction subprocess]
+  B -->|extracted text, no temp file| A
+  A -->|explicit task request| C[Bounded section processing]
+  C --> D[Existing managed prediction path]
+  D --> E[Loopback relay]
+  E --> F[Pinned model on internal Docker network]
+  F --> E --> D --> C --> A
+  G[Docker configuration observations] --> C
+  C --> H[Answer plus scoped privacy receipt]
+```
+
+### Supported inputs and bounds
+
+PDF with selectable text, DOCX, UTF-8 TXT/Markdown, or pasted text. No OCR, `.doc`, macro
+execution, external document links or remote parsers. Maximum upload 3 MB, PDF 40 pages,
+and extracted text 24,000 UTF-8 bytes. Unsupported/complex/encrypted files fail explicitly;
+they are not silently truncated.
+
+Extraction uses pipes rather than temporary files. The separate parser has a 384 MiB
+memory limit and 8-second CPU limit (Windows Job Object; Unix resource limits), with
+a 12-second parent deadline. PDF decompression/work limits and hardened DOCX XML parsing
+are additional defenses. These resource limits are **not** an OS sandbox for arbitrary
+parser code. A parser vulnerability, host malware, browser extensions, swap or crash dumps
+remain outside the model's Docker boundary.
+
+### Tasks and long documents
+
+Summarise, document questions, action items, dates, simplify, draft a reply, translate,
+or an independent chat request. Previous messages are displayed in this tab but are not
+automatically resent as model context. Clear or close the tab to discard them. There is
+no persistent conversation history or automatic answer export.
+
+Inputs are split on UTF-8 character boundaries into at most 1,000-byte sections. This
+conservative byte budget supports the configured 4,096-token context; it is not a token
+counter or retrieval index. Section results are combined in bounded stages for summaries,
+questions and extraction. Translation/rewrite joins independently processed sections;
+cross-section coherence can suffer. The response and UI disclose staging, section count
+and actual request count. Request/time/depth limits stop runaway processing. A token-limit
+ending or a model/configuration change cannot produce a completed answer/receipt.
+
+Documents can contain prompt injections. The prompt treats them as data; that instruction
+is not a guaranteed defense against misleading output. The model has no tools, document
+write access or internet route supplied by this workflow. Check consequential answers.
+This product is not medical, legal, financial or regulatory-compliance advice/certification.
+
+## What the privacy receipt proves
+
+Before and after each request, Furnace checks the exact managed launch, pinned endpoint
+identity, model weights verification recorded before launch, pinned image and observed
+Docker settings: only its internal network, non-root user, read-only root/bind mounts,
+all capabilities dropped, no new privileges and no direct published model ports. Missing,
+false or changed evidence blocks the request or discards the answer. A scripted adapter
+receipt is explicitly labelled test-only, never real Docker proof.
+
+The receipt reports observation time, launch/model IDs, revision and weight hash. Weights
+were hashed before launch; the receipt does not pretend to rehash them on every answer.
+This is configuration evidence, **not** proof that nothing left the entire computer or
+continuous packet capture. The host, Docker daemon, browser and other programs can have
+internet access. Downloading app/model files uses internet; answering uses the local path.
+
+Application policy: document text and answers are not written to project records,
+operation logs or project exports. Regression tests search actual records/logs and
+decompressed exports for unique source/answer markers. That test coverage is not a runtime
+DLP scanner and does not cover user copies, OS/browser caches or privileged attackers.
+
+## Model candidate and evaluation
+
+Default candidate: official Qwen2.5-1.5B-Instruct Q4_K_M, revision
+`91cad51170dc346986eccefdc2dd33a9da36ead9`, weights SHA-256
+`6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e`.
+The [official pinned model card](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/blob/91cad51170dc346986eccefdc2dd33a9da36ead9/README.md)
+declares Apache-2.0; the repository contains its license. Preserve its license/notices
+when distributing weights. This is distinct from Qwen2.5-3B's license; no inference about
+an entire model family is used. The 0.5B recipe remains the low-memory option.
+
+The candidate targets CPU with 8 GB available to Docker and the owner's 4 GB NVIDIA GPU.
+Those are validation targets until the installed-runtime trials are recorded. Do not
+substitute the older 0.5B/Granite records or scripted browser checks for new evidence.
+`everyday_suite.json` contains synthetic documents and fixed field/rule checks. Missing-
+information and reply-quality tasks remain unscored for human review. Per-task latency,
+failures, token-limit results and model identity belong in the actual run record; no
+semantic quality score or speed guarantee is inferred from field presence.
+
+## Verify locally
+
+```powershell
+uv sync --frozen
+uv run pytest -q apps/api/tests/test_everyday.py
+uv run playwright install chromium
+uv run python scripts/verify_everyday.py
+```
+
+The browser harness runs real extraction and loopback requests through the scripted
+test adapter, checks the receipt, clear, mobile layout and absence of external requests.
+It does not run an LLM or demonstrate human comprehension. Windows CI keeps this separate
+from installation/preflight/export/quit/uninstall checks. New installed-model receipts
+and an actual document recording are required before this product direction is published.

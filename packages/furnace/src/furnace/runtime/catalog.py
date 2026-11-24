@@ -97,6 +97,28 @@ MODELS = {
     recipe.id: recipe
     for recipe in (
         ModelRecipe(
+            id="qwen2.5-1.5b-instruct-q4_k_m",
+            name="Qwen2.5 1.5B Instruct (Q4_K_M GGUF)",
+            architecture="qwen2 (decoder-only transformer)",
+            family_note="Everyday document candidate. Quality and latency are measured separately from privacy checks.",
+            parameters="1.54B",
+            license="apache-2.0",
+            repository="Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+            revision="91cad51170dc346986eccefdc2dd33a9da36ead9",
+            weights=Artifact(
+                url="https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/"
+                "91cad51170dc346986eccefdc2dd33a9da36ead9/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+                sha256="6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+                size=1117320736,
+                filename="qwen2.5-1.5b-instruct-q4_k_m.gguf",
+            ),
+            alias="qwen2.5-1.5b-instruct-q4_k_m",
+            context_tokens=4096,
+            engine=LLAMA_CPP.id,
+            suite="general-tasks-v1",
+            hardware="Candidate for CPU with 8 GiB Docker memory and a 4 GiB NVIDIA GPU; see recorded validation, not a universal fit guarantee.",
+        ),
+        ModelRecipe(
             id="qwen2.5-0.5b-instruct-q8_0",
             name="Qwen2.5 0.5B Instruct (Q8_0 GGUF)",
             architecture="qwen2 (decoder-only transformer)",

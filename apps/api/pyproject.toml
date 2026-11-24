@@ -9,6 +9,8 @@ dependencies = [
   "uvicorn[standard]>=0.32",
   "sse-starlette>=2.1",
   "python-multipart>=0.0.12",
+  "pypdf>=7.1.1,<8",
+  "defusedxml>=0.7.1,<1",
 ]
 
 [build-system]
