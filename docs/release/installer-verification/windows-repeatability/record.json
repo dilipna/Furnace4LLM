@@ -78,5 +78,6 @@
     "qwen_cpu_load-db-unavailable-aborted.txt": "96ad5c98193cbed00823416d4bbd2ed413040f98aaacfea24537f819e4c14f7e",
     "qwen_cpu_load-interrupted.txt": "cbd71287f5b55eb6d81914667fb0327de68fb636b00fc35af1b95c79828dd5fd",
     "qwen_cpu_load.txt": "180a49899a4e8acf18a69e1be847b1520856029925276be04a89d6960f69d8a8"
-  }
+  },
+  "hash_encoding": "raw_files hashes preserve exact bytes via scoped -text attributes. runs[].log_sha256 hashes UTF-8 log text with LF line endings."
 }
