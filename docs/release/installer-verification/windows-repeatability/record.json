@@ -1,0 +1,83 @@
+{
+  "source": "9015d135979f4d3f12e8ce3c83dbe92fc094a42b",
+  "clean_source": true,
+  "docker_containers_before": [
+    "dbos-ws311",
+    "furnace-pr18-test-postgres",
+    "dbos-pg",
+    "dbos-ws",
+    "cal-api",
+    "wc26-mlops-grafana-1",
+    "wc26-mlops-prometheus-1",
+    "wc26-mlops-serving-1",
+    "wc26-mlops-mlflow-1",
+    "wc26-mlops-postgres-1"
+  ],
+  "runs": [
+    {
+      "scenario": "no_model",
+      "started_at": "2026-11-23T22:47:44.633108+00:00",
+      "seconds": 321.97,
+      "exit_code": 0,
+      "summary": "731 passed, 4 skipped, 1 warning in 317.22s (0:05:17)",
+      "log_sha256": "24383ce3c162af6851fd6a84841f292fa3531037d33905439e25be27673be0ef"
+    },
+    {
+      "scenario": "qwen_cpu_load",
+      "started_at": "2026-11-24T04:33:26.611278+00:00",
+      "seconds": 877.06,
+      "exit_code": 0,
+      "summary": "731 passed, 4 skipped, 1 warning in 863.22s (0:14:23)",
+      "log_sha256": "9eef4a2bc0353696844108531137206b62401c1f5071617a1e9c7cc7bdd48096"
+    },
+    {
+      "scenario": "parallel_primary",
+      "started_at": "2026-11-24T04:48:08.955342+00:00",
+      "seconds": 1366.55,
+      "exit_code": 1,
+      "summary": "15 failed, 716 passed, 4 skipped, 1 warning, 5 errors in 1356.84s (0:22:36)",
+      "log_sha256": "7774ba6fbb5d32396b43b616fd44fe0c2b6d208c0f87a368f1491c9871bb1070"
+    }
+  ],
+  "notes": "Three primary runs; parallel companion uses its own test database. No pytest-xdist dependency. Other projects containers left untouched.",
+  "interrupted_attempt": {
+    "scenario": "qwen_cpu_load",
+    "result": "interrupted; no completion record",
+    "log": "qwen_cpu_load-interrupted.txt"
+  },
+  "qwen_load": {
+    "requests": 70,
+    "errors": [],
+    "model": "qwen2.5-0.5b-instruct-q8_0",
+    "accelerator": "cpu"
+  },
+  "parallel_companion": {
+    "scenario": "parallel_companion",
+    "started_at": "2026-11-24T04:48:08.981787+00:00",
+    "seconds": 1366.53,
+    "exit_code": 1,
+    "summary": "14 failed, 717 passed, 4 skipped, 1 warning, 4 errors in 1356.84s (0:22:36)",
+    "log_sha256": "df46803172f828920412a55653bd1ef17167c43dccdef69cfc34e6c1fd430528"
+  },
+  "finished_at": "2026-11-24T05:10:55.383034+00:00",
+  "scope": "Real local Windows verification, not Linux CI. Other projects containers and independent developer work were present; not a controlled performance study.",
+  "postgres_max_connections": 100,
+  "additional_aborted_attempt": {
+    "scenario": "qwen_cpu_load",
+    "reason": "Docker recovered but the task-owned PostgreSQL container was stopped; aborted, then restarted only after an authenticated database readiness check",
+    "log": "qwen_cpu_load-db-unavailable-aborted.txt"
+  },
+  "lease_case_failed_in_primary_runs": false,
+  "raw_files": {
+    "fixed-delayed-claim.txt": "becd22f19b7b16ede1b5f8a1e79ed4f049234ed6e630736b28196345f9767b96",
+    "no_model.txt": "26c526cea0381a8db0a66ef19848e1557e0a9206e598389ec34b74139f83ec62",
+    "original-delayed-claim.txt": "ebb3d3fccfd8eea58f703b058f6c80205101bdfd1fa5fe4c322052f6202fffe5",
+    "original-delayed-state.json": "55b52c128244064c0d054eb425137ae2fc882664d6158c562b0e5d97b92968de",
+    "parallel_companion.txt": "4c5dbcac960aa920623065d291b01c21e901e809d9a6463de5bf4fc04b360795",
+    "parallel_primary.txt": "05d21ee45886235770759b39db131ae0be405be1e268bb83b9781e197bbe4e24",
+    "qwen_cpu_load-db-unavailable-aborted.txt": "96ad5c98193cbed00823416d4bbd2ed413040f98aaacfea24537f819e4c14f7e",
+    "qwen_cpu_load-interrupted.txt": "cbd71287f5b55eb6d81914667fb0327de68fb636b00fc35af1b95c79828dd5fd",
+    "qwen_cpu_load.txt": "180a49899a4e8acf18a69e1be847b1520856029925276be04a89d6960f69d8a8"
+  },
+  "hash_encoding": "raw_files hashes preserve exact bytes via scoped -text attributes. runs[].log_sha256 hashes UTF-8 log text with LF line endings."
+}
