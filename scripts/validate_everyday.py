@@ -6,6 +6,8 @@ import argparse
 import hashlib
 import json
 import platform
+import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -18,24 +20,56 @@ from furnace.runtime.scoring import SCORER_VERSION, ScoringRule, score
 from furnace_api.desktop import DesktopService
 
 
+def resource_view(value):
+    return {key: value.get(key) for key in ("gpu", "resources", "container")}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--installed-build", type=Path, required=True)
+    origin = parser.add_mutually_exclusive_group(required=True)
+    origin.add_argument("--installed-build", type=Path)
+    origin.add_argument(
+        "--source-checkout",
+        action="store_true",
+        help="Explicit source trial; never labelled installed",
+    )
+    parser.add_argument("--suite", type=Path)
+    parser.add_argument("--group", choices=["injection", "everyday", "longer-document"])
     parser.add_argument("--accelerator", choices=["cpu", "nvidia"], default="cpu")
     parser.add_argument("--model", default="qwen2.5-1.5b-instruct-q4_k_m")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     import furnace_api
 
-    installed = args.installed_build.resolve()
-    if not Path(sys.executable).resolve().is_relative_to(installed) or not Path(
-        furnace_api.__file__
-    ).resolve().is_relative_to(installed):
-        raise SystemExit("Use the installed runtime/python.exe -I; source imports are refused")
-    build = json.loads((installed / "build.json").read_text())
-    suite_path = Path(furnace_api.__file__).with_name("everyday_suite.json")
+    if args.installed_build:
+        installed = args.installed_build.resolve()
+        if not Path(sys.executable).resolve().is_relative_to(installed) or not Path(
+            furnace_api.__file__
+        ).resolve().is_relative_to(installed):
+            raise SystemExit("Use the installed runtime/python.exe -I; source imports are refused")
+        build = json.loads((installed / "build.json").read_text())
+    else:
+        root = Path(__file__).resolve().parents[1]
+        git = shutil.which("git")
+        if not git:
+            raise SystemExit("Source provenance requires git")
+        build = {
+            "kind": "source-checkout",
+            "commit": subprocess.check_output(  # noqa: S603 -- resolved git and fixed argv
+                [git, "rev-parse", "HEAD"], cwd=root, text=True
+            ).strip(),
+            "source_dirty": bool(
+                subprocess.check_output([git, "status", "--porcelain"], cwd=root)  # noqa: S603 -- resolved git and fixed argv
+            ),
+            "everyday_sha256": hashlib.sha256(
+                Path(furnace_api.__file__).with_name("everyday.py").read_bytes()
+            ).hexdigest(),
+        }
+    suite_path = args.suite or Path(furnace_api.__file__).with_name("everyday_suite.json")
     suite_bytes = suite_path.read_bytes()
     suite = json.loads(suite_bytes)
+    if args.group:
+        suite["cases"] = [c for c in suite["cases"] if c.get("group") == args.group]
     recipe = MODELS[args.model]
     record = {
         "schema": "furnace-everyday-model-v1",
@@ -50,6 +84,8 @@ def main() -> int:
         "license": recipe.license,
         "suite_sha256": hashlib.sha256(suite_bytes).hexdigest(),
         "scorer": SCORER_VERSION,
+        "group": args.group,
+        "download_bytes": recipe.weights.size,
         "source_data": "synthetic packaged everyday suite only; no private user documents",
         "cases": [],
         "result": "incomplete",
@@ -102,6 +138,9 @@ def main() -> int:
                 raise RuntimeError("Preparation failed; see preserved reason")
             ready = api("POST", f"projects/{pid}/managed/start", json={"consent": True})
             record["launch_id"] = ready["launch"]["launch_id"]
+            record["observation_before"] = resource_view(
+                api("GET", f"projects/{pid}/managed/observe")
+            )
             for case in suite["cases"]:
                 began = time.monotonic()
                 observed = {"name": case["name"], "operational": "error", "score": "unscored"}
@@ -132,11 +171,15 @@ def main() -> int:
                             processing=result["processing"],
                             requests=result["requests"],
                             receipt=result["receipt"],
+                            warnings=result.get("warnings", []),
                         )
                 except (httpx.HTTPError, ValueError) as error:
                     observed["error"] = type(error).__name__
                 observed["elapsed_seconds"] = round(time.monotonic() - began, 3)
                 record["cases"].append(observed)
+                observed["memory_observation"] = resource_view(
+                    api("GET", f"projects/{pid}/managed/observe")
+                )
                 print(
                     case["name"],
                     observed["operational"],

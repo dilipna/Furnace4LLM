@@ -59,7 +59,7 @@ async function readFile(file) {
     let binary=""; for (let i=0;i<bytes.length;i+=16384) binary+=String.fromCharCode(...bytes.subarray(i,i+16384));
     const result=await api("everyday/extract","POST",{kind,data:btoa(binary)});
     if (generation!==epoch) return;
-    if (new TextEncoder().encode(result.text).length>24000) throw new Error("Document exceeds 24,000 UTF-8 text bytes. Split it into smaller files.");
+    if (new TextEncoder().encode(result.text).length>128000) throw new Error("Document exceeds 128,000 UTF-8 text bytes. Split it into smaller files.");
     documentText=result.text; $("#document-info").textContent=file.name+" · read locally · "+documentText.length.toLocaleString()+" characters";
     setAction("summarise"); message("Document ready. Choose an action below. Longer documents are processed in stages. "+(result.warning || ""));
   } catch(error) { if(generation===epoch) message(error.message); }
@@ -73,13 +73,14 @@ drop.addEventListener("drop",event=>{event.preventDefault();drop.classList.remov
 $("#use-text").addEventListener("click",()=>{
   const value=$("#document-text").value;
   if(!value.trim()) { message("Paste document text first."); return; }
-  if(new TextEncoder().encode(value).length>24000) { message("Use at most 24,000 UTF-8 text bytes."); return; }
+  if(new TextEncoder().encode(value).length>128000) { message("Use at most 128,000 UTF-8 text bytes."); return; }
   epoch++; chatTurns=[]; documentText=value; $("#document-info").textContent="Pasted document · "+value.length.toLocaleString()+" characters";
   $("#paste").open=false; setAction("summarise"); message("Pasted text ready. It is not saved in project records.");
 });
 function element(tag,text,className) { const item=document.createElement(tag);if(text!==undefined) item.textContent=text;if(className)item.className=className;return item; }
 function renderAnswer(result,label,question) {
   const article=element("article",undefined,"answer");
+  for(const warning of result.warnings || []) { const note=element("p",warning,"document-warning"); note.setAttribute("role","note"); article.append(note); }
   if(question) article.append(element("p",question,"user-message"));
   article.append(element("h2",label),element("div",result.output,"output"));
   const seconds=(result.duration_ms/1000).toFixed(1);
@@ -87,7 +88,7 @@ function renderAnswer(result,label,question) {
   if(result.processing.history_truncated) article.append(element("p","Recent chat context was shortened to fit this model. Include key details again if needed.","meta"));
   if(result.processing.staged) article.append(element("p",`Processed ${result.processing.document_chunks} document sections in stages. ${result.processing.method}. Cross-section context can be lost; check the original.`,"meta"));
   const receipt=element("details",undefined,"receipt");
-  receipt.append(element("summary",result.receipt.status==="checked" ? "Proof it stayed private · inspect the checks" : "Privacy receipt · test adapter, not real Docker proof"));
+  receipt.append(element("summary",result.receipt.status==="checked" ? "✓ Answered on this computer · Model had no internet route at checks · Details" : "Privacy receipt · test adapter, not real Docker proof"));
   receipt.append(element("p","These are checks of the model container and this app's handling, not proof about every program on your computer."));
   const list=element("ul");
   for(const [key,passed] of Object.entries(result.receipt.observed.checks)) list.append(element("li",`${key.replaceAll("_"," ")}: ${passed ? "observed" : "not confirmed"}`));
@@ -96,6 +97,27 @@ function renderAnswer(result,label,question) {
   technical.append(element("p",`Recorded ${result.receipt.at} · launch ${result.receipt.launch_id}`));
   technical.append(element("p",`Pinned revision: ${result.receipt.model.revision}`),element("p",`Weights SHA-256: ${result.receipt.model.weights_sha256}`),element("p",result.receipt.model.weights_check),element("p",result.receipt.scope));
   receipt.append(technical); article.append(receipt); $("#conversation").append(article); article.scrollIntoView({block:"nearest"});
+}
+async function streamAnswer(pid,payload,onProgress) {
+  const response=await fetch(`/api/everyday/projects/${pid}/answer-stream`,{method:"POST",headers:{"Content-Type":"application/json","x-furnace-session":token},body:JSON.stringify(payload)});
+  if(!response.ok) { const error=await response.json(); throw new Error(typeof error.detail==="string" ? error.detail : "Check the document and model setup."); }
+  const reader=response.body.getReader(), decoder=new TextDecoder();
+  let buffer="", answer;
+  while(true) {
+    const part=await reader.read(); buffer+=decoder.decode(part.value,{stream:!part.done});
+    let boundary;
+    while((boundary=buffer.indexOf("\n"))>=0) {
+      const line=buffer.slice(0,boundary); buffer=buffer.slice(boundary+1);
+      if(!line) continue;
+      const event=JSON.parse(line);
+      if(event.error) throw new Error(event.error);
+      if(event.progress) onProgress(event.progress);
+      if(event.result) answer=event.result;
+    }
+    if(part.done) break;
+  }
+  if(!answer) throw new Error("The local answer was interrupted. Check the model and try again.");
+  return answer;
 }
 async function send() {
   if(busy) return;
@@ -115,7 +137,13 @@ async function send() {
       }
       return {role:turn.role,content};
     }) : [];
-    const result=await api(`everyday/projects/${pid}/answer`,"POST",{text:documentText,question,action,history,history_truncated:truncated});
+    const result=await streamAnswer(pid,{text:documentText,question,action,history,history_truncated:truncated},event=>{
+      if(generation!==epoch || projectId!==pid) return;
+      const n=event.completed_requests, sections=event.document_sections;
+      const left=event.phase==="document" ? Math.max(0,sections-n)+Math.ceil(sections/4)+1 : 1;
+      const estimate=n>0 ? ` Rough estimate: ${Math.max(1,Math.round(left*event.elapsed_seconds/n/60))}–${Math.max(1,Math.ceil(left*event.elapsed_seconds/n*2/60))} minutes remaining; combining stages may add time.` : " Estimating after the first section.";
+      message(`Working locally · ${n} requests completed · ${sections} document sections · ${event.phase==="combining" ? "combining results" : "reading sections"}.${estimate}`);
+    });
     if(generation!==epoch || projectId!==pid) return;
     renderAnswer(result,label,question);
     if(action==="chat" && !documentText) chatTurns=[{role:"user",content:question},{role:"assistant",content:result.output}]; $("#question").value="";message("Answer complete. Check important details and inspect the privacy receipt.");

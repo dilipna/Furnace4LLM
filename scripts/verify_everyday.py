@@ -77,11 +77,15 @@ def main() -> None:
                 )
                 record["checks"]["real_pdf_drop_and_local_extraction"] = True
                 with page.expect_response(
-                    lambda r: "/everyday/projects/" in r.url and r.url.endswith("/answer"),
+                    lambda r: "/everyday/projects/" in r.url and r.url.endswith("/answer-stream"),
                     timeout=60000,
                 ) as response:
                     page.get_by_role("button", name="Summarise", exact=True).click()
-                answer = response.value.json()
+                answer = next(
+                    json.loads(line)["result"]
+                    for line in response.value.text().splitlines()
+                    if "result" in json.loads(line)
+                )
                 assert response.value.status == 200 and answer["processing"]["model_requests"] == 1
                 expect(page.locator(".output")).to_have_text(ANSWERS[marker])
                 record["checks"]["actual_adapter_execution"] = True
@@ -120,12 +124,12 @@ def main() -> None:
                   const original=window.fetch;
                   window.fetch=async (...args)=>{
                     const response=await original(...args);
-                    if(String(args[0]).endsWith('/answer')) await new Promise(resolve=>setTimeout(resolve,1000));
+                    if(String(args[0]).endsWith('/answer-stream')) await new Promise(resolve=>setTimeout(resolve,1000));
                     return response;
                   };
                 }""")
                 page.locator("#question").fill("Remember my code: " + code)
-                with page.expect_response(lambda response: response.url.endswith("/answer")):
+                with page.expect_response(lambda response: response.url.endswith("/answer-stream")):
                     page.locator("#send").click()
                 page.get_by_role("button", name="New conversation", exact=False).click()
                 expect(page.locator("#composer")).to_have_attribute("aria-busy", "false")

@@ -10,7 +10,7 @@ import zipfile
 
 from defusedxml import ElementTree
 
-MAX_TEXT = 24000
+MAX_TEXT = 128000
 
 
 def extract(kind: str, data: bytes) -> str:

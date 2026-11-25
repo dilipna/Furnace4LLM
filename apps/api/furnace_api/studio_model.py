@@ -220,13 +220,17 @@ class ModelService:
             raise RuntimeFault("connect_current_model_configuration_first")
         return project, project["model_connection"]
 
-    def predict(self, pid: str, value: str) -> dict:
+    def predict(self, pid: str, value: str, *, system_prompt: str | None = None) -> dict:
         self.store.get(pid)
         with self.manager.lock_for(pid):
             project, config = self.ready(pid)
             try:
                 result = self.client.predict(
-                    config, value, config["timeout_seconds"], api_key=self.key_for(pid, config)
+                    config,
+                    value,
+                    config["timeout_seconds"],
+                    api_key=self.key_for(pid, config),
+                    **({"system_prompt": system_prompt} if system_prompt else {}),
                 )
                 if self.flag(pid).is_set():
                     raise RuntimeFault("endpoint_disconnected")

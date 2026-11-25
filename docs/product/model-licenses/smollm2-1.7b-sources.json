@@ -1,0 +1,11 @@
+[
+  {
+    "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF/resolve/2d4a76a30b4af41ecd395c35725ac11688d4cfe4/README.md",
+    "sha256": "503a83769e1a2c235a905521d4ff1b027ded434cbdc936e4f3546287614707b0",
+    "file": "smollm2-1.7b-README.md"
+  },
+  {
+    "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF/resolve/2d4a76a30b4af41ecd395c35725ac11688d4cfe4/LICENSE",
+    "error": "HTTPError"
+  }
+]

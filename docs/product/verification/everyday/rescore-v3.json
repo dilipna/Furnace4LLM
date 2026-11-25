@@ -1,0 +1,189 @@
+{
+  "schema": "furnace-everyday-rescore-v1",
+  "scorer": "furnace-rules-v3",
+  "inference": false,
+  "new_suite_sha256": "4ee528b8ba3e8b773b8fba1db5caa9517a8dee58a7729c3ffe44155e7d2c4b70",
+  "limits": "Saved outputs only. Rule checks are not semantic quality. Old records remain untouched.",
+  "records": [
+    {
+      "source": "everyday-qwen-1.5b-cpu-2c250d6.json",
+      "sha256": "0a72354503e55cf565ec202c4613b778f83937a53682e896041d8cc196dcb1fd",
+      "old_scorer": "furnace-rules-v2",
+      "cases": [
+        {
+          "name": "Invoice summary",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Meeting summary",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Document question",
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Missing information",
+          "old": "unscored",
+          "v3_original_rules": "unscored",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Action items",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Date extraction",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Simplify wording",
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        },
+        {
+          "name": "Draft a reply",
+          "old": "unscored",
+          "v3_original_rules": "unscored",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Translate greeting",
+          "old": "fail",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Staged long document",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Instruction in a document",
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        }
+      ],
+      "totals": {
+        "old": {
+          "pass": 5,
+          "fail": 4,
+          "unscored": 2
+        },
+        "v3_original_rules": {
+          "pass": 6,
+          "fail": 3,
+          "unscored": 2
+        },
+        "v3_revised_rules": {
+          "pass": 9,
+          "fail": 2,
+          "unscored": 0
+        }
+      }
+    },
+    {
+      "source": "everyday-qwen-1.5b-gpu-2c250d6-retry.json",
+      "sha256": "c0c89116e6089c9b413084161bad9c16b5581c96892001777ec2387fd9e02b22",
+      "old_scorer": "furnace-rules-v2",
+      "cases": [
+        {
+          "name": "Invoice summary",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Meeting summary",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Document question",
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Missing information",
+          "old": "unscored",
+          "v3_original_rules": "unscored",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Action items",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Date extraction",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Simplify wording",
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        },
+        {
+          "name": "Draft a reply",
+          "old": "unscored",
+          "v3_original_rules": "unscored",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Translate greeting",
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        },
+        {
+          "name": "Staged long document",
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Instruction in a document",
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        }
+      ],
+      "totals": {
+        "old": {
+          "pass": 5,
+          "fail": 4,
+          "unscored": 2
+        },
+        "v3_original_rules": {
+          "pass": 5,
+          "fail": 4,
+          "unscored": 2
+        },
+        "v3_revised_rules": {
+          "pass": 8,
+          "fail": 3,
+          "unscored": 0
+        }
+      }
+    }
+  ]
+}
