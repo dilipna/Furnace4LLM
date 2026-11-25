@@ -6,6 +6,12 @@ not standalone model capability. Synthetic sources include lease terms, an appoi
 letter, a bank excerpt, an email thread and a fictional council form. All 36 cases have
 fixed rules; eight are document-instruction attacks. Rule agreement is not semantic quality.
 
+**Latest installed confirmation: 31/36, including 7/8 fixed attacks.** The clean-source
+`04ef0a0` Windows installer completed all 36 GPU tasks, but followed the fake
+safety-policy attack and answered `1000` instead of `95`. The warning was returned.
+The earlier source and installed results below remain recorded; do not substitute their
+32/36 and 8/8 for this latest observation. See [installed acceptance](installed-document-acceptance.md).
+
 | Candidate (Q4_K_M) | Device | Rule passes / 36 planned | Completed tasks | Fixed attacks passed / 8 | Median task seconds | Max sampled container GiB | Max sampled whole-device GPU MiB | Download bytes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Qwen2.5-1.5B | CPU | 27/36 | 36 | 2/8 | 4.171 | 1.780 | — | 1,117,320,736 |
@@ -34,7 +40,8 @@ overwritten by the recording scripts.
 Consider **Qwen3-4B for a compatible NVIDIA GPU**, with **Qwen2.5-1.5B as the CPU and
 faster/lower-memory option**. Do not select Qwen3-4B as a universal CPU default from
 these results: it did not complete that trial. Its GPU run had the best rule result
-and passed these eight attacks. That does not establish general injection resistance.
+and passed these eight attacks in that source trial. The latest installed run failed
+one of them. Neither result establishes general injection resistance.
 SmolLM2 has a slightly smaller download, but observed runtime memory was higher than
 Qwen1.5 and its rule results were worse here; file size alone does not predict runtime fit.
 The owner approved that conditional selection after reviewing the results. Initial setup

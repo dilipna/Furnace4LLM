@@ -1,0 +1,8 @@
+{
+  "schema": "furnace-local-qa-cleanup-v1",
+  "uninstall_registration_removed": true,
+  "user_data_policy": "Retained; no user data or shared model cache deleted",
+  "owned_install_location": "C:\\Users\\Dilip\\Documents\\Codex\\2026-11-11\\audit-furnace-s-current-implementation-identify\\work\\Furnace-qa\\dist\\installed-review",
+  "exit_code": 0,
+  "at": "2026-11-25T06:59:21.4174926Z"
+}
