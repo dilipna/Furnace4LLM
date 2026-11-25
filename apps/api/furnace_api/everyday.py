@@ -341,7 +341,7 @@ class EverydayService:
             else ""
         )
         retrieval_note = (
-            " Use only these retrieved source sections and cite [Section N] for your answer. If they do not support an answer, say you do not know."
+            " Use only these retrieved source sections. Follow the user's requested answer format. Do not put section numbers in your answer: Furnace displays source references separately. If the sections do not support an answer, say you do not know."
             if prepared["retrieval"]
             else ""
         )

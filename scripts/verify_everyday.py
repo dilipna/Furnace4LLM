@@ -127,6 +127,26 @@ def main() -> None:
                 page.get_by_role("button", name="New conversation", exact=False).click()
                 expect(page.locator(".answer")).to_have_count(0)
                 record["checks"]["clear_removes_conversation"] = True
+                page.locator("#paste > summary").click()
+                page.locator("#document-text").fill("Meeting notes for the office. " * 200)
+                page.locator("#use-text").click()
+                before = sum(url.endswith("/answer-stream") for url in requests)
+                dialogs = []
+
+                def decline_estimate(dialog):
+                    dialogs.append(dialog.message)
+                    dialog.dismiss()
+
+                page.once("dialog", decline_estimate)
+                page.get_by_role("button", name="Summarise", exact=True).click()
+                expect(page.locator("#composer")).to_have_attribute("aria-busy", "false")
+                expect(page.locator("#notice")).to_contain_text("Rough estimate:")
+                assert dialogs and "Planning range" in dialogs[0]
+                assert sum(url.endswith("/answer-stream") for url in requests) == before
+                record["checks"][
+                    "estimate_shown_before_execution_and_decline_sends_no_document"
+                ] = True
+                page.get_by_role("button", name="New conversation", exact=False).click()
                 # The warning is derived by the API; it must be visible without
                 # opening receipt details, even with a scripted adapter.
                 page.locator("#paste > summary").click()
@@ -160,6 +180,8 @@ def main() -> None:
                 expect(page.locator("#model-status")).to_have_text("Set up local AI")
                 expect(page.locator(".answer")).to_have_count(0)
                 expect(page.locator("#document-info")).to_contain_text("Drop a PDF")
+                expect(page.locator("#set-aside-text")).to_have_text("")
+                expect(page.locator("#document-protection")).to_be_hidden()
                 page.locator("#project").select_option(pid)
                 expect(page.locator("#model-status")).to_contain_text("ready")
                 expect(page.locator("#model-choice")).to_have_value(MODEL)

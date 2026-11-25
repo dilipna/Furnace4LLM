@@ -40,9 +40,14 @@ function setAction(value) {
   $("#question").placeholder=value === "translate" ? "Target language, e.g. Spanish" : value === "ask" ? "What would you like to know about this document?" : "What would you like help with?";
   $("#question-label").textContent=value === "translate" ? "Translate into which language?" : value === "ask" ? "Ask about this document" : "Ask something, or just chat";
 }
+function resetProtection() {
+  includeAiText=false; $("#document-protection").hidden=true;
+  $("#set-aside-text").textContent=""; $("#set-aside-summary").textContent=""; $("#set-aside-count").textContent="";
+  $("#include-ai").textContent="Include it anyway";
+}
 function clearConversation() {
   if(answerController) answerController.abort();
-  epoch++; chatTurns=[]; documentText=""; includeAiText=false; $("#document-protection").hidden=true; $("#document-text").value=""; $("#question").value=""; $("#file").value="";
+  epoch++; chatTurns=[]; documentText=""; resetProtection(); $("#document-text").value=""; $("#question").value=""; $("#file").value="";
   $("#conversation").replaceChildren(); $("#document-info").textContent="Drop a PDF, Word document, TXT or Markdown file here.";
   setAction("chat"); message(busy ? "Conversation cleared. A request already sent locally may finish; its answer will be discarded." : "Conversation cleared from this tab. Original files are unchanged.");
 }
@@ -55,7 +60,7 @@ async function readFile(file) {
   const kind=file.name.split(".").at(-1).toLowerCase();
   if (!["pdf","docx","txt","md"].includes(kind)) { message("Choose PDF, DOCX, TXT or Markdown."); return; }
   const generation=++epoch;
-  chatTurns=[]; documentText=""; setBusy(true); message("Reading document locally. Nothing is uploaded to a cloud service.");
+  chatTurns=[]; documentText=""; resetProtection(); setBusy(true); message("Reading document locally. Nothing is uploaded to a cloud service.");
   try {
     const bytes=new Uint8Array(await file.arrayBuffer());
     let binary=""; for (let i=0;i<bytes.length;i+=16384) binary+=String.fromCharCode(...bytes.subarray(i,i+16384));
@@ -81,7 +86,7 @@ $("#use-text").addEventListener("click",async ()=>{
   $("#paste").open=false; setAction("summarise"); await inspectDocument(); if(generation!==epoch) return; message("Pasted text ready. It is not saved in project records.");
 });
 async function inspectDocument() {
-  includeAiText=false; $("#document-protection").hidden=true;
+  resetProtection();
   const generation=epoch;
   try {
     const result=await api("everyday/inspect","POST",{text:documentText,action:"summarise"});
@@ -107,7 +112,8 @@ function renderAnswer(result,label,question) {
   article.append(element("h2",label),element("div",result.output,"output"));
   if(result.protection?.included && result.protection.sentences.length) article.append(element("p","AI-directed text was included by your choice.","document-warning"));
   if(result.sources?.length) {
-    const sources=element("details"); sources.append(element("summary","Retrieved source sections — check the answer against these"));
+    const sources=element("details"); sources.append(element("summary","Source references: "+result.sources.map(s=>"Section "+s.section).join(", ")));
+    sources.append(element("p","Original sections provided to the model. These references do not prove that every answer claim is supported; check the text below."));
     for(const source of result.sources) sources.append(element("h3","Section "+source.section),element("pre",source.text,"source-text"));
     article.append(sources);
   }

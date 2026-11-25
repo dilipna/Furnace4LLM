@@ -553,6 +553,7 @@ def test_context_plan_is_read_only_and_retrieval_sends_original_sources(tmp_path
         assert result.status_code == 200, result.text
         body = result.json()
         assert len(sent) == 1 and len(sent[0].encode()) + 512 + 256 < 4096
+        assert "Furnace displays source references separately" in sent[0]
         assert body["processing"]["retrieval"] and body["sources"]
         assert any("1275" in s["text"] for s in body["sources"])
         for s in body["sources"]:
