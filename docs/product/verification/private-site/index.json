@@ -1,0 +1,32 @@
+{
+  "schema": "furnace-private-site-local-evidence-v1",
+  "site_source": "b3fa98199c49e0b4fbcfd0d9b3ce19adbee08676",
+  "installer_source": "2c250d642a1af2b648b67cb34fd190f535f24d8a",
+  "reports": [
+    {
+      "file": "lighthouse-first.json.gz",
+      "uncompressed_sha256": "007c9d03ec5350da4af7e0fac7d48cb14f83a9f927379e166ab2e48e4d8af95d",
+      "fetchTime": "2026-11-25T01:25:37.103Z",
+      "scores": {
+        "performance": 0.84,
+        "accessibility": 1,
+        "seo": 1
+      },
+      "requestedUrl": "http://127.0.0.1:4011/",
+      "benchmarkIndex": 1387.5
+    },
+    {
+      "file": "lighthouse-after.json.gz",
+      "uncompressed_sha256": "2386611223079006f405a29c79406b1c27c81a1882340115c2a67935cd73f85d",
+      "fetchTime": "2026-11-25T01:28:45.279Z",
+      "scores": {
+        "performance": 0.97,
+        "accessibility": 1,
+        "seo": 1
+      },
+      "requestedUrl": "http://127.0.0.1:4011/",
+      "benchmarkIndex": 1180
+    }
+  ],
+  "limits": "Two local runs, not a controlled comparison. First result is retained. Scores do not establish human comprehension, model quality, real inference in the browser test, or performance of the later final PR head. Full raw Lighthouse JSON is gzip compressed without editing."
+}
