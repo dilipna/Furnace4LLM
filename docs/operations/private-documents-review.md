@@ -15,8 +15,10 @@ python scripts/preview_site.py --port 4011
 
 The server needs `apps/web/out` from the static build. Locally staged installer and
 recording files are ignored, not supplied by a fresh checkout or published online.
-See `scripts/stage_everyday_recording.py --help` for staging an actual recording;
-never substitute a scripted adapter for real-model footage.
+Stage an actual completed recording with
+`python scripts/stage_everyday_recording.py C:\path\to\real-document-recording`
+before rebuilding the static site. The input directory must include its real
+`record.json`, video and screenshots; never substitute a scripted adapter for footage.
 
 ## Website comprehension (no Docker required)
 
