@@ -85,7 +85,7 @@ Open Advanced, return, then quit using the app window; closing a browser is not 
 - Latest selected installer must pass fresh installed-runtime acceptance; recordings and installed confirmations must retain their own source identities.
   Earlier `2c250d6` records remain historical.
 - Review the [model comparison](../product/model-comparison.md) and separate historical
-  re-scoring. The owner selected Qwen3 for compatible NVIDIA GPUs and Qwen1.5 for CPU/faster
+  re-scoring. The owner selected Qwen3 for compatible NVIDIA GPUs and Qwen2.5-1.5B for CPU/faster
   use. Latest installed Qwen3 GPU acceptance is 31/36, including 7/8 fixed attacks;
   earlier 32/36 and 8/8 results remain separate. Wrong answers and the Qwen3 CPU timeout
   remain. See [installed acceptance](../product/installed-document-acceptance.md).
