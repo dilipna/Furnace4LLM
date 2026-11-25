@@ -35,7 +35,7 @@ def main() -> None:
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(args.url)
-        expect(page.get_by_role("heading", name="Your model. Your machine.")).to_be_visible()
+        expect(page.get_by_role("heading", name="Private AI for", exact=False)).to_be_visible()
         button = page.get_by_role("link", name="Download Furnace", exact=False)
         expect(button).to_have_attribute("href", "/downloads/" + metadata["file"])
         checks["windows_download_target"] = True
@@ -91,6 +91,15 @@ def main() -> None:
             assert response.ok, (href, response.status)
         checks["local_links_and_images"] = True
         page.goto(args.url + "/demo")
+        expect(
+            page.get_by_role("heading", name="A document. An answer. Its checks.")
+        ).to_be_visible()
+        if page.locator("video").count() == 0:
+            expect(
+                page.get_by_role("heading", name="Recording not staged in this build")
+            ).to_be_visible()
+        checks["document_recording_status_honest"] = True
+        page.goto(args.url + "/researchers/tour")
         page.get_by_role("button", name="3. Explore").click()
         expect(page.get_by_role("heading", name="3. Explore the guided example")).to_be_visible()
         checks["recorded_tour"] = True
@@ -98,7 +107,7 @@ def main() -> None:
         expect(page).to_have_url(args.url + "/docs")
         page.get_by_role("link", name="Tour", exact=True).first.click()
         expect(
-            page.get_by_role("heading", name="A look inside your local workspace.")
+            page.get_by_role("heading", name="A document. An answer. Its checks.")
         ).to_be_visible()
         checks["header_navigation"] = True
         page.get_by_role("button", name="Switch color theme").click()
