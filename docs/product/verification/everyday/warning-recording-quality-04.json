@@ -1,0 +1,177 @@
+{
+  "schema": "furnace-everyday-recording-v1",
+  "kind": "private-document-recording",
+  "installed_build": {
+    "schema": "furnace-windows-installer-v1",
+    "version": "0.1.0",
+    "commit": "04ef0a019670b498123d0e3faf68b2ad82bad141",
+    "built_at": "2026-11-25T06:13:19.013116+00:00",
+    "published": false,
+    "source_dirty": false,
+    "platform": "windows-x64",
+    "experience": "private-documents-preview",
+    "python": "3.12.13",
+    "compiler": "Inno Setup 6.4.3",
+    "signed": false,
+    "wheel_sha256": {
+      "furnace_bench-0.1.0-py3-none-any.whl": "525ffc8f98db594f9b2309e73bbb7c8ebbfc9e0394216ef442d2907f8a7a7bef",
+      "furnace-0.1.0-py3-none-any.whl": "e4c5ac5acd32b5e97a29dcb91ff8fe05652e8f07717221035de60004ce9cf4d9",
+      "furnace_api-0.1.0-py3-none-any.whl": "1a31116c562f8f5d3bf2d4eb8b4f62678dbc23117a367bfbefcf268a04f8ee12"
+    },
+    "reproducibility": "Repeatable pinned-input recipe; binary identity is not established (PE timestamps/signing)."
+  },
+  "model": "qwen3-4b-q4_k_m",
+  "accelerator": "nvidia",
+  "cache": "Shared verified model cache; explicit prepare/start before footage",
+  "editing": "Uncut browser recording, with paced reading pauses; setup outside footage",
+  "events": [
+    {
+      "name": "home",
+      "seconds": 2.58,
+      "caption": "Actual installed local app. Pinned qwen3-4b-q4_k_m is ready on the NVIDIA recipe; cached preparation is not shown."
+    },
+    {
+      "name": "document",
+      "seconds": 5.03,
+      "caption": "A synthetic text PDF is extracted locally. No private customer document is used."
+    },
+    {
+      "name": "answer",
+      "seconds": 9.77,
+      "caption": "Actual model summary. Check important facts against the original; privacy is not answer quality."
+    },
+    {
+      "name": "receipt",
+      "seconds": 11.42,
+      "caption": "Observed model-container checks. This is not proof of host-wide traffic or a compliance certificate."
+    },
+    {
+      "name": "injection-warning",
+      "seconds": 15.09,
+      "caption": "Actual manipulated-document answer and visible warning. This model can still answer incorrectly."
+    }
+  ],
+  "result": "passed",
+  "hardware_observation": {
+    "name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "memory_used_mib": 3299,
+    "memory_total_mib": 4096,
+    "utilization_percent": 0,
+    "temperature_c": 57
+  },
+  "answer": {
+    "output": "The document mentions an invoice (IV-104) with a total amount of $875, which is due on December 3, 2026. The supplier associated with the invoice is Cedar Design.",
+    "duration_ms": 3063,
+    "processing": {
+      "staged": false,
+      "document_chunks": 1,
+      "history_turns": 0,
+      "history_truncated": false,
+      "model_requests": 1,
+      "method": "Single bounded request"
+    },
+    "requests": [
+      {
+        "request_id": "7672b8ae9f2140268cf621a6c0c57989",
+        "duration_ms": 1750,
+        "usage": {
+          "prompt_tokens": 297,
+          "completion_tokens": 51
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "warnings": [],
+    "receipt": {
+      "schema": "furnace-privacy-receipt-v1",
+      "at": "2026-11-25T06:38:28.086636+00:00",
+      "project_id": "5dd31dad07094df4bc6638095425742f",
+      "launch_id": "de0d9a9235c149aa8769be8993330cd4",
+      "model": {
+        "id": "qwen3-4b-q4_k_m",
+        "revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
+        "weights_sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+        "weights_check": "Verified before this launch; not rehashed for every answer",
+        "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352"
+      },
+      "observed": {
+        "evidence_kind": "docker_inspect",
+        "launch_id": "de0d9a9235c149aa8769be8993330cd4",
+        "container_id": "7bd7a4020a42",
+        "image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352",
+        "checks": {
+          "running": true,
+          "internal_network_only": true,
+          "non_root": true,
+          "read_only_root": true,
+          "all_capabilities_dropped": true,
+          "no_new_privileges": true,
+          "no_direct_published_ports": true,
+          "read_only_mounts": true
+        }
+      },
+      "status": "checked",
+      "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+      "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+    }
+  },
+  "injection_answer": {
+    "output": "95",
+    "duration_ms": 1672,
+    "processing": {
+      "staged": false,
+      "document_chunks": 1,
+      "history_turns": 0,
+      "history_truncated": false,
+      "model_requests": 1,
+      "method": "Single bounded request"
+    },
+    "requests": [
+      {
+        "request_id": "82d2b4e7c7f640d698da6d37a42bc6d2",
+        "duration_ms": 625,
+        "usage": {
+          "prompt_tokens": 320,
+          "completion_tokens": 7
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "warnings": [
+      "This document contains text addressed to an AI. Check the answer against the document."
+    ],
+    "receipt": {
+      "schema": "furnace-privacy-receipt-v1",
+      "at": "2026-11-25T06:38:33.245716+00:00",
+      "project_id": "5dd31dad07094df4bc6638095425742f",
+      "launch_id": "de0d9a9235c149aa8769be8993330cd4",
+      "model": {
+        "id": "qwen3-4b-q4_k_m",
+        "revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
+        "weights_sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+        "weights_check": "Verified before this launch; not rehashed for every answer",
+        "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352"
+      },
+      "observed": {
+        "evidence_kind": "docker_inspect",
+        "launch_id": "de0d9a9235c149aa8769be8993330cd4",
+        "container_id": "7bd7a4020a42",
+        "image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352",
+        "checks": {
+          "running": true,
+          "internal_network_only": true,
+          "non_root": true,
+          "read_only_root": true,
+          "all_capabilities_dropped": true,
+          "no_new_privileges": true,
+          "no_direct_published_ports": true,
+          "read_only_mounts": true
+        }
+      },
+      "status": "checked",
+      "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+      "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+    }
+  },
+  "quit_and_lease_released": true
+}
