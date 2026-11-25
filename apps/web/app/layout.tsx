@@ -1,29 +1,18 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Schibsted_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const display = Schibsted_Grotesk({
-  variable: "--font-schibsted",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
-
-const sans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const mono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
+const display = localFont({src:"./fonts/SchibstedGrotesk[wght].ttf",variable:"--font-schibsted",weight:"500 700",display:"swap",preload:false});
+const sans = localFont({src:"./fonts/IBMPlexSans[wdth,wght].ttf",variable:"--font-plex-sans",weight:"400 600",display:"swap",preload:false});
+const mono = localFont({src:[{path:"./fonts/IBMPlexMono-Regular.ttf",weight:"400"},{path:"./fonts/IBMPlexMono-Medium.ttf",weight:"500"}],variable:"--font-plex-mono",display:"swap",preload:false});
 
 export const metadata: Metadata = {
-  title: "Furnace — A workspace for your model",
+  title: "Furnace — Your model. Your machine.",
   description:
-    "Prepare a local workspace for your research model. Get started with a free kit, explore a guided example, and inspect recorded research and its limitations.",
+    "Run open-weight models locally with isolated serving, evaluations, logs and crash recovery. Free local app. Windows installer preview.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://furnace-5h6.pages.dev"),
+  openGraph: { title: "Furnace — Your model. Your machine.", description: "A home for your local model. Isolated serving, evaluations and crash recovery.", type: "website", images: ["/product/og.svg"] },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -60,6 +60,7 @@ def _run_cancellable(
     deadline = time.monotonic() + timeout
     with subprocess.Popen(  # noqa: S603 -- resolved executable and authored argument list
         command,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -123,6 +124,7 @@ class Supervisor:
             else:
                 result = subprocess.run(  # noqa: S603 -- resolved Docker, fixed argv, never a shell
                     [executable, *args],
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                     capture_output=True,
                     text=True,
                     encoding="utf-8",
@@ -419,6 +421,7 @@ class Supervisor:
                     "--query-gpu=name,memory.used,memory.total,utilization.gpu,temperature.gpu",
                     "--format=csv,noheader,nounits",
                 ],
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
                 capture_output=True,
                 text=True,
                 timeout=10,

@@ -1,0 +1,110 @@
+name: windows-installer
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  installed-app:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: '0.11.23'
+      - run: uv python install 3.12.13
+      - run: uv sync --frozen --python 3.12.13
+      - name: Install checksum-pinned free compiler
+        shell: powershell
+        run: ./scripts/install_compiler.ps1
+      - name: Build unsigned per-user installer
+        run: uv run python scripts/build_windows.py --iscc dist/build-tools/inno/ISCC.exe
+      - name: Install without elevation
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $metadata = Get-Content dist/windows/installer.json -Raw | ConvertFrom-Json
+          $binary = Join-Path (Resolve-Path dist/windows) $metadata.file
+          if ((Get-FileHash -LiteralPath $binary).Hash.ToLower() -ne $metadata.sha256) { throw 'Installer digest mismatch' }
+          $appDir = Join-Path $env:RUNNER_TEMP 'Furnace-installed'
+          $process = Start-Process $binary -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="'+$appDir+'"'),'/GROUP="Furnace CI"','/TASKS=desktopicon') -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Install failed: $($process.ExitCode)" }
+          if (-not (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\{3F41BE5E-54F7-4D62-A03C-187CB6478E72}_is1')) { throw 'Per-user uninstall registration missing' }
+          if (-not (Test-Path (Join-Path $env:APPDATA 'Microsoft/Windows/Start Menu/Programs/Furnace CI/Furnace.lnk'))) { throw 'Start shortcut missing' }
+          if (-not (Test-Path (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Furnace.lnk'))) { throw 'Desktop shortcut missing' }
+          "FURNACE_TEST_APP=$appDir" >> $env:GITHUB_ENV
+      - name: Actual installer and app-window lifecycle
+        shell: powershell
+        run: ./scripts/test_windows_window.ps1 -AppDir $env:FURNACE_TEST_APP -Installer (Join-Path (Resolve-Path dist/windows) (Get-Content dist/windows/installer.json -Raw | ConvertFrom-Json).file) -Screenshots dist/captures
+      - run: uv run playwright install chromium
+      - name: Installed browser journey with developer tools removed from PATH
+        run: uv run python scripts/smoke_installed.py --app "$env:FURNACE_TEST_APP" --out dist/installed-smoke.json --screenshots dist/captures
+      - name: Uninstall and retain user workspace
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $sentinel = Join-Path $env:USERPROFILE '.furnace/studio/installer-retention-test.txt'
+          New-Item -ItemType Directory -Force (Split-Path $sentinel) | Out-Null
+          Set-Content -LiteralPath $sentinel 'keep user data'
+          $uninstaller = Join-Path $env:FURNACE_TEST_APP 'unins000.exe'
+          $process = Start-Process $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -WindowStyle Hidden -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw 'Uninstall failed' }
+          if (Test-Path (Join-Path $env:FURNACE_TEST_APP 'runtime/python.exe')) { throw 'App files remained' }
+          if (-not (Test-Path $sentinel)) { throw 'Uninstall removed user data' }
+          if (Test-Path (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Furnace.lnk')) { throw 'Shortcut remained' }
+          '{"schema":"furnace-uninstall-v1","app_removed":true,"user_data_retained":true,"silent_defaults_only":true}' | Set-Content dist/uninstall.json
+      - name: Package all artifacts with provenance and checksums
+        run: uv run python scripts/package_release.py --windows dist/windows/installer.json
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: apps/web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            apps/web/pnpm-lock.yaml
+            scripts/lighthouse/pnpm-lock.yaml
+      - run: pnpm --dir apps/web install --frozen-lockfile
+      - run: pnpm --dir scripts/lighthouse install --frozen-lockfile --ignore-scripts
+      - run: uv run python scripts/stage_download.py
+      - run: uv run python scripts/export_release_notes.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Build unpublished static site with actual installer metadata
+        run: |
+          $env:NEXT_PUBLIC_RECORDED_ONLY = 'true'
+          pnpm --dir apps/web build:static
+      - name: Browser, download, checksum, links and mobile checks
+        run: |
+          $server = Start-Process .venv/Scripts/python.exe -ArgumentList @('scripts/preview_site.py') -WindowStyle Hidden -PassThru
+          try {
+            uv run python scripts/verify_download_site.py
+            if ($LASTEXITCODE -ne 0) { throw 'Browser verification failed' }
+            $env:CHROME_PATH = uv run python -c "from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()"
+            pnpm --dir scripts/lighthouse exec lighthouse http://127.0.0.1:4010 '--only-categories=performance,accessibility,seo' '--chrome-flags=--headless=new --no-sandbox --disable-gpu' --output=json --output-path=../../dist/lighthouse.json --quiet
+            if ($LASTEXITCODE -ne 0) { throw 'Lighthouse invocation failed' }
+            uv run python scripts/check_lighthouse.py dist/lighthouse.json
+            if ($LASTEXITCODE -ne 0) { throw 'Lighthouse score below acceptance' }
+          } finally { Stop-Process -Id $server.Id -ErrorAction SilentlyContinue }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: furnace-windows-and-site-preview
+          path: |
+            dist/windows/*.exe
+            dist/windows/installer.json
+            dist/windows/SHA256SUMS
+            dist/release/
+            dist/*smoke.json
+            dist/uninstall.json
+            dist/site-verification.json
+            dist/lighthouse.json
+            dist/captures/
+            dist/site-screenshots/
+            apps/web/out/
+          retention-days: 14
+          if-no-files-found: error

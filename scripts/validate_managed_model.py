@@ -103,7 +103,7 @@ class Studio:
         flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
         self.process = subprocess.Popen(  # noqa: S603 -- fixed argv for the local Studio
             [
-                sys.executable, "-m", "furnace.cli", "studio", "--no-browser",
+                sys.executable, "-I", "-m", "furnace.cli", "studio", "--no-browser",
                 "--workspace", str(self.workspace), "--port", str(self.port),
                 "--artifacts", str(self.artifacts),
             ],
@@ -198,9 +198,24 @@ def main() -> int:
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--memory-mb", type=int, default=2048)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--installed-build", type=Path, help="installed app root; requires its bundled interpreter"
+    )
     parser.add_argument("--fresh-download", action="store_true",
                         help="use an empty artifacts directory and interrupt the first download")  # fmt: skip
     args = parser.parse_args()
+    installed = None
+    if args.installed_build:
+        import furnace_api
+
+        app_root = args.installed_build.resolve()
+        if not Path(sys.executable).resolve().is_relative_to(app_root) or not Path(
+            furnace_api.__file__
+        ).resolve().is_relative_to(app_root):
+            raise SystemExit(
+                "Use this installation's runtime/python.exe -I; source or user-site imports are refused."
+            )
+        installed = json.loads((app_root / "build.json").read_text())
 
     from furnace.runtime.catalog import MODELS
     from furnace.runtime.serving import workspace_scope
@@ -228,6 +243,13 @@ def main() -> int:
         "completed": False,
     }
     steps = record["steps"]
+    if installed is not None:
+        record["installed_build"] = installed
+        record["environment"].update(
+            furnace_commit=installed["commit"],
+            working_tree_clean=True,
+            source_scope="clean installer build; harness checkout is separate",
+        )
     scope = f"label=furnace.managed.workspace={workspace_scope(workspace)}"
     studio = Studio(workspace, artifacts, args.port)
     print(f"Validating {args.model} on {args.accelerator}; workspace {workspace}", flush=True)
@@ -287,6 +309,12 @@ def main() -> int:
         step["seconds"] = round(time.monotonic() - began, 1)
         check(view.get("status") == "prepared", "images pulled and weights verified", step)
         step["manifest_sha256"] = view.get("manifest_sha256")
+        step["state"] = view.get("status")
+        step["reason"] = view.get("reason")
+        if view.get("status") != "prepared":
+            raise RuntimeError(
+                "Preparation failed; inspect the recorded reason before attempting inference"
+            )
 
         suite = studio.api("POST", f"projects/{pid}/managed/suite").json()
         steps["suite"] = {"cases": len(suite["cases"])}

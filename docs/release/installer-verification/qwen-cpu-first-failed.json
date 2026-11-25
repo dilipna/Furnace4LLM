@@ -1,0 +1,87 @@
+{
+  "schema": "furnace-real-model-validation-v1",
+  "model": "qwen2.5-0.5b-instruct-q8_0",
+  "accelerator": "cpu",
+  "recipe": {
+    "repository": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+    "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
+    "weights_sha256": "ca59ca7f13d0e15a8cfa77bd17e65d24f6844b554a7b6c12e07a5f89ff76844e",
+    "architecture": "qwen2 (decoder-only transformer)",
+    "license": "apache-2.0"
+  },
+  "environment": {
+    "recorded_at": "2026-11-23T20:30:44.022646+00:00",
+    "furnace_commit": "3d8a93dcee3c52afe53c7fe5daf25f24a249cfa2",
+    "working_tree_clean": true,
+    "os": "Windows 11 (10.0.26300)",
+    "machine": "AMD64",
+    "python": "3.12.13",
+    "docker_server": "29.6.1",
+    "docker_os": "Docker Desktop",
+    "docker_vm_cpus": 20,
+    "docker_vm_memory_bytes": 8150237184,
+    "docker_gpu_runtime": true,
+    "host_gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 610.91, 4096 MiB",
+    "host_cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+    "source_scope": "clean installer build; harness checkout is separate"
+  },
+  "steps": {
+    "studio_start": {
+      "seconds": 77.22
+    },
+    "select": {
+      "checks": {
+        "selection saved": true
+      }
+    },
+    "prepare": {
+      "fresh_download": false,
+      "seconds": 14.8,
+      "checks": {
+        "images pulled and weights verified": false
+      },
+      "manifest_sha256": "2d403187243cb393abd10be4d8dd787bc8b576d5d0d224ebfbddaad607e57080"
+    },
+    "suite": {
+      "cases": 12
+    },
+    "start": {
+      "seconds": 10.39,
+      "host_gpu_memory_mib": {
+        "before_start": 160,
+        "after_ready": 160
+      },
+      "checks": {
+        "server ready": false,
+        "connected automatically": false
+      },
+      "start_seconds": null,
+      "load_seconds": null
+    }
+  },
+  "completed": false,
+  "installed_build": {
+    "schema": "furnace-windows-installer-v1",
+    "version": "0.1.0",
+    "commit": "3d8a93dcee3c52afe53c7fe5daf25f24a249cfa2",
+    "built_at": "2026-11-23T20:05:21.265627+00:00",
+    "published": false,
+    "platform": "windows-x64",
+    "python": "3.12.13",
+    "compiler": "Inno Setup 6.4.3",
+    "signed": false,
+    "wheel_sha256": {
+      "furnace_bench-0.1.0-py3-none-any.whl": "525ffc8f98db594f9b2309e73bbb7c8ebbfc9e0394216ef442d2907f8a7a7bef",
+      "furnace-0.1.0-py3-none-any.whl": "0680baad061600e26a0a62f0c46ce1a5c3e76bc85fb8a36a7e397f94e5ab167f",
+      "furnace_api-0.1.0-py3-none-any.whl": "514396266cf3a15d44d278d79b4b2bf9bc6f53b710d7d6b5212271088b060d4e"
+    },
+    "reproducibility": "Repeatable pinned-input recipe; binary identity is not established (PE timestamps/signing)."
+  },
+  "failures": [
+    "images pulled and weights verified",
+    "server ready",
+    "connected automatically",
+    "validation_aborted:StopIteration"
+  ],
+  "result": "failed"
+}

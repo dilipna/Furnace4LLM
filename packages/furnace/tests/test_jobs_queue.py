@@ -202,15 +202,29 @@ async def test_job_timeout_fails_the_job_with_the_reason(clean_jobs, short_lease
 
 
 @pytest.mark.adversarial
-async def test_lost_lease_cancels_the_running_handler(clean_jobs, short_lease):
+@pytest.mark.parametrize("claim_delay", [0, 1.25])
+async def test_lost_lease_cancels_the_running_handler(
+    clean_jobs, short_lease, monkeypatch, claim_delay
+):
     """If another claim takes the job (this worker stalled), the heartbeat notices and the
     handler is cancelled before it can write anything else; the other claim's state stands."""
     from furnace.jobs import worker
     from sqlalchemy import text
 
+    started = asyncio.Event()
     cancelled = asyncio.Event()
+    original_claim = queue.claim
+
+    async def delayed_claim(*args, **kwargs):
+        # Reproduce a slow DB/worker startup without relying on machine load.
+        if kwargs.get("worker") == "w-slow":
+            await asyncio.sleep(claim_delay)
+        return await original_claim(*args, **kwargs)
+
+    monkeypatch.setattr(queue, "claim", delayed_claim)
 
     async def long_job(ctx):
+        started.set()
         try:
             await asyncio.sleep(60)
         except asyncio.CancelledError:
@@ -218,20 +232,31 @@ async def test_lost_lease_cancels_the_running_handler(clean_jobs, short_lease):
             raise
 
     worker.HANDLERS["test.long"] = long_job
+    run = None
     try:
         async with session_scope() as s:
             job = await queue.enqueue(s, queue="cpu", kind="test.long", max_attempts=3)
         run = asyncio.create_task(worker.run_one("w-slow", ["cpu"]))
-        await asyncio.sleep(0.5)
-        async with session_scope() as s:  # another worker re-claims it
-            await s.execute(
-                text("UPDATE jobs SET locked_by='thief', attempts=attempts+1 WHERE id=:i"),
+        # A sleep did not establish a claim: slow startup let the theft update a
+        # queued job, which the worker subsequently claimed normally.
+        await asyncio.wait_for(started.wait(), 15)
+        async with session_scope() as s:  # another worker re-claims the running job
+            stolen = await s.execute(
+                text(
+                    "UPDATE jobs SET locked_by='thief', attempts=attempts+1 "
+                    "WHERE id=:i AND status='running' AND locked_by='w-slow' RETURNING id"
+                ),
                 {"i": job.id},
             )
+            assert stolen.scalar_one() == job.id
         assert await asyncio.wait_for(run, 15)
         assert cancelled.is_set()
         async with session_scope() as s:
             j = await s.get(Job, job.id)
         assert j is not None and j.status == "running" and j.locked_by == "thief"
+        assert j.attempts == 2
     finally:
+        if run is not None and not run.done():
+            run.cancel()
+            await asyncio.gather(run, return_exceptions=True)
         del worker.HANDLERS["test.long"]

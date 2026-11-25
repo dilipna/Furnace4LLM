@@ -1,0 +1,14 @@
+{
+  "name": "furnace-lighthouse-tool",
+  "private": true,
+  "packageManager": "pnpm@10.28.2",
+  "devDependencies": {
+    "lighthouse": "13.0.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "tldts-icann": "7.5.5",
+      "tldts-core": "7.5.5"
+    }
+  }
+}
