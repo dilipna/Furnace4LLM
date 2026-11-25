@@ -113,6 +113,16 @@ def main() -> None:
         page.get_by_role("button", name="Switch color theme").click()
         expect(page.locator(".download-site")).to_have_attribute("data-theme", "dark")
         checks["theme_toggle"] = True
+        page.goto(args.url + "/security")
+        expect(page.get_by_role("heading", name="Manipulated documents")).to_be_visible()
+        expect(page.locator("main")).to_contain_text("no internet route")
+        page.goto(args.url + "/faq")
+        expect(
+            page.get_by_role("heading", name="What if a document tries to instruct the AI?")
+        ).to_be_visible()
+        expect(page.locator("main")).to_contain_text("These mitigations are incomplete")
+        checks["manipulated_document_limits_disclosed"] = True
+
         mobile = browser.new_context(
             viewport={"width": 390, "height": 844},
             is_mobile=True,

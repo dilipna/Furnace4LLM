@@ -64,11 +64,12 @@ Open Advanced, return, then quit using the app window; closing a browser is not 
 
 ## Release gates
 
-- Latest selected installer must pass fresh installed-runtime acceptance; the actual
-  CPU/GPU trials and recording currently belong to source `2c250d6`.
-- Model quality is unresolved: both devices passed 5/9 rules, with two unscored tasks.
-  The injected document instruction produced the wrong invoice total. Do not describe
-  this as safe professional advice or prompt-injection resistance.
+- Latest selected installer must pass fresh installed-runtime acceptance; recordings and installed confirmations must retain their own source identities.
+  Earlier `2c250d6` records remain historical.
+- Review the [model comparison](../product/model-comparison.md) and separate historical
+  re-scoring. The owner selected Qwen3 for compatible NVIDIA GPUs and Qwen1.5 for CPU/faster
+  use. Remaining wrong answers and the Qwen3 CPU timeout remain; eight fixed attacks do
+  not establish general injection resistance. No professional-advice suitability is claimed.
 - Human observations, clean-account install/keep/delete, licensing/legal review and
   explicit owner merge/publication decisions remain outstanding.
 - Local site evidence is in `docs/product/verification/private-site`: first Lighthouse
