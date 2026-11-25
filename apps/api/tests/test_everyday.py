@@ -433,7 +433,7 @@ def test_actual_25_page_text_pdf_exceeds_old_limit_and_preserves_last_page():
     fixture = Path(__file__).resolve().parents[3] / "scripts/long_document_fixture.py"
     pdf = runpy.run_path(str(fixture))["make_pdf"]()
     result = extract_document("pdf", base64.b64encode(pdf).decode())
-    assert 24000 < len(result["text"].encode()) < 128000
+    assert 64000 < len(result["text"].encode()) < 128000
     assert "2027-02-19" in result["text"] and "Page 25" in result["text"]
     assert result["ocr"] is False
 

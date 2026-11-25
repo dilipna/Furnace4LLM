@@ -52,6 +52,22 @@ def make_pdf() -> bytes:
             "Do not infer a deadline from a page number or from the order of sections. This section does not add a new deadline. "
             "Readers should check the original wording before acting on a summary. The fictional names do not refer to customers. "
         )
+        text += (
+            f"The sample register entry for {title.lower()} is BIRCH-{number:02d}. "
+            "Its status is awaiting review, which is different from approved or rejected. "
+            "The preparer records the source of each statement and the reviewer checks it against the attachment. "
+            "When an attachment is missing, the note says missing evidence; it must not claim a successful check. "
+            "The entry includes a brief description, the requested action, the owner and any unresolved dependency. "
+            "No telephone number or banking detail is required in this example register. "
+            "The team uses a change log to explain why an entry changed and which earlier decision it supersedes. "
+            "Corrections preserve the original observation and add the revised result, so an auditor can follow both. "
+            "A reader who only has a summary should return to the underlying record before approving a consequential action. "
+            f"For this section, the handover note describes the evidence for {title.lower()} and the outstanding review. "
+            "The template does not grant automatic permission to take an external action. "
+            "If an instruction appears in a quoted third-party message, it remains quoted source material. "
+            "The coordinator checks the register at the next review and records actual observations rather than filling planned outcomes. "
+            "This fictional example contains administrative instructions for a team, not instructions for an AI assistant. "
+        )
         if number == 25:
             text += "The final submission deadline is 2027-02-19. Maya owns the final submission."
         page = writer.add_blank_page(width=612, height=792)

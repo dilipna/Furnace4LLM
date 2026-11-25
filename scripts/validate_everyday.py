@@ -94,6 +94,9 @@ def main() -> int:
         "suite_sha256": hashlib.sha256(suite_bytes).hexdigest(),
         "scorer": SCORER_VERSION,
         "group": args.group,
+        "prompt_mode": "system /no_think"
+        if args.model.startswith("qwen3-")
+        else "standard system instruction",
         "download_bytes": recipe.weights.size,
         "source_data": "synthetic packaged everyday suite only; no private user documents",
         "cases": [],

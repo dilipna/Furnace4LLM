@@ -1,4 +1,24 @@
-# Installed everyday-model observations
+# Everyday-model evidence
+
+## Historical installed outputs and separate v3 re-scoring
+
+The original records below are unchanged. Re-scoring existing outputs is not new inference.
+
+| Saved outputs | Original v2 rules | v3 with original rules | v3 with revised everyday rules |
+| --- | --- | --- | --- |
+| CPU | 5 pass / 4 fail / 2 unscored | 6 / 3 / 2 | 9 / 2 / 0 |
+| NVIDIA | 5 pass / 4 fail / 2 unscored | 5 / 4 / 2 | 8 / 3 / 0 |
+
+Only the punctuation change is a scorer correction: surrounding inverted Spanish
+punctuation is now stripped, while English “Good morning.” still fails Spanish translation.
+The suite separately accepts a deadline within a sentence and adds fixed missing-info/reply
+rules. Those rules check an admission or required text plus specific forbidden time forms;
+they do not establish semantic correctness or detect every possible invented commitment.
+The [re-score record](verification/everyday/rescore-v3-revised-suite.json) records original
+file hashes, old scores, the revised rules and new verdicts. The preliminary v3 record
+is also retained. The original suite and exact baseline suite bytes are archived.
+
+## Original installed v2 trial results
 
 Candidate: Qwen2.5-1.5B Instruct Q4_K_M, Apache-2.0, pinned revision and SHA-256
 in the catalog. Installed source `2c250d642a1af2b648b67cb34fd190f535f24d8a`.
