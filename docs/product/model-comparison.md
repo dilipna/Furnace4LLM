@@ -118,3 +118,9 @@ every 25-page document or a comprehensive fidelity score. The exact PDF hash and
 hash are recorded; byte-exact fixture source is archived in `long-document-fixture.py.gz`.
 The current limit is 128,000 extracted UTF-8 bytes, 3 MB per file and 40 PDF pages.
 Scanned PDFs and image-only sections still need OCR, which is not implemented.
+
+
+The two initial PDF records retain the harness's older generic `source_data` label
+(“synthetic packaged everyday suite only”). Their `suite_override` identifies the actual
+external synthetic PDF fixture and hash; that explicit override describes the run.
+The label is corrected in future recording commands, without rewriting either raw record.

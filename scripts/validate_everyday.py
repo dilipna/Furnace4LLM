@@ -98,7 +98,11 @@ def main() -> int:
         if args.model.startswith("qwen3-")
         else "standard system instruction",
         "download_bytes": recipe.weights.size,
-        "source_data": "synthetic packaged everyday suite only; no private user documents",
+        "source_data": "synthetic 25-page fixture; no private user documents"
+        if args.long_pdf
+        else "explicit supplied suite; contents are not asserted synthetic"
+        if args.suite
+        else "synthetic packaged everyday suite only; no private user documents",
         "cases": [],
         "result": "incomplete",
     }
