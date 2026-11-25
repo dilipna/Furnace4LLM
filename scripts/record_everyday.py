@@ -146,11 +146,15 @@ try:
                 "A synthetic text PDF is extracted locally. No private customer document is used.",
             )
             with view.expect_response(
-                lambda r: r.url.endswith("/answer"), timeout=180000
+                lambda r: r.url.endswith("/answer-stream"), timeout=180000
             ) as response:
                 view.get_by_role("button", name="Summarise", exact=True).click()
             assert response.value.status == 200
-            answer = response.value.json()
+            answer = next(
+                json.loads(line)["result"]
+                for line in response.value.text().splitlines()
+                if "result" in json.loads(line)
+            )
             assert answer["receipt"]["status"] == "checked"
             record["answer"] = answer
             expect(view.locator(".output")).to_have_text(answer["output"])

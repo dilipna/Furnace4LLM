@@ -123,7 +123,13 @@ class LocalChatEndpoint:
             raise RuntimeFault("configured_model_not_advertised")
 
     def predict(
-        self, config: dict[str, Any], value: str, timeout: float, api_key: str | None = None
+        self,
+        config: dict[str, Any],
+        value: str,
+        timeout: float,
+        api_key: str | None = None,
+        *,
+        system_prompt: str | None = None,
     ) -> dict[str, Any]:
         began = time.monotonic()
         response = self.request(
@@ -132,7 +138,10 @@ class LocalChatEndpoint:
             timeout,
             {
                 "model": config["model_id"],
-                "messages": [{"role": "user", "content": value}],
+                "messages": (
+                    [{"role": "system", "content": system_prompt}] if system_prompt else []
+                )
+                + [{"role": "user", "content": value}],
                 "stream": False,
                 "temperature": 0,
                 "max_tokens": config["max_tokens"],

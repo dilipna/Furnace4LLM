@@ -11,6 +11,7 @@ import platform
 import secrets
 import sqlite3
 import tempfile
+import threading
 import uuid
 import zipfile
 from collections.abc import AsyncIterator
@@ -20,7 +21,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 from furnace.runtime.lease import WorkspaceLease
 from furnace.runtime.manager import RuntimeFault, RuntimeManager
 from furnace.runtime.oplog import OperationsLog
@@ -334,8 +335,45 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
 
     @app.post("/api/everyday/projects/{project_id}/answer")
     async def everyday_answer(project_id: str, request: Request):
-        value = await payload(request, EverydayRequest, 110_000)
+        value = await payload(request, EverydayRequest, 800_000)
         return await asyncio.to_thread(everyday.answer, project_id, value)
+
+    @app.post("/api/everyday/projects/{project_id}/answer-stream")
+    async def everyday_answer_stream(project_id: str, request: Request):
+        value = await payload(request, EverydayRequest, 800_000)
+        stopped = threading.Event()
+        loop = asyncio.get_running_loop()
+        events: asyncio.Queue = asyncio.Queue()
+
+        def progress(event):
+            if stopped.is_set():
+                raise RuntimeFault("Document task cancelled")
+            loop.call_soon_threadsafe(events.put_nowait, {"progress": event})
+
+        def execute():
+            try:
+                result = {"result": everyday.answer(project_id, value, progress)}
+            except RuntimeFault as error:
+                result = {"error": error.code}
+            except Exception:
+                result = {"error": "Local document task failed; retry after checking the model"}
+            if not stopped.is_set():
+                loop.call_soon_threadsafe(events.put_nowait, result)
+
+        async def stream():
+            task = asyncio.create_task(asyncio.to_thread(execute))
+            try:
+                while True:
+                    event = await events.get()
+                    yield json.dumps(event) + "\n"
+                    if "result" in event or "error" in event:
+                        break
+            finally:
+                # A sent model request may finish; no further section is sent.
+                stopped.set()
+                task.cancel()
+
+        return StreamingResponse(stream(), media_type="application/x-ndjson")
 
     @app.get("/guide")
     def real_evaluation_guide():
