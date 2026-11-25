@@ -2,7 +2,7 @@ const $ = value => document.querySelector(value);
 const fragment = new URLSearchParams(location.hash.slice(1)).get("session");
 const token = fragment || sessionStorage.getItem("furnace-session") || "";
 if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", "/"); }
-let chatTurns = [], setupWorking = false;
+let chatTurns = [], setupWorking = false, answerController = null;
 let documentText = "", action = "chat", projectId = "", epoch = 0, busy = false, refreshing = false, selectionChosen = false, hardwareChosen = false;
 const labels = {summarise:"Summarise",ask:"Ask about this document",actions:"Extract action items",dates:"Find dates",rewrite:"Simplify",reply:"Draft a reply",translate:"Translate",chat:"Chat"};
 const errors = {
@@ -40,6 +40,7 @@ function setAction(value) {
   $("#question-label").textContent=value === "translate" ? "Translate into which language?" : value === "ask" ? "Ask about this document" : "Ask something, or just chat";
 }
 function clearConversation() {
+  if(answerController) answerController.abort();
   epoch++; chatTurns=[]; documentText=""; $("#document-text").value=""; $("#question").value=""; $("#file").value="";
   $("#conversation").replaceChildren(); $("#document-info").textContent="Drop a PDF, Word document, TXT or Markdown file here.";
   setAction("chat"); message(busy ? "Conversation cleared. A request already sent locally may finish; its answer will be discarded." : "Conversation cleared from this tab. Original files are unchanged.");
@@ -98,8 +99,8 @@ function renderAnswer(result,label,question) {
   technical.append(element("p",`Pinned revision: ${result.receipt.model.revision}`),element("p",`Weights SHA-256: ${result.receipt.model.weights_sha256}`),element("p",result.receipt.model.weights_check),element("p",result.receipt.scope));
   receipt.append(technical); article.append(receipt); $("#conversation").append(article); article.scrollIntoView({block:"nearest"});
 }
-async function streamAnswer(pid,payload,onProgress) {
-  const response=await fetch(`/api/everyday/projects/${pid}/answer-stream`,{method:"POST",headers:{"Content-Type":"application/json","x-furnace-session":token},body:JSON.stringify(payload)});
+async function streamAnswer(pid,payload,onProgress,signal) {
+  const response=await fetch(`/api/everyday/projects/${pid}/answer-stream`,{method:"POST",headers:{"Content-Type":"application/json","x-furnace-session":token},body:JSON.stringify(payload),signal});
   if(!response.ok) { const error=await response.json(); throw new Error(typeof error.detail==="string" ? error.detail : "Check the document and model setup."); }
   const reader=response.body.getReader(), decoder=new TextDecoder();
   let buffer="", answer;
@@ -126,6 +127,7 @@ async function send() {
   const question=$("#question").value.trim();
   if(["ask","chat","translate"].includes(action) && !question) { $("#question").focus();message("Enter a question, message or target language.");return; }
   const generation=epoch, pid=projectId, label=labels[action];
+  const controller=new AbortController(); answerController=controller;
   setBusy(true); message(new TextEncoder().encode(documentText).length>1000 ? "Working locally in document sections. This can take a few minutes; no cloud fallback is used." : "Working with your local AI…");
   try {
     let truncated=false;
@@ -143,12 +145,12 @@ async function send() {
       const left=event.phase==="document" ? Math.max(0,sections-n)+Math.ceil(sections/4)+1 : 1;
       const estimate=n>0 ? ` Rough estimate: ${Math.max(1,Math.round(left*event.elapsed_seconds/n/60))}–${Math.max(1,Math.ceil(left*event.elapsed_seconds/n*2/60))} minutes remaining; combining stages may add time.` : " Estimating after the first section.";
       message(`Working locally · ${n} requests completed · ${sections} document sections · ${event.phase==="combining" ? "combining results" : "reading sections"}.${estimate}`);
-    });
+    },controller.signal);
     if(generation!==epoch || projectId!==pid) return;
     renderAnswer(result,label,question);
     if(action==="chat" && !documentText) chatTurns=[{role:"user",content:question},{role:"assistant",content:result.output}]; $("#question").value="";message("Answer complete. Check important details and inspect the privacy receipt.");
   } catch(error) { if(generation===epoch) message(error.message); }
-  finally {setBusy(false);}
+  finally {if(answerController===controller) answerController=null;setBusy(false);}
 }
 $("#composer").addEventListener("submit",event=>{event.preventDefault();send();});
 for(const button of document.querySelectorAll("[data-action]")) button.addEventListener("click",()=>{

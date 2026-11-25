@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+from furnace.runtime.catalog import MODELS
 from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +22,13 @@ from apps.api.tests.test_everyday import (  # noqa: E402 -- test-only browser ha
     privacy_double,
     text_pdf,
 )
-from apps.api.tests.test_studio_managed import ANSWERS, TOKEN, build, ready_project  # noqa: E402
+from apps.api.tests.test_studio_managed import (  # noqa: E402
+    ANSWERS,
+    MODEL,
+    TOKEN,
+    build,
+    ready_project,
+)
 
 
 def main() -> None:
@@ -81,12 +88,8 @@ def main() -> None:
                     timeout=60000,
                 ) as response:
                     page.get_by_role("button", name="Summarise", exact=True).click()
-                answer = next(
-                    json.loads(line)["result"]
-                    for line in response.value.text().splitlines()
-                    if "result" in json.loads(line)
-                )
-                assert response.value.status == 200 and answer["processing"]["model_requests"] == 1
+                assert response.value.status == 200
+                expect(page.locator(".answer .meta").first).to_contain_text("1 local request(s)")
                 expect(page.locator(".output")).to_have_text(ANSWERS[marker])
                 record["checks"]["actual_adapter_execution"] = True
                 page.locator(".receipt > summary").click()
@@ -95,9 +98,7 @@ def main() -> None:
                 )
                 expect(page.locator(".receipt")).to_contain_text("not proof about every program")
                 page.get_by_text("Model identity and technical details", exact=True).click()
-                expect(page.locator(".receipt")).to_contain_text(
-                    answer["receipt"]["model"]["weights_sha256"]
-                )
+                expect(page.locator(".receipt")).to_contain_text(MODELS[MODEL].weights.sha256)
                 record["checks"]["receipt_and_limits_visible"] = True
                 page.screenshot(path=str(args.out / "answer-receipt.png"), full_page=True)
                 # Clearing is a user action, and must remove both source text and answer.
