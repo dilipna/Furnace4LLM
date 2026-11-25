@@ -92,8 +92,11 @@ Token-limit termination is incomplete even if the returned text exactly matches.
 Exact equality is not semantic quality. No performance acceptance, repair verification
 or architecture certification follows from these observations.
 
-Errors mark the connection failed. Reconnect and retry explicitly; there is no hidden
-retry. Retrying re-executes the cases. Each recorded case has a new local request ID.
+Errors mark the connection failed. After a request timeout, the next request can
+health-check and recover the same approved configuration automatically; explicit
+disconnects and changed or invalid identities still refuse execution. Other failures
+require reconnecting. The failed request is never replayed silently. Retry an
+interrupted evaluation explicitly; it re-executes the cases with new local request IDs.
 Project ID, contract, preferences, case inputs/expectations, connection settings and
 protocol version bind the observation to a SHA-256 identity. Configuration changes
 invalidate readiness and prior evidence. Saved results retain their time; reloading

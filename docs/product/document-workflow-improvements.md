@@ -21,6 +21,39 @@ Some records explicitly report a dirty source tree. None is relabelled as an ins
 or a measurement of a later documentation head. Random delimiter nonces were not saved;
 exact prompt replay remains unavailable.
 
+### Latest expanded execution, before the focused tables
+
+Both defaults completed all 42 requests in a final source trial. Raw verdicts are
+preserved alongside a separate post-hoc fixture correction:
+
+| Default | Raw rules / 42 | Restored UTF-8 rules / 42 (no new inference) | Original 36-case subset under restored rules | Attacks | Long Q&A |
+| --- | --- | --- | --- | --- | --- |
+| Qwen2.5-1.5B CPU | 36/42 | **37/42** | 32/36 | 8/8 | **5/6** |
+| Qwen3-4B GPU | 40/42 | **41/42** | 35/36 | 8/8 | 6/6 |
+
+The author's Windows suite-expansion helper omitted UTF-8 decoding and corrupted
+the translation target and a regex string. All 42 request bodies were unchanged.
+The original 36-case archive restored both strings exactly; a new regression test
+requires preservation of all original cases. The malformed v3 suite, raw model
+records and raw scores remain archived. Packaged suite v4 and a separate derivation
+retain the correction's identity. Only the translation verdict changes in each run.
+No scorer algorithm, tolerance or unfavorable model output was changed.
+
+The latest CPU long-Q&A result is **5/6**, below the focused 6/6 below: the form
+answer repeated an instruction rather than supplying the requested facts.
+Variation's cause is unisolated; do not use the better focused result as a guarantee.
+Other CPU failures include a missing account suffix, incorrect thread actions and
+date reformatting that fails the literal rules. The remaining GPU failure is date
+reformatting. See [full records and re-scoring](verification/everyday/document-improvements-full42-summary.json).
+
+```powershell
+uv run python scripts/report_document_improvements.py --expanded-suite --out dist/full42-summary.json
+```
+
+These executions used source 6ed8bb2 (dirty flags recorded independently), not a
+fresh installed binary. The restored-fixture totals are re-scoring of those saved
+outputs, not a second model run. No failed inference was removed.
+
 ## 1. Set aside AI-directed sentences
 
 The existing detector now removes flagged sentences, and some command continuations,
@@ -71,6 +104,12 @@ relay. It does not instrument llama.cpp internals or establish recovery from an 
 Regression tests additionally refuse recovery after disconnect, configuration change
 or wrong advertised model. Historical interrupted evaluations still require their
 existing explicit retry; no incomplete evaluation is silently labelled successful.
+
+A final Windows run exposed a native-socket/timer scheduling race: a socket timeout
+could arrive before the timer callback and be misclassified as unavailable. A
+deterministic delayed-timer test reproduced it before correction; native TimeoutError
+now follows the timeout recovery path too. The initial failed local run and
+deterministic reproduction remain archived; neither was rerun merely until green.
 
 ```powershell
 uv run pytest -q apps/api/tests/test_studio_model.py -k timeout

@@ -40,7 +40,7 @@ def server():
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(raw)))
             self.end_headers()
-            with contextlib.suppress(BrokenPipeError, ConnectionResetError):
+            with contextlib.suppress(BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 self.wfile.write(raw)
 
         def do_GET(self):
@@ -183,7 +183,16 @@ def test_wall_clock_deadline_covers_slow_and_trickling_bodies(server, mode):
     assert time.monotonic() - started < 1.25
 
 
-def test_timeout_aborts_upstream_and_next_four_requests_execute_without_reconnect(tmp_path, server):
+@pytest.mark.parametrize("late_timer", [False, True], ids=["timer-deadline", "socket-deadline"])
+def test_timeout_aborts_upstream_and_next_four_requests_execute_without_reconnect(
+    tmp_path, server, monkeypatch, late_timer
+):
+    if late_timer:
+        real_timer = threading.Timer
+        monkeypatch.setattr(
+            "furnace.runtime.endpoint.threading.Timer",
+            lambda interval, callback: real_timer(interval + 5, callback),
+        )
     state, config = server
     with TestClient(
         create_app(tmp_path, TOKEN),

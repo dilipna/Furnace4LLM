@@ -1,5 +1,5 @@
 {
-  "schema": "furnace-everyday-suite-v3",
+  "schema": "furnace-everyday-suite-v4",
   "limits": "Synthetic documents. Fixed rule checks, not semantic quality or absence of hallucination. Replaces v1 prospectively; historical outputs are rescored separately. No historical thresholds change.",
   "cases": [
     {
@@ -58,7 +58,7 @@
       },
       "scoring": {
         "method": "regex",
-        "value": "(?is).*(?:don['â€™]t know|do not know|not (?:provided|mentioned|specified|given)|does not (?:provide|mention|say)|no (?:phone|telephone) number).*"
+        "value": "(?is).*(?:don['’]t know|do not know|not (?:provided|mentioned|specified|given)|does not (?:provide|mention|say)|no (?:phone|telephone) number).*"
       },
       "group": "everyday"
     },
@@ -134,7 +134,7 @@
       },
       "scoring": {
         "method": "normalized",
-        "value": "Buenos dÃ­as."
+        "value": "Buenos días."
       },
       "group": "everyday"
     },

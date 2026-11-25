@@ -8,6 +8,7 @@ import json
 import statistics
 from pathlib import Path
 
+from furnace.runtime.scoring import ScoringRule, score
 from furnace_api.document_policy import quarantine
 
 
@@ -15,6 +16,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--records", type=Path, default=Path("docs/product/verification/everyday"))
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--expanded-suite",
+        action="store_true",
+        help="Also summarize the two full 42-case default trials",
+    )
     args = parser.parse_args()
     if args.out.exists():
         raise SystemExit("Refusing to overwrite a derived report")
@@ -29,7 +35,8 @@ def main() -> None:
         cases = [
             c
             for c in record["cases"]
-            if (
+            if prefix == "all"
+            or (
                 c["name"].startswith("Long Q&A:")
                 if prefix == "qa"
                 else not c["name"].startswith("Long Q&A:")
@@ -129,6 +136,69 @@ def main() -> None:
         {"text": text, "flagged": bool(quarantine(text)[1])} for text in controls
     ]
     report["timeout_probe"] = read("real-timeout-recovery.json")
+    if args.expanded_suite:
+        report["expanded_suite"] = []
+        restored = read("everyday-suite-v4-42-cases-utf8.json")
+        assert len(restored["cases"]) == len(suite["cases"]) == 42
+        assert all(
+            a["request"] == b["request"]
+            for a, b in zip(suite["cases"], restored["cases"], strict=True)
+        )
+        changed_rules = [
+            a["name"]
+            for a, b in zip(suite["cases"], restored["cases"], strict=True)
+            if a["scoring"] != b["scoring"]
+        ]
+        assert changed_rules == ["Missing information", "Translate greeting"]
+        report["fixture_correction"] = {
+            "inference": False,
+            "changed_rule_strings": changed_rules,
+            "all_42_requests_unchanged": True,
+            "reason": "Restore original UTF-8 rule strings after Windows authoring-helper decoding error; scorer algorithm and thresholds unchanged",
+        }
+        for device, model in (("cpu", "qwen25"), ("gpu", "qwen3")):
+            name = f"full42-{model}-{device}.json"
+            record = read(name)
+            assert record["suite_sha256"] == hashes["everyday-suite-v3-42-cases.json"]
+            assert len({c["name"] for c in record["cases"]}) == 42
+            corrected = json.loads(json.dumps(record))
+            changes = []
+            rules = {c["name"]: c for c in restored["cases"]}
+            for case in corrected["cases"]:
+                if case["operational"] == "completed":
+                    gold = rules[case["name"]]
+                    verdict, reason = score(
+                        ScoringRule.model_validate(gold["scoring"]),
+                        case["output"],
+                        None,
+                        gold["request"]["text"],
+                    )
+                    if verdict != case["score"]:
+                        changes.append(
+                            {
+                                "name": case["name"],
+                                "raw": case["score"],
+                                "restored_fixture": verdict,
+                                "reason": reason,
+                            }
+                        )
+                    case["score"] = verdict
+            report["expanded_suite"].append(
+                {
+                    "source": name,
+                    "device": device,
+                    "all": table(record, "all", 42),
+                    "original36": table(record, "original", 36),
+                    "long_qa": table(record, "qa", 6),
+                    "posthoc_restored_fixture": {
+                        "inference": False,
+                        "all": table(corrected, "all", 42),
+                        "original36": table(corrected, "original", 36),
+                        "long_qa": table(corrected, "qa", 6),
+                        "changed_case_scores": changes,
+                    },
+                }
+            )
     report["source_sha256"] = hashes
     report["limits"] = (
         "Individual source-checkout runs on one shared machine, not installed acceptance, a controlled speedup or semantic quality. Nonces not archived. Failed executions remain in planned denominators; medians use completed tasks only. First retrieval failures retained."

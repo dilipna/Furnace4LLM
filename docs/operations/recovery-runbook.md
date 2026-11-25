@@ -28,7 +28,7 @@ a server or reruns an evaluation without an explicit action.
 | `interrupted` after reopening Studio | the previous Studio session ended while a server ran; its containers were removed on startup | **Start server** explicitly; reconnecting happens automatically on ready |
 | `unknown` | cleanup could not be confirmed (Docker was unreachable) | start Docker Desktop, reopen Studio (cleanup is retried), or press **Stop server**; reconfiguring is refused until cleanup is confirmed |
 | `docker_unavailable`, `gpu_runtime_unavailable`, `memory_exceeds_docker_limit` | preflight refused | follow the message; see the preflight table in the [runtime contract](../product/managed-local-runtime.md#preflight-checks) |
-| evaluation stops with `endpoint_timeout` | one request exceeded its timeout | raise the request timeout or lower tokens per request; reconnect or restart; retry re-executes every case |
+| evaluation stops with `endpoint_timeout` | one request exceeded its timeout; its upstream socket is closed | lower tokens/shorten input or review the timeout; the next request health-checks the same approved connection automatically; explicitly retrying an evaluation re-executes every case; invalid/stopped servers still need attention |
 | "This Studio workspace is already open" | a second Studio on the same workspace | use the running one, or close it; after a crash the lock is released by the operating system |
 
 ## After a crash of Studio itself
