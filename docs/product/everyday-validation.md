@@ -32,3 +32,27 @@ The later word-boundary regression fix has unit coverage, but these installed tr
 belong to the earlier 2c250d6 candidate. Fresh selected-release acceptance remains a gate.
 The model remains a quality-review candidate; it is not approved here for sensitive
 professional decisions. Owner/pilot comprehension and quality observations remain blank.
+
+
+## Reproduce the recorded document journey
+
+The real recording uses the installed, unsigned Windows 2c250d6 candidate, Microsoft
+Edge at its standard Program Files (x86) path, Docker Desktop Linux containers, the
+pinned NVIDIA recipe and a working NVIDIA GPU. Preparation/download and start occur
+before the uncut footage; the synthetic invoice is not customer material. This is
+an automated recording, not a human comprehension test. It is not a CPU recorder.
+
+From this checkout, after installing the selected app in a disposable test location:
+
+```powershell
+uv sync --frozen
+uv run python scripts/record_everyday.py --app C:\path\to\installed\Furnace --out dist/real-document-recording
+```
+
+`--app` must contain build.json and runtime/python.exe from the actual installed app.
+The command creates its own temporary workspace, explicitly prepares/starts the model,
+records actual requests, then quits and checks lease release. It can download model
+weights to the shared cache; it does not publish anything. Keep generated media local.
+The [recorded receipt](verification/everyday/document-recording-2c250d6.json) preserves
+build identity, actual answer, observed isolation and clean quit. It is not verification
+of a later installer merely because this command is documented.
