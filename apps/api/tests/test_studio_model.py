@@ -26,6 +26,7 @@ def server():
             self.requests = []
             self.entered = threading.Event()
             self.release = threading.Event()
+            self.cancelled = threading.Event()
 
     state = State()
 
@@ -52,6 +53,12 @@ def server():
         def do_POST(self):
             data = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             state.requests.append((self.path, data))
+            if state.mode == "cancel_on_disconnect":
+                state.entered.set()
+                self.connection.settimeout(3)
+                if self.rfile.read(1) == b"":
+                    state.cancelled.set()
+                return
             if state.mode == "hold":
                 state.entered.set()
                 state.release.wait(timeout=2)
@@ -174,6 +181,35 @@ def test_wall_clock_deadline_covers_slow_and_trickling_bodies(server, mode):
     with pytest.raises(RuntimeFault):
         LocalChatEndpoint().predict(config, "bounded", 0.25)
     assert time.monotonic() - started < 1.25
+
+
+def test_timeout_aborts_upstream_and_next_four_requests_execute_without_reconnect(tmp_path, server):
+    state, config = server
+    with TestClient(
+        create_app(tmp_path, TOKEN),
+        base_url="http://localhost",
+        headers={"x-furnace-session": TOKEN},
+    ) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        configure(client, pid, config)
+        connect(client, pid)
+        state.mode = "cancel_on_disconnect"
+        response = client.post(f"/api/projects/{pid}/model/predict", json={"input": "slow"})
+        assert response.status_code == 409 and response.json()["detail"] == "endpoint_timeout"
+        assert state.cancelled.wait(1), "Upstream slot did not observe HTTP cancellation"
+        state.mode = "normal"
+        for i in range(4):
+            result = client.post(f"/api/projects/{pid}/model/predict", json={"input": f"next {i}"})
+            assert result.status_code == 200, result.text
+            assert result.json()["output"] == "answer"
+        posts = [body for path, body in state.requests if path.endswith("/chat/completions")]
+        assert len(posts) == 5
+        assert [p["messages"][-1]["content"] for p in posts] == [
+            "slow",
+            *[f"next {i}" for i in range(4)],
+        ]
+        saved = client.get(f"/api/projects/{pid}/model").json()["model_endpoint"]
+        assert saved["state"]["status"] == "connected"
 
 
 def configure(client, pid, config):

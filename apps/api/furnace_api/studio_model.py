@@ -212,6 +212,23 @@ class ModelService:
     def ready(self, pid: str) -> tuple[dict, dict]:
         project = self.store.get(pid)
         state = project.get("model_connection_state") or {}
+        if state.get("status") == "failed" and state.get("reason") == "endpoint_timeout":
+            # The timed-out request has closed its upstream socket. Recover only
+            # the same consented configuration; never replay the failed prompt.
+            with self.manager.lock_for(pid):
+                project = self.store.get(pid)
+                state = project.get("model_connection_state") or {}
+                if (
+                    state.get("status") == "failed"
+                    and state.get("reason") == "endpoint_timeout"
+                    and state.get("configuration_sha256") == identity(project)
+                    and not self.flag(pid).is_set()
+                ):
+                    config = project["model_connection"]
+                    self.client.check(config, api_key=self.key_for(pid, config))
+                    self.state(pid, "connected", "Recovered same endpoint after request timeout")
+                    project = self.store.get(pid)
+                    state = project["model_connection_state"]
         if (
             state.get("status") != "connected"
             or state.get("configuration_sha256") != identity(project)
