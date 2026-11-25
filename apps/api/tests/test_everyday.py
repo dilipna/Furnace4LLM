@@ -292,3 +292,11 @@ def test_chat_context_is_bounded_and_ephemeral(tmp_path, monkeypatch):
         )
         assert invalid.status_code == 422
         assert "another secret" not in invalid.text
+
+
+def test_section_boundary_keeps_a_date_with_its_word():
+    text = "note " * 198 + "due 2026-12-03 for Maya."
+    sections = chunks(text)
+    assert "".join(sections) == text
+    assert all(len(section.encode()) <= 1000 for section in sections)
+    assert any("2026-12-03" in section for section in sections)

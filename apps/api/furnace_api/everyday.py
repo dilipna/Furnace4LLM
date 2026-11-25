@@ -61,8 +61,20 @@ def chunks(text: str, size: int = 1000) -> list[str]:
     for char in text:
         length = len(char.encode("utf-8"))
         if used + length > size:
-            parts.append("".join(current))
-            current, used = [], 0
+            section = "".join(current)
+            # Prefer a natural boundary near the end. Keep every character, but
+            # avoid cutting a date/name mid-word merely to fill the byte budget.
+            boundary = max(
+                (
+                    index + 1
+                    for index, value in enumerate(section)
+                    if index >= len(section) // 2 and (value.isspace() or value in "。！？")
+                ),
+                default=len(section),
+            )
+            parts.append(section[:boundary])
+            current = list(section[boundary:])
+            used = len(section[boundary:].encode("utf-8"))
         current.append(char)
         used += length
     if current:
