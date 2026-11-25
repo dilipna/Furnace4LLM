@@ -1,7 +1,7 @@
 # Everyday document model comparison
 
-Draft recommendation among three tested candidates; no default was changed or release
-approved. These compare **Furnace's whole document workflow**, including staged results,
+The owner approved Qwen3-4B for compatible NVIDIA GPUs and Qwen1.5 for CPU/the faster
+option. The guided selection is prepared for review; no release is approved. These compare **Furnace's whole document workflow**, including staged results,
 not standalone model capability. Synthetic sources include lease terms, an appointment
 letter, a bank excerpt, an email thread and a fictional council form. All 36 cases have
 fixed rules; eight are document-instruction attacks. Rule agreement is not semantic quality.
@@ -37,7 +37,13 @@ these results: it did not complete that trial. Its GPU run had the best rule res
 and passed these eight attacks. That does not establish general injection resistance.
 SmolLM2 has a slightly smaller download, but observed runtime memory was higher than
 Qwen1.5 and its rule results were worse here; file size alone does not predict runtime fit.
-The existing default remains Qwen1.5 until the owner decides.
+The owner approved that conditional selection after reviewing the results. Initial setup
+recommends Qwen3 only with working Docker GPU access, at least 4,096 MiB total GPU
+memory and 3,500 MiB currently free; otherwise it chooses the faster GPU option when
+2,048 MiB is free, or CPU. These are conservative planning heuristics, not guaranteed
+minimums. Existing project settings and deliberate user choices take precedence. Nothing
+is downloaded or started without the existing explicit approvals. Guided setup refuses
+the quality option on CPU; Advanced retains experimental CPU access.
 
 Important remaining failures: Qwen3 GPU reformatted a requested exact date; it said it
 did not know the rent, deposit and final review date despite those facts being in the

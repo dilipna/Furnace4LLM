@@ -15,6 +15,7 @@ from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--app", type=Path, required=True)
+parser.add_argument("--model", default="qwen2.5-1.5b-instruct-q4_k_m")
 parser.add_argument(
     "--with-injection",
     action="store_true",
@@ -33,7 +34,7 @@ record = {
     "schema": "furnace-everyday-recording-v1",
     "kind": "private-document-recording",
     "installed_build": json.loads((app / "build.json").read_text()),
-    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "model": args.model,
     "accelerator": "nvidia",
     "cache": "Shared verified model cache; explicit prepare/start before footage",
     "editing": "Uncut browser recording, with paced reading pauses; setup outside footage",
@@ -156,7 +157,7 @@ try:
             expect(view.locator("#model-status")).to_contain_text("ready", timeout=30000)
             event(
                 "home",
-                "Actual installed local app. Pinned Qwen 1.5B is ready on the NVIDIA recipe; cached preparation is not shown.",
+                f"Actual installed local app. Pinned {args.model} is ready on the NVIDIA recipe; cached preparation is not shown.",
             )
             dt = view.evaluate_handle(
                 "data=>{const dt=new DataTransfer();dt.items.add(new File([Uint8Array.from(atob(data),c=>c.charCodeAt(0))],'synthetic-invoice.pdf',{type:'application/pdf'}));return dt;}",

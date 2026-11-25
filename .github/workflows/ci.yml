@@ -55,6 +55,7 @@ jobs:
       - run: node --test lib/prefix-check.test.mjs
       - run: node --test lib/download.test.mjs
       - run: node --test ../api/tests/studio-state.test.mjs
+      - run: node --test ../api/tests/everyday-selection.test.mjs
       - run: NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static
 
   image:

@@ -72,6 +72,28 @@ def main() -> None:
                     page.get_by_role("heading", name="A little help.", exact=False)
                 ).to_be_visible()
                 expect(page.locator("#model-status")).to_contain_text("ready", timeout=30000)
+                page.get_by_role("button", name="Model & setup", exact=True).click()
+                expect(page.locator("#model-choice")).to_have_value(MODEL)
+                page.locator("#model-choice").select_option("qwen3-4b-q4_k_m")
+                page.locator("#accelerator").select_option("cpu")
+                page.locator("#consent").check()
+                page.locator("#prepare").click()
+                expect(page.locator("#setup-status")).to_contain_text(
+                    "quality option is for a compatible NVIDIA GPU"
+                )
+                assert (
+                    client.get(f"/api/projects/{pid}/managed").json()["selection"]["model"] == MODEL
+                )
+                page.locator("#model-choice").select_option("qwen2.5-1.5b-instruct-q4_k_m")
+                before_starts = fake.started
+                page.locator("#start").click()
+                expect(page.locator("#setup-status")).to_contain_text(
+                    "Prepare the selected settings before starting"
+                )
+                assert fake.started == before_starts
+                page.locator("#model-choice").select_option(MODEL)
+                page.get_by_role("button", name="Close setup", exact=True).click()
+                record["checks"]["saved_recipe_restored_and_guided_quality_cpu_refused"] = True
                 page.screenshot(path=str(args.out / "app-desktop.png"), full_page=True)
                 data = base64.b64encode(text_pdf(marker)).decode()
                 transfer = page.evaluate_handle(
@@ -121,6 +143,17 @@ def main() -> None:
                 assert not page.locator(".receipt").evaluate("e=>e.open")
                 page.screenshot(path=str(args.out / "injection-warning.png"), full_page=True)
                 record["checks"]["injection_warning_visible_with_collapsed_receipt"] = True
+                page.get_by_role("button", name="Model & setup", exact=True).click()
+                page.locator("#project").select_option("")
+                expect(page.locator("#model-status")).to_have_text("Set up local AI")
+                expect(page.locator(".answer")).to_have_count(0)
+                expect(page.locator("#document-info")).to_contain_text("Drop a PDF")
+                page.locator("#project").select_option(pid)
+                expect(page.locator("#model-status")).to_contain_text("ready")
+                expect(page.locator("#model-choice")).to_have_value(MODEL)
+                page.get_by_role("button", name="Close setup", exact=True).click()
+                record["checks"]["workspace_change_clears_document_and_restores_recipe"] = True
+
                 page.get_by_role("button", name="New conversation", exact=False).click()
                 code = "CONTEXT-CODE-827"
                 ANSWERS[code] = code
