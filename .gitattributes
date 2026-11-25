@@ -13,3 +13,5 @@ apps/web/app/fonts/* -text
 
 # The v1 suite is archived against historical exact byte digests.
 apps/api/furnace_api/everyday_suite_v1.json -text
+
+docs/product/verification/everyday/windows-input-bytes/*.json -text

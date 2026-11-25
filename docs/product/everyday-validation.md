@@ -14,9 +14,9 @@ punctuation is now stripped, while English “Good morning.” still fails Spani
 The suite separately accepts a deadline within a sentence and adds fixed missing-info/reply
 rules. Those rules check an admission or required text plus specific forbidden time forms;
 they do not establish semantic correctness or detect every possible invented commitment.
-The [re-score record](verification/everyday/rescore-v3-revised-suite.json) records original
-file hashes, old scores, the revised rules and new verdicts. The preliminary v3 record
-is also retained. The original suite and exact baseline suite bytes are archived.
+The [re-score record](verification/everyday/rescore-v3-committed-inputs.json) records original
+file hashes, old scores, the revised rules and new verdicts. The preliminary working-copy derivations are also retained, with matching Windows
+input bytes and provenance notes in the evidence directory. The original suite and exact baseline suite bytes are archived.
 
 ## Original installed v2 trial results
 

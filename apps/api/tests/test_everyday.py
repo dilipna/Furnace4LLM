@@ -466,3 +466,19 @@ def test_cancelled_progress_stops_before_sending_another_section(tmp_path, monke
                 cancel_after_first,
             )
         assert len(sent) == 1
+
+
+def test_archived_suite_bytes_match_the_historical_record_identity():
+    import hashlib
+    from pathlib import Path
+
+    import furnace_api
+
+    suite = Path(furnace_api.__file__).with_name("everyday_suite_v1.json")
+    root = Path(__file__).resolve().parents[3]
+    saved = json.loads(
+        (root / "docs/product/verification/everyday/everyday-qwen-1.5b-cpu-2c250d6.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert hashlib.sha256(suite.read_bytes()).hexdigest() == saved["suite_sha256"]
