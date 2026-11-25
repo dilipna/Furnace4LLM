@@ -14,6 +14,7 @@ import tempfile
 import threading
 import time
 import urllib.request
+import zipfile
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -126,6 +127,10 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
             raise AssertionError("The metadata/connector journey must not contact Docker")
 
         app.state.runtime.manager._docker = no_docker
+        app.state.runtime.manager.readiness = lambda: {
+            "status": "unavailable",
+            "reason": "test_no_docker",
+        }
         app.state.managed.supervisor._docker = no_docker
         app.state.managed.supervisor.daemon = lambda: {
             "status": "unavailable",
@@ -173,6 +178,13 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch(channel=channel)
                 page = browser.new_page(viewport={"width": 1440, "height": 1000})
+                server_errors = []
+                page.on(
+                    "response",
+                    lambda response: (
+                        server_errors.append(response.status) if response.status >= 500 else None
+                    ),
+                )
                 try:
                     page.goto(base + "/#session=" + token)
                     expect(
@@ -204,6 +216,12 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
                         item for item in saved_projects if item.get("origin") == "guided_example"
                     )
                     assert guided["evaluation"] is None
+                    with page.expect_download() as exported:
+                        page.locator("#download").click()
+                    archive_path = exported.value.path()
+                    assert archive_path is not None
+                    with zipfile.ZipFile(archive_path) as archive:
+                        assert archive.namelist()
                     expect(page.locator("#capabilities")).not_to_be_visible()
                     page.locator(".assessment-details > summary").click()
                     expect(page.locator("#capabilities > *")).to_have_count(6)
@@ -213,6 +231,7 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
                         path=str(screenshots / "studio-workspace-desktop.png"), full_page=True
                     )
                     print("Studio metadata and guided example saved", flush=True)
+                    assert not server_errors, server_errors
                     api(f"projects/{project['id']}", "DELETE")
                     assert (model / "research.py").is_file()
                     page.set_viewport_size({"width": 390, "height": 844})
@@ -255,6 +274,7 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
                 "welcome_project_disclosure": "passed",
                 "metadata_project_and_guided_example": "actual_API_persistence_no_execution",
                 "docker_calls": 0,
+                "starter_kit_ui_download": "actual_zip_downloaded_and_opened",
                 "managed_selection": "persisted_without_consent_download_or_execution; advanced_values_preserved",
                 "hardware_catalog": "mocked_unavailable; no_machine_compatibility_claim",
                 "connector": result,

@@ -4,8 +4,9 @@
 
 Furnace is being developed for model researchers who need the operational infrastructure
 around their models, including new architectures. The owner-defined product is a free
-starter kit followed by a $20/month managed-infrastructure subscription, supporting
-both Furnace-provided and customer-provided compute. Application development precedes model selection/testing. This branch
+starter kit followed by a proposed $20/month Furnace-operated infrastructure service.
+The managed service is not operating yet; the current product is the free local workflow.
+Initial demonstrations focus on one or two supported models before expansion. This branch
 implements local assessment, the Studio application and an isolated Docker framework runtime.
 The runnable fixture verifies infrastructure only; it is not a model and supports no model-quality claims.
 

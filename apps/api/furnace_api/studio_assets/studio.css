@@ -1,11 +1,11 @@
 /* Local assets only: no font, analytics or third-party requests. */
 :root {
   color-scheme: light;
-  --bg: #fff; --surface: #fff; --surface-raised: #f7f7f7;
-  --line: #e3e3e3; --muted: #6b6b6b; --text: #292929;
-  --accent: #a14b2d; --accent-dark: #fff; --green: #326c4d; --blue: #365b88;
+  --bg: #fafaf7; --surface: #fff; --surface-raised: #f0f2ec;
+  --line: #d9e0d8; --muted: #5d6a64; --text: #26342f;
+  --accent: #205b45; --accent-dark: #fff; --green: #326c4d; --blue: #365b88;
   --radius: 12px;
-  font: 14px/1.65 "Segoe UI", system-ui, sans-serif;
+  font: 14px/1.65 Arial, Helvetica, sans-serif;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); }
@@ -373,6 +373,8 @@ footer { color: #6b6b6b; font-size: 11px; }
 .endpoint-panel { border-top: 1px solid var(--line); padding: 16px 0; }
 .endpoint-panel > summary { font-size: 14px; }
 .endpoint-panel .card { margin-bottom: 0; }
+.primary{background:#205b45;color:#fff;border-color:#205b45}
+.app-header{background:#fafaf7}.layout>aside{background:#f0f2ec}.brand-mark,.welcome-icon{background:#205b45;color:#fff}.brand-edition{color:#5d6a64;border-color:#d9e0d8}.project-button[aria-current]{background:#e4eee5;color:#205b45;border-color:#adc3b0}.project-button:hover{background:#e4eee5}.managed-proposal{max-width:620px;margin:28px auto 0;padding:16px 20px;background:#eef4ed;border:1px solid #d9e0d8;border-radius:12px;color:#465a4e;font-size:13px;line-height:1.8}
 @media(max-width:850px) {
   .model-layout { grid-template-columns: 1fr; }
   .connection-settings .form-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }

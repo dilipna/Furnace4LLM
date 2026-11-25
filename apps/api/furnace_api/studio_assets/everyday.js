@@ -2,7 +2,7 @@ import {recommendedSelection} from "./everyday-selection.mjs";
 const $ = value => document.querySelector(value);
 const fragment = new URLSearchParams(location.hash.slice(1)).get("session");
 const token = fragment || sessionStorage.getItem("furnace-session") || "";
-if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", "/"); }
+if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", location.pathname); }
 let chatTurns = [], setupWorking = false, answerController = null, settingsEdited = false, refreshAgain = false, includeAiText = false;
 let documentText = "", action = "chat", projectId = "", epoch = 0, busy = false, refreshing = false, selectionChosen = false, hardwareChosen = false;
 const labels = {summarise:"Summarise",ask:"Ask about this document",actions:"Extract action items",dates:"Find dates",rewrite:"Simplify",reply:"Draft a reply",translate:"Translate",chat:"Chat"};

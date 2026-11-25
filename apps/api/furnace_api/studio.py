@@ -289,7 +289,11 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
         return response
 
     @app.get("/")
-    def everyday_home():
+    def researcher_home():
+        return FileResponse(ASSETS / "index.html")
+
+    @app.get("/examples/documents")
+    def document_example():
         return FileResponse(ASSETS / "everyday.html")
 
     @app.get("/advanced")

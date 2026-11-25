@@ -129,7 +129,7 @@ def main() -> None:
         "published": False,
         "source_dirty": False,
         "platform": "windows-x64",
-        "experience": "private-documents-preview",
+        "experience": "researcher-infrastructure-preview",
         "python": sys.version.split()[0],
         "compiler": "Inno Setup 6.4.3",
         "signed": bool(args.sign_command),
