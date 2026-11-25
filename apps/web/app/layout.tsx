@@ -1,24 +1,10 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Schibsted_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const display = Schibsted_Grotesk({
-  variable: "--font-schibsted",
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-});
-
-const sans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const mono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-});
+const display = localFont({src:"./fonts/SchibstedGrotesk[wght].ttf",variable:"--font-schibsted",weight:"500 700",display:"swap"});
+const sans = localFont({src:"./fonts/IBMPlexSans[wdth,wght].ttf",variable:"--font-plex-sans",weight:"400 600",display:"swap"});
+const mono = localFont({src:[{path:"./fonts/IBMPlexMono-Regular.ttf",weight:"400"},{path:"./fonts/IBMPlexMono-Medium.ttf",weight:"500"}],variable:"--font-plex-mono",display:"swap"});
 
 export const metadata: Metadata = {
   title: "Furnace — A workspace for your model",
