@@ -20,6 +20,24 @@ Stage an actual completed recording with
 before rebuilding the static site. The input directory must include its real
 `record.json`, video and screenshots; never substitute a scripted adapter for footage.
 
+For a fresh local rebuild, copy an actual Windows build's `installer.json`,
+`SHA256SUMS` and matching executable into this checkout's `dist/windows`, then
+run `python scripts/stage_download.py` and stage the recording as above.
+With the documented Node/pnpm prerequisites installed:
+
+```powershell
+pnpm --dir apps/web install --frozen-lockfile
+$env:NEXT_PUBLIC_RECORDED_ONLY = 'true'
+$env:NEXT_TELEMETRY_DISABLED = '1'
+pnpm --dir apps/web build
+python scripts/preview_site.py --port 4011
+```
+
+The local recorded-only export and browser check passed against the actual
+`04ef0a0` installer: [browser record](../product/verification/private-site/browser-04.json).
+This checks the downloaded hash, recorded labels, security/FAQ limits and browser
+behavior; it is not a new model trial, deployment or human result.
+
 ## Website comprehension (no Docker required)
 
 Ask the participant to work without reading implementation details. Record their
@@ -68,8 +86,10 @@ Open Advanced, return, then quit using the app window; closing a browser is not 
   Earlier `2c250d6` records remain historical.
 - Review the [model comparison](../product/model-comparison.md) and separate historical
   re-scoring. The owner selected Qwen3 for compatible NVIDIA GPUs and Qwen1.5 for CPU/faster
-  use. Remaining wrong answers and the Qwen3 CPU timeout remain; eight fixed attacks do
-  not establish general injection resistance. No professional-advice suitability is claimed.
+  use. Latest installed Qwen3 GPU acceptance is 31/36, including 7/8 fixed attacks;
+  earlier 32/36 and 8/8 results remain separate. Wrong answers and the Qwen3 CPU timeout
+  remain. See [installed acceptance](../product/installed-document-acceptance.md).
+  No general injection resistance or professional-advice suitability is claimed.
 - Human observations, clean-account install/keep/delete, licensing/legal review and
   explicit owner merge/publication decisions remain outstanding.
 - Local site evidence is in `docs/product/verification/private-site`: first Lighthouse
