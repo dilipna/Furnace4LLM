@@ -23,7 +23,7 @@ flowchart LR
 
 PDF with selectable text, DOCX, UTF-8 TXT/Markdown, or pasted text. No OCR, `.doc`, macro
 execution, external document links or remote parsers. Maximum upload 3 MB, PDF 40 pages,
-and extracted text 24,000 UTF-8 bytes. Unsupported/complex/encrypted files fail explicitly;
+and extracted text 128,000 UTF-8 bytes. Unsupported/complex/encrypted files fail explicitly;
 they are not silently truncated.
 
 Extraction uses pipes rather than temporary files. The separate parser has a 384 MiB
@@ -108,3 +108,35 @@ test adapter, checks the receipt, clear, mobile layout and absence of external r
 It does not run an LLM or demonstrate human comprehension. Windows CI keeps this separate
 from installation/preflight/export/quit/uninstall checks. Installed-model receipts and an actual document recording now exist for source 2c250d6;
 selected-release verification, model-quality review and publication approval remain gates.
+
+
+## Manipulated document text
+
+The model receives a separate system-role instruction and unique document delimiters.
+Document text is untrusted data, including anything claiming to be a system prompt,
+safety policy or assistant instruction. Intermediate section results remain untrusted.
+A heuristic flags AI-directed phrases and shows a warning on the answer. It can miss
+attacks or flag harmless quotations; absence of a warning is not a safety verdict.
+
+This is partial mitigation, not prompt-injection resistance. The eight-case CPU baseline
+passed 0/8, delimiters alone still passed 0/8, and separate system-role instructions
+passed 2/8. Original outputs and intermediate failures are retained. The isolated model
+has no internet route at the observed checks and no URL-fetching/tool-execution capability
+provided by this workflow. A manipulated document can still distort an answer or cause
+sensitive text to be repeated in the local answer. The host/browser, privileged Docker
+access and user copies remain outside that model-container boundary.
+
+Every real answer shows a one-line summary while receipt details stay collapsible.
+Scripted-adapter responses remain explicitly test-only. The summary describes observed
+configuration, not continuous network monitoring or whole-computer privacy proof.
+
+## Larger text documents
+
+The extracted-text limit is now 128,000 UTF-8 bytes; the 3 MB file and 40 PDF-page bounds
+remain. Text PDFs only: scans and image-only sections still need OCR, which is not included.
+Streaming progress reports completed model requests and section count. Remaining time is
+a rough estimate based on this task's observed pace, not a promise; combining stages can
+add requests. Processing has at most 512 requests/four reduction levels and a 30-minute
+scheduling budget. A request already sent can run to its individual timeout. Disconnecting
+stops scheduling further sections once the current request completes. Summaries may lose
+cross-section context; extraction limits do not guarantee answer quality.

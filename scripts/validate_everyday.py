@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import platform
+import runpy
 import shutil
 import subprocess
 import sys
@@ -35,10 +37,17 @@ def main() -> int:
     )
     parser.add_argument("--suite", type=Path)
     parser.add_argument("--group", choices=["injection", "everyday", "longer-document"])
+    parser.add_argument(
+        "--long-pdf",
+        action="store_true",
+        help="Actual extraction/answer of a synthetic 25-page text PDF",
+    )
     parser.add_argument("--accelerator", choices=["cpu", "nvidia"], default="cpu")
     parser.add_argument("--model", default="qwen2.5-1.5b-instruct-q4_k_m")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+    if args.out.exists():
+        raise SystemExit("Refusing to overwrite an existing trial record")
     import furnace_api
 
     if args.installed_build:
@@ -141,6 +150,39 @@ def main() -> int:
             record["observation_before"] = resource_view(
                 api("GET", f"projects/{pid}/managed/observe")
             )
+            if args.long_pdf:
+                fixture = Path(__file__).with_name("long_document_fixture.py")
+                pdf = runpy.run_path(str(fixture))["make_pdf"]()
+                record["suite_override"] = {
+                    "kind": "synthetic-25-page-pdf",
+                    "fixture_sha256": hashlib.sha256(fixture.read_bytes()).hexdigest(),
+                }
+                began_extract = time.monotonic()
+                extracted = api(
+                    "POST",
+                    "everyday/extract",
+                    json={"kind": "pdf", "data": base64.b64encode(pdf).decode()},
+                )
+                record["pdf"] = {
+                    "pages": 25,
+                    "sha256": hashlib.sha256(pdf).hexdigest(),
+                    "bytes": len(pdf),
+                    "text_utf8_bytes": len(extracted["text"].encode()),
+                    "extraction_seconds": round(time.monotonic() - began_extract, 3),
+                    "ocr": extracted["ocr"],
+                    "warning": extracted["warning"],
+                }
+                suite["cases"] = [
+                    {
+                        "name": "25-page document",
+                        "request": {
+                            "action": "summarise",
+                            "text": extracted["text"],
+                            "question": "State the project owner and final submission deadline exactly as written.",
+                        },
+                        "scoring": {"method": "contains", "values": ["Maya", "2027-02-19"]},
+                    }
+                ]
             for case in suite["cases"]:
                 began = time.monotonic()
                 observed = {"name": case["name"], "operational": "error", "score": "unscored"}
