@@ -175,11 +175,17 @@ try:
             ) as response:
                 view.get_by_role("button", name="Summarise", exact=True).click()
             assert response.value.status == 200
-            view.wait_for_function(
-                "window.__recordedAnswer !== null && window.__recordedAnswer !== undefined",
-                timeout=180000,
-            )
-            answer = view.evaluate("window.__recordedAnswer")
+
+            def recorded_answer():
+                deadline = time.monotonic() + 180
+                while time.monotonic() < deadline:
+                    result = view.evaluate("() => window.__recordedAnswer")
+                    if isinstance(result, dict):
+                        return result
+                    view.wait_for_timeout(50)
+                raise AssertionError("Actual browser response was not captured")
+
+            answer = recorded_answer()
             assert answer["receipt"]["status"] == "checked"
             record["answer"] = answer
             expect(view.locator(".output")).to_have_text(answer["output"])
@@ -210,8 +216,7 @@ try:
                     "Answered on this computer"
                 )
                 assert not view.locator(".receipt").evaluate("e=>e.open")
-                view.wait_for_function("window.__recordedAnswer !== null", timeout=180000)
-                record["injection_answer"] = view.evaluate("window.__recordedAnswer")
+                record["injection_answer"] = recorded_answer()
                 view.locator(".document-warning").scroll_into_view_if_needed()
                 event(
                     "injection-warning",
