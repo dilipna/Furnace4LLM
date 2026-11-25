@@ -1,0 +1,113 @@
+{
+  "schema": "furnace-everyday-recording-v1",
+  "kind": "private-document-recording",
+  "installed_build": {
+    "schema": "furnace-windows-installer-v1",
+    "version": "0.1.0",
+    "commit": "2c250d642a1af2b648b67cb34fd190f535f24d8a",
+    "built_at": "2026-11-24T05:28:22.017175+00:00",
+    "published": false,
+    "source_dirty": false,
+    "platform": "windows-x64",
+    "experience": "private-documents-preview",
+    "python": "3.12.13",
+    "compiler": "Inno Setup 6.4.3",
+    "signed": false,
+    "wheel_sha256": {
+      "furnace_bench-0.1.0-py3-none-any.whl": "525ffc8f98db594f9b2309e73bbb7c8ebbfc9e0394216ef442d2907f8a7a7bef",
+      "furnace-0.1.0-py3-none-any.whl": "a8d359ebf2492088c702e042aa73729d265da17c88229de1f59db82e0f86635a",
+      "furnace_api-0.1.0-py3-none-any.whl": "288d24908760160f46fcaa2d71f2c7bde4fa4ca8aae8914ca76c97e8ae9cb478"
+    },
+    "reproducibility": "Repeatable pinned-input recipe; binary identity is not established (PE timestamps/signing)."
+  },
+  "model": "qwen2.5-1.5b-instruct-q4_k_m",
+  "accelerator": "nvidia",
+  "cache": "Shared verified model cache; explicit prepare/start before footage",
+  "editing": "Uncut browser recording, with paced reading pauses; setup outside footage",
+  "events": [
+    {
+      "name": "home",
+      "seconds": 2.72,
+      "caption": "Actual installed local app. Pinned Qwen 1.5B is ready on the NVIDIA recipe; cached preparation is not shown."
+    },
+    {
+      "name": "document",
+      "seconds": 6.72,
+      "caption": "A synthetic text PDF is extracted locally. No private customer document is used."
+    },
+    {
+      "name": "answer",
+      "seconds": 10.23,
+      "caption": "Actual model summary. Check important facts against the original; privacy is not answer quality."
+    },
+    {
+      "name": "receipt",
+      "seconds": 11.88,
+      "caption": "Observed model-container checks. This is not proof of host-wide traffic or a compliance certificate."
+    }
+  ],
+  "result": "passed",
+  "hardware_observation": {
+    "name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "memory_used_mib": 1374,
+    "memory_total_mib": 4096,
+    "utilization_percent": 27,
+    "temperature_c": 55
+  },
+  "answer": {
+    "output": "The document is an invoice for $875 due on December 3, 2026, from Cedar Design.",
+    "duration_ms": 1844,
+    "processing": {
+      "staged": false,
+      "document_chunks": 1,
+      "history_turns": 0,
+      "history_truncated": false,
+      "model_requests": 1,
+      "method": "Single bounded request"
+    },
+    "requests": [
+      {
+        "request_id": "4818da2904f746e3a1acd5df7088b8da",
+        "duration_ms": 687,
+        "usage": {
+          "prompt_tokens": 108.0,
+          "completion_tokens": 27.0
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "receipt": {
+      "schema": "furnace-privacy-receipt-v1",
+      "at": "2026-11-25T01:21:59.712680+00:00",
+      "project_id": "2251d1e720f64f60a3611778f1e570d0",
+      "launch_id": "9c0d867ed79643438eaf7b053a621208",
+      "model": {
+        "id": "qwen2.5-1.5b-instruct-q4_k_m",
+        "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+        "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+        "weights_check": "Verified before this launch; not rehashed for every answer",
+        "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352"
+      },
+      "observed": {
+        "evidence_kind": "docker_inspect",
+        "launch_id": "9c0d867ed79643438eaf7b053a621208",
+        "container_id": "dca0a9be6e8a",
+        "image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352",
+        "checks": {
+          "running": true,
+          "internal_network_only": true,
+          "non_root": true,
+          "read_only_root": true,
+          "all_capabilities_dropped": true,
+          "no_new_privileges": true,
+          "no_direct_published_ports": true,
+          "read_only_mounts": true
+        }
+      },
+      "status": "checked",
+      "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+      "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+    }
+  },
+  "quit_and_lease_released": true
+}

@@ -85,9 +85,10 @@ declares Apache-2.0; the repository contains its license. Preserve its license/n
 when distributing weights. This is distinct from Qwen2.5-3B's license; no inference about
 an entire model family is used. The 0.5B recipe remains the low-memory option.
 
-The candidate targets CPU with 8 GB available to Docker and the owner's 4 GB NVIDIA GPU.
-Those are validation targets until the installed-runtime trials are recorded. Do not
-substitute the older 0.5B/Granite records or scripted browser checks for new evidence.
+The candidate completed installed-runtime trials on CPU with about 8 GB available to
+Docker and on the owner's 4 GB NVIDIA GPU. See [actual results and failures](everyday-validation.md):
+5/9 rule checks passed on each device, with two tasks unscored. The candidate is not
+quality-approved. Older 0.5B/Granite records and scripted checks are separate evidence.
 `everyday_suite.json` contains synthetic documents and fixed field/rule checks. Missing-
 information and reply-quality tasks remain unscored for human review. Per-task latency,
 failures, token-limit results and model identity belong in the actual run record; no
@@ -105,5 +106,5 @@ uv run python scripts/verify_everyday.py
 The browser harness runs real extraction and loopback requests through the scripted
 test adapter, checks the receipt, clear, mobile layout and absence of external requests.
 It does not run an LLM or demonstrate human comprehension. Windows CI keeps this separate
-from installation/preflight/export/quit/uninstall checks. New installed-model receipts
-and an actual document recording are required before this product direction is published.
+from installation/preflight/export/quit/uninstall checks. Installed-model receipts and an actual document recording now exist for source 2c250d6;
+selected-release verification, model-quality review and publication approval remain gates.
