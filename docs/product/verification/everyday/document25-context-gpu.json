@@ -1,0 +1,509 @@
+{
+  "schema": "furnace-everyday-model-v1",
+  "recorded_at": "2026-11-25T08:50:11.357574+00:00",
+  "installed_build": {
+    "kind": "source-checkout",
+    "commit": "125bab00c9905c478b24bf2f1f6f3f9b4ea5295c",
+    "source_dirty": true,
+    "everyday_sha256": "435a9331ba9f84ea99408fa3fa25d996e90f9b84bd348eb54d243a5869526f2c"
+  },
+  "os": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.13",
+  "model": "qwen2.5-1.5b-instruct-q4_k_m",
+  "accelerator": "nvidia",
+  "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "model_revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+  "license": "apache-2.0",
+  "suite_sha256": "f344f1fde5614189e2acd54e07f0c69172438d3a83924f785ff2000c59854999",
+  "scorer": "furnace-rules-v3",
+  "group": null,
+  "prompt_mode": "standard system instruction",
+  "download_bytes": 1117320736,
+  "source_data": "synthetic 25-page fixture; no private user documents",
+  "cases": [
+    {
+      "name": "25-page document",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "contains_all",
+      "output": "Project owner: Maya\nFinal submission deadline: 2027-02-19",
+      "processing": {
+        "staged": true,
+        "document_chunks": 33,
+        "chunk_bytes": 2036,
+        "indexed_sections": 33,
+        "retrieval": false,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 36,
+        "method": "Section results combined in bounded stages"
+      },
+      "requests": [
+        {
+          "request_id": "7e054cbcfb304218847e3ddc00af865c",
+          "duration_ms": 829,
+          "usage": {
+            "prompt_tokens": 701.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "cc07bd79c8dc4663bb9a84f0d0bf3a5f",
+          "duration_ms": 407,
+          "usage": {
+            "prompt_tokens": 688.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "6d08c7ca2a1a4ebfa4be660018f5e288",
+          "duration_ms": 454,
+          "usage": {
+            "prompt_tokens": 684.0,
+            "completion_tokens": 17.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "d0f5ba262c3e431f9bc1e6239883064c",
+          "duration_ms": 437,
+          "usage": {
+            "prompt_tokens": 705.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "ac5b1a52a9ed4dfa9e75c621251c169a",
+          "duration_ms": 469,
+          "usage": {
+            "prompt_tokens": 699.0,
+            "completion_tokens": 20.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "e4cfc24621514b5abc00b05091bb0bb5",
+          "duration_ms": 422,
+          "usage": {
+            "prompt_tokens": 688.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "0b5da7dedbc04d6f9251f5042252fefe",
+          "duration_ms": 437,
+          "usage": {
+            "prompt_tokens": 688.0,
+            "completion_tokens": 17.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "8b83f93cb53441f8880ea8d5941fe217",
+          "duration_ms": 390,
+          "usage": {
+            "prompt_tokens": 702.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "0c263cf1e20e4e6ba3cec0025df163f0",
+          "duration_ms": 406,
+          "usage": {
+            "prompt_tokens": 700.0,
+            "completion_tokens": 13.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "417d051a72504403b6f92e25b621f63e",
+          "duration_ms": 406,
+          "usage": {
+            "prompt_tokens": 696.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "036dd6e5bcdf457fa93c85f252e40593",
+          "duration_ms": 406,
+          "usage": {
+            "prompt_tokens": 683.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "6b5df0c7c80f41d8ba853ed3fa017518",
+          "duration_ms": 453,
+          "usage": {
+            "prompt_tokens": 696.0,
+            "completion_tokens": 17.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "49fa349fd6fd40ccb5c519a325894bd7",
+          "duration_ms": 437,
+          "usage": {
+            "prompt_tokens": 698.0,
+            "completion_tokens": 16.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "ba13be3bb1a948cd918c50df8accca67",
+          "duration_ms": 453,
+          "usage": {
+            "prompt_tokens": 703.0,
+            "completion_tokens": 17.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "ae01853294434101b2903886b714414f",
+          "duration_ms": 422,
+          "usage": {
+            "prompt_tokens": 685.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "86bf804de87543e2b1b6b46a142b291c",
+          "duration_ms": 390,
+          "usage": {
+            "prompt_tokens": 690.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "cccb4628e9374cc0aaf778886c6fec95",
+          "duration_ms": 391,
+          "usage": {
+            "prompt_tokens": 702.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "e02b5514b0c447f69a4c48f1e8abb43f",
+          "duration_ms": 421,
+          "usage": {
+            "prompt_tokens": 698.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "d549b242a5194a1fad62b75d37b99743",
+          "duration_ms": 422,
+          "usage": {
+            "prompt_tokens": 700.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "75481f4fe096437da0bdf0bf4fa53421",
+          "duration_ms": 344,
+          "usage": {
+            "prompt_tokens": 684.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "d187c1cb6d134f6bad4270f0fee80222",
+          "duration_ms": 390,
+          "usage": {
+            "prompt_tokens": 702.0,
+            "completion_tokens": 16.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "be1eea73c5664a2c9effc32c4d993704",
+          "duration_ms": 407,
+          "usage": {
+            "prompt_tokens": 695.0,
+            "completion_tokens": 13.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "f96dbc55601441f4a0cafa236874e478",
+          "duration_ms": 359,
+          "usage": {
+            "prompt_tokens": 692.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "ac75d85ab74e40c48b5e5dc66018ae55",
+          "duration_ms": 406,
+          "usage": {
+            "prompt_tokens": 683.0,
+            "completion_tokens": 17.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "93d0b0e0af304c2db4956c055a53c4cc",
+          "duration_ms": 390,
+          "usage": {
+            "prompt_tokens": 701.0,
+            "completion_tokens": 17.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "a930f74a995a4074bcd65089d4462826",
+          "duration_ms": 407,
+          "usage": {
+            "prompt_tokens": 699.0,
+            "completion_tokens": 16.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "e65c95d1c6d54b89aa1922012bf82607",
+          "duration_ms": 344,
+          "usage": {
+            "prompt_tokens": 695.0,
+            "completion_tokens": 12.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "0e782a70a68b40b28d0d9edd52eb81e5",
+          "duration_ms": 422,
+          "usage": {
+            "prompt_tokens": 685.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "283b8d2a40d64ca2ad19d30ca02222ca",
+          "duration_ms": 375,
+          "usage": {
+            "prompt_tokens": 697.0,
+            "completion_tokens": 17.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "b41150d38d684d67996a0046422c7ec9",
+          "duration_ms": 422,
+          "usage": {
+            "prompt_tokens": 694.0,
+            "completion_tokens": 20.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "2054f9a7cc63497a8507c6a5af241049",
+          "duration_ms": 375,
+          "usage": {
+            "prompt_tokens": 704.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "f644c3313ed0467e80654dffebd7010c",
+          "duration_ms": 390,
+          "usage": {
+            "prompt_tokens": 696.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "6c9e7b0eb2d44ff19fa396d046138070",
+          "duration_ms": 438,
+          "usage": {
+            "prompt_tokens": 572.0,
+            "completion_tokens": 21.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "7a8a72774f6c4f619db05d662fe9cb65",
+          "duration_ms": 422,
+          "usage": {
+            "prompt_tokens": 690.0,
+            "completion_tokens": 15.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "43c77801299c4b45a41950c668744fb9",
+          "duration_ms": 375,
+          "usage": {
+            "prompt_tokens": 404.0,
+            "completion_tokens": 21.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "bf96018b20274ff589f9b2adadde75fe",
+          "duration_ms": 375,
+          "usage": {
+            "prompt_tokens": 327.0,
+            "completion_tokens": 21.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-25T08:51:33.640414+00:00",
+        "project_id": "6b21778570fa471ea20099aeed38ae03",
+        "launch_id": "f079600095584e3bbd2f4c6cb801ba26",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "f079600095584e3bbd2f4c6cb801ba26",
+          "container_id": "ba19badccb77",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "warnings": [],
+      "protection": {
+        "sentences": [],
+        "included": false,
+        "exclusive_output_values": []
+      },
+      "sources": [],
+      "elapsed_seconds": 49.437,
+      "memory_observation": {
+        "gpu": {
+          "name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+          "memory_used_mib": 1414,
+          "memory_total_mib": 4096,
+          "utilization_percent": 5,
+          "temperature_c": 57
+        },
+        "resources": {
+          "cpu_percent": "0.11%",
+          "memory": "1.861GiB / 4GiB",
+          "memory_percent": "46.54%",
+          "pids": "27"
+        },
+        "container": {
+          "running": true,
+          "present": true,
+          "failure": null,
+          "exit_code": 0,
+          "oom_killed": false,
+          "started_at": "2026-11-25T08:50:22.384237571Z",
+          "launch_id": "f079600095584e3bbd2f4c6cb801ba26",
+          "container_id": "ba19badccb77",
+          "networks": [
+            "furnace-net-bc24cf182bf3da54-6b21778570fa471ea20099aeed38ae03"
+          ]
+        }
+      }
+    }
+  ],
+  "result": "recorded",
+  "selection": {
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "accelerator": "nvidia",
+    "threads": 4,
+    "memory_mb": 4096,
+    "context_tokens": 4096,
+    "max_tokens": 512,
+    "request_timeout_seconds": 120,
+    "evaluation_budget_seconds": 900
+  },
+  "docker": {
+    "status": "ready",
+    "gpu_runtime": true,
+    "cpus": 20,
+    "memory_bytes": 8150224896
+  },
+  "prepare": {
+    "status": "prepared",
+    "reason": "Images pulled by digest; weights SHA-256 verified",
+    "cache": "shared verified-weights store; verified again before launch"
+  },
+  "launch_id": "f079600095584e3bbd2f4c6cb801ba26",
+  "observation_before": {
+    "gpu": {
+      "name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+      "memory_used_mib": 1395,
+      "memory_total_mib": 4096,
+      "utilization_percent": 7,
+      "temperature_c": 59
+    },
+    "resources": {
+      "cpu_percent": "0.10%",
+      "memory": "1.23GiB / 4GiB",
+      "memory_percent": "30.75%",
+      "pids": "27"
+    },
+    "container": {
+      "running": true,
+      "present": true,
+      "failure": null,
+      "exit_code": 0,
+      "oom_killed": false,
+      "started_at": "2026-11-25T08:50:22.384237571Z",
+      "launch_id": "f079600095584e3bbd2f4c6cb801ba26",
+      "container_id": "ba19badccb77",
+      "networks": [
+        "furnace-net-bc24cf182bf3da54-6b21778570fa471ea20099aeed38ae03"
+      ]
+    }
+  },
+  "suite_override": {
+    "kind": "synthetic-25-page-pdf",
+    "fixture_sha256": "c03d8d868070b3947171e1123419a1947a0359a1210a7d2c6c87c4c0b93fe291"
+  },
+  "pdf": {
+    "pages": 25,
+    "sha256": "b7f12b8ad7da3d40df855abd659984e63c8f366e2f7faaf94c91ed4a749c628a",
+    "bytes": 80938,
+    "text_utf8_bytes": 66380,
+    "extraction_seconds": 0.766,
+    "ocr": false,
+    "warning": "PDF reading order can differ from the page. Images and scanned sections are not read."
+  },
+  "shutdown_completed": true,
+  "score_summary": {
+    "pass": 1,
+    "fail": 0,
+    "unscored": 0
+  },
+  "operationally_complete": true
+}

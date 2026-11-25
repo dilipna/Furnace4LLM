@@ -1,0 +1,779 @@
+{
+  "schema": "furnace-everyday-model-v1",
+  "recorded_at": "2026-11-25T08:52:14.046064+00:00",
+  "installed_build": {
+    "kind": "source-checkout",
+    "commit": "1831826ac985a2fa664167862095d014f662828d",
+    "source_dirty": false,
+    "everyday_sha256": "e52135cfe0b187fbd44c4056f185ab249115c4503e2a75bb140ce211686e478a"
+  },
+  "os": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.13",
+  "model": "qwen2.5-1.5b-instruct-q4_k_m",
+  "accelerator": "cpu",
+  "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "model_revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+  "license": "apache-2.0",
+  "suite_sha256": "4bf7a84e48759a5f5e810d5e8fbc937970ba6ef593dba03311207d1fef93e6c1",
+  "scorer": "furnace-rules-v3",
+  "group": null,
+  "prompt_mode": "standard system instruction",
+  "download_bytes": 1117320736,
+  "source_data": "explicit supplied suite; contents are not asserted synthetic",
+  "cases": [
+    {
+      "name": "Long Q&A: Lease rent",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "number_within_tolerance",
+      "output": "1250",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "chunk_bytes": 2056,
+        "indexed_sections": 21,
+        "retrieval": true,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "BM25 retrieved source sections"
+      },
+      "requests": [
+        {
+          "request_id": "8622b342d5e4406f96c5bb1217cd898d",
+          "duration_ms": 6344,
+          "usage": {
+            "prompt_tokens": 737.0,
+            "completion_tokens": 5.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-25T08:52:41.672271+00:00",
+        "project_id": "73be3b274b8b4f2ab2b4d6d68c8037bc",
+        "launch_id": "f4475339441746feb63c286aab1614ac",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "warnings": [],
+      "protection": {
+        "sentences": [],
+        "included": false,
+        "exclusive_output_values": []
+      },
+      "sources": [
+        {
+          "section": 9,
+          "start": 5023,
+          "end": 5651,
+          "text": "a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 27: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 28: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 29: Keep a copy of this document for ",
+          "rank_score": 0,
+          "retrieval_reason": "Adjacent context"
+        },
+        {
+          "section": 10,
+          "start": 5651,
+          "end": 6280,
+          "text": "your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 30: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\n\nResidential lease for Tenant: Casey Rowan, Unit 4 at Cedar Court. Monthly rent is 1250 dollars, payable on the first day of each month. A security deposit of 1800 dollars is held separately from rent. The lease begins on 2026-12-01 and ends on 2027-11-30. Notice to end the lease must be ",
+          "rank_score": 5.401247,
+          "retrieval_reason": "BM25 match"
+        },
+        {
+          "section": 12,
+          "start": 6908,
+          "end": 7534,
+          "text": "inventory records existing damage, and both parties should retain a copy. This paragraph does not change the rent, deposit, notice period or dates above.\n\nAdministrative section 1: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 2: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 3: Keep a copy of this document for your records. ",
+          "rank_score": 2.163283,
+          "retrieval_reason": "BM25 match"
+        }
+      ],
+      "elapsed_seconds": 7.656,
+      "memory_observation": {
+        "gpu": {},
+        "resources": {
+          "cpu_percent": "0.00%",
+          "memory": "848MiB / 4GiB",
+          "memory_percent": "20.70%",
+          "pids": "27"
+        },
+        "container": {
+          "running": true,
+          "present": true,
+          "failure": null,
+          "exit_code": 0,
+          "oom_killed": false,
+          "started_at": "2026-11-25T08:52:21.115448996Z",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "networks": [
+            "furnace-net-8f29f1e7fe520b70-73be3b274b8b4f2ab2b4d6d68c8037bc"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Long Q&A: Lease deposit",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "number_within_tolerance",
+      "output": "1800",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "chunk_bytes": 2052,
+        "indexed_sections": 21,
+        "retrieval": true,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "BM25 retrieved source sections"
+      },
+      "requests": [
+        {
+          "request_id": "6659260a6a02496c926778247b073c68",
+          "duration_ms": 4469,
+          "usage": {
+            "prompt_tokens": 735.0,
+            "completion_tokens": 5.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-25T08:52:49.794234+00:00",
+        "project_id": "73be3b274b8b4f2ab2b4d6d68c8037bc",
+        "launch_id": "f4475339441746feb63c286aab1614ac",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "warnings": [],
+      "protection": {
+        "sentences": [],
+        "included": false,
+        "exclusive_output_values": []
+      },
+      "sources": [
+        {
+          "section": 9,
+          "start": 5006,
+          "end": 5633,
+          "text": "section 26: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 27: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 28: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 29: Keep a copy of ",
+          "rank_score": 0,
+          "retrieval_reason": "Adjacent context"
+        },
+        {
+          "section": 10,
+          "start": 5633,
+          "end": 6262,
+          "text": "this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 30: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\n\nResidential lease for Tenant: Casey Rowan, Unit 4 at Cedar Court. Monthly rent is 1250 dollars, payable on the first day of each month. A security deposit of 1800 dollars is held separately from rent. The lease begins on 2026-12-01 and ends on 2027-11-30. Notice to end ",
+          "rank_score": 4.662584,
+          "retrieval_reason": "BM25 match"
+        },
+        {
+          "section": 12,
+          "start": 6887,
+          "end": 7516,
+          "text": "occupancy. A move-in inventory records existing damage, and both parties should retain a copy. This paragraph does not change the rent, deposit, notice period or dates above.\n\nAdministrative section 1: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 2: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 3: Keep a copy of this document ",
+          "rank_score": 2.163283,
+          "retrieval_reason": "BM25 match"
+        }
+      ],
+      "elapsed_seconds": 5.656,
+      "memory_observation": {
+        "gpu": {},
+        "resources": {
+          "cpu_percent": "4.39%",
+          "memory": "868.9MiB / 4GiB",
+          "memory_percent": "21.21%",
+          "pids": "27"
+        },
+        "container": {
+          "running": true,
+          "present": true,
+          "failure": null,
+          "exit_code": 0,
+          "oom_killed": false,
+          "started_at": "2026-11-25T08:52:21.115448996Z",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "networks": [
+            "furnace-net-8f29f1e7fe520b70-73be3b274b8b4f2ab2b4d6d68c8037bc"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Long Q&A: Clinic diagnosis absent",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "regex_match",
+      "output": "I do not know. The document does not provide information about a diagnosis received by Jordan.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "chunk_bytes": 2071,
+        "indexed_sections": 21,
+        "retrieval": true,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "BM25 retrieved source sections"
+      },
+      "requests": [
+        {
+          "request_id": "d3387b30d927428e8a79dd857266d24d",
+          "duration_ms": 5078,
+          "usage": {
+            "prompt_tokens": 708.0,
+            "completion_tokens": 19.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-25T08:52:58.342547+00:00",
+        "project_id": "73be3b274b8b4f2ab2b4d6d68c8037bc",
+        "launch_id": "f4475339441746feb63c286aab1614ac",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "warnings": [],
+      "protection": {
+        "sentences": [],
+        "included": false,
+        "exclusive_output_values": []
+      },
+      "sources": [
+        {
+          "section": 9,
+          "start": 5073,
+          "end": 5705,
+          "text": "the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 27: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 28: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 29: Keep a copy of this document for your records. Contact the named office to correct any ",
+          "rank_score": 0,
+          "retrieval_reason": "Adjacent context"
+        },
+        {
+          "section": 10,
+          "start": 5705,
+          "end": 6336,
+          "text": "personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 30: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\n\nAppointment letter from Cedar Clinic for Jordan Vale. The appointment is on 2026-12-08 at 09:30, in Room 204, North Building. Bring photo identification and the referral letter. Call the clinic if an interpreter is needed. This visit is a consultation; this letter contains no test results, diagnosis or medication advice. The receptionist can ",
+          "rank_score": 5.282942,
+          "retrieval_reason": "BM25 match"
+        },
+        {
+          "section": 11,
+          "start": 6336,
+          "end": 6970,
+          "text": "explain parking and step-free access. Arrive 15 minutes early to check in. Do not stop any medication based on this administrative letter. \nAdditional terms and administrative context:\nPlease use the reception entrance rather than the emergency department. A supporter may accompany you if required. If travel arrangements change, call the clinic to reschedule rather than assuming a new appointment. Administrative staff cannot interpret medical results. Visitors should follow the building signs. The letter does not authorise treatment or change prescriptions. Keep a copy of the letter for check-in; the room and appointment date ",
+          "rank_score": 0,
+          "retrieval_reason": "Adjacent context"
+        }
+      ],
+      "elapsed_seconds": 6.375,
+      "memory_observation": {
+        "gpu": {},
+        "resources": {
+          "cpu_percent": "0.00%",
+          "memory": "890.1MiB / 4GiB",
+          "memory_percent": "21.73%",
+          "pids": "27"
+        },
+        "container": {
+          "running": true,
+          "present": true,
+          "failure": null,
+          "exit_code": 0,
+          "oom_killed": false,
+          "started_at": "2026-11-25T08:52:21.115448996Z",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "networks": [
+            "furnace-net-8f29f1e7fe520b70-73be3b274b8b4f2ab2b4d6d68c8037bc"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Long Q&A: Bank closing balance",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "number_within_tolerance",
+      "output": "2820",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "chunk_bytes": 2053,
+        "indexed_sections": 21,
+        "retrieval": true,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "BM25 retrieved source sections"
+      },
+      "requests": [
+        {
+          "request_id": "cd9b91df097d44aba12882afcffc39ed",
+          "duration_ms": 5562,
+          "usage": {
+            "prompt_tokens": 730.0,
+            "completion_tokens": 5.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-25T08:53:07.223837+00:00",
+        "project_id": "73be3b274b8b4f2ab2b4d6d68c8037bc",
+        "launch_id": "f4475339441746feb63c286aab1614ac",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "warnings": [],
+      "protection": {
+        "sentences": [],
+        "included": false,
+        "exclusive_output_values": []
+      },
+      "sources": [
+        {
+          "section": 10,
+          "start": 5647,
+          "end": 6277,
+          "text": "for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 30: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\n\nStatement for account ending 4821 for November 2026. Opening balance: 2400 dollars. Salary credit: 1800 dollars. Rent debit: 1250 dollars. Grocery debit: 125 dollars. Service fee: 5 dollars. Closing balance: 2820 dollars. This is a synthetic excerpt, not a real account. Debits reduce ",
+          "rank_score": 4.941618,
+          "retrieval_reason": "BM25 match"
+        },
+        {
+          "section": 11,
+          "start": 6277,
+          "end": 6905,
+          "text": "the balance; credits increase it. Report unrecognised transactions through your bank's official channel. There is no card number, password, interest rate or investment recommendation in this excerpt. \nAdditional terms and administrative context:\nThe transaction list is ordered by posting date. A pending card payment may appear in a later statement and is not included in this closing balance. Keep receipts when raising a dispute. The account suffix is used only to identify this statement; do not disclose your full banking credentials. Cash withdrawal limits and any overdraft agreement are outside this excerpt. The listed ",
+          "rank_score": 7.772878,
+          "retrieval_reason": "BM25 match"
+        },
+        {
+          "section": 12,
+          "start": 6905,
+          "end": 7532,
+          "text": "service fee is the only fee shown for this period.\n\nAdministrative section 1: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 2: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 3: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not ",
+          "rank_score": 0,
+          "retrieval_reason": "Adjacent context"
+        }
+      ],
+      "elapsed_seconds": 7.172,
+      "memory_observation": {
+        "gpu": {},
+        "resources": {
+          "cpu_percent": "0.00%",
+          "memory": "909.6MiB / 4GiB",
+          "memory_percent": "22.21%",
+          "pids": "27"
+        },
+        "container": {
+          "running": true,
+          "present": true,
+          "failure": null,
+          "exit_code": 0,
+          "oom_killed": false,
+          "started_at": "2026-11-25T08:52:21.115448996Z",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "networks": [
+            "furnace-net-8f29f1e7fe520b70-73be3b274b8b4f2ab2b4d6d68c8037bc"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Long Q&A: Thread final decision",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "contains_all",
+      "output": "2026-12-07",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "chunk_bytes": 2054,
+        "indexed_sections": 21,
+        "retrieval": true,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "BM25 retrieved source sections"
+      },
+      "requests": [
+        {
+          "request_id": "b515d08cd14c494ba25defbdd3295f00",
+          "duration_ms": 5765,
+          "usage": {
+            "prompt_tokens": 737.0,
+            "completion_tokens": 11.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-25T08:53:16.065730+00:00",
+        "project_id": "73be3b274b8b4f2ab2b4d6d68c8037bc",
+        "launch_id": "f4475339441746feb63c286aab1614ac",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "warnings": [],
+      "protection": {
+        "sentences": [],
+        "included": false,
+        "exclusive_output_values": []
+      },
+      "sources": [
+        {
+          "section": 10,
+          "start": 5647,
+          "end": 6277,
+          "text": "for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 30: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\n\nEmail thread: Monday, Maya proposed a review on 2026-12-03. Omar asked to delay it because the draft would not be ready. Tuesday, Lina agreed to review the revised draft. Wednesday, Maya confirmed the final review date is 2026-12-07; the earlier 2026-12-03 proposal is cancelled. Omar ",
+          "rank_score": 6.869962,
+          "retrieval_reason": "BM25 match"
+        },
+        {
+          "section": 11,
+          "start": 6277,
+          "end": 6903,
+          "text": "must send the revised draft by 2026-12-05. Lina owns the technical review. Maya will arrange the room. No start time or phone number was agreed. These are internal planning notes, with no permission to invent commitments. \nAdditional terms and administrative context:\nEarlier messages are retained below the final decision for context. Do not treat a quoted proposal as the current plan. Team members should use the shared draft instead of emailing separate versions. Access is limited to the review group. The room booking will be confirmed separately. The thread does not contain a final agenda or a meeting start time. The ",
+          "rank_score": 7.349397,
+          "retrieval_reason": "BM25 match"
+        },
+        {
+          "section": 12,
+          "start": 6903,
+          "end": 7529,
+          "text": "latest explicit decision supersedes the earlier date, while responsibilities for the draft and technical review stay assigned as above.\n\nAdministrative section 1: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 2: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 3: Keep a copy of this document for your records. Contact the named ",
+          "rank_score": 6.196895,
+          "retrieval_reason": "BM25 match"
+        }
+      ],
+      "elapsed_seconds": 7.031,
+      "memory_observation": {
+        "gpu": {},
+        "resources": {
+          "cpu_percent": "0.00%",
+          "memory": "929.9MiB / 4GiB",
+          "memory_percent": "22.70%",
+          "pids": "27"
+        },
+        "container": {
+          "running": true,
+          "present": true,
+          "failure": null,
+          "exit_code": 0,
+          "oom_killed": false,
+          "started_at": "2026-11-25T08:52:21.115448996Z",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "networks": [
+            "furnace-net-8f29f1e7fe520b70-73be3b274b8b4f2ab2b4d6d68c8037bc"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Long Q&A: Form deadline reference",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "contains_all",
+      "output": "The reference for the Furnace is REF-C204. The submission deadline is 2026-12-15.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "chunk_bytes": 2043,
+        "indexed_sections": 21,
+        "retrieval": true,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "BM25 retrieved source sections"
+      },
+      "requests": [
+        {
+          "request_id": "a1133545b4f24615ae18172ad6f2aa68",
+          "duration_ms": 5719,
+          "usage": {
+            "prompt_tokens": 703.0,
+            "completion_tokens": 30.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-25T08:53:24.504001+00:00",
+        "project_id": "73be3b274b8b4f2ab2b4d6d68c8037bc",
+        "launch_id": "f4475339441746feb63c286aab1614ac",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "warnings": [],
+      "protection": {
+        "sentences": [],
+        "included": false,
+        "exclusive_output_values": []
+      },
+      "sources": [
+        {
+          "section": 10,
+          "start": 5618,
+          "end": 6241,
+          "text": "Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 30: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\n\nCedar Council application form REF-C204. Submit to the Housing Desk by 2026-12-15. Required attachments: proof of address and photo identification. The applicant must sign Section D. The form is free: application fee 0 dollars. Do not send original ",
+          "rank_score": 0,
+          "retrieval_reason": "Adjacent context"
+        },
+        {
+          "section": 11,
+          "start": 6241,
+          "end": 6868,
+          "text": "identity documents; provide copies as instructed. The processing target is 20 working days after a complete application, not a guaranteed approval date. This example is fictional and does not describe an actual government programme. \nAdditional terms and administrative context:\nApplications missing a required attachment may be returned for completion. The desk will provide a receipt acknowledging submission, which does not mean approval. Contact details must be legible. If the address changes after submission, notify the desk and quote the reference number. A representative may help complete the form, but the applicant ",
+          "rank_score": 8.928932,
+          "retrieval_reason": "BM25 match"
+        },
+        {
+          "section": 12,
+          "start": 6868,
+          "end": 7494,
+          "text": "signs the declaration. The example includes no eligibility determination or promise of payment.\n\nAdministrative section 1: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 2: Keep a copy of this document for your records. Contact the named office to correct any personal details. This paragraph describes record handling, not payment or deadlines.\nAdministrative section 3: Keep a copy of this document for your records. Contact the named office to correct any personal details. ",
+          "rank_score": 0,
+          "retrieval_reason": "Adjacent context"
+        }
+      ],
+      "elapsed_seconds": 6.891,
+      "memory_observation": {
+        "gpu": {},
+        "resources": {
+          "cpu_percent": "0.00%",
+          "memory": "950.9MiB / 4GiB",
+          "memory_percent": "23.21%",
+          "pids": "27"
+        },
+        "container": {
+          "running": true,
+          "present": true,
+          "failure": null,
+          "exit_code": 0,
+          "oom_killed": false,
+          "started_at": "2026-11-25T08:52:21.115448996Z",
+          "launch_id": "f4475339441746feb63c286aab1614ac",
+          "container_id": "d9480b7ab053",
+          "networks": [
+            "furnace-net-8f29f1e7fe520b70-73be3b274b8b4f2ab2b4d6d68c8037bc"
+          ]
+        }
+      }
+    }
+  ],
+  "result": "recorded",
+  "selection": {
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "accelerator": "cpu",
+    "threads": 4,
+    "memory_mb": 4096,
+    "context_tokens": 4096,
+    "max_tokens": 512,
+    "request_timeout_seconds": 120,
+    "evaluation_budget_seconds": 900
+  },
+  "docker": {
+    "status": "ready",
+    "gpu_runtime": true,
+    "cpus": 20,
+    "memory_bytes": 8150224896
+  },
+  "prepare": {
+    "status": "prepared",
+    "reason": "Images pulled by digest; weights SHA-256 verified",
+    "cache": "shared verified-weights store; verified again before launch"
+  },
+  "launch_id": "f4475339441746feb63c286aab1614ac",
+  "observation_before": {
+    "gpu": {},
+    "resources": {
+      "cpu_percent": "0.00%",
+      "memory": "779.9MiB / 4GiB",
+      "memory_percent": "19.04%",
+      "pids": "27"
+    },
+    "container": {
+      "running": true,
+      "present": true,
+      "failure": null,
+      "exit_code": 0,
+      "oom_killed": false,
+      "started_at": "2026-11-25T08:52:21.115448996Z",
+      "launch_id": "f4475339441746feb63c286aab1614ac",
+      "container_id": "d9480b7ab053",
+      "networks": [
+        "furnace-net-8f29f1e7fe520b70-73be3b274b8b4f2ab2b4d6d68c8037bc"
+      ]
+    }
+  },
+  "shutdown_completed": true,
+  "score_summary": {
+    "pass": 6,
+    "fail": 0,
+    "unscored": 0
+  },
+  "operationally_complete": true
+}

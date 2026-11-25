@@ -142,7 +142,7 @@ MODELS = {
         ),
         ModelRecipe(
             id="qwen2.5-1.5b-instruct-q4_k_m",
-            name="Qwen2.5 1.5B Instruct (Q4_K_M GGUF)",
+            name="Qwen2.5-1.5B Instruct (Q4_K_M GGUF)",
             architecture="qwen2 (decoder-only transformer)",
             family_note="Everyday document candidate. Quality and latency are measured separately from privacy checks.",
             parameters="1.54B",

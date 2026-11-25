@@ -30,6 +30,7 @@ from furnace.starter import assess_model, write_starter_files
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from furnace_api.document_policy import quarantine
 from furnace_api.documents import extract_document
 from furnace_api.everyday import DocumentUpload, EverydayRequest, EverydayService
 from furnace_api.studio_evidence import project_view, provenance
@@ -332,6 +333,17 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
                 ],
             }
         )
+
+    @app.post("/api/everyday/inspect")
+    async def everyday_inspect(request: Request):
+        value = await payload(request, EverydayRequest, 800_000)
+        _, sentences = quarantine(value.text)
+        return {"sentences": sentences}
+
+    @app.post("/api/everyday/projects/{project_id}/plan")
+    async def everyday_plan(project_id: str, request: Request):
+        value = await payload(request, EverydayRequest, 800_000)
+        return await asyncio.to_thread(everyday.plan, project_id, value)
 
     @app.post("/api/everyday/projects/{project_id}/answer")
     async def everyday_answer(project_id: str, request: Request):

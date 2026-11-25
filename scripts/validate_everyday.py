@@ -221,6 +221,8 @@ def main() -> int:
                             requests=result["requests"],
                             receipt=result["receipt"],
                             warnings=result.get("warnings", []),
+                            protection=result.get("protection"),
+                            sources=result.get("sources", []),
                         )
                 except (httpx.HTTPError, ValueError) as error:
                     observed["error"] = type(error).__name__

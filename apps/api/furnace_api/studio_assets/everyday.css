@@ -3,3 +3,4 @@
 .user-message{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.7}
 
 .document-warning{border-left:4px solid #a45b15;padding:14px;background:#fff2df;color:#573413;font-size:14px;line-height:1.6}
+.source-text{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:13px;max-height:260px;overflow:auto}.document-warning[hidden]{display:none}
