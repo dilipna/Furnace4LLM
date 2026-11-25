@@ -9,7 +9,7 @@
     "error": "HTTPError"
   },
   {
-    "file": "smollm2-1.7b-original-README.md",
+    "file": "smollm2-1.7b-original-README.txt",
     "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct/resolve/31b70e2e869a7173562077fd711b654946d38674/README.md",
     "sha256": "b00c0570dbc43674a0028d088fc72f40d83eea90f47cd987706ca2f95ed114c0"
   },
