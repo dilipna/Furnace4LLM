@@ -10,7 +10,7 @@ export function readInstaller(): Installer | null {
   if (!existsSync(metadata)) return null;
   const value: unknown = JSON.parse(readFileSync(metadata, "utf8"));
   if (!validInstaller(value)) throw new Error("Invalid installer metadata");
-  if (value.experience !== "private-documents-preview") throw new Error("This installer predates the document experience; stage the matching candidate");
+  if (value.experience !== "researcher-infrastructure-preview") throw new Error("Stage the matching researcher-infrastructure installer; an older document-first build is not the current product");
   if (value.download_url) return value;
   if (process.env.FURNACE_PUBLIC_SITE === "true") throw new Error("Stage an approved public release link before deploying; local installers exceed Pages limits");
   const binary = readFileSync(join(root, value.file));

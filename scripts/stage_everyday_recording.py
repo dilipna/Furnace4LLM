@@ -15,7 +15,10 @@ assert (
     and record["quit_and_lease_released"]
 )
 assert record["answer"]["receipt"]["status"] == "checked"
-assert record["installed_build"]["experience"] == "private-documents-preview"
+assert record["installed_build"]["experience"] in {
+    "private-documents-preview",
+    "researcher-infrastructure-preview",
+}
 target = root / "apps/web/public/product/generated/everyday"
 target.mkdir(parents=True, exist_ok=True)
 for name in (

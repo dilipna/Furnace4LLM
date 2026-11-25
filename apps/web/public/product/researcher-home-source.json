@@ -1,0 +1,9 @@
+{
+  "width": 1440,
+  "height": 1130,
+  "sha256": "7e84f2890d743ad86434d46be89b6a88574fbb28dd8c81188b3c2bdb99184ea6",
+  "kind": "actual browser capture of local source UI",
+  "source_base": "b1b0332030ad6016801aa19eeff39d64edd14703",
+  "source_dirty": true,
+  "scope": "Researcher-front-door changes; fixture metadata and simulated unavailable Docker preflight. No model inference, installed-build or human-comprehension claim."
+}

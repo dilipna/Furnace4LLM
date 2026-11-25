@@ -35,7 +35,12 @@ def main() -> None:
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(args.url)
-        expect(page.get_by_role("heading", name="Private AI for", exact=False)).to_be_visible()
+        expect(
+            page.get_by_role("heading", name="You build the model.", exact=False)
+        ).to_be_visible()
+        expect(page.locator("main")).to_contain_text("free infrastructure starter kit")
+        expect(page.locator("main")).to_contain_text("proposed at $20/month")
+        checks["researcher_product_and_proposed_service_clear"] = True
         button = page.get_by_role("link", name="Download Furnace", exact=False)
         expect(button).to_have_attribute("href", "/downloads/" + metadata["file"])
         checks["windows_download_target"] = True
@@ -70,6 +75,7 @@ def main() -> None:
             "/privacy",
             "/terms",
             "/earlier-work",
+            "/examples/documents",
         ):
             response = page.goto(args.url + route)
             assert response is not None and response.status == 200, route
@@ -90,7 +96,7 @@ def main() -> None:
             response = context.request.get(args.url + href)
             assert response.ok, (href, response.status)
         checks["local_links_and_images"] = True
-        page.goto(args.url + "/demo")
+        page.goto(args.url + "/examples/documents")
         expect(
             page.get_by_role("heading", name="A document. An answer. Its checks.")
         ).to_be_visible()
@@ -107,7 +113,7 @@ def main() -> None:
         expect(page).to_have_url(args.url + "/docs")
         page.get_by_role("link", name="Tour", exact=True).first.click()
         expect(
-            page.get_by_role("heading", name="A document. An answer. Its checks.")
+            page.get_by_role("heading", name="A look inside your local workspace.")
         ).to_be_visible()
         checks["header_navigation"] = True
         page.get_by_role("button", name="Switch color theme").click()
