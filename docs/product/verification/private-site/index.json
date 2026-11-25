@@ -1,6 +1,6 @@
 {
   "schema": "furnace-private-site-local-evidence-v1",
-  "site_source": "b3fa98199c49e0b4fbcfd0d9b3ce19adbee08676",
+  "site_source": "Locally staged static export; exact source-to-build binding was not recorded for these Lighthouse reports",
   "installer_source": "2c250d642a1af2b648b67cb34fd190f535f24d8a",
   "reports": [
     {
