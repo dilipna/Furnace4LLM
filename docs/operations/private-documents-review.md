@@ -1,5 +1,9 @@
 # Private-document preview review
 
+This is now a secondary example-application checklist. The primary product review is
+[the researcher workflow](researcher-preview-review.md). The document example lives
+at `/examples/documents` in the local app and on the website.
+
 Draft only. This is separate from the unchanged November 24 Studio walkthrough.
 Nothing here records human participation or approves publication.
 
