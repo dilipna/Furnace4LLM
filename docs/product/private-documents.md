@@ -42,10 +42,15 @@ in this tab. Document tasks do not reuse unrelated chat context. Clear or close 
 to discard it. There is
 no persistent conversation history or automatic answer export.
 
-Inputs are split on UTF-8 character boundaries into at most 1,000-byte sections. This
-conservative byte budget supports the configured 4,096-token context; it is not a token
-counter or retrieval index. Section results are combined in bounded stages for summaries,
-questions and extraction. Translation, rewriting, actions and dates join independently processed sections;
+Section size now comes from the selected context window minus actual prompt/system
+bytes, output allowance and a 256-token chat-template reserve. UTF-8 byte fallback is
+a conservative bound, not an exact tokenizer; it deliberately leaves capacity unused.
+Summaries combine section results in bounded stages. Longer "Ask about it" requests
+use dependency-free local BM25 and up to three bounded original sections, filling
+unused slots with adjacent context. They do not summarize the whole document first.
+The UI lists the exact source sections supplied to the model separately from its
+answer. Those references are not proof of entailment; lexical retrieval can miss
+paraphrases or distant facts. Translation, rewriting, actions and dates join independently processed sections;
 cross-section coherence can suffer. The response and UI disclose staging, section count
 and actual request count. Request/time/depth limits stop runaway processing. A token-limit
 ending or a model/configuration change cannot produce a completed answer/receipt.
@@ -85,12 +90,14 @@ declares Apache-2.0; the repository contains its license. Preserve its license/n
 when distributing weights. This is distinct from Qwen2.5-3B's license; no inference about
 an entire model family is used. The 0.5B recipe remains the low-memory option.
 
-The candidate completed installed-runtime trials on CPU with about 8 GB available to
-Docker and on the owner's 4 GB NVIDIA GPU. See [actual results and failures](everyday-validation.md):
-5/9 rule checks passed on each device, with two tasks unscored. The candidate is not
-quality-approved. Older 0.5B/Granite records and scripted checks are separate evidence.
-`everyday_suite.json` contains synthetic documents and fixed field/rule checks. Missing-
-information and reply-quality tasks remain unscored for human review. Per-task latency,
+The original installed CPU/GPU trials recorded 5/9 scored rules and two unscored tasks
+per device. Those outputs remain unchanged. Separate v3 re-scoring gives CPU 9/11 and
+GPU 8/11 under revised rules; this is not new inference. See [historical evidence](everyday-validation.md),
+[model comparison](model-comparison.md) and the newer [protection/retrieval trials](document-workflow-improvements.md).
+Owner selection of a conditional default does not certify answer quality.
+Older 0.5B/Granite records and scripted checks are separate evidence.
+`everyday_suite.json` now contains 42 synthetic cases, including eight attacks and six
+long Q&A cases, all with fixed rules. These are not a semantic-quality benchmark. Per-task latency,
 failures, token-limit results and model identity belong in the actual run record; no
 semantic quality score or speed guarantee is inferred from field presence.
 
@@ -115,8 +122,13 @@ selected-release verification, model-quality review and publication approval rem
 The model receives a separate system-role instruction and unique document delimiters.
 Document text is untrusted data, including anything claiming to be a system prompt,
 safety policy or assistant instruction. Intermediate section results remain untrusted.
-A heuristic flags AI-directed phrases and shows a warning on the answer. It can miss
-attacks or flag harmless quotations; absence of a warning is not a safety verdict.
+A heuristic sets aside AI-directed sentences before inference by default, including
+some command continuations. The UI shows the count, exact text and an explicit
+"Include it anyway" opt-in. A deterministic answer check warns when a numeric/date
+string occurs only in the flagged text, even after an opt-in. It is a literal check,
+not semantic validation, and can miss rewritten numbers or dates. It can also flag
+legitimate material about AI; inspect the text before restoring it. No detector or
+sentence split catches every attack. Absence of a warning is not a safety verdict.
 
 This is partial mitigation, not prompt-injection resistance. The eight-case CPU baseline
 passed 0/8, delimiters alone still passed 0/8, and separate system-role instructions
@@ -135,11 +147,18 @@ configuration, not continuous network monitoring or whole-computer privacy proof
 The extracted-text limit is now 128,000 UTF-8 bytes; the 3 MB file and 40 PDF-page bounds
 remain. Text PDFs only: scans and image-only sections still need OCR, which is not included.
 Streaming progress reports completed model requests and section count. Remaining time is
-a rough estimate based on this task's observed pace, not a promise; combining stages can
+a rough estimate based on this task's observed pace, not a promise. Before starting
+a staged task, the app shows a context-derived planning range and asks whether to
+continue; this range is not calibrated to every machine. Combining stages can
 add requests. Processing has at most 512 requests/four reduction levels and a 30-minute
 scheduling budget. A request already sent can run to its individual timeout. Disconnecting
 stops scheduling further sections once the current request completes. Summaries may lose
 cross-section context; extraction limits do not guarantee answer quality.
+
+Timed-out HTTP requests shut down their upstream socket. A later request may recover
+the same previously approved connection after a model-ID health check. It never
+silently replays the failed prompt, restarts a model, changes configuration or overrides
+an explicit disconnect. Invalid identities and other failures still refuse execution.
 
 
 ## Owner-approved guided selection

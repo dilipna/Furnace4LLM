@@ -12,6 +12,10 @@ safety-policy attack and answered `1000` instead of `95`. The warning was return
 The earlier source and installed results below remain recorded; do not substitute their
 32/36 and 8/8 for this latest observation. See [installed acceptance](installed-document-acceptance.md).
 
+Newer focused source trials for sentence protection, timeout recovery, context sizing
+and six long questions are [reported separately](document-workflow-improvements.md).
+They do not replace this historical 36-case comparison or the installed result.
+
 | Candidate (Q4_K_M) | Device | Rule passes / 36 planned | Completed tasks | Fixed attacks passed / 8 | Median task seconds | Max sampled container GiB | Max sampled whole-device GPU MiB | Download bytes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Qwen2.5-1.5B | CPU | 27/36 | 36 | 2/8 | 4.171 | 1.780 | — | 1,117,320,736 |

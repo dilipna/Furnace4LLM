@@ -14,6 +14,8 @@ The original walkthrough sheet and port 4010 candidate are unchanged.
    history, retarget to main and inspect the child-only diff. Recheck all five workflows
    on the resulting head. The owner has selected Qwen3 for compatible NVIDIA GPUs and Qwen2.5-1.5B for CPU/faster use.
    Remaining owner gates: review that guided selection, accept or reject the remaining
+   [protection/retrieval trade-offs](../product/document-workflow-improvements.md),
+   including benign-text removal and conditional GPU memory fit,
    quality/staging limitations, and review
    installed acceptance and larger-document results. Do not represent 8/8 fixed attacks
    as solved prompt injection. Request merge approval; do not merge automatically.

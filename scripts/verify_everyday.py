@@ -146,6 +146,13 @@ def main() -> None:
                 record["checks"][
                     "estimate_shown_before_execution_and_decline_sends_no_document"
                 ] = True
+                page.get_by_role("button", name="Ask about it", exact=True).click()
+                page.locator("#question").fill("What do the meeting notes say about the office?")
+                page.locator("#send").click()
+                expect(page.locator(".answer")).to_have_count(1)
+                page.get_by_text("Source references:", exact=False).click()
+                expect(page.locator(".answer .source-text").first).to_contain_text("Meeting notes")
+                record["checks"]["actual_retrieval_source_references_rendered"] = True
                 page.get_by_role("button", name="New conversation", exact=False).click()
                 # The warning is derived by the API; it must be visible without
                 # opening receipt details, even with a scripted adapter.
