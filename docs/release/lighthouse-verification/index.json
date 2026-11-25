@@ -1,0 +1,36 @@
+{
+  "schema": "furnace-lighthouse-lock-evidence-v1",
+  "files": [
+    {
+      "file": "pr19-registry-failure.log.gz",
+      "uncompressed_sha256": "5784f69def52f100411415b3ec0353786febbabbc6c4f618eef60d156c77cd16"
+    },
+    {
+      "file": "pr20-registry-failure.log.gz",
+      "uncompressed_sha256": "2f62f73468c0a23c987f6f9328bb63fa953bd3ee84fd208fad74afae6e76ceaf"
+    },
+    {
+      "file": "local-initial-tool-graph.json.gz",
+      "uncompressed_sha256": "c372aa0caa975d0c28334f0942e057053cb49b6f9af2778b2575669f4adda517",
+      "fetch_time": "2026-11-25T09:36:56.512Z",
+      "version": "13.0.1",
+      "scores": {
+        "performance": 0.98,
+        "accessibility": 1,
+        "seo": 1
+      }
+    },
+    {
+      "file": "local-isolated-tool.json.gz",
+      "uncompressed_sha256": "592f2e6cb94896fa272f14a701adaf70725e9f04e2f5a5124e673d6ab8250b06",
+      "fetch_time": "2026-11-25T09:39:56.701Z",
+      "version": "13.0.1",
+      "scores": {
+        "performance": 0.97,
+        "accessibility": 1,
+        "seo": 1
+      }
+    }
+  ],
+  "scope": "Registry failures produced no audit scores. Two local audit runs target the separate port4011 preview built at c9d97a8 with installer6ed8bb2; not measurements of the final PR heads, human comprehension or model inference. Uncontrolled observations, no causal performance claim. The initial web-package experiment was reverted; the committed lock is isolated from product dependencies."
+}

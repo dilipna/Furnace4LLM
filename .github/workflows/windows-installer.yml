@@ -69,8 +69,11 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          cache-dependency-path: apps/web/pnpm-lock.yaml
+          cache-dependency-path: |
+            apps/web/pnpm-lock.yaml
+            scripts/lighthouse/pnpm-lock.yaml
       - run: pnpm --dir apps/web install --frozen-lockfile
+      - run: pnpm --dir scripts/lighthouse install --frozen-lockfile --ignore-scripts
       - run: uv run python scripts/stage_download.py
       - run: uv run python scripts/export_release_notes.py
         env:
@@ -86,7 +89,7 @@ jobs:
             uv run python scripts/verify_download_site.py
             if ($LASTEXITCODE -ne 0) { throw 'Browser verification failed' }
             $env:CHROME_PATH = uv run python -c "from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()"
-            pnpm dlx lighthouse@13.0.1 http://127.0.0.1:4010 '--only-categories=performance,accessibility,seo' '--chrome-flags=--headless=new --no-sandbox --disable-gpu' --output=json --output-path=dist/lighthouse.json --quiet
+            pnpm --dir scripts/lighthouse exec lighthouse http://127.0.0.1:4010 '--only-categories=performance,accessibility,seo' '--chrome-flags=--headless=new --no-sandbox --disable-gpu' --output=json --output-path=../../dist/lighthouse.json --quiet
             if ($LASTEXITCODE -ne 0) { throw 'Lighthouse invocation failed' }
             uv run python scripts/check_lighthouse.py dist/lighthouse.json
             if ($LASTEXITCODE -ne 0) { throw 'Lighthouse score below acceptance' }
