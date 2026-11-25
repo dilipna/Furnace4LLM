@@ -12,9 +12,11 @@
 
 Evidence: [contract](https://github.com/dilipna/Furnace4LLM/blob/product/private-documents/docs/product/private-documents.md),
 [actual installed CPU/GPU outcomes](https://github.com/dilipna/Furnace4LLM/blob/product/private-documents/docs/product/everyday-validation.md).
-These are draft features, not a published release. The candidate completed 11 tasks on
-CPU/GPU but passed only 5/9 rule checks, with 2 unscored and a genuine document-instruction
-failure. Do not claim semantic accuracy, professional suitability or customer adoption.
+These are draft features, not a published release. Historical v2 runs completed 11 tasks
+on CPU/GPU with 5/9 rule passes and 2 unscored. Corrected v3 re-scoring of those same outputs
+is separate from new inference. The later 36-case comparison includes a Qwen3 CPU timeout
+and retained failures; see the [full comparison](https://github.com/dilipna/Furnace4LLM/blob/product/private-documents/docs/product/model-comparison.md).
+Do not claim semantic accuracy, professional suitability or customer adoption.
 The pilot placeholder below remains blank.
 
 ## Earlier Studio bullets — alternative engineering material
