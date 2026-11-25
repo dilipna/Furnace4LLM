@@ -67,7 +67,7 @@ def main() -> None:
                 errors, requests = [], []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.on("request", lambda request: requests.append(request.url))
-                page.goto(service.url + "/#session=" + TOKEN)
+                page.goto(service.url + "/examples/documents#session=" + TOKEN)
                 expect(
                     page.get_by_role("heading", name="A little help.", exact=False)
                 ).to_be_visible()
@@ -230,7 +230,7 @@ def main() -> None:
                 mobile = browser.new_page(
                     viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True
                 )
-                mobile.goto(service.url + "/#session=" + TOKEN)
+                mobile.goto(service.url + "/examples/documents#session=" + TOKEN)
                 expect(
                     mobile.get_by_role("heading", name="A little help.", exact=False)
                 ).to_be_visible()

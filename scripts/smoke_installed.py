@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import tempfile
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -83,9 +84,8 @@ def main() -> None:
                 lambda message: errors.append(message.text) if message.type == "error" else None,
             )
             page.goto(ready["url"] + "/#session=" + ready["token"])
-            expect(page.get_by_role("heading", name="A little help.", exact=False)).to_be_visible()
-            checks["everyday_home_opened"] = True
-            page.get_by_role("link", name="Advanced / Developers", exact=False).click()
+            expect(page.get_by_text("INFRASTRUCTURE FOR YOUR MODEL", exact=True)).to_be_visible()
+            checks["researcher_home_opened"] = True
             expect(
                 page.get_by_role("heading", name="What would you like to work on?")
             ).to_be_visible()
@@ -110,15 +110,13 @@ def main() -> None:
             projects = api("projects")
             checks["guided_example_saved"] = len(projects) == 1 and len(projects[0]["cases"]) == 2
             page.screenshot(path=str(args.screenshots / "studio-example.png"), full_page=True)
-            # Export through the same HTTP API as the UI, rather than reading SQLite.
-            pid = projects[0]["id"]
-            export = httpx.post(
-                ready["url"] + f"/api/projects/{pid}/kit",
-                headers=headers,
-                timeout=30,
-                trust_env=False,
-            )
-            checks["kit_export"] = export.status_code == 200 and export.content[:2] == b"PK"
+            with page.expect_download() as exported:
+                page.locator("#download").click()
+            archive_path = exported.value.path()
+            assert archive_path is not None
+            with zipfile.ZipFile(archive_path) as archive:
+                checks["kit_export"] = bool(archive.namelist())
+            checks["kit_export_through_ui"] = True
             checks["no_browser_errors"] = not errors
             record["browser_errors"] = [
                 message.replace(ready["token"], "<redacted>") for message in errors

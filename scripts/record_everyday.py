@@ -153,7 +153,7 @@ try:
                 view.screenshot(path=str(out / (name + ".png")))
                 view.wait_for_timeout(1500)
 
-            view.goto(ready["url"] + "/#session=" + ready["token"])
+            view.goto(ready["url"] + "/examples/documents#session=" + ready["token"])
             expect(view.locator("#model-status")).to_contain_text("ready", timeout=30000)
             event(
                 "home",
@@ -226,7 +226,7 @@ try:
             mobile = browser.new_page(
                 viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True
             )
-            mobile.goto(ready["url"] + "/#session=" + ready["token"])
+            mobile.goto(ready["url"] + "/examples/documents#session=" + ready["token"])
             expect(mobile.locator("#model-status")).to_contain_text("ready", timeout=30000)
             mobile.screenshot(path=str(out / "app-mobile.png"), full_page=True)
             video = view.video

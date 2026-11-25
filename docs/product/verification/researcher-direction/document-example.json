@@ -1,0 +1,23 @@
+{
+  "schema": "furnace-everyday-browser-v1",
+  "at": "2026-11-25T19:10:10.063743+00:00",
+  "execution": "scripted Python test adapter over actual loopback HTTP; not an LLM",
+  "result": "passed",
+  "checks": {
+    "saved_recipe_restored_and_guided_quality_cpu_refused": true,
+    "real_pdf_drop_and_local_extraction": true,
+    "actual_adapter_execution": true,
+    "receipt_and_limits_visible": true,
+    "clear_removes_conversation": true,
+    "estimate_shown_before_execution_and_decline_sends_no_document": true,
+    "actual_retrieval_source_references_rendered": true,
+    "injection_warning_visible_with_collapsed_receipt": true,
+    "set_aside_inspection_and_opt_in_controls": true,
+    "workspace_change_clears_document_and_restores_recipe": true,
+    "recent_chat_context_and_clear": true,
+    "late_answer_cannot_restore_cleared_content": true,
+    "mobile_no_overflow": true,
+    "no_external_requests_or_browser_errors": true
+  },
+  "quit_and_lease_released": true
+}

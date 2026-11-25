@@ -1,8 +1,9 @@
 # Private documents — local product branch
 
 Status: draft development, not the #18 installer walkthrough and not published.
-The new default screen is `/`; existing Studio is intact at `/advanced`, with its model
-workspace at `/model`. No accounts, billing, cloud inference or analytics are added.
+This is an example application at `/examples/documents`. Researcher Studio is the
+default at `/` (also accessible at `/advanced`), with model connections at `/model`.
+No accounts, billing, cloud inference or analytics are added.
 
 ## Data flow
 
