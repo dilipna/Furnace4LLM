@@ -24,11 +24,11 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Furnace — Your model. Your machine.",
+  title: "Furnace — Private AI for your documents.",
   description:
-    "Run open-weight models locally with isolated serving, evaluations, logs and crash recovery. Free local app. Windows installer preview.",
+    "Summarise sensitive documents, ask questions and write locally. Inspect each answer’s privacy checks. Free Windows application preview.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://furnace-5h6.pages.dev"),
-  openGraph: { title: "Furnace — Your model. Your machine.", description: "A home for your local model. Isolated serving, evaluations and crash recovery.", type: "website", images: ["/product/og.svg"] },
+  openGraph: { title: "Furnace — Private AI for your documents.", description: "Private document help on your computer, with inspectable privacy checks.", type: "website", images: ["/product/og.svg"] },
   robots: { index: true, follow: true },
 };
 

@@ -1,3 +1,3 @@
-import { InstalledTour } from "@/components/download/tour";
-import { readRecording } from "@/lib/recording";
-export default function DemoPage() { return <InstalledTour recording={readRecording()} />; }
+import { DocumentTour } from "@/components/download/document-tour";
+import { readEverydayRecording } from "@/lib/everyday-recording";
+export default function DemoPage() { return <DocumentTour recording={readEverydayRecording()} />; }

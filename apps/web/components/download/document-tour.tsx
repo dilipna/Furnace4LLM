@@ -1,0 +1,17 @@
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import { DocPage } from "./site";
+import type { EverydayRecording } from "@/lib/everyday-recording";
+
+const steps = [
+  ["home","Open your private workspace","An actual installed-app screen with the selected local model. Preparation used cached public assets and required explicit approval before recording."],
+  ["document","Choose a document","A synthetic text PDF is dropped into the app and extracted locally. No cloud parser is used. Scanned PDFs are not supported."],
+  ["answer","Get a summary","This is the model's actual output from this run. A fluent answer can still omit or invent details; check the original."],
+  ["receipt","Inspect its receipt","The panel reports the exact model/launch identity and observed Docker settings. It does not prove that no other program sent data or certify the answer."],
+];
+export function DocumentTour({recording}:{recording:EverydayRecording|null}) {
+  const [step,setStep]=useState(0);
+  return <DocPage title="A document. An answer. Its checks." eyebrow="RECORDED LOCAL DEMO · NOT LIVE INFERENCE"><p>This website never receives your documents or runs prompts on the owner’s computer. Install the app to work locally.</p>{recording ? <><video controls preload="metadata" poster="/product/generated/everyday/home.png" aria-label="Recorded installed document journey"><source src="/product/generated/everyday/journey.webm" type="video/webm"/><track kind="captions" src="/product/generated/everyday/captions.vtt" srcLang="en" label="English" default/></video><p>Actual installed source <code>{recording.source_commit.slice(0,7)}</code> · {recording.model} · {recording.accelerator === "nvidia" ? "NVIDIA GPU" : "CPU"}. Synthetic example; automated recording, not a human usability result.</p><div className="tour-nav" role="group" aria-label="Recorded steps">{steps.map((item,index)=><button key={item[0]} onClick={()=>setStep(index)} aria-pressed={index===step}>{index+1}. {item[1]}</button>)}</div><section aria-live="polite"><h2>{steps[step][1]}</h2><Image unoptimized src={"/product/generated/everyday/"+steps[step][0]+".png"} width={1440} height={1000} alt={steps[step][2]}/><p>{steps[step][2]}</p></section><p><a href="/product/generated/everyday/record.json">Raw recording evidence</a> · <a href="/product/generated/everyday/journey.webm" download>Download the local recording</a></p></> : <><h2>Recording not staged in this build</h2><p>The document workflow is being verified separately. No generated animation or scripted-adapter response is substituted for a real-model recording here.</p><ol>{steps.map(item=><li key={item[0]}><strong>{item[1]}.</strong> The executed recording must supply this step before publication.</li>)}</ol></>}<h2>What the privacy check means</h2><p>The model’s network and filesystem settings are observed around each request. Document extraction runs locally on the host with resource limits. Windows, Docker, the browser and other software remain outside this model-container boundary.</p><p><Link prefetch={false} href="/security">Read the security boundary</Link> · <Link prefetch={false} href="/researchers">Earlier Studio and model evidence</Link></p></DocPage>;
+}

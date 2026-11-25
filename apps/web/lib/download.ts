@@ -1,4 +1,4 @@
-export type Installer = { version: string; commit: string; built_at: string; file: string; bytes: number; sha256: string; signed: boolean; download_url?: string; published?: boolean; published_at?: string };
+export type Installer = { experience?: string; version: string; commit: string; built_at: string; file: string; bytes: number; sha256: string; signed: boolean; download_url?: string; published?: boolean; published_at?: string };
 export function platformFor(userAgent: string): "windows" | "macos" | "linux" | "other" {
   if (/Android|iPhone|iPad/i.test(userAgent)) return "other";
   if (/Windows/i.test(userAgent)) return "windows";
