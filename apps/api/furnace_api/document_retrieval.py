@@ -78,7 +78,22 @@ def retrieve(parts: list[str], question: str, limit: int = 3) -> list[dict]:
                 }
             )
         offset += len(part)
-    return sorted(
-        sorted(ranked, key=lambda r: (-r["rank_score"], r["section"]))[:limit],
-        key=lambda r: r["section"],
-    )
+    selected = sorted(ranked, key=lambda r: (-r["rank_score"], r["section"]))[:limit]
+    # A lexical match near a section boundary can omit the preceding fact.
+    # Fill unused slots with adjacent original context, within the same budget.
+    chosen = {r["section"]: {**r, "retrieval_reason": "BM25 match"} for r in selected}
+    for anchor in selected:
+        for section in (anchor["section"] - 1, anchor["section"] + 1):
+            if len(chosen) >= limit:
+                break
+            if 1 <= section <= len(parts) and section not in chosen:
+                start = sum(len(part) for part in parts[: section - 1])
+                chosen[section] = {
+                    "section": section,
+                    "start": start,
+                    "end": start + len(parts[section - 1]),
+                    "text": parts[section - 1],
+                    "rank_score": 0,
+                    "retrieval_reason": "Adjacent context",
+                }
+    return sorted(chosen.values(), key=lambda r: r["section"])

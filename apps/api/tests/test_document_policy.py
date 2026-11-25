@@ -50,3 +50,14 @@ def test_retrieval_preserves_source_offsets_and_does_not_invent_a_match():
     assert "".join(parts)[sources[0]["start"] : sources[0]["end"]] == sources[0]["text"]
     assert "1275" in sources[0]["text"]
     assert retrieve(parts, "Aardvark whereabouts?", 3) == []
+
+
+def test_retrieval_keeps_adjacent_context_when_only_one_section_matches():
+    parts = [
+        "Form REF-C204. Submit by 2026-12-15. ",
+        "Quote the reference after submission. ",
+        "Office record handling.",
+    ]
+    sources = retrieve(parts, "Give the reference and submission deadline.")
+    assert any("REF-C204" in source["text"] for source in sources)
+    assert any("2026-12-15" in source["text"] for source in sources)

@@ -226,6 +226,8 @@ class ModelService:
                 ):
                     config = project["model_connection"]
                     self.client.check(config, api_key=self.key_for(pid, config))
+                    if self.flag(pid).is_set():
+                        raise RuntimeFault("endpoint_disconnected")
                     self.state(pid, "connected", "Recovered same endpoint after request timeout")
                     project = self.store.get(pid)
                     state = project["model_connection_state"]

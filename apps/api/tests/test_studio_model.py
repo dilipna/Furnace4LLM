@@ -212,6 +212,43 @@ def test_timeout_aborts_upstream_and_next_four_requests_execute_without_reconnec
         assert saved["state"]["status"] == "connected"
 
 
+@pytest.mark.parametrize("change", ["disconnect", "configuration", "wrong_model"])
+def test_timeout_recovery_cannot_override_consent_or_identity(tmp_path, server, change):
+    state, config = server
+    app = create_app(tmp_path, TOKEN)
+    with TestClient(
+        app, base_url="http://localhost", headers={"x-furnace-session": TOKEN}
+    ) as client:
+        pid = client.post("/api/examples/framework").json()["id"]
+        configure(client, pid, config)
+        connect(client, pid)
+        state.mode = "cancel_on_disconnect"
+        assert (
+            client.post(f"/api/projects/{pid}/model/predict", json={"input": "slow"}).status_code
+            == 409
+        )
+        assert state.cancelled.wait(1)
+        if change == "disconnect":
+            assert client.post(f"/api/projects/{pid}/model/disconnect").status_code == 200
+        elif change == "configuration":
+            configure(client, pid, {**config, "model_id": "other-model"})
+        else:
+            state.mode = "normal"
+            # The real health response advertises transport-test, not this changed
+            # server's advertised model. Persisted identity itself remains unchanged.
+            original = app.state.model.client.check
+
+            def refuse(configuration, api_key=None):
+                original({**configuration, "model_id": "unexpected"}, api_key=api_key)
+
+            app.state.model.client.check = refuse
+        result = client.post(f"/api/projects/{pid}/model/predict", json={"input": "never sent"})
+        assert result.status_code == 409
+        assert (
+            len([body for path, body in state.requests if path.endswith("/chat/completions")]) == 1
+        )
+
+
 def configure(client, pid, config):
     response = client.put(f"/api/projects/{pid}/model/connection", json=config)
     assert response.status_code == 200, response.text
