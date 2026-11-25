@@ -15,7 +15,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # Bump when any rule changes its verdict for the same output; runs record it.
-SCORER_VERSION = "furnace-rules-v2"
+SCORER_VERSION = "furnace-rules-v3"
 Method = Literal["exact", "normalized", "contains", "regex", "numeric", "choice", "json_fields"]
 JsonScalar = str | int | float | bool | None
 MAX_OUTPUT_FOR_REGEX = 16000
@@ -70,7 +70,7 @@ def normalize(text: str) -> str:
     """Case-, width- and whitespace-insensitive form without surrounding punctuation."""
     value = unicodedata.normalize("NFKC", text).casefold()
     value = " ".join(value.split())
-    return value.strip(" \t\n\"'`.,;:!?()[]{}*_")
+    return value.strip(" \t\n\"'`.,;:!?¡¿()[]{}*_")
 
 
 def _numbers(text: str) -> list[float]:

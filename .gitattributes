@@ -4,3 +4,7 @@
 *.mp4 binary
 *.zip binary
 *.tar.gz binary
+
+# Preserve the exact bytes addressed by benchmark/license evidence hashes.
+docs/product/verification/everyday/*.json -text
+docs/product/model-licenses/* -text

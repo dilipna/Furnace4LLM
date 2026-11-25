@@ -225,7 +225,12 @@ class EverydayService:
                     raise RuntimeFault(
                         "Request exceeds the model context budget; shorten your message or clear recent context"
                     )
-                result = self.model.predict(pid, prompt, system_prompt=DOCUMENT_SYSTEM)
+                result = self.model.predict(
+                    pid,
+                    prompt,
+                    system_prompt=DOCUMENT_SYSTEM
+                    + ("\n/no_think" if model["id"].startswith("qwen3-") else ""),
+                )
                 calls += 1
                 replies.append(
                     {

@@ -24,6 +24,13 @@ def test_normalized_ignores_case_width_whitespace_and_surrounding_punctuation():
     assert score(rule(method="normalized"), "x", None) == ("unscored", "no_expected_output")
 
 
+@pytest.mark.parametrize("output", ["¡Buenos días!", "¿Buenos días?", "  ¡Buenos días!  "])
+def test_normalized_spanish_surrounding_punctuation(output):
+    spanish = rule(method="normalized", value="Buenos días.")
+    assert score(spanish, output, None)[0] == "pass"
+    assert score(spanish, "Good morning.", None)[0] == "fail"
+
+
 @pytest.mark.parametrize(
     ("output", "status"),
     [("42", "pass"), ("The answer is 42.", "pass"), ("17 + 25 = 42", "pass"), ("1,042", "fail"),
