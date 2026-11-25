@@ -1,8 +1,9 @@
+import {recommendedSelection} from "./everyday-selection.mjs";
 const $ = value => document.querySelector(value);
 const fragment = new URLSearchParams(location.hash.slice(1)).get("session");
 const token = fragment || sessionStorage.getItem("furnace-session") || "";
 if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", "/"); }
-let chatTurns = [], setupWorking = false;
+let chatTurns = [], setupWorking = false, answerController = null, settingsEdited = false, refreshAgain = false;
 let documentText = "", action = "chat", projectId = "", epoch = 0, busy = false, refreshing = false, selectionChosen = false, hardwareChosen = false;
 const labels = {summarise:"Summarise",ask:"Ask about this document",actions:"Extract action items",dates:"Find dates",rewrite:"Simplify",reply:"Draft a reply",translate:"Translate",chat:"Chat"};
 const errors = {
@@ -40,6 +41,7 @@ function setAction(value) {
   $("#question-label").textContent=value === "translate" ? "Translate into which language?" : value === "ask" ? "Ask about this document" : "Ask something, or just chat";
 }
 function clearConversation() {
+  if(answerController) answerController.abort();
   epoch++; chatTurns=[]; documentText=""; $("#document-text").value=""; $("#question").value=""; $("#file").value="";
   $("#conversation").replaceChildren(); $("#document-info").textContent="Drop a PDF, Word document, TXT or Markdown file here.";
   setAction("chat"); message(busy ? "Conversation cleared. A request already sent locally may finish; its answer will be discarded." : "Conversation cleared from this tab. Original files are unchanged.");
@@ -98,8 +100,8 @@ function renderAnswer(result,label,question) {
   technical.append(element("p",`Pinned revision: ${result.receipt.model.revision}`),element("p",`Weights SHA-256: ${result.receipt.model.weights_sha256}`),element("p",result.receipt.model.weights_check),element("p",result.receipt.scope));
   receipt.append(technical); article.append(receipt); $("#conversation").append(article); article.scrollIntoView({block:"nearest"});
 }
-async function streamAnswer(pid,payload,onProgress) {
-  const response=await fetch(`/api/everyday/projects/${pid}/answer-stream`,{method:"POST",headers:{"Content-Type":"application/json","x-furnace-session":token},body:JSON.stringify(payload)});
+async function streamAnswer(pid,payload,onProgress,signal) {
+  const response=await fetch(`/api/everyday/projects/${pid}/answer-stream`,{method:"POST",headers:{"Content-Type":"application/json","x-furnace-session":token},body:JSON.stringify(payload),signal});
   if(!response.ok) { const error=await response.json(); throw new Error(typeof error.detail==="string" ? error.detail : "Check the document and model setup."); }
   const reader=response.body.getReader(), decoder=new TextDecoder();
   let buffer="", answer;
@@ -126,6 +128,7 @@ async function send() {
   const question=$("#question").value.trim();
   if(["ask","chat","translate"].includes(action) && !question) { $("#question").focus();message("Enter a question, message or target language.");return; }
   const generation=epoch, pid=projectId, label=labels[action];
+  const controller=new AbortController(); answerController=controller;
   setBusy(true); message(new TextEncoder().encode(documentText).length>1000 ? "Working locally in document sections. This can take a few minutes; no cloud fallback is used." : "Working with your local AI…");
   try {
     let truncated=false;
@@ -143,12 +146,12 @@ async function send() {
       const left=event.phase==="document" ? Math.max(0,sections-n)+Math.ceil(sections/4)+1 : 1;
       const estimate=n>0 ? ` Rough estimate: ${Math.max(1,Math.round(left*event.elapsed_seconds/n/60))}–${Math.max(1,Math.ceil(left*event.elapsed_seconds/n*2/60))} minutes remaining; combining stages may add time.` : " Estimating after the first section.";
       message(`Working locally · ${n} requests completed · ${sections} document sections · ${event.phase==="combining" ? "combining results" : "reading sections"}.${estimate}`);
-    });
+    },controller.signal);
     if(generation!==epoch || projectId!==pid) return;
     renderAnswer(result,label,question);
     if(action==="chat" && !documentText) chatTurns=[{role:"user",content:question},{role:"assistant",content:result.output}]; $("#question").value="";message("Answer complete. Check important details and inspect the privacy receipt.");
   } catch(error) { if(generation===epoch) message(error.message); }
-  finally {setBusy(false);}
+  finally {if(answerController===controller) answerController=null;setBusy(false);}
 }
 $("#composer").addEventListener("submit",event=>{event.preventDefault();send();});
 for(const button of document.querySelectorAll("[data-action]")) button.addEventListener("click",()=>{
@@ -157,8 +160,8 @@ for(const button of document.querySelectorAll("[data-action]")) button.addEventL
   send();
 });
 async function refresh() {
-  if(refreshing || setupWorking) return;
-  refreshing=true;
+  if(refreshing || setupWorking) {refreshAgain=true;return;}
+  refreshAgain=false; refreshing=true;
   const generation=epoch;
   try {
     const catalog=await api("managed/catalog");
@@ -167,7 +170,8 @@ async function refresh() {
       const hardware=await api("everyday/hardware");
       if(generation!==epoch) return;
       const gpu=hardware.gpu;
-      if(docker.gpu_runtime && gpu.name && gpu.memory_total_mib>=4096 && gpu.memory_total_mib-gpu.memory_used_mib>=2048) $("#accelerator").value="nvidia";
+      const recommended=recommendedSelection(docker,gpu);
+      $("#accelerator").value=recommended.accelerator; $("#model-choice").value=recommended.model;
       hardwareChosen=docker.status==="ready";
     }
     $("#docker-state").textContent=docker.status==="ready" ? "Docker is ready with Linux containers." : docker.status==="linux_containers_required" ? "Switch Docker Desktop to Linux containers. This page rechecks automatically." : "Docker is not reachable. Open Docker Desktop; this page rechecks automatically.";
@@ -183,17 +187,27 @@ async function refresh() {
       projectId=selected.id;select.value=projectId;
       const managed=await api(`projects/${selected.id}/managed`);
       if(generation!==epoch || setupWorking) return;
-      $("#model-status").textContent=managed.status==="ready" ? `${managed.selection.model.includes("1.5b") ? "Everyday" : "Local"} AI · ${managed.selection.accelerator==="nvidia" ? "GPU" : "CPU"} · ready` : "Local AI · "+(managed.status || "not set up");
+      if(managed.selection && !settingsEdited) {
+        if(![...$("#model-choice").options].some(option=>option.value===managed.selection.model)) {
+          const saved=catalog.models.find(model=>model.id===managed.selection.model);
+          if(saved) $("#model-choice").add(new Option(saved.name+" (existing Advanced selection)",saved.id));
+        }
+        $("#model-choice").value=managed.selection.model;
+        $("#accelerator").value=managed.selection.accelerator;
+      }
+      $("#model-status").textContent=managed.status==="ready" ? `${managed.selection.model.includes("4b-q4") ? "Quality" : managed.selection.model.includes("1.5b") ? "Everyday" : "Local"} AI · ${managed.selection.accelerator==="nvidia" ? "GPU" : "CPU"} · ready` : "Local AI · "+(managed.status || "not set up");
       if($("#setup").open) $("#setup-status").textContent=managed.status==="preparing" ? "Preparing approved files… "+(managed.preparation?.phase || "") : managed.reason || (managed.status || "Choose a model and approve its preparation.");
     } else {$("#model-status").textContent="Set up local AI";projectId="";}
   } catch(error) {$("#model-status").textContent="Studio disconnected";if($("#setup").open) $("#setup-status").textContent=error.message;}
-  finally {refreshing=false;}
+  finally {refreshing=false;if(refreshAgain && !setupWorking) {refreshAgain=false;queueMicrotask(refresh);}}
 }
 async function showSetup() {$("#setup").showModal();await refresh();}
 $("#setup-open").addEventListener("click",showSetup);$("#model-status").addEventListener("click",showSetup);
-$("#accelerator").addEventListener("change",()=>{hardwareChosen=true;});
-$("#project").addEventListener("change",event=>{projectId=event.target.value;selectionChosen=true;chatTurns=[];epoch++;});
+for(const selector of ["#accelerator","#model-choice"]) $(selector).addEventListener("change",()=>{hardwareChosen=true;settingsEdited=true;});
+$("#project").addEventListener("change",event=>{projectId=event.target.value;selectionChosen=true;settingsEdited=false;hardwareChosen=false;clearConversation();$("#model-status").textContent="Checking workspace…";refresh();});
 async function setupAction(kind) {
+  if(["prepare","start"].includes(kind) && $("#model-choice").value==="qwen3-4b-q4_k_m" && $("#accelerator").value!=="nvidia") {$("#setup-status").textContent="The quality option is for a compatible NVIDIA GPU. Choose Qwen1.5 for CPU or open Advanced for experimental settings.";return;}
+  if(kind==="start" && settingsEdited) {$("#setup-status").textContent="Prepare the selected settings before starting. The saved model has not been changed.";return;}
   if(kind!=="stop" && !$("#consent").checked) {$("#setup-status").textContent="Approve the download and execution before proceeding.";return;}
   setupWorking=true;
   for(const control of document.querySelectorAll(".setup-actions button,#project,#model-choice,#accelerator,#consent")) control.disabled=true;
@@ -203,6 +217,7 @@ async function setupAction(kind) {
     if(kind==="prepare") {
       await api(`projects/${pid}/managed`,"PUT",{model:$("#model-choice").value,accelerator:$("#accelerator").value,memory_mb:$("#model-choice").value.includes("0.5b") ? 2048 : 4096,context_tokens:4096,max_tokens:512,request_timeout_seconds:120});
       await api(`projects/${pid}/managed/prepare`,"POST",{consent:true});
+      settingsEdited=false;
       $("#setup-status").textContent="Preparing the approved model. Wait for prepared, then press Start.";
     } else {
       if(kind==="stop" && !confirm("Stop this local model? An in-progress answer may be interrupted.")) return;

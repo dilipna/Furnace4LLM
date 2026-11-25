@@ -51,6 +51,8 @@ def test_catalog_without_working_docker_preserves_metadata_and_idle_state(
             "qwen2.5-1.5b-instruct-q4_k_m",
             "qwen2.5-0.5b-instruct-q8_0",
             "granite-4.0-h-350m-q8_0",
+            "qwen3-4b-q4_k_m",
+            "smollm2-1.7b-instruct-q4_k_m",
         }
         assert all(
             present is None

@@ -394,6 +394,7 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
             "favicon.svg",
             "everyday.js",
             "everyday.css",
+            "everyday-selection.mjs",
         ],
     ):
         # Windows registry MIME mappings can label .js/.mjs text/plain. Browsers

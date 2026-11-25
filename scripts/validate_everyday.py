@@ -94,8 +94,15 @@ def main() -> int:
         "suite_sha256": hashlib.sha256(suite_bytes).hexdigest(),
         "scorer": SCORER_VERSION,
         "group": args.group,
+        "prompt_mode": "system /no_think"
+        if args.model.startswith("qwen3-")
+        else "standard system instruction",
         "download_bytes": recipe.weights.size,
-        "source_data": "synthetic packaged everyday suite only; no private user documents",
+        "source_data": "synthetic 25-page fixture; no private user documents"
+        if args.long_pdf
+        else "explicit supplied suite; contents are not asserted synthetic"
+        if args.suite
+        else "synthetic packaged everyday suite only; no private user documents",
         "cases": [],
         "result": "incomplete",
     }
@@ -106,7 +113,7 @@ def main() -> int:
         with httpx.Client(
             base_url=service.url,
             headers={"x-furnace-session": service.token},
-            timeout=330,
+            timeout=1930,
             trust_env=False,
         ) as client:
 

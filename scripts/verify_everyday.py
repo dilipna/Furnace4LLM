@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+from furnace.runtime.catalog import MODELS
 from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +22,13 @@ from apps.api.tests.test_everyday import (  # noqa: E402 -- test-only browser ha
     privacy_double,
     text_pdf,
 )
-from apps.api.tests.test_studio_managed import ANSWERS, TOKEN, build, ready_project  # noqa: E402
+from apps.api.tests.test_studio_managed import (  # noqa: E402
+    ANSWERS,
+    MODEL,
+    TOKEN,
+    build,
+    ready_project,
+)
 
 
 def main() -> None:
@@ -65,6 +72,28 @@ def main() -> None:
                     page.get_by_role("heading", name="A little help.", exact=False)
                 ).to_be_visible()
                 expect(page.locator("#model-status")).to_contain_text("ready", timeout=30000)
+                page.get_by_role("button", name="Model & setup", exact=True).click()
+                expect(page.locator("#model-choice")).to_have_value(MODEL)
+                page.locator("#model-choice").select_option("qwen3-4b-q4_k_m")
+                page.locator("#accelerator").select_option("cpu")
+                page.locator("#consent").check()
+                page.locator("#prepare").click()
+                expect(page.locator("#setup-status")).to_contain_text(
+                    "quality option is for a compatible NVIDIA GPU"
+                )
+                assert (
+                    client.get(f"/api/projects/{pid}/managed").json()["selection"]["model"] == MODEL
+                )
+                page.locator("#model-choice").select_option("qwen2.5-1.5b-instruct-q4_k_m")
+                before_starts = fake.started
+                page.locator("#start").click()
+                expect(page.locator("#setup-status")).to_contain_text(
+                    "Prepare the selected settings before starting"
+                )
+                assert fake.started == before_starts
+                page.locator("#model-choice").select_option(MODEL)
+                page.get_by_role("button", name="Close setup", exact=True).click()
+                record["checks"]["saved_recipe_restored_and_guided_quality_cpu_refused"] = True
                 page.screenshot(path=str(args.out / "app-desktop.png"), full_page=True)
                 data = base64.b64encode(text_pdf(marker)).decode()
                 transfer = page.evaluate_handle(
@@ -81,12 +110,8 @@ def main() -> None:
                     timeout=60000,
                 ) as response:
                     page.get_by_role("button", name="Summarise", exact=True).click()
-                answer = next(
-                    json.loads(line)["result"]
-                    for line in response.value.text().splitlines()
-                    if "result" in json.loads(line)
-                )
-                assert response.value.status == 200 and answer["processing"]["model_requests"] == 1
+                assert response.value.status == 200
+                expect(page.locator(".answer .meta").first).to_contain_text("1 local request(s)")
                 expect(page.locator(".output")).to_have_text(ANSWERS[marker])
                 record["checks"]["actual_adapter_execution"] = True
                 page.locator(".receipt > summary").click()
@@ -95,9 +120,7 @@ def main() -> None:
                 )
                 expect(page.locator(".receipt")).to_contain_text("not proof about every program")
                 page.get_by_text("Model identity and technical details", exact=True).click()
-                expect(page.locator(".receipt")).to_contain_text(
-                    answer["receipt"]["model"]["weights_sha256"]
-                )
+                expect(page.locator(".receipt")).to_contain_text(MODELS[MODEL].weights.sha256)
                 record["checks"]["receipt_and_limits_visible"] = True
                 page.screenshot(path=str(args.out / "answer-receipt.png"), full_page=True)
                 # Clearing is a user action, and must remove both source text and answer.
@@ -120,6 +143,17 @@ def main() -> None:
                 assert not page.locator(".receipt").evaluate("e=>e.open")
                 page.screenshot(path=str(args.out / "injection-warning.png"), full_page=True)
                 record["checks"]["injection_warning_visible_with_collapsed_receipt"] = True
+                page.get_by_role("button", name="Model & setup", exact=True).click()
+                page.locator("#project").select_option("")
+                expect(page.locator("#model-status")).to_have_text("Set up local AI")
+                expect(page.locator(".answer")).to_have_count(0)
+                expect(page.locator("#document-info")).to_contain_text("Drop a PDF")
+                page.locator("#project").select_option(pid)
+                expect(page.locator("#model-status")).to_contain_text("ready")
+                expect(page.locator("#model-choice")).to_have_value(MODEL)
+                page.get_by_role("button", name="Close setup", exact=True).click()
+                record["checks"]["workspace_change_clears_document_and_restores_recipe"] = True
+
                 page.get_by_role("button", name="New conversation", exact=False).click()
                 code = "CONTEXT-CODE-827"
                 ANSWERS[code] = code

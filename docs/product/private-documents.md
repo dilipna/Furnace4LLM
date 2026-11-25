@@ -77,7 +77,7 @@ DLP scanner and does not cover user copies, OS/browser caches or privileged atta
 
 ## Model candidate and evaluation
 
-Default candidate: official Qwen2.5-1.5B-Instruct Q4_K_M, revision
+CPU / faster option: official Qwen2.5-1.5B-Instruct Q4_K_M, revision
 `91cad51170dc346986eccefdc2dd33a9da36ead9`, weights SHA-256
 `6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e`.
 The [official pinned model card](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/blob/91cad51170dc346986eccefdc2dd33a9da36ead9/README.md)
@@ -140,3 +140,13 @@ add requests. Processing has at most 512 requests/four reduction levels and a 30
 scheduling budget. A request already sent can run to its individual timeout. Disconnecting
 stops scheduling further sections once the current request completes. Summaries may lose
 cross-section context; extraction limits do not guarantee answer quality.
+
+
+## Owner-approved guided selection
+
+Qwen3-4B Q4_K_M is the quality option for a compatible NVIDIA GPU; Qwen2.5-1.5B is
+used for CPU and as the faster/lower-memory option. The [comparison](model-comparison.md)
+records the owner's decision, actual results, planning heuristics and remaining failures.
+The app recommends rather than starts a model: prepare/start still require consent.
+Saved project settings and deliberate choices survive refresh. Quality-on-CPU is refused
+in guided setup because that trial timed out; Advanced remains available for experiments.
