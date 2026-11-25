@@ -12,7 +12,7 @@ The original walkthrough sheet and port 4010 candidate are unchanged.
    require fresh checks on main. A child's earlier green checks do not prove merged main.
 3. **#19 document app:** merge that main into the branch without rewriting shared
    history, retarget to main and inspect the child-only diff. Recheck all five workflows
-   on the resulting head. The owner has selected Qwen3 for compatible NVIDIA GPUs and Qwen1.5 for CPU/faster use.
+   on the resulting head. The owner has selected Qwen3 for compatible NVIDIA GPUs and Qwen2.5-1.5B for CPU/faster use.
    Remaining owner gates: review that guided selection, accept or reject the remaining
    quality/staging limitations, and review
    installed acceptance and larger-document results. Do not represent 8/8 fixed attacks

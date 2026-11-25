@@ -1,6 +1,6 @@
 # Everyday document model comparison
 
-The owner approved Qwen3-4B for compatible NVIDIA GPUs and Qwen1.5 for CPU/the faster
+The owner approved Qwen3-4B for compatible NVIDIA GPUs and Qwen2.5-1.5B for CPU/the faster
 option. The guided selection is prepared for review; no release is approved. These compare **Furnace's whole document workflow**, including staged results,
 not standalone model capability. Synthetic sources include lease terms, an appointment
 letter, a bank excerpt, an email thread and a fictional council form. All 36 cases have
@@ -43,7 +43,7 @@ these results: it did not complete that trial. Its GPU run had the best rule res
 and passed these eight attacks in that source trial. The latest installed run failed
 one of them. Neither result establishes general injection resistance.
 SmolLM2 has a slightly smaller download, but observed runtime memory was higher than
-Qwen1.5 and its rule results were worse here; file size alone does not predict runtime fit.
+Qwen2.5-1.5B and its rule results were worse here; file size alone does not predict runtime fit.
 The owner approved that conditional selection after reviewing the results. Initial setup
 recommends Qwen3 only with working Docker GPU access, at least 4,096 MiB total GPU
 memory and 3,500 MiB currently free; otherwise it chooses the faster GPU option when
@@ -54,7 +54,7 @@ the quality option on CPU; Advanced retains experimental CPU access.
 
 Important remaining failures: Qwen3 GPU reformatted a requested exact date; it said it
 did not know the rent, deposit and final review date despite those facts being in the
-longer documents. Staged processing can lose facts. Qwen1.5 still followed document
+longer documents. Staged processing can lose facts. Qwen2.5-1.5B still followed document
 instructions in several cases. None is approved as professional advice or an autonomous
 decision maker. The complete outputs, not only totals, need human review.
 
@@ -62,7 +62,7 @@ decision maker. The complete outputs, not only totals, need human review.
 
 Seven attacks were added to the original case: role spoofing, false corrections,
 quoted email, HTML comments, a fake safety policy, delimiter spoofing and an indirect
-Spanish command. The same eight-case Qwen1.5 CPU baseline passed **0/8**. Clear
+Spanish command. The same eight-case Qwen2.5-1.5B CPU baseline passed **0/8**. Clear
 delimiters/repeated instructions alone still passed **0/8**. A separate system-role
 instruction passed **2/8**, also 2/8 in the full CPU trial. The first unsuccessful
 mitigation is retained in `injection-after-cpu.json`; it is not described as fixed.
@@ -110,7 +110,7 @@ Nothing here redistributes weights or treats an entire model family as one licen
 ## Dense 25-page text PDF
 
 The same synthetic PDF (80,938 file bytes; 66,380 extracted UTF-8 bytes) was actually
-parsed locally and answered by Qwen1.5 on both devices. It exceeds the old 24,000-byte
+parsed locally and answered by Qwen2.5-1.5B on both devices. It exceeds the old 24,000-byte
 limit. Each run processed 67 source sections in 75 model requests and passed the two
 required owner/deadline fields. Both shut down cleanly.
 

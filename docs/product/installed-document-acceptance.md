@@ -38,7 +38,7 @@ archive, with different line endings.
   The warning recording answers the original attack correctly; it is a different
   case from the failed fake-policy attack above. Browser automation is not human
   comprehension. These runs quit their own services.
-- [Earlier Qwen1.5 recording](verification/everyday/recording-1ad.json) and
+- [Earlier Qwen2.5-1.5B recording](verification/everyday/recording-1ad.json) and
   [warning recording](verification/everyday/warning-recording-1ad.json) remain.
 - A separate source-checkout [plain-chat diagnostic](verification/everyday/chat-diagnostic-qwen4.json)
   answered `42` correctly. Its [one-case suite](verification/everyday/chat-diagnostic-suite.json)

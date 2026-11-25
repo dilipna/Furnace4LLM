@@ -3,11 +3,11 @@ const $ = value => document.querySelector(value);
 const fragment = new URLSearchParams(location.hash.slice(1)).get("session");
 const token = fragment || sessionStorage.getItem("furnace-session") || "";
 if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", "/"); }
-let chatTurns = [], setupWorking = false, answerController = null, settingsEdited = false, refreshAgain = false;
+let chatTurns = [], setupWorking = false, answerController = null, settingsEdited = false, refreshAgain = false, includeAiText = false;
 let documentText = "", action = "chat", projectId = "", epoch = 0, busy = false, refreshing = false, selectionChosen = false, hardwareChosen = false;
 const labels = {summarise:"Summarise",ask:"Ask about this document",actions:"Extract action items",dates:"Find dates",rewrite:"Simplify",reply:"Draft a reply",translate:"Translate",chat:"Chat"};
 const errors = {
-  endpoint_timeout:"The local AI took too long. Stop and start it in Model & setup, or try shorter text.",
+  endpoint_timeout:"The local AI took too long; that request was cancelled. Try shorter text. Furnace checks the same connection before your next request.",
   endpoint_unavailable_or_invalid:"The local AI is unavailable. Check its state in Model & setup before trying again.",
   connect_current_model_configuration_first:"Reconnect the current model in Advanced, or stop and start it from setup.",
   managed_server_not_running:"Start your local AI in Model & setup first.",
@@ -42,7 +42,7 @@ function setAction(value) {
 }
 function clearConversation() {
   if(answerController) answerController.abort();
-  epoch++; chatTurns=[]; documentText=""; $("#document-text").value=""; $("#question").value=""; $("#file").value="";
+  epoch++; chatTurns=[]; documentText=""; includeAiText=false; $("#document-protection").hidden=true; $("#document-text").value=""; $("#question").value=""; $("#file").value="";
   $("#conversation").replaceChildren(); $("#document-info").textContent="Drop a PDF, Word document, TXT or Markdown file here.";
   setAction("chat"); message(busy ? "Conversation cleared. A request already sent locally may finish; its answer will be discarded." : "Conversation cleared from this tab. Original files are unchanged.");
 }
@@ -63,7 +63,7 @@ async function readFile(file) {
     if (generation!==epoch) return;
     if (new TextEncoder().encode(result.text).length>128000) throw new Error("Document exceeds 128,000 UTF-8 text bytes. Split it into smaller files.");
     documentText=result.text; $("#document-info").textContent=file.name+" · read locally · "+documentText.length.toLocaleString()+" characters";
-    setAction("summarise"); message("Document ready. Choose an action below. Longer documents are processed in stages. "+(result.warning || ""));
+    setAction("summarise"); await inspectDocument(); if(generation!==epoch) return; message("Document ready. Choose an action below. Longer documents are processed in stages. "+(result.warning || ""));
   } catch(error) { if(generation===epoch) message(error.message); }
   finally { setBusy(false); }
 }
@@ -72,12 +72,32 @@ const drop=$("#document-box");
 drop.addEventListener("dragover",event=>{event.preventDefault();drop.classList.add("drag");});
 drop.addEventListener("dragleave",()=>drop.classList.remove("drag"));
 drop.addEventListener("drop",event=>{event.preventDefault();drop.classList.remove("drag");readFile(event.dataTransfer.files[0]);});
-$("#use-text").addEventListener("click",()=>{
+$("#use-text").addEventListener("click",async ()=>{
   const value=$("#document-text").value;
   if(!value.trim()) { message("Paste document text first."); return; }
   if(new TextEncoder().encode(value).length>128000) { message("Use at most 128,000 UTF-8 text bytes."); return; }
   epoch++; chatTurns=[]; documentText=value; $("#document-info").textContent="Pasted document · "+value.length.toLocaleString()+" characters";
-  $("#paste").open=false; setAction("summarise"); message("Pasted text ready. It is not saved in project records.");
+  const generation=epoch;
+  $("#paste").open=false; setAction("summarise"); await inspectDocument(); if(generation!==epoch) return; message("Pasted text ready. It is not saved in project records.");
+});
+async function inspectDocument() {
+  includeAiText=false; $("#document-protection").hidden=true;
+  const generation=epoch;
+  try {
+    const result=await api("everyday/inspect","POST",{text:documentText,action:"summarise"});
+    if(generation!==epoch) return;
+    $("#document-protection").hidden=!result.sentences.length;
+    $("#set-aside-text").textContent=result.sentences.join("");
+    $("#set-aside-count").textContent=result.sentences.length;
+    $("#set-aside-summary").textContent=result.sentences.length===1 ? "1 sentence addressed to an AI was set aside." : result.sentences.length+" sentences addressed to an AI were set aside.";
+    $("#include-ai").textContent="Include it anyway";
+  } catch(error) {if(generation===epoch) message(error.message);}
+}
+$("#include-ai").addEventListener("click",()=>{
+  if(busy) return;
+  includeAiText=!includeAiText;
+  $("#include-ai").textContent=includeAiText ? "Set it aside again" : "Include it anyway";
+  $("#set-aside-summary").textContent=includeAiText ? "AI-directed text will be included by your choice. Check answers carefully." : $("#set-aside-count").textContent+" sentence(s) addressed to an AI set aside.";
 });
 function element(tag,text,className) { const item=document.createElement(tag);if(text!==undefined) item.textContent=text;if(className)item.className=className;return item; }
 function renderAnswer(result,label,question) {
@@ -85,6 +105,12 @@ function renderAnswer(result,label,question) {
   for(const warning of result.warnings || []) { const note=element("p",warning,"document-warning"); note.setAttribute("role","note"); article.append(note); }
   if(question) article.append(element("p",question,"user-message"));
   article.append(element("h2",label),element("div",result.output,"output"));
+  if(result.protection?.included && result.protection.sentences.length) article.append(element("p","AI-directed text was included by your choice.","document-warning"));
+  if(result.sources?.length) {
+    const sources=element("details"); sources.append(element("summary","Retrieved source sections — check the answer against these"));
+    for(const source of result.sources) sources.append(element("h3","Section "+source.section),element("pre",source.text,"source-text"));
+    article.append(sources);
+  }
   const seconds=(result.duration_ms/1000).toFixed(1);
   article.append(element("p",`${seconds}s total · ${result.processing.model_requests} local request(s) · ${result.receipt.model.id}`,"meta"));
   if(result.processing.history_truncated) article.append(element("p","Recent chat context was shortened to fit this model. Include key details again if needed.","meta"));
@@ -129,7 +155,7 @@ async function send() {
   if(["ask","chat","translate"].includes(action) && !question) { $("#question").focus();message("Enter a question, message or target language.");return; }
   const generation=epoch, pid=projectId, label=labels[action];
   const controller=new AbortController(); answerController=controller;
-  setBusy(true); message(new TextEncoder().encode(documentText).length>1000 ? "Working locally in document sections. This can take a few minutes; no cloud fallback is used." : "Working with your local AI…");
+  setBusy(true); message("Planning the local request…");
   try {
     let truncated=false;
     const history=action==="chat" && !documentText ? chatTurns.slice(-2).map(turn=>{
@@ -140,7 +166,13 @@ async function send() {
       }
       return {role:turn.role,content};
     }) : [];
-    const result=await streamAnswer(pid,{text:documentText,question,action,history,history_truncated:truncated},event=>{
+    const payload={text:documentText,question,action,history,history_truncated:truncated,include_ai_text:includeAiText};
+    const plan=await api("everyday/projects/"+pid+"/plan","POST",payload);
+    if(generation!==epoch || projectId!==pid) return;
+    const estimate="Rough estimate: "+plan.estimate_seconds.join("–")+" seconds. "+plan.estimate_basis+" No cloud fallback.";
+    message(estimate);
+    if(plan.document_sections>1 && !confirm(estimate+" Continue?")) return;
+    const result=await streamAnswer(pid,payload,event=>{
       if(generation!==epoch || projectId!==pid) return;
       const n=event.completed_requests, sections=event.document_sections;
       const left=event.phase==="document" ? Math.max(0,sections-n)+Math.ceil(sections/4)+1 : 1;
@@ -206,7 +238,7 @@ $("#setup-open").addEventListener("click",showSetup);$("#model-status").addEvent
 for(const selector of ["#accelerator","#model-choice"]) $(selector).addEventListener("change",()=>{hardwareChosen=true;settingsEdited=true;});
 $("#project").addEventListener("change",event=>{projectId=event.target.value;selectionChosen=true;settingsEdited=false;hardwareChosen=false;clearConversation();$("#model-status").textContent="Checking workspace…";refresh();});
 async function setupAction(kind) {
-  if(["prepare","start"].includes(kind) && $("#model-choice").value==="qwen3-4b-q4_k_m" && $("#accelerator").value!=="nvidia") {$("#setup-status").textContent="The quality option is for a compatible NVIDIA GPU. Choose Qwen1.5 for CPU or open Advanced for experimental settings.";return;}
+  if(["prepare","start"].includes(kind) && $("#model-choice").value==="qwen3-4b-q4_k_m" && $("#accelerator").value!=="nvidia") {$("#setup-status").textContent="The quality option is for a compatible NVIDIA GPU. Choose Qwen2.5-1.5B for CPU or open Advanced for experimental settings.";return;}
   if(kind==="start" && settingsEdited) {$("#setup-status").textContent="Prepare the selected settings before starting. The saved model has not been changed.";return;}
   if(kind!=="stop" && !$("#consent").checked) {$("#setup-status").textContent="Approve the download and execution before proceeding.";return;}
   setupWorking=true;
