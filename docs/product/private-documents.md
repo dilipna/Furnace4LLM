@@ -49,7 +49,8 @@ Summaries combine section results in bounded stages. Longer "Ask about it" reque
 use dependency-free local BM25 and up to three bounded original sections, filling
 unused slots with adjacent context. They do not summarize the whole document first.
 The UI lists the exact source sections supplied to the model separately from its
-answer. Those references are not proof of entailment; lexical retrieval can miss
+answer. Section numbers and character offsets refer to the retained text after any
+set-aside removal, not original PDF pages or clause numbers. Those references are not proof of entailment; lexical retrieval can miss
 paraphrases or distant facts. Translation, rewriting, actions and dates join independently processed sections;
 cross-section coherence can suffer. The response and UI disclose staging, section count
 and actual request count. Request/time/depth limits stop runaway processing. A token-limit

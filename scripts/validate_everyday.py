@@ -36,7 +36,7 @@ def main() -> int:
         help="Explicit source trial; never labelled installed",
     )
     parser.add_argument("--suite", type=Path)
-    parser.add_argument("--group", choices=["injection", "everyday", "longer-document"])
+    parser.add_argument("--group", choices=["injection", "everyday", "longer-document", "long-qa"])
     parser.add_argument(
         "--long-pdf",
         action="store_true",

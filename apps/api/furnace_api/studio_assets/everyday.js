@@ -113,8 +113,8 @@ function renderAnswer(result,label,question) {
   if(result.protection?.included && result.protection.sentences.length) article.append(element("p","AI-directed text was included by your choice.","document-warning"));
   if(result.sources?.length) {
     const sources=element("details"); sources.append(element("summary","Source references: "+result.sources.map(s=>"Section "+s.section).join(", ")));
-    sources.append(element("p","Original sections provided to the model. These references do not prove that every answer claim is supported; check the text below."));
-    for(const source of result.sources) sources.append(element("h3","Section "+source.section),element("pre",source.text,"source-text"));
+    sources.append(element("p","Text supplied after any set-aside removal. These are Furnace text sections, not original page or clause numbers. References do not prove that every answer claim is supported; check the text below."));
+    for(const source of result.sources) sources.append(element("h3","Text section "+source.section),element("pre",source.text,"source-text"));
     article.append(sources);
   }
   const seconds=(result.duration_ms/1000).toFixed(1);
