@@ -1,6 +1,23 @@
 # Resume and LinkedIn draft
 
-## Four resume bullets
+## Current document-product prototype — resume options
+
+- Built Furnace (Python, FastAPI, Docker, llama.cpp), a local document-AI prototype
+  with summarisation, Q&A and rewriting, while preserving an Advanced model workspace.
+- Added per-answer privacy receipts bound to model identity and observed container
+  isolation; tested that document text and answers stay out of application records,
+  logs and exported kits, without claiming host-wide traffic proof.
+- Built a self-contained, per-user Windows installer with bundled Python, automatic
+  browser launch and clean shutdown; verified installation and uninstall retention in CI.
+
+Evidence: [contract](https://github.com/dilipna/Furnace4LLM/blob/product/private-documents/docs/product/private-documents.md),
+[actual installed CPU/GPU outcomes](https://github.com/dilipna/Furnace4LLM/blob/product/private-documents/docs/product/everyday-validation.md).
+These are draft features, not a published release. The candidate completed 11 tasks on
+CPU/GPU but passed only 5/9 rule checks, with 2 unscored and a genuine document-instruction
+failure. Do not claim semantic accuracy, professional suitability or customer adoption.
+The pilot placeholder below remains blank.
+
+## Earlier Studio bullets — alternative engineering material
 
 - Built Furnace (Python, FastAPI, Docker, llama.cpp), a local platform
   that runs open-weight LLMs as isolated, monitored services with automated
@@ -72,6 +89,6 @@ November 29, 2026; observations and outcomes remain blank until it happens.
 
 ## LinkedIn description — two sentences
 
-I built Furnace, a local app that helps researchers run open-weight models with
-isolated serving, evaluations, logs and crash recovery. I’ve tested Qwen and Granite
-on CPU and NVIDIA GPU, and I’m preparing a hands-on pilot with another developer.
+I’m building Furnace, a local app for sensitive documents, with privacy checks you can
+inspect alongside each answer. I built its Windows installer and model infrastructure,
+tested CPU and NVIDIA GPU journeys, and am preparing a user pilot.
