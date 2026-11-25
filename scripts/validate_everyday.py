@@ -106,7 +106,7 @@ def main() -> int:
         with httpx.Client(
             base_url=service.url,
             headers={"x-furnace-session": service.token},
-            timeout=330,
+            timeout=1930,
             trust_env=False,
         ) as client:
 

@@ -424,3 +424,45 @@ def test_revised_everyday_rules_check_the_intended_fields(name, output, expected
     )
     case = next(c for c in suite["cases"] if c["name"] == name)
     assert score(ScoringRule.model_validate(case["scoring"]), output, None)[0] == expected
+
+
+def test_actual_25_page_text_pdf_exceeds_old_limit_and_preserves_last_page():
+    import runpy
+    from pathlib import Path
+
+    fixture = Path(__file__).resolve().parents[3] / "scripts/long_document_fixture.py"
+    pdf = runpy.run_path(str(fixture))["make_pdf"]()
+    result = extract_document("pdf", base64.b64encode(pdf).decode())
+    assert 24000 < len(result["text"].encode()) < 128000
+    assert "2027-02-19" in result["text"] and "Page 25" in result["text"]
+    assert result["ocr"] is False
+
+
+def test_cancelled_progress_stops_before_sending_another_section(tmp_path, monkeypatch):
+    from furnace.runtime.manager import RuntimeFault
+    from furnace_api.everyday import EverydayRequest, EverydayService
+
+    app, fake = build(tmp_path)
+    with client_for(app) as client:
+        pid = ready_project(client)
+        privacy_double(app, fake, pid)
+        sent = []
+        original = app.state.model.client.predict
+
+        def capture(*args, **kwargs):
+            sent.append(args)
+            return original(*args, **kwargs)
+
+        monkeypatch.setattr(app.state.model.client, "predict", capture)
+
+        def cancel_after_first(event):
+            if event["completed_requests"] == 1:
+                raise RuntimeFault("Document task cancelled")
+
+        with pytest.raises(RuntimeFault, match="cancelled"):
+            EverydayService(app.state.managed, app.state.model).answer(
+                pid,
+                EverydayRequest(action="summarise", text="meeting notes " * 500),
+                cancel_after_first,
+            )
+        assert len(sent) == 1

@@ -7,5 +7,15 @@
   {
     "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct-GGUF/resolve/2d4a76a30b4af41ecd395c35725ac11688d4cfe4/LICENSE",
     "error": "HTTPError"
+  },
+  {
+    "file": "smollm2-1.7b-original-README.md",
+    "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct/resolve/31b70e2e869a7173562077fd711b654946d38674/README.md",
+    "sha256": "b00c0570dbc43674a0028d088fc72f40d83eea90f47cd987706ca2f95ed114c0"
+  },
+  {
+    "file": "Apache-2.0.txt",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
   }
 ]
