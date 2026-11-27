@@ -153,7 +153,13 @@ def write_starter_files(assessment: dict[str, Any], output: Path) -> None:
         "1. Inspect assessment.json: detected files are not validated capabilities.\n"
         "2. Fill in model-contract.json with the model author; do not put secrets in it.\n"
         "3. Replace the example evaluation cases with representative inputs and expectations.\n"
-        "4. Review operations.md before a supervised implementation.\n\n"
+        "4. In Studio, select your project, open Checks, and import evaluation-cases.example.jsonl.\n"
+        "   Preview the cases before replacing the saved suite. Importing executes nothing.\n"
+        "5. Open the project's model workspace to choose a reviewed recipe, your own Python adapter,\n"
+        "   or an existing compatible local server. Prepare/start/connect require explicit consent.\n"
+        "6. Review operations.md before execution. Evaluate only after the server is connected.\n\n"
+        "The arithmetic case is an illustrative numeric rule, not a task-specific quality suite.\n"
+        "Its expected answer is authored, not a measured baseline. Not run is not a pass.\n\n"
         "The $20/month managed-service offer is the owner's product direction, not an active subscription or provisioned service in this kit.\n",
         encoding="utf-8",
     )
@@ -179,9 +185,11 @@ def write_starter_files(assessment: dict[str, Any], output: Path) -> None:
     (output / "evaluation-cases.example.jsonl").write_text(
         json.dumps(
             {
-                "id": "replace-with-representative-case",
-                "input": None,
-                "expected_behavior": None,
+                "name": "Example arithmetic — replace for your task",
+                "input": "How many minutes are in 3 hours? Reply with only the number.",
+                "expected_behavior": "Return 180. This illustrative case must be reviewed for your model's task.",
+                "expected_output": None,
+                "scoring": {"method": "numeric", "number": 180},
                 "status": "not_run",
             }
         )

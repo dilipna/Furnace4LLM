@@ -1,11 +1,11 @@
-import {activeStates, caseStatus, countsFor, mergeProjectRecord, updateKnownProject, requestOutputFor, journeyFor, runtimeState, toneFor} from "./studio-state.mjs";
+import {activeStates, caseStatus, countsFor, mergeProjectRecord, updateKnownProject, requestOutputFor, journeyFor, runtimeState, toneFor, projectUrl, selectProjectId} from "./studio-state.mjs";
 import {parseCaseSuite, MAX_CASE_FILE_BYTES} from "./case-import.mjs";
 
 const $ = selector => document.querySelector(selector);
 const token = new URLSearchParams(location.hash.slice(1)).get("session") || sessionStorage.getItem("furnace-session");
 if (token) {
   sessionStorage.setItem("furnace-session", token);
-  history.replaceState(null, "", location.pathname);
+  history.replaceState(null, "", projectUrl(location.pathname, new URLSearchParams(location.search).get("project")));
 }
 window.addEventListener("hashchange", () => {
   if (new URLSearchParams(location.hash.slice(1)).has("session")) location.reload();
@@ -85,6 +85,7 @@ async function refreshProject(id = current?.id) {
   acceptProject(project);
 }
 function openProject(project) {
+  history.replaceState(null, "", projectUrl(location.pathname, project.id));
   current = project; view = "overview"; notice(""); render();
 }
 function navigation() {
@@ -240,7 +241,7 @@ function syncControls() {
   document.querySelectorAll('#workspace button[aria-busy="true"]').forEach(button => button.disabled = true);
 }
 function renderJourney() {
-  const journey = journeyFor(evidenceFresh ? current : {...current, evaluation: null, evaluation_verification: "unconfirmed"});
+  const journey = journeyFor(evidenceFresh ? current : {...current, evaluation: null, evaluation_verification: "unconfirmed", model_endpoint:{...current.model_endpoint, verification:"unconfirmed"}});
   $("#next-title").textContent = journey.next.title;
   $("#next-description").textContent = journey.next.description;
   $("#next-action").textContent = journey.next.action;
@@ -248,12 +249,14 @@ function renderJourney() {
     const li = text("li", ""); li.dataset.complete = step.done;
     const button = text("button", ""); button.append(text("span", step.done ? "✓" : index + 1), text("strong", step.label));
     button.setAttribute("aria-label", step.label + (step.done ? ": prepared or executed" : ": incomplete"));
-    button.onclick = () => changeView(step.view, true); li.append(button); return li;
+    button.onclick = () => step.model ? location.assign(projectUrl("/model", current.id)) : changeView(step.view, true); li.append(button); return li;
   }));
   const metrics = [
     [Object.values(current.assessment.file_evidence).filter(Boolean).length + " / 5", "File signals detected"],
     [String(current.cases.length), "Prepared evaluation cases"],
-    [current.evaluation?.status?.replaceAll("_", " ") || "Not run", "Framework execution"],
+    current.origin === "guided_example"
+      ? [current.evaluation?.status?.replaceAll("_", " ") || "Not run", "Framework execution"]
+      : [journey.modelRun?.status?.replaceAll("_", " ") || "Not run", "Model evaluation attempt"],
   ];
   $("#project-metrics").replaceChildren(...metrics.map(([value, label]) => { const div = text("div", "", "metric"); div.append(text("strong", value), text("span", label)); return div; }));
 }
@@ -287,6 +290,7 @@ function render() {
   const previousFocus = document.activeElement;
   const projectFocus = previousFocus?.dataset?.project;
   navigation();
+  $("#model-workspace-link").href = projectUrl("/model", current?.id);
   $("#welcome").hidden = Boolean(current); $("#workspace").hidden = !current;
   if (!current) { renderedProjectId = null; renderPanels(); syncEntryControls(); return; }
   if (renderedProjectId !== current.id) $("#runtime-consent").checked = false;
@@ -303,8 +307,9 @@ function render() {
   renderForm("contract", current.contract); renderForm("plan", current.plan || {}); renderForm("case", {}); renderForm("predict", {});
   draftLabels(); $("#exact-output-label").hidden = !$("#case-form").elements.namedItem("expect_exact").checked;
   const state = runtimeState(current);
-  $("#project-state").textContent = !evidenceFresh ? "SAVED STATE UNCONFIRMED" : state.status === "not_connected" ? "MODEL NOT CONNECTED" : "FIXTURE · " + state.status.replaceAll("_", " ").toUpperCase();
-  $("#project-state").dataset.tone = toneFor(state.status);
+  const example = current.origin === "guided_example", connected = current.model_endpoint?.state?.status === "connected";
+  $("#project-state").textContent = !evidenceFresh ? "SAVED STATE UNCONFIRMED" : !example ? (connected ? "MODEL CONNECTED" : "MODEL NOT CONNECTED") : state.status === "not_connected" ? "MODEL NOT CONNECTED" : "FIXTURE · " + state.status.replaceAll("_", " ").toUpperCase();
+  $("#project-state").dataset.tone = toneFor(example ? state.status : connected ? "ready" : "not_connected");
   $("#runtime-message").textContent = state.reason || state.status;
   $("#runtime-detail").textContent = (checked.has(current.id) ? "Checked " + checked.get(current.id).toLocaleTimeString() + " · " : "") + "Model execution: no · " + (state.container_id ? "Worker " + state.container_id.slice(0,12) : "No confirmed running worker");
   if (state.adapter) $("#adapter").value = state.adapter;
@@ -318,7 +323,7 @@ function render() {
 
 $(".brand").onclick = event => {
   if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
-  event.preventDefault(); current = null; notice(""); render(); $("#welcome h1").tabIndex = -1; $("#welcome h1").focus();
+  event.preventDefault(); history.replaceState(null, "", location.pathname); current = null; notice(""); render(); $("#welcome h1").tabIndex = -1; $("#welcome h1").focus();
 };
 function showProjectEntry() {
   $("#project-entry").open = true;
@@ -360,6 +365,7 @@ $("#download").onclick = event => action(event.currentTarget, "download", downlo
 $("#next-action").onclick = event => {
   if (!current) return;
   const next = journeyFor(current).next;
+  if (next.model) return location.assign(projectUrl("/model", current.id));
   if (next.download) return action(event.currentTarget, "download", downloadKit);
   changeView(next.view, true);
   if (next.view === "infrastructure") showEnvironment();
@@ -440,9 +446,12 @@ $("#system-nav").onclick = showEnvironment;
 $("#check-environment").onclick = event => action(event.currentTarget, "environment", checkEnvironment, null);
 (async () => {
   try {
-    projects = await api("projects"); current = projects[0] || null;
+    projects = await api("projects");
+    const requested = new URLSearchParams(location.search).get("project");
+    current = projects.find(p => p.id === selectProjectId(projects, requested)) || null;
     for (const project of projects) checked.set(project.id, new Date());
     render(); if (!token) notice("Open Studio through the private session link printed by furnace studio.");
+    if (requested !== null && !current) notice("This project is unavailable. Choose a project from the workspace; no other model was selected.");
     if (token) {
       api("system").then(system => {
         const runtime = system.runtime;
@@ -462,7 +471,8 @@ window.addEventListener("pageshow", async event => {
   try {
     const saved = await api("projects");
     projects = saved.map(project => mergeProjectRecord(projects.find(p => p.id === project.id), project));
-    current = projects.find(project => project.id === current?.id) || projects[0] || null;
+    const requested = new URLSearchParams(location.search).get("project");
+    current = projects.find(project => project.id === selectProjectId(projects, requested)) || null;
     evidenceFresh = true;
     render();
   } catch (error) { notice("Saved state could not be confirmed: " + error.message); }

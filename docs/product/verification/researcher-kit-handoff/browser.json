@@ -1,0 +1,51 @@
+{
+  "schema": "furnace-researcher-kit-handoff-v1",
+  "recorded_at": "2026-11-27T09:19:52.409272+00:00",
+  "source_base_commit": "b5f6fe6d08a874ee7e3a76731d291b7d4965b981",
+  "source_tree_dirty": true,
+  "files_sha256": {
+    "packages/furnace/src/furnace/starter.py": "c298e3c5784f69f6bc9304db916dcc39e6c8e2ee83855517c6cf6f961c273460",
+    "apps/api/furnace_api/studio_assets/studio.js": "69c56eebcb402fad828acfe4c1b14f6ada1251447908f5e2080999d8c9f8818c",
+    "apps/api/furnace_api/studio_assets/model.js": "b682dda27e31663d2de4d8594b178367e0723237bd2bbd0857946f608cb5d443",
+    "apps/api/furnace_api/studio_assets/studio-state.mjs": "5b17364a6666efeac4c1241830a0c8e69bcca5bda7a4be883fc6d6a3e42c0bb5",
+    "apps/api/furnace_api/studio_assets/index.html": "60f9036dbe1735883c3fa3cbba66522a7735d1f6210c3685b233ed13843af3a9",
+    "scripts/verify_simple_interface.py": "00796a331142eba4acc088028d2fa15f553e3d736abf5fba8c1400d7919672bf"
+  },
+  "execution": {
+    "journey": {
+      "welcome_project_disclosure": "passed",
+      "metadata_project_and_guided_example": "actual_API_persistence_no_execution",
+      "docker_calls": 0,
+      "starter_kit_ui_download": "actual_zip_downloaded_and_opened",
+      "cli_kit_cases": "exported_parsed_saved_and_reexported_through_UI; not_run",
+      "project_handoff": "second_project_preserved_across_navigation_and_reload; missing_refused",
+      "researcher_next_action": "real_model_workspace_without_fixture_execution; setup_persisted_via_API",
+      "managed_selection": "persisted_without_consent_download_or_execution; advanced_values_preserved",
+      "hardware_catalog": "mocked_unavailable; no_machine_compatibility_claim",
+      "connector": {
+        "http_test_server_only": true,
+        "installed_api_checks": "passed",
+        "malformed_unicode_refused": "passed",
+        "browser": {
+          "engine": "158.0.4370.45",
+          "checks": "passed",
+          "human_comprehension": "not_tested",
+          "bfcache_use": "not_asserted",
+          "persisted_pageshow_failure_recovery": "synthetic_event_passed",
+          "attempt_history": "failed_attempt_inspected_without_execution; retained_after_retry_and_configuration_edit; project_scoped; exported",
+          "case_import": "invalid_and_delayed_reads_safe; stale_replace_refused; explicit_replace_reset_statuses; kit_jsonl_round_trip"
+        },
+        "saved_run_id": "c84ff629671e490d9dd470a459f5da97",
+        "saved_history_ids": [
+          "78954c1d6c47438db056bd4c46bacfcf",
+          "b0f4a0e1bd9e4b418d9bed9d00aca80e",
+          "9e142d03036a456dad8320b7b6120a4c",
+          "c84ff629671e490d9dd470a459f5da97"
+        ],
+        "actual_http_requests": 18
+      }
+    },
+    "model_inference": false,
+    "human_comprehension": "not_tested"
+  }
+}

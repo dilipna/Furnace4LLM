@@ -6,6 +6,7 @@ import argparse
 import faulthandler
 import gc
 import json
+import re
 import secrets
 import shutil
 import socket
@@ -19,6 +20,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import uvicorn
+from furnace.starter import export_starter
 from furnace_api.studio import create_app
 from playwright.sync_api import expect, sync_playwright
 from studio_connector_checks import verify_connector
@@ -222,6 +224,72 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
                     assert archive_path is not None
                     with zipfile.ZipFile(archive_path) as archive:
                         assert archive.namelist()
+                    # The second project must survive workspace/model navigation and
+                    # reload. A missing explicit identity must not pick the first.
+                    page.goto(base + "/?project=" + guided["id"] + "#session=" + token)
+                    expect(page.locator("#project-title")).to_have_text(guided["name"])
+                    expect(page).not_to_have_url(re.compile("#session"))
+                    page.locator("#model-workspace-link").click()
+                    expect(page.locator("#model-project")).to_have_value(guided["id"])
+                    page.goto(base + "/model?project=" + guided["id"] + "#session=" + token)
+                    expect(page.locator("#model-project")).to_have_value(guided["id"])
+                    expect(page).not_to_have_url(re.compile("#session"))
+                    page.reload(wait_until="networkidle")
+                    expect(page.locator("#model-project")).to_have_value(guided["id"])
+                    page.get_by_role("link", name="Back to workspace", exact=False).click()
+                    expect(page.locator("#project-title")).to_have_text(guided["name"])
+                    page.goto(base + "/model?project=deleted-project")
+                    expect(page.locator("#model-notice")).to_contain_text("unavailable")
+                    expect(page.locator("#model-project")).to_have_value("")
+                    expect(page.locator("#model-workspace")).not_to_be_visible()
+                    page.reload(wait_until="networkidle")
+                    expect(page.locator("#model-project")).to_have_value("")
+                    expect(page.locator("#model-workspace")).not_to_be_visible()
+                    # Run the actual CLI kit -> browser parser -> saved API cases ->
+                    # UI kit export round trip, not a hand-authored imitation.
+                    cli_kit = root / "cli-kit"
+                    export_starter(model, cli_kit)
+                    page.goto(base + "/?project=" + project["id"])
+                    page.locator('[data-view="evaluations"]').click()
+                    page.locator("#case-import-file").set_input_files(
+                        cli_kit / "evaluation-cases.example.jsonl"
+                    )
+                    expect(page.locator("#case-import-status")).to_contain_text(
+                        "cases ready for review"
+                    )
+                    page.locator("#case-import-save").click()
+                    expect(page.locator("#notice")).to_contain_text("saved")
+                    imported = api(f"projects/{project['id']}")
+                    assert imported["cases"][0]["scoring"]["number"] == 180
+                    assert imported["cases"][0]["status"] == "not_run"
+                    assert imported["model_endpoint"]["evaluation"] is None
+                    page.locator('[data-view="overview"]').click()
+                    with page.expect_download() as roundtrip:
+                        page.locator("#download").click()
+                    with zipfile.ZipFile(roundtrip.value.path()) as archive:
+                        exported_case = json.loads(archive.read("evaluation-cases.example.jsonl"))
+                        assert exported_case == imported["cases"][0]
+                    api(
+                        f"projects/{project['id']}/contract",
+                        "PUT",
+                        {"notes": "Reviewed test interface"},
+                    )
+                    api(
+                        f"projects/{project['id']}/plan",
+                        "PUT",
+                        {
+                            "compute": "customer",
+                            "memory_gb": 2,
+                            "timeout_seconds": 30,
+                            "log_retention_days": 7,
+                        },
+                    )
+                    page.reload(wait_until="networkidle")
+                    expect(page.locator("#next-action")).to_have_text("Open model infrastructure →")
+                    page.locator("#next-action").click()
+                    expect(page.locator("#model-project")).to_have_value(project["id"])
+                    assert api(f"projects/{project['id']}")["evaluation"] is None
+                    page.goto(base + "/?project=" + guided["id"])
                     expect(page.locator("#capabilities")).not_to_be_visible()
                     page.locator(".assessment-details > summary").click()
                     expect(page.locator("#capabilities > *")).to_have_count(6)
@@ -275,6 +343,9 @@ def studio_journey(channel: str | None, screenshots: Path) -> dict:
                 "metadata_project_and_guided_example": "actual_API_persistence_no_execution",
                 "docker_calls": 0,
                 "starter_kit_ui_download": "actual_zip_downloaded_and_opened",
+                "cli_kit_cases": "exported_parsed_saved_and_reexported_through_UI; not_run",
+                "project_handoff": "second_project_preserved_across_navigation_and_reload; missing_refused",
+                "researcher_next_action": "real_model_workspace_without_fixture_execution; setup_persisted_via_API",
                 "managed_selection": "persisted_without_consent_download_or_execution; advanced_values_preserved",
                 "hardware_catalog": "mocked_unavailable; no_machine_compatibility_claim",
                 "connector": result,

@@ -1,5 +1,13 @@
 // Presentation rules use saved execution evidence, never file presence as proof.
 export const activeStates = ["ready", "starting", "unknown"];
+export function projectUrl(path, projectId) {
+  return path + (projectId ? "?project=" + encodeURIComponent(projectId) : "");
+}
+export function selectProjectId(projects, requested) {
+  // An explicit missing/deleted project must never select another model silently.
+  if (requested !== null) return projects.some(p => p.id === requested) ? requested : null;
+  return projects[0]?.id || null;
+}
 export function runtimeState(project) {
   return typeof project.runtime === "object" && project.runtime !== null
     ? project.runtime : {status: "not_connected", reason: "No model adapter is connected."};
@@ -50,6 +58,21 @@ export function journeyFor(project) {
     {label: "Cases prepared", view: "evaluations", done: project.cases.length > 0},
     {label: "Framework executed", view: "evaluations", done: execution},
   ];
+  if (project.origin !== "guided_example") {
+    const endpoint = project.model_endpoint;
+    const run = endpoint?.verification === "current_endpoint_observation" ? endpoint.evaluation : null;
+    const completed = Boolean(run?.status === "completed" && project.cases.length
+      && run.results?.length === project.cases.length
+      && run.results.every((result, index) => result.case_index === index
+        && ["check_pass", "check_fail", "unscored"].includes(result.status)));
+    stages[stages.length - 1] = {label:"Model evaluated", view:"overview", model:true, done:completed};
+    let next;
+    if (!contract) next = {view:"contract", title:"Describe the model interface", description:"Capture its architecture or loading notes so the adapter requirements are explicit.", action:"Describe model →"};
+    else if (!project.plan) next = {view:"infrastructure", title:"Choose your compute preferences", description:"Save the intended environment. No cloud resource or subscription is activated.", action:"Choose preferences →"};
+    else if (!project.cases.length) next = {view:"evaluations", title:"Prepare your first evaluation case", description:"Import your starter-kit cases or add a representative input and a task-specific expectation. Nothing runs on import.", action:"Add a case →"};
+    else next = {view:"overview", model:true, title:completed ? "Review your model's results" : "Continue with your model", description:"Choose a reviewed recipe, your Python adapter or an existing local server. Run inference, evaluations and operational checks there; the infrastructure fixture is optional.", action:"Open model infrastructure →"};
+    return {stages, next, counts, modelRun:run};
+  }
   const state = runtimeState(project).status;
   let next;
   if (!contract) next = {view: "contract", title: "Describe the model interface", description: "Capture its architecture or loading notes so the adapter requirements are explicit.", action: "Describe model →"};
