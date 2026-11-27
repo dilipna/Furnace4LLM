@@ -30,6 +30,8 @@ front door. The original November 24 walkthrough and independent branches are un
 
 The free kit and same-project model handoff have an executed
 [round-trip verification](researcher-kit-handoff.md), separate from real-model trials.
+The [fresh CPU lifecycle](researcher-lifecycle-validation.md) separately records actual
+inference, evaluations, crash recovery, export and the relative-cache launch fix.
 
 Exercise project inspection and kit download through the real UI/API, without Docker.
 Check that model operations still require explicit consent and suitable prerequisites.

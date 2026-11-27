@@ -1,0 +1,70 @@
+{
+  "schema": "furnace-real-model-validation-v1",
+  "model": "qwen2.5-0.5b-instruct-q8_0",
+  "accelerator": "cpu",
+  "recipe": {
+    "repository": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+    "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
+    "weights_sha256": "ca59ca7f13d0e15a8cfa77bd17e65d24f6844b554a7b6c12e07a5f89ff76844e",
+    "architecture": "qwen2 (decoder-only transformer)",
+    "license": "apache-2.0"
+  },
+  "environment": {
+    "recorded_at": "2026-11-27T17:10:06.766959+00:00",
+    "furnace_commit": "e87260fa71e9c9dbd6fcd1cb91899642adbcbfe1",
+    "working_tree_clean": true,
+    "os": "Windows 11 (10.0.26300)",
+    "machine": "AMD64",
+    "python": "3.12.13",
+    "docker_server": "29.6.1",
+    "docker_os": "Docker Desktop",
+    "docker_vm_cpus": 20,
+    "docker_vm_memory_bytes": 8150228992,
+    "docker_gpu_runtime": true,
+    "host_gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 610.91, 4096 MiB",
+    "host_cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel"
+  },
+  "steps": {
+    "studio_start": {
+      "seconds": 1.88
+    },
+    "select": {
+      "checks": {
+        "selection saved": true
+      }
+    },
+    "prepare": {
+      "fresh_download": false,
+      "seconds": 2.4,
+      "checks": {
+        "images pulled and weights verified": true
+      },
+      "manifest_sha256": "2d403187243cb393abd10be4d8dd787bc8b576d5d0d224ebfbddaad607e57080",
+      "state": "prepared",
+      "reason": "Images pulled by digest; weights SHA-256 verified"
+    },
+    "suite": {
+      "cases": 12
+    },
+    "start": {
+      "seconds": 3.78,
+      "host_gpu_memory_mib": {
+        "before_start": 53,
+        "after_ready": 53
+      },
+      "checks": {
+        "server ready": false,
+        "connected automatically": false
+      },
+      "start_seconds": null,
+      "load_seconds": null
+    }
+  },
+  "completed": false,
+  "failures": [
+    "server ready",
+    "connected automatically",
+    "validation_aborted:StopIteration"
+  ],
+  "result": "failed"
+}

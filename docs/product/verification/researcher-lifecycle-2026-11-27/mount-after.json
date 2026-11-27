@@ -1,0 +1,6 @@
+{
+  "artifact_path_absolute": true,
+  "docker_returncode": 0,
+  "docker_stderr": "",
+  "execution": "docker_create_only; no_model_inference"
+}
