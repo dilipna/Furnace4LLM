@@ -38,8 +38,10 @@ def test_all_jobs_and_pass_stamp_refer_to_the_initial_commit_when_head_moves(tmp
     ]
     assets = [
         "apps/api/tests/studio-state.test.mjs",
+        "apps/api/tests/everyday-selection.test.mjs",
         "apps/api/furnace_api/studio_assets/studio-state.mjs",
         "apps/api/furnace_api/studio_assets/case-import.mjs",
+        "apps/api/furnace_api/studio_assets/everyday-selection.mjs",
     ]
     for name in [*markers, *assets]:
         path = repo / name
@@ -83,7 +85,9 @@ def test_all_jobs_and_pass_stamp_refer_to_the_initial_commit_when_head_moves(tmp
         """import io,json,os,subprocess,sys,tarfile
 from pathlib import Path
 args=sys.argv[1:]
-if args[0]=='build' or '-i' in args:
+if args[0]=='build' and '-f' not in args:
+ sys.stdin.buffer.read()  # The toolchain accepts a Dockerfile, not an application tar.
+elif args[0]=='build' or '-i' in args:
  with tarfile.open(fileobj=io.BytesIO(sys.stdin.buffer.read())) as archive:
   values=sorted({archive.extractfile(m).read().decode() for m in archive.getmembers() if m.name.endswith('build-marker.txt')})
  log=Path(os.environ['FURNACE_TEST_ARCHIVES'])
