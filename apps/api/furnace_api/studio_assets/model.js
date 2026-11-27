@@ -1,9 +1,13 @@
-import {mergeProjectRecord, requestOutputFor} from "./studio-state.mjs";
+import {mergeProjectRecord, requestOutputFor, projectUrl, selectProjectId} from "./studio-state.mjs";
 const $ = selector => document.querySelector(selector);
 const fragment = new URLSearchParams(location.hash.slice(1)).get("session");
 const token = fragment || sessionStorage.getItem("furnace-session") || "";
-if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", "/model"); }
-let projects = [], selected = null, busy = false, refreshing = false;
+document.querySelectorAll('a[href="/"]').forEach(link => link.dataset.projectWorkspace = "");
+if (fragment) { sessionStorage.setItem("furnace-session", fragment); history.replaceState(null, "", projectUrl("/model", new URLSearchParams(location.search).get("project"))); }
+window.addEventListener("hashchange", () => {
+  if (new URLSearchParams(location.hash.slice(1)).has("session")) location.reload();
+});
+let projects = [], selected = new URLSearchParams(location.search).get("project"), busy = false, refreshing = false;
 let refreshGeneration = 0;
 let catalog = null, managedPoll = null;
 const drafts = new Map(), outputs = new Map(), prompts = new Map();
@@ -81,6 +85,7 @@ function formData() {
 }
 function render() {
   const p = current();
+  document.querySelectorAll('[data-project-workspace]').forEach(link => link.href = projectUrl("/", p?.id));
   $("#model-workspace").hidden = !p;
   $("#empty-projects").hidden = projects.length > 0;
   if (!p) return;
@@ -153,11 +158,13 @@ async function refresh() {
     const saved = await api("projects");
     if (generation !== refreshGeneration) return;
     projects = saved.map(p => mergeProjectRecord(projects.find(old => old.id === p.id), p));
-    if (!projects.some(p => p.id === selected)) selected = projects[0]?.id || null;
+    if (selected === null) selected = selectProjectId(projects, null);
     const selector = $("#model-project"); selector.replaceChildren();
+    if (!current()) { const option = document.createElement("option"); option.value = ""; option.textContent = "Choose a project…"; selector.append(option); }
     for (const p of projects) { const option = document.createElement("option"); option.value = p.id; option.textContent = p.name; selector.append(option); }
-    selector.value = selected || "";
+    selector.value = current() ? selected : "";
     refreshing = false; render();
+    if (selected !== null && !current()) notice("This project is unavailable. Choose a project explicitly; no other model was selected.");
   } catch (error) {
     if (generation !== refreshGeneration) return;
     notice("Saved state not confirmed: " + error.message); render();
@@ -173,6 +180,7 @@ async function action(fn) {
 }
 $("#model-project").onchange = event => {
   selected = event.target.value; $("#model-consent").checked = false; notice(""); render();
+  history.replaceState(null, "", projectUrl("/model", selected));
 };
 $("#connection-form").oninput = () => {
   if (selected) { drafts.set(selected, formData()); $("#connection-draft").textContent = "Unsaved settings · kept for this project in this tab."; }
