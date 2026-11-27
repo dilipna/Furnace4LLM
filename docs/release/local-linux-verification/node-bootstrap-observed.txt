@@ -1,0 +1,5 @@
+Downloading pyright (5.9MiB)
+ Downloaded pyright
+Installed 3 packages in 343ms
+ * Install prebuilt node (26.13.1) ..... done.
+pyright 1.1.414

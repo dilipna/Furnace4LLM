@@ -21,12 +21,13 @@ Furnace-operated model containers have no route to the internet.
 | verified weights | `<artifacts>/blobs/sha256/` | until `furnace studio-cleanup --artifacts … --yes` |
 | exports (kit ZIP) | wherever you save them | under your control |
 
-## What is never stored
+## What is excluded from application records
 
 - Raw prompts and raw model outputs of evaluations or ad-hoc messages (the database keeps
   SHA-256 hashes; ad-hoc replies live only in the browser tab).
-- The per-launch API key of a managed server (memory only; tests and every recorded
-  validation run check the database, operations log and exports for it).
+- Furnace's per-launch key copy stays in memory and is excluded from its database,
+  operations log and exports. Docker retains it in container configuration until
+  removal; Docker administrators can inspect it.
 - Upstream error bodies from a model server (only a fixed error category).
 
 The operations log refuses fields named `input`, `output`, `prompt`, `messages`, `content`,
