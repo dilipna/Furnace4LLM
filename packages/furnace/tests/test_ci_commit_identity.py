@@ -12,7 +12,10 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 
 
-def test_all_jobs_and_pass_stamp_refer_to_the_initial_commit_when_head_moves(tmp_path):
+@pytest.mark.parametrize("loopback_ready", [True, False])
+def test_all_jobs_and_pass_stamp_refer_to_the_initial_commit_when_head_moves(
+    tmp_path, loopback_ready
+):
     bash = Path("C:/Program Files/Git/bin/bash.exe") if sys.platform == "win32" else None
     executable = str(bash) if bash and bash.is_file() else shutil.which("bash")
     if executable is None:
@@ -38,8 +41,10 @@ def test_all_jobs_and_pass_stamp_refer_to_the_initial_commit_when_head_moves(tmp
     ]
     assets = [
         "apps/api/tests/studio-state.test.mjs",
+        "apps/api/tests/everyday-selection.test.mjs",
         "apps/api/furnace_api/studio_assets/studio-state.mjs",
         "apps/api/furnace_api/studio_assets/case-import.mjs",
+        "apps/api/furnace_api/studio_assets/everyday-selection.mjs",
     ]
     for name in [*markers, *assets]:
         path = repo / name
@@ -83,7 +88,13 @@ def test_all_jobs_and_pass_stamp_refer_to_the_initial_commit_when_head_moves(tmp
         """import io,json,os,subprocess,sys,tarfile
 from pathlib import Path
 args=sys.argv[1:]
-if args[0]=='build' or '-i' in args:
+if args[0]=='port':
+ print('127.0.0.1:54321')
+elif args[0]=='run' and 'socket.create_connection' in args[-1]:
+ sys.exit(0 if os.environ['FURNACE_TEST_LOOPBACK_READY']=='1' else 1)
+elif args[0]=='build' and '-f' not in args:
+ sys.stdin.buffer.read()  # The toolchain accepts a Dockerfile, not an application tar.
+elif args[0]=='build' or '-i' in args:
  with tarfile.open(fileobj=io.BytesIO(sys.stdin.buffer.read())) as archive:
   values=sorted({archive.extractfile(m).read().decode() for m in archive.getmembers() if m.name.endswith('build-marker.txt')})
  log=Path(os.environ['FURNACE_TEST_ARCHIVES'])
@@ -105,16 +116,23 @@ if args[0]=='build' or '-i' in args:
             "FURNACE_TEST_DOCKER": driver.as_posix(),
             "FURNACE_TEST_ARCHIVES": str(record),
             "FURNACE_TEST_NEXT_COMMIT": changed,
+            "FURNACE_TEST_LOOPBACK_READY": "1" if loopback_ready else "0",
         },
         capture_output=True,
         text=True,
         timeout=60,
         check=False,
     )
+    assert git("rev-parse", "HEAD") == changed, "The test must actually move HEAD during CI"
+    if not loopback_ready:
+        assert result.returncode != 0
+        assert "requires Docker host-loopback networking" in result.stderr
+        assert json.loads(record.read_text()) == [["initial"]]
+        assert not (repo / ".git/ci-linux-passed").exists()
+        return
     assert result.returncode == 0, result.stdout + result.stderr
     actual = {
         "archives": json.loads(record.read_text()),
         "stamp": (repo / ".git/ci-linux-passed").read_text().splitlines(),
     }
-    assert git("rev-parse", "HEAD") == changed, "The test must actually move HEAD during CI"
     assert actual == {"archives": [["initial"]] * 3, "stamp": [initial]}

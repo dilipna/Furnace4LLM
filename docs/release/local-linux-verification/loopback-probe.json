@@ -1,0 +1,19 @@
+{
+  "scope": "temporary synthetic HTTP probe; no model, user data or source mount",
+  "target_running": "true",
+  "native_host_status": 200,
+  "bridge": {
+    "exit_code": 1,
+    "stdout": "",
+    "error_tail": [
+      "urllib.error.URLError: <urlopen error [Errno 111] Connection refused>"
+    ]
+  },
+  "host": {
+    "exit_code": 1,
+    "stdout": "",
+    "error_tail": [
+      "urllib.error.URLError: <urlopen error [Errno 111] Connection refused>"
+    ]
+  }
+}
