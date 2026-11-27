@@ -98,6 +98,32 @@ def store_for(tmp_path, server):
     return ArtifactStore(tmp_path, client=httpx.Client(transport=httpx.MockTransport(server)))
 
 
+def test_relative_cache_returns_absolute_verified_mount_paths_and_survives_chdir(
+    tmp_path, monkeypatch
+):
+    from pathlib import Path
+
+    from furnace.runtime.adapter import LaunchSettings, LlamaCppAdapter
+
+    monkeypatch.chdir(tmp_path)
+    store = store_for(Path("weights"), Server())
+    downloaded = store.fetch(ART)
+    assert downloaded.is_absolute()
+    assert downloaded.read_bytes() == DATA
+    assert downloaded == tmp_path / "weights" / "blobs" / "sha256" / ART.sha256
+    recipe = catalog.MODELS["qwen2.5-0.5b-instruct-q8_0"]
+    spec = LlamaCppAdapter(recipe).launch(
+        {recipe.weights.sha256: store.verify(ART)}, LaunchSettings()
+    )
+    assert spec.mounts[0].source == downloaded
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    assert store.verify(ART) == downloaded
+    assert store.status(ART)["state"] == "present"
+    assert store.fetch(ART) == downloaded
+
+
 def test_interrupted_download_resumes_with_range_and_publishes_only_verified_bytes(tmp_path):
     server = Server()
     server.cut_after = 300_000

@@ -328,10 +328,17 @@ def main() -> int:
         gpu_after = gpu_memory_mib()
         step["host_gpu_memory_mib"] = {"before_start": gpu_before, "after_ready": gpu_after}
         view = started.json()
+        step["http_status"] = started.status_code
         check(started.status_code == 200 and view.get("status") == "ready", "server ready", step)
         step.update(start_seconds=view.get("start_seconds"), load_seconds=view.get("load_seconds"))
         endpoint = studio.api("GET", f"projects/{pid}/model").json()["model_endpoint"]
         check(endpoint["state"]["status"] == "connected", "connected automatically", step)
+        if started.status_code != 200 or view.get("status") != "ready":
+            failed = studio.api("GET", f"projects/{pid}/managed").json()
+            step["failure_reason"] = failed.get("reason")
+            raise RuntimeError(
+                "Server start failed; inspect the recorded status and failure reason"
+            )
         names = model_container(scope)
         model_name = next(n for n in names if n.startswith("furnace-model-"))
         inspected = json.loads(run("docker", "inspect", model_name))[0]

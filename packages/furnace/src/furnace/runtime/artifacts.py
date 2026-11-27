@@ -51,9 +51,11 @@ def file_sha256(path: Path, cancel: threading.Event | None = None) -> str:
 
 class ArtifactStore:
     def __init__(self, root: Path, client: httpx.Client | None = None):
-        self.root = root
-        self.blobs = root / "blobs" / "sha256"
-        self.partial = root / "partial"
+        # Docker bind mounts require absolute sources. Resolve once so a relative
+        # cache also keeps its identity if the caller's working directory changes.
+        self.root = root.resolve()
+        self.blobs = self.root / "blobs" / "sha256"
+        self.partial = self.root / "partial"
         self._client = client
         self._locks: dict[str, threading.Lock] = {}
         self._guard = threading.Lock()
