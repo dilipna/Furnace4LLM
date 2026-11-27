@@ -40,3 +40,6 @@ bootstrap, and retains its existing safety and privacy tests.
 
 No main merge, release publication, deployment, billing or new hosted infrastructure
 is part of this repositioning.
+
+Current artifact acceptance and remaining gates:
+[researcher delivery checklist](../release/researcher-delivery.md).

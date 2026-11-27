@@ -1,5 +1,13 @@
 # Evidence required before calling the demo ready
 
+The current ledger is [researcher-delivery.md](researcher-delivery.md), including the
+exact Windows candidate and its installed Qwen/Granite CPU acceptance. A native
+Windows installer now exists; independent consumer-account and human gates remain.
+The proposed operated service remains unimplemented. No release/deployment is approved.
+
+<details>
+<summary>Historical pre-native-integration gate snapshot — superseded by the current ledger</summary>
+
 The product serves model researchers who need the surrounding infrastructure.
 The current deliverable is a free local application preview. Its useful first
 outcome is an inspected project and an exported kit. It also offers explicitly
@@ -29,3 +37,5 @@ See [the source-bound interface handoff](simple-interface-review.md) for command
 receipts, human tasks and recorded-versus-live limitations. The next product
 gate after review is human onboarding plus final-build validation on the intended
 machine. Neither is replaced by automated browser tests or historical records.
+
+</details>

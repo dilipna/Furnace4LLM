@@ -1,0 +1,13 @@
+{
+  "recorded_at": "2026-11-27T18:26:44.9728991+00:00",
+  "source_commit": "9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3",
+  "silent_defaults_only": true,
+  "qa_export_outside_app_retained": true,
+  "clean_consumer_account": false,
+  "schema": "furnace-delivery-uninstall-v1",
+  "qa_target_verified": true,
+  "interactive_data_choices": "not_tested",
+  "per_user_registration_removed": true,
+  "exit_code": 0,
+  "runtime_removed": true
+}
