@@ -32,6 +32,7 @@ This candidate has fresh CPU acceptance; earlier GPU records keep their original
 | Independent install | Exact verified candidate opens, inspects/exports and reopens in a clean Windows account; record actual errors/assistance | Owner/pilot participant |
 | Comprehension | Explain purpose, free/proposed service, fixture/inference, requirements and next action without implementation coaching | Owner and unfamiliar participant |
 | Interactive retention | Observe agreed keep/delete choices in a test account; never delete live project data for the test | Owner/participant |
+| Full local Linux gate | Run on a Linux Docker host with reachable host-loopback networking; current Docker Desktop container topology is blocked | Environment prerequisite; do not skip serving tests |
 | Distribution review | Review notices, draft policies and unsigned-preview disclosure; accept or identify changes | Owner |
 | Integration | Approve reviewed #18 → #19 → #20; preserve ancestry, retarget children, obtain exact-head checks; keep main green | Owner approval, then maintainer execution |
 | Publication | Separately approve the exact artifact/hash and recorded-only site after selected gates pass | Owner explicit approval |
@@ -47,6 +48,14 @@ The original November 24 walkthrough is unchanged.
   Python, migrations/full non-GPU suite, web tests/builds and API image. Its Node
   major and JavaScript tests now match hosted CI. A complete pass records the exact
   source commit in the repository's local pre-push receipt.
+  The Python job needs host-loopback networking because serving tests use Docker's
+  loopback-published relays. It now fails early if that path is unavailable and never
+  writes a success stamp. On the current Docker Desktop setup, both bridge and host
+  container probes refused a service that the Windows host reached with HTTP 200.
+  Global Docker settings were not changed. Use a native Linux host or explicitly
+  configure Desktop host networking when safe for other projects. Hosted Ubuntu
+  results are separate, not a claim that this local gate passed. See the
+  [retained failure and diagnostic](local-linux-verification/README.md).
 - Frozen-candidate [Python/web/image](https://github.com/dilipna/Furnace4LLM/actions/runs/46040961684),
   [Windows](https://github.com/dilipna/Furnace4LLM/actions/runs/46040961559) and
   [saved evidence](https://github.com/dilipna/Furnace4LLM/actions/runs/46040961640)
