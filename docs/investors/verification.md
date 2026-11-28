@@ -8,6 +8,9 @@
   changed raw bytes/value, uncited number, false displayed value, wrong evidence target,
   broken file/anchor, wrong calculation, cyclic inputs and unsourced external value.
 - Ruff check and format check on `docs/investors`: passed with the repository's Ruff.
+- Explicit Pyright check of the new verifier and regression script: zero errors.
+  The first explicit check found two optional-match typing gaps; explicit rejection
+  branches resolved them before this result. Product type-check scope is unchanged.
 - `git diff --check`: passed before commit.
 - Offline checker and nine tests passed again from a fresh `git archive` of committed
   files, confirming copied byte hashes survive extraction without local workspace state.

@@ -114,7 +114,8 @@ def validate(root: Path = ROOT, online: bool = False) -> list[str]:
         claim = claims[key]
         kind = claim["kind"]
         label_number = NUMBER.search(claim["label"].replace(",", ""))
-        require(label_number is not None, "numeric claim label missing")
+        if label_number is None:
+            raise ValueError("numeric claim label missing")
         label_value = float(label_number.group()) * (
             1_000_000 if "million" in claim["label"] else 1
         )
@@ -137,7 +138,8 @@ def validate(root: Path = ROOT, online: bool = False) -> list[str]:
             # Ensure an arbitrary numeric value cannot be substituted behind a valid citation.
             digits = claim["contains"].replace(",", "")
             match = NUMBER.search(digits)
-            require(match is not None, "external value has no numeric text")
+            if match is None:
+                raise ValueError("external value has no numeric text")
             actual = float(match.group()) * (1_000_000 if "million" in digits else 1)
             require(actual == claim["value"], "source text/value mismatch")
         elif kind == "assumption":
