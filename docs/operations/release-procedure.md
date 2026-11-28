@@ -27,6 +27,9 @@ as the Linux gate; leave Docker Desktop settings unchanged.
 4. Keep installer/checksums, build metadata, both acceptance records and actual human
    install/pilot observations together. If a fix changes the binary, freeze a new
    hash and repeat both journeys. Never transfer old acceptance to replacement bytes.
+   Run the [final installed-evidence consistency check](../release/final-acceptance.md)
+   against the final installer, exact source and new records. A consistent result is
+   not human acceptance or publication approval.
 5. Ask for publication approval only after the reviewable package is ready. Publication
    requires a **separate owner message naming the exact installer SHA-256**. A deadline,
    clean-account success or merge approval does not authorize it.

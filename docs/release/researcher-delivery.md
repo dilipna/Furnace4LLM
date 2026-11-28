@@ -50,7 +50,7 @@ This candidate has fresh CPU acceptance; earlier GPU records keep their original
 | Linux gate | Hosted Ubuntu CI on each exact head is accepted for this release; retain the local diagnostic separately | Maintainer; do not change Docker Desktop settings |
 | Distribution review | Root-notice packaging omission corrected with regression/installed smoke checks; review all notices, draft policies and unsigned-preview disclosure | Owner; [packaging evidence](distribution-notices/README.md) |
 | Integration | After Dilip's successful-clean-account report, integrate #18 → #19 → #20, then #15/#16; preserve ancestry, retarget and verify exact green heads; keep main green | Conditional owner approval already given |
-| Final frozen installer | Rebuild from final source, record full SHA-256, and accept installed private documents plus Studio Qwen/Granite on the same bytes; any rebuilt replacement repeats both | Maintainer, with human checks separate |
+| Final frozen installer | Rebuild, repeat both installed journeys on the exact bytes, then run the [record consistency check](final-acceptance.md); replacements repeat both | Maintainer, with human checks separate |
 | Publication | Separately approve the exact artifact/hash and recorded-only site after selected gates pass | Owner explicit approval |
 | Future operated service | Proposal only; not a December 4 release gate or implemented offering | Coming later |
 
