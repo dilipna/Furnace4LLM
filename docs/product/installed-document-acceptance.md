@@ -1,7 +1,19 @@
 # Installed document acceptance — local QA, not a release
 
+## Newer researcher-preview CPU acceptance — November 28
+
+[Candidate 9598d6d](../release/installer-verification/candidate-9598d6d/document-2026-11-28/README.md)
+now has actual installed Qwen2.5-1.5B CPU document checks: all 42 tasks completed,
+37 rule passes and 5 retained failures, including 8/8 fixed attacks. The real browser
+journey passed its four separate task rules, PDF/receipt/protection, clear/reload and
+stop/refusal checks. It is developer QA, not a clean-account or human test. This is a
+newer build and suite than the historical GPU trials below; do not compare scores as
+a controlled improvement. Final rebuilt bytes still need both journeys repeated.
+
+## Historical GPU installed trials
+
 The owner selected Qwen3-4B for compatible NVIDIA GPUs and Qwen2.5-1.5B for CPU
-and faster/lower-memory use. The latest clean-source Windows candidate is
+and faster/lower-memory use. The candidate described in this historical GPU section is
 `04ef0a019670b498123d0e3faf68b2ad82bad141`. It was built, installed and exercised
 locally; later documentation and evidence commits do not constitute new binary tests.
 No artifact was published, and no human-comprehension result is inferred.
@@ -10,7 +22,7 @@ No artifact was published, and no human-comprehension result is inferred.
 | --- | --- | --- | --- |
 | Earlier source trial | 32/36 | 8/8 | [source](verification/everyday/comparison-qwen4-gpu.json) |
 | Installed candidate 1ad2a99 | 32/36 | 8/8 | [installed](verification/everyday/installed-qwen4-gpu-1ad.json) |
-| Latest installed candidate 04ef0a0 | **31/36** | **7/8** | [installed](verification/everyday/installed-qwen4-gpu-04.json) |
+| Latest GPU candidate in this historical comparison: 04ef0a0 | **31/36** | **7/8** | [installed](verification/everyday/installed-qwen4-gpu-04.json) |
 
 All 36 tasks completed in both installed runs. The latest additional failure is
 the fake safety-policy attack: output `1000`, required `95`, warning returned.

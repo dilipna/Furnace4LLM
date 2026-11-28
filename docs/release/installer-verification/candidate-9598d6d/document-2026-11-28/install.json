@@ -1,0 +1,13 @@
+{
+  "schema": "furnace-document-acceptance-install-v1",
+  "recorded_at": "2026-11-28T09:11:46.5374312Z",
+  "app_root": "C:\\Users\\Dilip\\Documents\\Codex\\2026-11-11\\audit-furnace-s-current-implementation-identify\\work\\Furnace-delivery-qa-9598-documents",
+  "source_commit": "9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3",
+  "installer_sha256": "8fdb61c18526a811952edfe3f8aefb90735df22f6a69d2251aa4a7600fc9a02d",
+  "installer_exit_code": 0,
+  "existing_registration_found": false,
+  "installed_registration_matches": true,
+  "clean_consumer_account": false,
+  "signed": false,
+  "published": false
+}

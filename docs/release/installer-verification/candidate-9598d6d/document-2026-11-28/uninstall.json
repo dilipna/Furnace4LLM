@@ -1,0 +1,11 @@
+{
+  "schema": "furnace-document-acceptance-uninstall-v1",
+  "recorded_at": "2026-11-28T09:22:08.0986791Z",
+  "source_commit": "9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3",
+  "uninstall_exit_code": 0,
+  "runtime_removed": true,
+  "qa_registration_removed": true,
+  "shared_weights_retained": true,
+  "managed_containers_remaining": 0,
+  "interactive_keep_delete_verified": false
+}

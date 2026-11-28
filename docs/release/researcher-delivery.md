@@ -17,8 +17,10 @@ naming the final installer's exact SHA-256. No merge or publication has happened
 `Furnace-0.1.0-9598d6d83beb-windows-x64.exe`, exact source
 `9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3`, is an unsigned preview.
 [Exact artifact and installed acceptance](installer-verification/candidate-9598d6d/README.md).
-9598d6d has installed Studio acceptance only. Its document journey has **not** been
-accepted on the installed bytes. Researcher Studio remains the product front door;
+9598d6d now has developer-installed Studio acceptance and a separate
+[real CPU document journey](installer-verification/candidate-9598d6d/document-2026-11-28/README.md).
+Its 42-case document trial retained 37 rule passes and 5 failures; this is not human
+comprehension or acceptance of a future rebuilt installer. Researcher Studio remains the product front door;
 the document example stays accessible without changing that positioning.
 After final source integration, build one new frozen installer and accept **both**
 private documents and Studio Qwen/Granite on those exact bytes. Historical/source/
@@ -26,7 +28,7 @@ scripted document checks cannot substitute for installed real-model acceptance.
 
 | Deliverable | Executed evidence | Boundary |
 | --- | --- | --- |
-| Document example journey | Final installed acceptance outstanding | Summary/question, correctness against the source, receipt/limits, protection and clear/navigation must be exercised on the final binary |
+| Document example journey | Provisional installed CPU suite/browser checks executed; final rebuild acceptance outstanding | Summary/question, correctness against the source, receipt/limits, protection and clear/navigation must be exercised on the final binary |
 | Researcher website and Studio | CI-built site; download/hash, navigation, mobile/theme and installed home | Local preview; public hosting remains recorded-only |
 | Assessment and free kit | Actual export → browser import → API save → re-export; installed UI ZIP download | Metadata inspection is not model execution or compatibility |
 | Model serving and security controls | Exact installed Qwen and Granite CPU journeys | Two pinned recipes on one Windows/Docker machine |

@@ -1,0 +1,123 @@
+{
+  "schema": "furnace-installed-document-acceptance-v1",
+  "recorded_at": "2026-11-28T09:16:54.986066+00:00",
+  "installed_build": {
+    "schema": "furnace-windows-installer-v1",
+    "version": "0.1.0",
+    "commit": "9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3",
+    "built_at": "2026-11-27T17:20:33.812767+00:00",
+    "published": false,
+    "source_dirty": false,
+    "platform": "windows-x64",
+    "experience": "researcher-infrastructure-preview",
+    "python": "3.12.13",
+    "compiler": "Inno Setup 6.4.3",
+    "signed": false,
+    "wheel_sha256": {
+      "furnace_bench-0.1.0-py3-none-any.whl": "525ffc8f98db594f9b2309e73bbb7c8ebbfc9e0394216ef442d2907f8a7a7bef",
+      "furnace-0.1.0-py3-none-any.whl": "55631d428b23ed46c31f50af3a8568d299fccac0e4f16b4c3a99c46adb165364",
+      "furnace_api-0.1.0-py3-none-any.whl": "5b5db32855aefe9e0fd7f3bbbdcb1edca53ad9ed99991fcdc9e551623309027f"
+    },
+    "reproducibility": "Repeatable pinned-input recipe; binary identity is not established (PE timestamps/signing)."
+  },
+  "installer_sha256": "8fdb61c18526a811952edfe3f8aefb90735df22f6a69d2251aa4a7600fc9a02d",
+  "model": "qwen2.5-1.5b-instruct-q4_k_m",
+  "accelerator": "cpu",
+  "execution": "Playwright UI, installed interpreter/API, real Docker and model",
+  "clean_consumer_account": false,
+  "human_comprehension": false,
+  "cache": "Shared pinned cache; preparation and verification explicitly requested",
+  "fixture": {
+    "text": "Workshop fee: 180 EUR total. Payment deadline: 2026-11-30.",
+    "pdf_sha256": "7e8569afc85dd04a2e35ed9cf0715017a6e48f6a1b9dfc60bd1ab85ce1adb7bc"
+  },
+  "checks": {
+    "installed_module_ownership": true,
+    "studio_to_document_example_navigation": true,
+    "explicit_ui_prepare_start_cpu": true,
+    "actual_pdf_extraction": true,
+    "quit_and_lease_released": true
+  },
+  "answers": [
+    {
+      "name": "summary",
+      "question": "",
+      "output": "The document contains a conversation about a workshop fee of 180 EUR and a payment deadline of 2026-11-30. The document is untrusted and should not be followed as instructions.",
+      "rule_passed": true,
+      "actual_response": {
+        "output": "The document contains a conversation about a workshop fee of 180 EUR and a payment deadline of 2026-11-30. The document is untrusted and should not be followed as instructions.",
+        "duration_ms": 4484,
+        "processing": {
+          "staged": false,
+          "document_chunks": 1,
+          "chunk_bytes": 2109,
+          "indexed_sections": 1,
+          "retrieval": false,
+          "history_turns": 0,
+          "history_truncated": false,
+          "model_requests": 1,
+          "method": "Single bounded request"
+        },
+        "requests": [
+          {
+            "request_id": "2a5fc6a23c9a4bcf8f4f9088466e5e0f",
+            "duration_ms": 3594,
+            "usage": {
+              "prompt_tokens": 298,
+              "completion_tokens": 46
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "warnings": [],
+        "protection": {
+          "sentences": [],
+          "included": false,
+          "exclusive_output_values": []
+        },
+        "sources": [],
+        "receipt": {
+          "schema": "furnace-privacy-receipt-v1",
+          "at": "2026-11-28T09:17:27.130048+00:00",
+          "project_id": "186a80b59c2d4820ba4307e716e7258e",
+          "launch_id": "0a57e7a450434e7987851ba32e033931",
+          "model": {
+            "id": "qwen2.5-1.5b-instruct-q4_k_m",
+            "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+            "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+            "weights_check": "Verified before this launch; not rehashed for every answer",
+            "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+          },
+          "observed": {
+            "evidence_kind": "docker_inspect",
+            "launch_id": "0a57e7a450434e7987851ba32e033931",
+            "container_id": "7129459fb9c1",
+            "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+            "checks": {
+              "running": true,
+              "internal_network_only": true,
+              "non_root": true,
+              "read_only_root": true,
+              "all_capabilities_dropped": true,
+              "no_new_privileges": true,
+              "no_direct_published_ports": true,
+              "read_only_mounts": true
+            }
+          },
+          "status": "checked",
+          "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+          "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+        }
+      }
+    }
+  ],
+  "result": "failed",
+  "preparation": {
+    "status": "prepared",
+    "reason": "Images pulled by digest; weights SHA-256 verified"
+  },
+  "error": {
+    "type": "AssertionError",
+    "message": "Locator expected to contain text 'Answered on this computer'\nActual value: None\nError: strict mode violation: locator(\".answer\").last.locator(\".receipt\").locator(\"summary\") resolved to 2 elements:\n    1) <summary>\u2713 Answered on this computer \u00b7 Model had no intern\u2026</summary> aka get_by_text(\"\u2713 Answered on this computer\")\n    2) <summary>Model identity and technical details</summary> aka get_by_text(\"Model identity and technical\")\n \nCall log:\n  - Expect \"to_contain_text\" locator(\".answer\").last.locator(\".receipt\").locator(\"summary\") with timeout 5000ms\n  - waiting for locator(\".answer\").last.locator(\".receipt\").locator(\"summary\")\n"
+  }
+}

@@ -1,7 +1,8 @@
 # Installed Studio preview: 9598d6d
 
-**Provisional preview, not the December 4 final installer.** These records accept
-the Studio journey only. Installed private-document acceptance is missing here.
+**Provisional preview, not the December 4 final installer.** The original November 27 records covered
+Studio only. [November 28 installed CPU document acceptance](document-2026-11-28/README.md)
+now separately covers the document example on these same provisional bytes.
 The final source must be rebuilt once and both journeys accepted on that new binary's
 exact bytes; these records must not be transferred to it.
 

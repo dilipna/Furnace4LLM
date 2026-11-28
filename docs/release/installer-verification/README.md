@@ -4,8 +4,10 @@ This directory records executed observations, not a blanket release certificatio
 The exact source/runtime and environment are inside each record. No GPU run is added.
 
 The [provisional Studio preview 9598d6d](candidate-9598d6d/README.md) has installed
-Qwen/Granite CPU, browser/kit, install and uninstall records. It lacks installed
-private-document acceptance and is not the December 4 final installer. The final
+Qwen/Granite CPU, browser/kit, install and uninstall records. A separate
+[November 28 CPU document acceptance](candidate-9598d6d/document-2026-11-28/README.md)
+now covers its installed document suite and browser workflow. It is not the December 4
+final installer. The final
 rebuilt binary must pass both journeys on its exact bytes. Earlier records below
 are historical and cannot substitute for that acceptance.
 
