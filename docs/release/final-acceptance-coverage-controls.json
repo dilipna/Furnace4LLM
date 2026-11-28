@@ -1,0 +1,21 @@
+{
+  "recorded_on": "2026-11-28",
+  "previous_verifier_commit": "a8e30e10072d494d575aa78f5ea8a5f38c5a9a1f",
+  "corrected_verifier_sha256": "f84861cec9db77511d34d9747dec2ce0abd6aff98ef75a2700251a9c84debbf0",
+  "controls": [
+    {
+      "journey": "studio",
+      "input": "authored unit fixture reduced to one planned/executed case; no inference",
+      "before": "machine_evidence_consistent",
+      "after": "blocked",
+      "reason": "release Studio suite must contain all 12 cases"
+    },
+    {
+      "journey": "documents",
+      "input": "authored unit fixture reduced to one planned/executed case; no inference",
+      "before": "machine_evidence_consistent",
+      "after": "blocked",
+      "reason": "release document suite must contain all 42 cases"
+    }
+  ]
+}

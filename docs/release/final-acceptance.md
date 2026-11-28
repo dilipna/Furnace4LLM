@@ -15,6 +15,8 @@ actual Studio case counts and output/restart comparisons, interruption/cleanup,
 document suite digest/case coverage/receipts, and the browser's measured outputs and
 stopped-model refusal. It requires the corrected installed project-notice check.
 
+It requires the existing complete release suites: twelve Studio cases per model and
+42 document cases. Reducing the plan itself cannot hide undercoverage.
 It preserves quality failures and reports their actual totals. It introduces no new
 benchmark quality threshold and does not rescore outputs. The browser's existing
 four task rules must pass; inference/privacy checks are not semantic-quality proof.
@@ -63,8 +65,8 @@ Qwen/Granite Studio and Qwen2.5-1.5B documents; it is not arbitrary-model valida
 
 ## Actual validation performed
 
-Eighteen focused checker regressions passed; together with relevant packaging tests,
-34 tests passed locally. Positive fixtures use authored metadata around historical
+Twenty focused checker regressions passed; together with relevant packaging tests,
+36 tests passed locally. Positive fixtures use authored metadata around historical
 record shapes and do not claim new inference or a new installer acceptance.
 Tests retain Qwen/Granite/document quality failures and refuse stale source, changed
 binary, another build at the same source, missing cases, forged totals, wrong installer
@@ -82,6 +84,16 @@ installer and untouched raw records:
 The [historical input index](installer-verification/candidate-9598d6d/acceptance-inputs.json)
 points at existing records without changing them. No current final-source installer
 has passed this checker; that requires the remaining integration and execution gates.
+
+## Coverage loophole caught during self-review
+
+The initial checker at a8e30e1 accepted an authored unit fixture reduced to one
+planned/executed Studio case, or one matching document case/suite. The final checker
+requires the unchanged full release suites (12 and 42). Both [before/after controls](final-acceptance-coverage-controls.json)
+were actually executed against the initial and corrected checker. They are test
+fixtures, not model inference or a real installer acceptance. Both now reject the
+shortened plan, even when its counts, hashes and success labels agree internally.
+The original artifact/source negative controls remain archived separately.
 
 ## Integration preflight — preview only
 

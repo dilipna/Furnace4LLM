@@ -95,7 +95,9 @@ def verify(metadata: Path, installer: Path, manifest: Path, expected_commit: str
         require(trial["completed"] is True and not trial["failures"], f"{name} incomplete")
         steps = trial["steps"]
         count = steps["suite"]["cases"]
-        require(type(count) is int and count > 0, "missing planned Studio cases")
+        require(
+            type(count) is int and count == 12, "release Studio suite must contain all 12 cases"
+        )
         for key in ("evaluation_1", "evaluation_2"):
             evaluation = steps[key]
             require(
@@ -174,6 +176,7 @@ def verify(metadata: Path, installer: Path, manifest: Path, expected_commit: str
         "document suite digest differs",
     )
     suite = read(suite_path)
+    require(len(suite["cases"]) == 42, "release document suite must contain all 42 cases")
     require(
         bool(suite["cases"])
         and [c["name"] for c in suite["cases"]] == [c["name"] for c in document["cases"]],

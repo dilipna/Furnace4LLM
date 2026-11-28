@@ -134,6 +134,41 @@ def test_document_suite_cannot_discard_a_failed_case(evidence):
         checker.verify(*evidence)
 
 
+@pytest.mark.parametrize("journey", ["studio", "documents"])
+def test_reducing_the_plan_as_well_as_results_cannot_hide_undercoverage(evidence, journey):
+    if journey == "studio":
+
+        def reduce_studio(record):
+            steps = record["steps"]
+            steps["suite"]["cases"] = 1
+            for name in ("evaluation_1", "evaluation_2"):
+                evaluation = steps[name]
+                evaluation.update(per_case=evaluation["per_case"][:1], passed=1, failed=0)
+            steps["outputs"]["cases"] = steps["outputs"]["cases"][:1]
+            steps["outputs"]["identical_to_evaluation"] = 1
+            for phase in (steps["evaluation_2"], steps["restart"]):
+                phase["reproducibility"].update(compared=1, identical=1)
+
+        change(evidence, "qwen", reduce_studio)
+        expected = "all 12 cases"
+    else:
+        folder = evidence[2].parent
+        suite = json.loads((folder / "suite.json").read_text())
+        suite["cases"] = suite["cases"][:1]
+        data = json.dumps(suite).encode()
+        (folder / "suite.json").write_bytes(data)
+
+        def mutate(record):
+            record["cases"] = record["cases"][:1]
+            record["suite_sha256"] = hashlib.sha256(data).hexdigest()
+            record["score_summary"] = {"pass": 1, "fail": 0, "unscored": 0}
+
+        change(evidence, "document_suite", mutate)
+        expected = "all 42 cases"
+    with pytest.raises(ValueError, match=expected):
+        checker.verify(*evidence)
+
+
 def test_score_labels_cannot_overrule_actual_case_counts(evidence):
     change(
         evidence,
