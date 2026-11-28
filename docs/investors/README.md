@@ -12,6 +12,8 @@ The December 4 local release and private demonstration take precedence.
 
 ## Contents
 
+- [Owner-confirmed product contract and end-to-end acceptance](product-contract.md).
+
 - [One-page memo](memo.md), [deck outline and notes](deck.md).
 - [Evidence room](evidence-room.md), [known limitations](known-limitations.md).
 - [Market](market.md), [why now](why-now.md), [competition](competition.md).

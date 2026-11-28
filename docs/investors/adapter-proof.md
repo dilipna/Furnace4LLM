@@ -28,7 +28,7 @@ another permissive unsupported model rather than manufacture a boundary.
 Use a disposable folder outside frozen installation/checkout. Read PythonAdapter in
 the exact frozen source and [boundary snapshot](evidence/boundary.txt). Researcher supplies:
 
-- Adapter module using existing factory/load/predict response contract. Native masked
+- Adapter module using existing factory/load/generate contract (served through the predict route). Native masked
   diffusion sampling, not an autoregressive substitute, canned answer or monkeypatch.
 - Immutable digest/local-content-ID dependency image, locked versions, pinned base.
   Review code before opting into remote loading. Cache model/code/tokenizer for offline
