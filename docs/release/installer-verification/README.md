@@ -3,9 +3,11 @@
 This directory records executed observations, not a blanket release certification.
 The exact source/runtime and environment are inside each record. No GPU run is added.
 
-The [frozen candidate 9598d6d](candidate-9598d6d/README.md) has its own installed
-Qwen/Granite CPU, browser/kit, install and uninstall records. Earlier records below
-are historical and are not substituted for that candidate's acceptance.
+The [provisional Studio preview 9598d6d](candidate-9598d6d/README.md) has installed
+Qwen/Granite CPU, browser/kit, install and uninstall records. It lacks installed
+private-document acceptance and is not the December 4 final installer. The final
+rebuilt binary must pass both journeys on its exact bytes. Earlier records below
+are historical and cannot substitute for that acceptance.
 
 ## First installed build: `3d8a93d`
 

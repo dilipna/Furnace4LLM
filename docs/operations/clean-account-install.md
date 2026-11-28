@@ -1,5 +1,11 @@
 # Clean-account Windows installer check
 
+For the December 4 release and November 29 pilot, use the updated
+[clean-account checklist](pilot-2026-11-29/clean-account-install.md) and
+[participant sheet](pilot-2026-11-29/participant-sheet.md). The older #18 procedure
+below is historical: its port/build and statement that no document task applies
+must not be used for the current preview or final dual-journey acceptance.
+
 Owner exercise; observations are blank until performed. Budget about 10 minutes once
 the separate Windows account and Docker (if testing deletion) are ready. Account setup,
 Docker installation and model downloads are outside that timebox. Use synthetic text only.

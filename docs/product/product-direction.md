@@ -1,5 +1,22 @@
 # Furnace product direction
 
+## December 4 local MVP — latest owner decision
+
+Furnace remains the researcher infrastructure platform with the free kit and Studio;
+documents stays an example application. The cream-and-green theme stays. Scope is local MVP plus a
+private demonstration; the $20/month hosted plan is **Coming later** and remains the
+proposal in `docs/release/hosted-service-design.md`. No billing, accounts or public
+internet-facing service is included. The final rebuilt installer must pass both
+journeys on the same exact bytes. Hosted Ubuntu is the accepted Linux gate.
+
+Current preview 9598d6d opens researcher Studio; its document link is under
+Example application: documents. Preserve that product ordering. Both installed
+journeys still need acceptance on the one final rebuilt installer.
+See the [release ledger](../release/researcher-delivery.md) and
+[November 29 pilot packet](../operations/pilot-2026-11-29/README.md).
+
+## Researcher platform direction
+
 Owner-confirmed direction: infrastructure for model researchers, with the current
 cream-and-green visual theme. The document assistant is an example application.
 

@@ -3,6 +3,11 @@
 These records concern the developer verification runner, not model quality or a
 new release artifact. No tests were skipped or acceptance thresholds changed.
 
+Owner decision for the December 4 release: **hosted Ubuntu CI is accepted as the
+Linux gate; do not change Docker Desktop settings**. The local limitation below is
+retained as a diagnostic and is not relabeled successful or required to be resolved
+by changing this machine for that release.
+
 - [Node bootstrap observation](node-bootstrap-observed.txt): a fresh Pyright 1.1.414
   invocation in the existing Python/uv Linux image succeeded and installed Node
   26.13.1. The older `0-alpha` bootstrap failure did not reproduce. The runner now
