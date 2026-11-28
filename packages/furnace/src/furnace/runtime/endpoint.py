@@ -104,6 +104,10 @@ class LocalChatEndpoint:
             if not isinstance(result, dict):
                 raise RuntimeFault("endpoint_invalid_response")
             return result
+        except TimeoutError:
+            # A socket deadline can fire before the timer thread is scheduled.
+            # It must remain a recoverable timeout, not a poisoned connection.
+            raise RuntimeFault("endpoint_timeout") from None
         except (OSError, http.client.HTTPException, ValueError):
             raise RuntimeFault(
                 "endpoint_timeout" if expired.is_set() else "endpoint_unavailable_or_invalid"
@@ -123,7 +127,13 @@ class LocalChatEndpoint:
             raise RuntimeFault("configured_model_not_advertised")
 
     def predict(
-        self, config: dict[str, Any], value: str, timeout: float, api_key: str | None = None
+        self,
+        config: dict[str, Any],
+        value: str,
+        timeout: float,
+        api_key: str | None = None,
+        *,
+        system_prompt: str | None = None,
     ) -> dict[str, Any]:
         began = time.monotonic()
         response = self.request(
@@ -132,7 +142,10 @@ class LocalChatEndpoint:
             timeout,
             {
                 "model": config["model_id"],
-                "messages": [{"role": "user", "content": value}],
+                "messages": (
+                    [{"role": "system", "content": system_prompt}] if system_prompt else []
+                )
+                + [{"role": "user", "content": value}],
                 "stream": False,
                 "temperature": 0,
                 "max_tokens": config["max_tokens"],

@@ -1,10 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {countsFor, journeyFor, runtimeState, mergeProjectRecord, requestOutputFor, updateKnownProject} from "../furnace_api/studio_assets/studio-state.mjs";
+import {countsFor, journeyFor, runtimeState, mergeProjectRecord, requestOutputFor, updateKnownProject, projectUrl, selectProjectId} from "../furnace_api/studio_assets/studio-state.mjs";
 import {parseCaseSuite} from "../furnace_api/studio_assets/case-import.mjs";
 
 const importedCase = () => ({name:"Research case", input:"  preserve whitespace\n", expected_behavior:"Author-reviewed behavior"});
 const parseSuite = source => parseCaseSuite(new TextEncoder().encode(source));
+
+test("researcher handoff selects the requested project and refuses a missing identity", () => {
+  const projects = [{id:"first"}, {id:"research"}];
+  assert.equal(selectProjectId(projects, "research"), "research");
+  assert.equal(selectProjectId(projects, null), "first");
+  for (const missing of ["deleted", "", "FIRST"]) assert.equal(selectProjectId(projects, missing), null);
+  assert.equal(selectProjectId([], null), null);
+  assert.equal(selectProjectId([], "research"), null);
+  assert.equal(projectUrl("/model", "research"), "/model?project=research");
+  assert.equal(projectUrl("/", "research"), "/?project=research");
+  assert.equal(projectUrl("/model", null), "/model");
+  assert.equal(projectUrl("/model", "a&session=secret"), "/model?project=a%26session%3Dsecret");
+});
 test("case import round-trips exported JSONL without treating labels as evidence", () => {
   const item = {...importedCase(), status:"framework_pass", recorded_status:"exact_pass"};
   assert.deepEqual(parseSuite("\ufeff\r\n" + JSON.stringify(item) + "\r\n"), {cases:[{...importedCase(), expected_output:null}], discardedStatuses:1});
@@ -44,11 +57,33 @@ test("case import accounts for the normalized conditional save request size", ()
 const evidenceFor = cases => cases.map((item, case_index) => ({case_index, status: item.status}));
 const bind = (project, evaluation) => ({...evaluation, project_id: project.id, configuration_sha256: project.configuration_sha256});
 const prepared = () => ({
+  origin: "guided_example",
   id: "project-a", revision: 3, configuration_sha256: "current-inputs", evaluation_verification: "current_framework_evidence",
   contract: {architecture: "Custom research architecture", notes: ""},
   plan: {compute: "customer"},
   cases: [{status: "not_run"}, {status: "not_run"}],
   runtime: "not_connected", evaluation: null,
+});
+
+test("research projects lead to actual model operations, never require fixture execution", () => {
+  const project = {...prepared(), origin:"local_project"};
+  const journey = journeyFor(project);
+  assert.equal(journey.next.model, true);
+  assert.equal(journey.next.action, "Open model infrastructure →");
+  assert.equal(journey.stages.at(-1).label, "Model evaluated");
+  assert.equal(journey.stages.at(-1).done, false);
+  project.evaluation = bind(project, {status:"completed", results:evidenceFor(project.cases)});
+  assert.equal(journeyFor(project).stages.at(-1).done, false); // Fixture is not model evidence.
+  project.model_endpoint = {verification:"current_endpoint_observation", evaluation:{status:"completed", results:[{case_index:0, status:"check_fail"}, {case_index:1, status:"unscored"}]}};
+  assert.equal(journeyFor(project).stages.at(-1).done, true);
+  project.model_endpoint.evaluation.results[1].status = "not_run";
+  assert.equal(journeyFor(project).stages.at(-1).done, false);
+  project.model_endpoint.evaluation.results[1].status = "unscored";
+  project.model_endpoint.verification = "unbound_or_stale";
+  assert.equal(journeyFor(project).stages.at(-1).done, false);
+  project.cases = [];
+  assert.equal(journeyFor(project).next.view, "evaluations");
+  assert.equal(journeyFor(project).stages.at(-1).done, false);
 });
 test("saved preparation and detected files never establish execution", () => {
   const project = prepared();

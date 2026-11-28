@@ -167,6 +167,7 @@ folder after reviewing retention. Do not delete shared model folders or uv cache
     }
     archive_path = ROOT / "dist" / "furnace-studio-preview.zip"
     with zipfile.ZipFile(archive_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.write(ROOT / "LICENSE", "LICENSE")
         for name in names:
             archive.write(wheels / name, "wheels/" + name)
         archive.write(wheels / "requirements.txt", "requirements.txt")

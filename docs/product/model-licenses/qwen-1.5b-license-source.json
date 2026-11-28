@@ -1,0 +1,9 @@
+{
+  "source": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/91cad51170dc346986eccefdc2dd33a9da36ead9/LICENSE",
+  "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+  "license": "apache-2.0",
+  "license_file_sha256": "832dd9e00a68dd83b3c3fb9f5588dad7dcf337a0db50f7d9483f310cd292e92e",
+  "reviewed_on": "2026-11-23",
+  "commercial_use": "Allowed under Apache-2.0 terms; preserve license and applicable notices. Not a warranty or compliance certification.",
+  "weights_bundled_in_installer": false
+}

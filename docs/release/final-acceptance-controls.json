@@ -1,0 +1,26 @@
+{
+  "recorded_on": "2026-11-28",
+  "execution": "actual existing installer and untouched historical records; no inference",
+  "verifier_source": "working tree before commit",
+  "verifier_sha256": "f0f2d6e09bd6c3b4faa44ca7ca006103b9bd6b70fd983ea0a433584d9a29603e",
+  "controls": [
+    {
+      "expected_commit": "ebdd5f2c39a8ed149e21c6f01fc4d0917754e71f",
+      "exit_code": 1,
+      "report": {
+        "status": "blocked",
+        "reason": "installer source differs from expected commit",
+        "publication_authorized": false
+      }
+    },
+    {
+      "expected_commit": "9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3",
+      "exit_code": 1,
+      "report": {
+        "status": "blocked",
+        "reason": "missing/failed check: project_notice_matches_source",
+        "publication_authorized": false
+      }
+    }
+  ]
+}

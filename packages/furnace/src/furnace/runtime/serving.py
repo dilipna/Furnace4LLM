@@ -340,6 +340,36 @@ class Supervisor:
             "networks": sorted((info.get("NetworkSettings") or {}).get("Networks") or {}),
         }
 
+    def privacy_state(self, pid: str) -> dict[str, Any]:
+        """Sanitized observations, not a claim about all traffic on the host."""
+        state = self.container_state(pid)  # includes ownership validation
+        names = self.names(pid)
+        info = json.loads(self._docker("inspect", "--format", "{{json .}}", names["model"]).stdout)
+        network = json.loads(
+            self._docker("network", "inspect", "--format", "{{json .}}", names["network"]).stdout
+        )
+        host, config = info["HostConfig"], info["Config"]
+        return {
+            "evidence_kind": "docker_inspect",
+            "launch_id": state.get("launch_id"),
+            "container_id": state.get("container_id"),
+            "image": config.get("Image"),
+            "checks": {
+                "running": state.get("running") is True,
+                "internal_network_only": network.get("Internal") is True
+                and state.get("networks") == [names["network"]],
+                "non_root": config.get("User") == "10001:10001",
+                "read_only_root": host.get("ReadonlyRootfs") is True,
+                "all_capabilities_dropped": host.get("CapDrop") == ["ALL"],
+                "no_new_privileges": "no-new-privileges" in (host.get("SecurityOpt") or [])
+                or "no-new-privileges:true" in (host.get("SecurityOpt") or []),
+                "no_direct_published_ports": not host.get("PortBindings"),
+                "read_only_mounts": all(
+                    not m.get("RW") for m in info.get("Mounts", []) if m.get("Type") == "bind"
+                ),
+            },
+        }
+
     def stop(self, pid: str) -> None:
         names = self.names(pid)
         with self._guard:

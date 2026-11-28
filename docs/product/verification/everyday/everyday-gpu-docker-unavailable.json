@@ -1,0 +1,57 @@
+{
+  "schema": "furnace-everyday-model-v1",
+  "recorded_at": "2026-11-25T01:16:56.172779+00:00",
+  "installed_build": {
+    "schema": "furnace-windows-installer-v1",
+    "version": "0.1.0",
+    "commit": "2c250d642a1af2b648b67cb34fd190f535f24d8a",
+    "built_at": "2026-11-24T05:28:22.017175+00:00",
+    "published": false,
+    "source_dirty": false,
+    "platform": "windows-x64",
+    "experience": "private-documents-preview",
+    "python": "3.12.13",
+    "compiler": "Inno Setup 6.4.3",
+    "signed": false,
+    "wheel_sha256": {
+      "furnace_bench-0.1.0-py3-none-any.whl": "525ffc8f98db594f9b2309e73bbb7c8ebbfc9e0394216ef442d2907f8a7a7bef",
+      "furnace-0.1.0-py3-none-any.whl": "a8d359ebf2492088c702e042aa73729d265da17c88229de1f59db82e0f86635a",
+      "furnace_api-0.1.0-py3-none-any.whl": "288d24908760160f46fcaa2d71f2c7bde4fa4ca8aae8914ca76c97e8ae9cb478"
+    },
+    "reproducibility": "Repeatable pinned-input recipe; binary identity is not established (PE timestamps/signing)."
+  },
+  "os": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.13",
+  "model": "qwen2.5-1.5b-instruct-q4_k_m",
+  "accelerator": "nvidia",
+  "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "model_revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+  "license": "apache-2.0",
+  "suite_sha256": "8a2e4162c13a5ae27b912b7ac3ec2479a3b32298263c9c84797c9ad292f94872",
+  "scorer": "furnace-rules-v2",
+  "source_data": "synthetic packaged everyday suite only; no private user documents",
+  "cases": [],
+  "result": "incomplete",
+  "selection": {
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "accelerator": "nvidia",
+    "threads": 4,
+    "memory_mb": 4096,
+    "context_tokens": 4096,
+    "max_tokens": 512,
+    "request_timeout_seconds": 120,
+    "evaluation_budget_seconds": 900
+  },
+  "docker": {
+    "status": "unavailable",
+    "gpu_runtime": false
+  },
+  "error": "HTTPStatusError",
+  "shutdown_completed": true,
+  "score_summary": {
+    "pass": 0,
+    "fail": 0,
+    "unscored": 0
+  },
+  "operationally_complete": false
+}

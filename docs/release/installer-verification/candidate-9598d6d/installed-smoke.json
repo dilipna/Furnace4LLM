@@ -1,0 +1,44 @@
+{
+  "schema": "furnace-installed-smoke-v1",
+  "recorded_at": "2026-11-27T18:22:37.347389+00:00",
+  "build": {
+    "schema": "furnace-windows-installer-v1",
+    "version": "0.1.0",
+    "commit": "9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3",
+    "built_at": "2026-11-27T17:20:33.812767+00:00",
+    "published": false,
+    "source_dirty": false,
+    "platform": "windows-x64",
+    "experience": "researcher-infrastructure-preview",
+    "python": "3.12.13",
+    "compiler": "Inno Setup 6.4.3",
+    "signed": false,
+    "wheel_sha256": {
+      "furnace_bench-0.1.0-py3-none-any.whl": "525ffc8f98db594f9b2309e73bbb7c8ebbfc9e0394216ef442d2907f8a7a7bef",
+      "furnace-0.1.0-py3-none-any.whl": "55631d428b23ed46c31f50af3a8568d299fccac0e4f16b4c3a99c46adb165364",
+      "furnace_api-0.1.0-py3-none-any.whl": "5b5db32855aefe9e0fd7f3bbbdcb1edca53ad9ed99991fcdc9e551623309027f"
+    },
+    "reproducibility": "Repeatable pinned-input recipe; binary identity is not established (PE timestamps/signing)."
+  },
+  "checks": {
+    "installed_code_with_no_python_uv_git_on_path": true,
+    "researcher_home_opened": true,
+    "opened_studio_in_browser": true,
+    "preflight_read_only": true,
+    "guided_example_saved": true,
+    "kit_export": true,
+    "kit_export_through_ui": true,
+    "no_browser_errors": true,
+    "quit_and_lease_released": true
+  },
+  "model_inference": false,
+  "clean_profile": false,
+  "installed_module": "runtime\\Lib\\site-packages\\furnace_api\\desktop.py",
+  "preflight": {
+    "status": "unavailable",
+    "code": "docker_unavailable"
+  },
+  "browser_errors": [],
+  "completed": true,
+  "result": "passed"
+}

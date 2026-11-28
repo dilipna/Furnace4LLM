@@ -32,6 +32,8 @@ def test_version_bump_builds_and_launches_the_declared_package_wheels(
         config.parent.mkdir(parents=True)
         config.write_text(f'[project]\nname = "{name}"\nversion = "{version}"\n')
     wheels = tmp_path / "dist/studio-wheels"
+    notice = SOURCE.parents[1].joinpath("LICENSE").read_bytes()
+    (tmp_path / "LICENSE").write_bytes(notice)
     wheels.mkdir(parents=True)
     for name in packages:
         (wheels / f"{name.replace('-', '_')}-0.0.9-py3-none-any.whl").write_bytes(b"previous build")
@@ -60,6 +62,7 @@ def test_version_bump_builds_and_launches_the_declared_package_wheels(
     assert len(list(wheels.glob("*.whl"))) == len(packages)
     install = tmp_path / "installed"
     with zipfile.ZipFile(tmp_path / "dist/furnace-studio-preview.zip") as archive:
+        assert archive.read("LICENSE") == notice
         manifest = json.loads(archive.read("manifest.json"))
         assert manifest["package_version"] == versions[0]
         assert manifest["source_commit"] == "commit-sha"

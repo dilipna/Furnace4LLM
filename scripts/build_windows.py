@@ -51,6 +51,7 @@ def main() -> None:
     runtime = stage / "runtime"
     base = Path(sys.base_prefix)
     runtime.mkdir(parents=True)
+    shutil.copy2(ROOT / "LICENSE", stage / "LICENSE")
     shutil.copy2(ROOT / "packaging/windows/furnace.ico", stage / "furnace.ico")
     for name in ("DLLs", "Lib", "tcl"):
         shutil.copytree(
@@ -129,6 +130,7 @@ def main() -> None:
         "published": False,
         "source_dirty": False,
         "platform": "windows-x64",
+        "experience": "researcher-infrastructure-preview",
         "python": sys.version.split()[0],
         "compiler": "Inno Setup 6.4.3",
         "signed": bool(args.sign_command),

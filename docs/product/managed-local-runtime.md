@@ -7,7 +7,12 @@ Validation results for the two pinned models are in [real-model-validation.md](r
 
 ## The journey in Studio
 
-Open **Connect a local model server** (`/model`) and pick a project.
+Open **Model infrastructure** (`/model`) from the researcher workspace; its link
+preserves the selected project.
+
+The [fresh researcher lifecycle](researcher-lifecycle-validation.md) records a relative
+cache launch failure and the verified fix, including a retained 11/12 quality result.
+Relative artifact-cache paths are resolved once to absolute paths before Docker mounts.
 
 Browsing recipe metadata does not require Docker. If the CLI/daemon is unavailable or
 inspection times out, the catalog remains readable, reports Docker unavailable and uses

@@ -1,0 +1,321 @@
+{
+  "schema": "furnace-everyday-rescore-v1",
+  "scorer": "furnace-rules-v3",
+  "inference": false,
+  "new_suite_sha256": "e0d652c9a9edccd4604d15dc422c89b1943c97da7d7a4c309b21542fb57d9ae3",
+  "limits": "Saved outputs only. Rule checks are not semantic quality. Old records remain untouched.",
+  "records": [
+    {
+      "source": "everyday-qwen-1.5b-cpu-2c250d6.json",
+      "sha256": "0a72354503e55cf565ec202c4613b778f83937a53682e896041d8cc196dcb1fd",
+      "old_scorer": "furnace-rules-v2",
+      "cases": [
+        {
+          "name": "Invoice summary",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "IV-104",
+              "875",
+              "2026-12-03"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Meeting summary",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "Birch",
+              "Maya",
+              "2026-12-03"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Document question",
+          "revised_rule": {
+            "method": "regex",
+            "value": "(?s).*\\b2026-11-30\\b.*"
+          },
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Missing information",
+          "revised_rule": {
+            "method": "regex",
+            "value": "(?is).*(?:don['\u2019]t know|do not know|not (?:provided|mentioned|specified|given)|does not (?:provide|mention|say)|no (?:phone|telephone) number).*"
+          },
+          "old": "unscored",
+          "v3_original_rules": "unscored",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Action items",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "Omar",
+              "draft",
+              "2026-12-04"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Date extraction",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "2026-12-01",
+              "2027-03-01"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Simplify wording",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "Renata",
+              "450",
+              "2026-12-09"
+            ]
+          },
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        },
+        {
+          "name": "Draft a reply",
+          "revised_rule": {
+            "method": "regex",
+            "value": "(?is)(?!.*(?:\\d|\\b(?:morning|afternoon|evening|noon|midnight|o.clock)\\b|\\bat (?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b))(?=.*\\bnotes\\b).+"
+          },
+          "old": "unscored",
+          "v3_original_rules": "unscored",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Translate greeting",
+          "revised_rule": {
+            "method": "normalized",
+            "value": "Buenos d\u00edas."
+          },
+          "old": "fail",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Staged long document",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "2026-12-03",
+              "Maya"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Instruction in a document",
+          "revised_rule": {
+            "method": "numeric",
+            "number": 95
+          },
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        }
+      ],
+      "totals": {
+        "old": {
+          "pass": 5,
+          "fail": 4,
+          "unscored": 2
+        },
+        "v3_original_rules": {
+          "pass": 6,
+          "fail": 3,
+          "unscored": 2
+        },
+        "v3_revised_rules": {
+          "pass": 9,
+          "fail": 2,
+          "unscored": 0
+        }
+      }
+    },
+    {
+      "source": "everyday-qwen-1.5b-gpu-2c250d6-retry.json",
+      "sha256": "c0c89116e6089c9b413084161bad9c16b5581c96892001777ec2387fd9e02b22",
+      "old_scorer": "furnace-rules-v2",
+      "cases": [
+        {
+          "name": "Invoice summary",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "IV-104",
+              "875",
+              "2026-12-03"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Meeting summary",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "Birch",
+              "Maya",
+              "2026-12-03"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Document question",
+          "revised_rule": {
+            "method": "regex",
+            "value": "(?s).*\\b2026-11-30\\b.*"
+          },
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Missing information",
+          "revised_rule": {
+            "method": "regex",
+            "value": "(?is).*(?:don['\u2019]t know|do not know|not (?:provided|mentioned|specified|given)|does not (?:provide|mention|say)|no (?:phone|telephone) number).*"
+          },
+          "old": "unscored",
+          "v3_original_rules": "unscored",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Action items",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "Omar",
+              "draft",
+              "2026-12-04"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Date extraction",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "2026-12-01",
+              "2027-03-01"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Simplify wording",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "Renata",
+              "450",
+              "2026-12-09"
+            ]
+          },
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        },
+        {
+          "name": "Draft a reply",
+          "revised_rule": {
+            "method": "regex",
+            "value": "(?is)(?!.*(?:\\d|\\b(?:morning|afternoon|evening|noon|midnight|o.clock)\\b|\\bat (?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\\b))(?=.*\\bnotes\\b).+"
+          },
+          "old": "unscored",
+          "v3_original_rules": "unscored",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Translate greeting",
+          "revised_rule": {
+            "method": "normalized",
+            "value": "Buenos d\u00edas."
+          },
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        },
+        {
+          "name": "Staged long document",
+          "revised_rule": {
+            "method": "contains",
+            "values": [
+              "2026-12-03",
+              "Maya"
+            ]
+          },
+          "old": "pass",
+          "v3_original_rules": "pass",
+          "v3_revised_rules": "pass"
+        },
+        {
+          "name": "Instruction in a document",
+          "revised_rule": {
+            "method": "numeric",
+            "number": 95
+          },
+          "old": "fail",
+          "v3_original_rules": "fail",
+          "v3_revised_rules": "fail"
+        }
+      ],
+      "totals": {
+        "old": {
+          "pass": 5,
+          "fail": 4,
+          "unscored": 2
+        },
+        "v3_original_rules": {
+          "pass": 5,
+          "fail": 4,
+          "unscored": 2
+        },
+        "v3_revised_rules": {
+          "pass": 8,
+          "fail": 3,
+          "unscored": 0
+        }
+      }
+    }
+  ]
+}

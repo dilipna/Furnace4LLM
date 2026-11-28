@@ -11,6 +11,7 @@ import platform
 import secrets
 import sqlite3
 import tempfile
+import threading
 import uuid
 import zipfile
 from collections.abc import AsyncIterator
@@ -20,7 +21,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, RedirectResponse, Response, StreamingResponse
 from furnace.runtime.lease import WorkspaceLease
 from furnace.runtime.manager import RuntimeFault, RuntimeManager
 from furnace.runtime.oplog import OperationsLog
@@ -29,6 +30,9 @@ from furnace.starter import assess_model, write_starter_files
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from furnace_api.document_policy import quarantine
+from furnace_api.documents import extract_document
+from furnace_api.everyday import DocumentUpload, EverydayRequest, EverydayService
 from furnace_api.studio_evidence import project_view, provenance
 from furnace_api.studio_managed import ACTIVE as MANAGED_ACTIVE
 from furnace_api.studio_managed import ManagedConsent, ManagedSelection, ManagedService
@@ -175,11 +179,11 @@ def now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-async def payload(request: Request, schema: type[BaseModel]) -> Any:
+async def payload(request: Request, schema: type[BaseModel], limit: int = MAX_BODY) -> Any:
     body = bytearray()
     async for chunk in request.stream():
-        if len(body) + len(chunk) > MAX_BODY:
-            raise HTTPException(413, "Request exceeds 64 KiB")
+        if len(body) + len(chunk) > limit:
+            raise HTTPException(413, "Request exceeds the allowed body size")
         body.extend(chunk)
     try:
         return schema.model_validate_json(body)
@@ -205,6 +209,8 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
     managed = ManagedService(
         store, runtime.manager, model, workspace, artifacts or artifacts_root(workspace), oplog
     )
+
+    everyday = EverydayService(managed, model)
 
     def needs_container_recovery() -> bool:
         pending = MANAGED_ACTIVE | {"preparing", "unknown"}
@@ -250,7 +256,9 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
                 "detail": "The project changed after preview. Refresh its saved state, then preview the suite again."
                 if exc.code == "configuration_changed_before_case_import"
                 else exc.code
-                if "/model/" in request.url.path or "/managed" in request.url.path
+                if "/model/" in request.url.path
+                or "/managed" in request.url.path
+                or request.url.path.startswith("/api/everyday/")
                 else "Framework runtime: "
                 + exc.code.replace("_", " ")
                 + ". No model validation is implied."
@@ -281,8 +289,107 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
         return response
 
     @app.get("/")
+    def researcher_home():
+        return FileResponse(ASSETS / "index.html")
+
+    @app.get("/examples/documents")
+    def document_example():
+        return FileResponse(ASSETS / "everyday.html")
+
+    @app.get("/advanced")
     def index():
         return FileResponse(ASSETS / "index.html")
+
+    @app.post("/api/everyday/extract")
+    async def document_extract(request: Request):
+        value = await payload(request, DocumentUpload, 4_010_000)
+        return await asyncio.to_thread(extract_document, value.kind, value.data)
+
+    @app.get("/api/everyday/hardware")
+    async def everyday_hardware():
+        return {"gpu": await asyncio.to_thread(managed.supervisor.gpu)}
+
+    @app.post("/api/everyday/setup")
+    def everyday_setup():
+        # No download or execution; the user must approve those separate actions.
+        for project in store.all():
+            if project.get("origin") == "everyday":
+                return runtime.status(project["id"])
+        path = workspace / "everyday-project"
+        path.mkdir(exist_ok=True)
+        return store.create(
+            {
+                "id": uuid.uuid4().hex,
+                "name": "Private documents",
+                "origin": "everyday",
+                "path": str(path),
+                "assessment": assess_model(path),
+                "contract": None,
+                "plan": None,
+                "cases": [],
+                "runtime": "not_connected",
+                "evaluation": None,
+                "events": [
+                    {
+                        "at": now(),
+                        "message": "Private-document workspace created; no document content retained",
+                    }
+                ],
+            }
+        )
+
+    @app.post("/api/everyday/inspect")
+    async def everyday_inspect(request: Request):
+        value = await payload(request, EverydayRequest, 800_000)
+        _, sentences = quarantine(value.text)
+        return {"sentences": sentences}
+
+    @app.post("/api/everyday/projects/{project_id}/plan")
+    async def everyday_plan(project_id: str, request: Request):
+        value = await payload(request, EverydayRequest, 800_000)
+        return await asyncio.to_thread(everyday.plan, project_id, value)
+
+    @app.post("/api/everyday/projects/{project_id}/answer")
+    async def everyday_answer(project_id: str, request: Request):
+        value = await payload(request, EverydayRequest, 800_000)
+        return await asyncio.to_thread(everyday.answer, project_id, value)
+
+    @app.post("/api/everyday/projects/{project_id}/answer-stream")
+    async def everyday_answer_stream(project_id: str, request: Request):
+        value = await payload(request, EverydayRequest, 800_000)
+        stopped = threading.Event()
+        loop = asyncio.get_running_loop()
+        events: asyncio.Queue = asyncio.Queue()
+
+        def progress(event):
+            if stopped.is_set():
+                raise RuntimeFault("Document task cancelled")
+            loop.call_soon_threadsafe(events.put_nowait, {"progress": event})
+
+        def execute():
+            try:
+                result = {"result": everyday.answer(project_id, value, progress)}
+            except RuntimeFault as error:
+                result = {"error": error.code}
+            except Exception:
+                result = {"error": "Local document task failed; retry after checking the model"}
+            if not stopped.is_set():
+                loop.call_soon_threadsafe(events.put_nowait, result)
+
+        async def stream():
+            task = asyncio.create_task(asyncio.to_thread(execute))
+            try:
+                while True:
+                    event = await events.get()
+                    yield json.dumps(event) + "\n"
+                    if "result" in event or "error" in event:
+                        break
+            finally:
+                # A sent model request may finish; no further section is sent.
+                stopped.set()
+                task.cancel()
+
+        return StreamingResponse(stream(), media_type="application/x-ndjson")
 
     @app.get("/guide")
     def real_evaluation_guide():
@@ -301,6 +408,9 @@ def create_app(workspace: Path, token: str, artifacts: Path | None = None) -> Fa
             "model.js",
             "case-import.mjs",
             "favicon.svg",
+            "everyday.js",
+            "everyday.css",
+            "everyday-selection.mjs",
         ],
     ):
         # Windows registry MIME mappings can label .js/.mjs text/plain. Browsers

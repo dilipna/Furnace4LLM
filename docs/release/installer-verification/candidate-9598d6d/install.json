@@ -1,0 +1,16 @@
+{
+  "isolated_directory": true,
+  "source_commit": "9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3",
+  "installer_sha256": "8fdb61c18526a811952edfe3f8aefb90735df22f6a69d2251aa4a7600fc9a02d",
+  "interactive_install": false,
+  "per_user_registration_matches": true,
+  "existing_installation_refused": true,
+  "current_windows_account": true,
+  "installer_exit_code": 0,
+  "recorded_at": "2026-11-27T18:21:50.1601706+00:00",
+  "app_root": "C:\\Users\\Dilip\\Documents\\Codex\\2026-11-11\\audit-furnace-s-current-implementation-identify\\work\\Furnace-delivery-qa-9598",
+  "schema": "furnace-delivery-install-v1",
+  "clean_consumer_account": false,
+  "installed_build_identity_matches": true,
+  "smartscreen_observed": false
+}

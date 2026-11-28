@@ -1,0 +1,10 @@
+{
+  "before": {
+    "exit_code": 1,
+    "uncompressed_sha256": "d343bf11e2bb355eb3085b4badb58b25721c94fa1e4360cfa2957f97fa4e1774"
+  },
+  "after": {
+    "exit_code": 0,
+    "uncompressed_sha256": "01a97542cf8667a04a33931ac530d96cfd47c3531f3c510772ac7388dcf48f8e"
+  }
+}

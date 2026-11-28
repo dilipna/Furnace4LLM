@@ -1,0 +1,1 @@
+{"schema": "furnace-everyday-diagnostic-v1", "cases": [{"name": "Plain chat arithmetic", "request": {"action": "chat", "text": "", "question": "What is 17 + 25? Reply with only the number."}, "scoring": {"method": "numeric", "number": 42}}]}

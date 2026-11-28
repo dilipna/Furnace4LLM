@@ -30,6 +30,7 @@ fi
 cleanup() {
   docker rm -f "$TAG-pg" >/dev/null 2>&1 || true
   docker network rm "$TAG" >/dev/null 2>&1 || true
+  docker image rm "$TAG-python" >/dev/null 2>&1 || true
   docker run --rm -v /tmp:/vmtmp alpine rm -rf "/vmtmp/$TAG" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
@@ -41,24 +42,47 @@ stage_tree() {
 
 run_python() {
   echo "== python job at $SHA"
+  # Pyright's Python wrapper otherwise bootstraps its own Node major (currently
+  # 26). Supply the same Node 24 major as hosted CI, using the existing images.
+  docker build -q -t "$TAG-python" - <<'DOCKERFILE'
+FROM node:24-bookworm AS node
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+DOCKERFILE
   docker network create "$TAG" >/dev/null
   docker run -d --name "$TAG-pg" --network "$TAG" -e POSTGRES_USER=furnace \
-    -e POSTGRES_PASSWORD=furnace -e POSTGRES_DB=furnace postgres:17-alpine >/dev/null
-  docker run --rm --network "$TAG" \
+    -e POSTGRES_PASSWORD=furnace -e POSTGRES_DB=furnace \
+    -p 127.0.0.1::5432 postgres:17-alpine >/dev/null
+  CI_PG_ADDRESS=$(docker port "$TAG-pg" 5432/tcp)
+  CI_PG_PORT=${CI_PG_ADDRESS##*:}
+  case "$CI_PG_PORT" in ''|*[!0-9]*) echo "Invalid test database port" >&2; return 1;; esac
+  for i in $(seq 1 30); do
+    if docker exec "$TAG-pg" pg_isready -U furnace >/dev/null 2>&1; then break; fi
+    sleep 1
+  done
+  # Docker-backed serving tests connect to daemon-published 127.0.0.1 ports.
+  # Match a native Linux runner's network namespace; never skip these tests or
+  # change application endpoint validation to compensate for nested networking.
+  if ! docker run --rm --network host "$TAG-python" python -c \
+    "import socket; socket.create_connection(('127.0.0.1', $CI_PG_PORT), timeout=3).close()"; then
+    echo "Python job requires Docker host-loopback networking. Use a native Linux host, or enable Docker Desktop host networking yourself. No checks passed and no pass stamp was written." >&2
+    return 1
+  fi
+  docker run --rm --network host \
     -v /var/run/docker.sock:/var/run/docker.sock -v "$VMDIR:$VMDIR" -w "$VMDIR/src" \
-    -e PG_HOST="$TAG-pg" -e VMDIR="$VMDIR" \
-    ghcr.io/astral-sh/uv:python3.12-bookworm bash -euo pipefail -c '
+    -e PG_HOST=127.0.0.1 -e PG_PORT="$CI_PG_PORT" -e VMDIR="$VMDIR" \
+    "$TAG-python" bash -euo pipefail -c '
       curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.3.1.tgz \
         | tar -xz -C /usr/local/bin --strip-components=1 docker/docker
       gid=$(stat -c %g /var/run/docker.sock)
       getent group "$gid" >/dev/null || groupadd -g "$gid" dockersock
       useradd -m -u 1001 -G "$(getent group "$gid" | cut -d: -f1)" runner
-      for i in $(seq 1 30); do (echo > /dev/tcp/$PG_HOST/5432) 2>/dev/null && break; sleep 1; done
       su runner -s /bin/bash -c "
         set -euo pipefail
         export PATH=/usr/local/bin:\$PATH TMPDIR=$VMDIR/tmp UV_LINK_MODE=copy
         export UV_PROJECT_ENVIRONMENT=/home/runner/venv  # the shared VM path is mounted noexec
-        export FURNACE_DATABASE_URL=postgresql+asyncpg://furnace:furnace@$PG_HOST:5432/furnace
+        export FURNACE_DATABASE_URL=postgresql+asyncpg://furnace:furnace@$PG_HOST:$PG_PORT/furnace
+        node --version
         uv sync --frozen
         uv run ruff check .
         uv run ruff format --check .
@@ -72,7 +96,7 @@ run_python() {
 run_web() {
   echo "== web job at $SHA"
   # Its own filesystem, not the shared VM path: node_modules does not fit the VM's small /tmp.
-  git archive "$COMMIT" apps/web experiments/prefix-cache apps/api/tests/studio-state.test.mjs apps/api/furnace_api/studio_assets/studio-state.mjs apps/api/furnace_api/studio_assets/case-import.mjs | docker run --rm -i node:24-bookworm bash -euo pipefail -c '
+  git archive "$COMMIT" apps/web experiments/prefix-cache apps/api/tests/studio-state.test.mjs apps/api/tests/everyday-selection.test.mjs apps/api/furnace_api/studio_assets | docker run --rm -i node:24-bookworm bash -euo pipefail -c '
     mkdir -p /src && tar -x -C /src && cd /src/apps/web
     corepack enable >/dev/null
     pnpm install --frozen-lockfile
@@ -81,7 +105,9 @@ run_web() {
     pnpm build
     node --test cloudflare/range.test.mjs
     node --test lib/prefix-check.test.mjs
+    node --test lib/download.test.mjs
     node --test ../api/tests/studio-state.test.mjs
+    node --test ../api/tests/everyday-selection.test.mjs
     NEXT_PUBLIC_RECORDED_ONLY=true pnpm build:static'
 }
 

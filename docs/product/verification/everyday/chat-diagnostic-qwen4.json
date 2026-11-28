@@ -1,0 +1,172 @@
+{
+  "schema": "furnace-everyday-model-v1",
+  "recorded_at": "2026-11-25T06:08:21.663779+00:00",
+  "installed_build": {
+    "kind": "source-checkout",
+    "commit": "9042c1f6d10bdf4e78e4f2190ab3a073b62702b6",
+    "source_dirty": true,
+    "everyday_sha256": "ef6ba57b6e6b3e7af025a88b9188c4e3fbcbd161bbf82bf54b324e7b8de187ea"
+  },
+  "os": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.13",
+  "model": "qwen3-4b-q4_k_m",
+  "accelerator": "nvidia",
+  "weights_sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+  "model_revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
+  "license": "apache-2.0",
+  "suite_sha256": "09fd71f45d5cc3acb7c30ba9834929a3790b2a7ed0abbdc29dc6509bd1085deb",
+  "scorer": "furnace-rules-v3",
+  "group": null,
+  "prompt_mode": "system /no_think",
+  "download_bytes": 2497280256,
+  "source_data": "synthetic packaged everyday suite only; no private user documents",
+  "cases": [
+    {
+      "name": "Plain chat arithmetic",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "number_within_tolerance",
+      "output": "42",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Single bounded request"
+      },
+      "requests": [
+        {
+          "request_id": "8dfe30d3764e4baea9f94a82239102e7",
+          "duration_ms": 766,
+          "usage": {
+            "prompt_tokens": 280.0,
+            "completion_tokens": 7.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-25T06:09:18.444988+00:00",
+        "project_id": "4ae0f9c866814ae88206ae193f61bdf7",
+        "launch_id": "8efe9fc548ea411a817ad2dcdda15841",
+        "model": {
+          "id": "qwen3-4b-q4_k_m",
+          "revision": "bc640142c66e1fdd12af0bd68f40445458f3869b",
+          "weights_sha256": "7485fe6f11af29433bc51cab58009521f205840f5b4ae3a32fa7f92e8534fdf5",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "8efe9fc548ea411a817ad2dcdda15841",
+          "container_id": "9500ed68d022",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:f25bfa096802cdf35ceb7d124816387a1e3ed5cbfc869eb242246cd29ab29352",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "warnings": [],
+      "elapsed_seconds": 2.062,
+      "memory_observation": {
+        "gpu": {
+          "name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+          "memory_used_mib": 3306,
+          "memory_total_mib": 4096,
+          "utilization_percent": 5,
+          "temperature_c": 59
+        },
+        "resources": {
+          "cpu_percent": "0.09%",
+          "memory": "2.377GiB / 4GiB",
+          "memory_percent": "59.42%",
+          "pids": "27"
+        },
+        "container": {
+          "running": true,
+          "present": true,
+          "failure": null,
+          "exit_code": 0,
+          "oom_killed": false,
+          "started_at": "2026-11-25T06:08:33.61950701Z",
+          "launch_id": "8efe9fc548ea411a817ad2dcdda15841",
+          "container_id": "9500ed68d022",
+          "networks": [
+            "furnace-net-ab1b63138830e4c7-4ae0f9c866814ae88206ae193f61bdf7"
+          ]
+        }
+      }
+    }
+  ],
+  "result": "recorded",
+  "selection": {
+    "model": "qwen3-4b-q4_k_m",
+    "accelerator": "nvidia",
+    "threads": 4,
+    "memory_mb": 4096,
+    "context_tokens": 4096,
+    "max_tokens": 512,
+    "request_timeout_seconds": 120,
+    "evaluation_budget_seconds": 900
+  },
+  "docker": {
+    "status": "ready",
+    "gpu_runtime": true,
+    "cpus": 20,
+    "memory_bytes": 8150224896
+  },
+  "prepare": {
+    "status": "prepared",
+    "reason": "Images pulled by digest; weights SHA-256 verified",
+    "cache": "shared verified-weights store; verified again before launch"
+  },
+  "launch_id": "8efe9fc548ea411a817ad2dcdda15841",
+  "observation_before": {
+    "gpu": {
+      "name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+      "memory_used_mib": 3304,
+      "memory_total_mib": 4096,
+      "utilization_percent": 5,
+      "temperature_c": 58
+    },
+    "resources": {
+      "cpu_percent": "0.10%",
+      "memory": "2.356GiB / 4GiB",
+      "memory_percent": "58.89%",
+      "pids": "27"
+    },
+    "container": {
+      "running": true,
+      "present": true,
+      "failure": null,
+      "exit_code": 0,
+      "oom_killed": false,
+      "started_at": "2026-11-25T06:08:33.61950701Z",
+      "launch_id": "8efe9fc548ea411a817ad2dcdda15841",
+      "container_id": "9500ed68d022",
+      "networks": [
+        "furnace-net-ab1b63138830e4c7-4ae0f9c866814ae88206ae193f61bdf7"
+      ]
+    }
+  },
+  "shutdown_completed": true,
+  "score_summary": {
+    "pass": 1,
+    "fail": 0,
+    "unscored": 0
+  },
+  "operationally_complete": true
+}

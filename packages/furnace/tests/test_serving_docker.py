@@ -46,6 +46,9 @@ def test_managed_server_is_isolated_keyed_observable_and_recoverable(supervisor)
     spec = adapter.launch({}, settings)
     launch = sup.start(PID, spec, {"furnace.managed.manifest": "test"})
     sup.wait_ready(PID, spec)
+    privacy = sup.privacy_state(PID)
+    assert privacy["launch_id"] == launch["launch_id"]
+    assert all(privacy["checks"].values())
     names = sup.names(PID)
     model, relay = inspect(names["model"]), inspect(names["relay"])
     host = model["HostConfig"]

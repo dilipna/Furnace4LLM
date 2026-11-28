@@ -1,0 +1,752 @@
+{
+  "schema": "furnace-everyday-model-v1",
+  "recorded_at": "2026-11-24T05:36:22.887995+00:00",
+  "installed_build": {
+    "schema": "furnace-windows-installer-v1",
+    "version": "0.1.0",
+    "commit": "2c250d642a1af2b648b67cb34fd190f535f24d8a",
+    "built_at": "2026-11-24T05:28:22.017175+00:00",
+    "published": false,
+    "source_dirty": false,
+    "platform": "windows-x64",
+    "experience": "private-documents-preview",
+    "python": "3.12.13",
+    "compiler": "Inno Setup 6.4.3",
+    "signed": false,
+    "wheel_sha256": {
+      "furnace_bench-0.1.0-py3-none-any.whl": "525ffc8f98db594f9b2309e73bbb7c8ebbfc9e0394216ef442d2907f8a7a7bef",
+      "furnace-0.1.0-py3-none-any.whl": "a8d359ebf2492088c702e042aa73729d265da17c88229de1f59db82e0f86635a",
+      "furnace_api-0.1.0-py3-none-any.whl": "288d24908760160f46fcaa2d71f2c7bde4fa4ca8aae8914ca76c97e8ae9cb478"
+    },
+    "reproducibility": "Repeatable pinned-input recipe; binary identity is not established (PE timestamps/signing)."
+  },
+  "os": "Windows-11-10.0.26300-SP0",
+  "python": "3.12.13",
+  "model": "qwen2.5-1.5b-instruct-q4_k_m",
+  "accelerator": "cpu",
+  "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+  "model_revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+  "license": "apache-2.0",
+  "suite_sha256": "8a2e4162c13a5ae27b912b7ac3ec2479a3b32298263c9c84797c9ad292f94872",
+  "scorer": "furnace-rules-v2",
+  "source_data": "synthetic packaged everyday suite only; no private user documents",
+  "cases": [
+    {
+      "name": "Invoice summary",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "contains_all",
+      "output": "Invoice ID: IV-104\nAmount: 875 dollars\nDue Date: 2026-12-03\nSupplier: Cedar Design",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Single bounded request"
+      },
+      "requests": [
+        {
+          "request_id": "f052969f1af54c5694527c215a83026d",
+          "duration_ms": 2078,
+          "usage": {
+            "prompt_tokens": 125.0,
+            "completion_tokens": 37.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:36:45.698567+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 3.25
+    },
+    {
+      "name": "Meeting summary",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "contains_all",
+      "output": "Project Birch will be reviewed on 2026-12-03. Maya is the owner of the review. The team must bring the draft.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Single bounded request"
+      },
+      "requests": [
+        {
+          "request_id": "fa775742fa4d4c3392cff33fb917a590",
+          "duration_ms": 1515,
+          "usage": {
+            "prompt_tokens": 118.0,
+            "completion_tokens": 34.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:36:48.560271+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 2.86
+    },
+    {
+      "name": "Document question",
+      "operational": "completed",
+      "score": "fail",
+      "http_status": 200,
+      "scoring_reason": "normalized_mismatch",
+      "output": "The application deadline is 2026-11-30.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Single bounded request"
+      },
+      "requests": [
+        {
+          "request_id": "5ce9c1c56ae94ecaa46020dc374b14a5",
+          "duration_ms": 1407,
+          "usage": {
+            "prompt_tokens": 126.0,
+            "completion_tokens": 17.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:36:51.049585+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 2.5
+    },
+    {
+      "name": "Missing information",
+      "operational": "completed",
+      "score": "unscored",
+      "http_status": 200,
+      "scoring_reason": "no_rule",
+      "output": "I do not know. The document does not provide any information about Maya's phone number.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Single bounded request"
+      },
+      "requests": [
+        {
+          "request_id": "7390b7c63e0c486594c82f0f31b98e5b",
+          "duration_ms": 1078,
+          "usage": {
+            "prompt_tokens": 111.0,
+            "completion_tokens": 19.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:36:53.170521+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 2.109
+    },
+    {
+      "name": "Action items",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "contains_all",
+      "output": "**Action Items:**\n1. Omar must send the draft by 2026-12-04.\n2. Lina will review the draft after it arrives.\n\n**Owners:**\n1. Omar (Sender)\n2. Lina (Receiver)\n\n**Deadlines:**\n1. Omar: 2026-12-04\n2. Lina: After Omar sends the draft.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Independent sections with concatenated results"
+      },
+      "requests": [
+        {
+          "request_id": "b59d1cf2903d43e48e552af607224ce3",
+          "duration_ms": 3250,
+          "usage": {
+            "prompt_tokens": 113.0,
+            "completion_tokens": 87.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:36:57.383206+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 4.219
+    },
+    {
+      "name": "Date extraction",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "contains_all",
+      "output": "The contract starts on 2026-12-01 and ends on 2027-03-01.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Independent sections with concatenated results"
+      },
+      "requests": [
+        {
+          "request_id": "002142257bda47e1bf67af91d0b18ad3",
+          "duration_ms": 1656,
+          "usage": {
+            "prompt_tokens": 118.0,
+            "completion_tokens": 31.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:37:00.069816+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 2.687
+    },
+    {
+      "name": "Simplify wording",
+      "operational": "completed",
+      "score": "fail",
+      "http_status": 200,
+      "scoring_reason": "missing_required_text",
+      "output": "Renata needs to send 450 dollars by December 9, 2026.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Independent sections with concatenated results"
+      },
+      "requests": [
+        {
+          "request_id": "818d3134e9ec4b15a63bd6339e5a686f",
+          "duration_ms": 1343,
+          "usage": {
+            "prompt_tokens": 116.0,
+            "completion_tokens": 22.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:37:02.399062+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 2.329
+    },
+    {
+      "name": "Draft a reply",
+      "operational": "completed",
+      "score": "unscored",
+      "http_status": 200,
+      "scoring_reason": "no_rule",
+      "output": "Hi Sam,\nI will send the meeting notes to you tomorrow. Thanks, Alex.",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Single bounded request"
+      },
+      "requests": [
+        {
+          "request_id": "ef7d965072264d6fa4a60e8d8bc4b462",
+          "duration_ms": 1125,
+          "usage": {
+            "prompt_tokens": 114.0,
+            "completion_tokens": 18.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:37:04.512764+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 2.109
+    },
+    {
+      "name": "Translate greeting",
+      "operational": "completed",
+      "score": "fail",
+      "http_status": 200,
+      "scoring_reason": "normalized_mismatch",
+      "output": "\u00a1Buenos d\u00edas!",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Independent sections with concatenated results"
+      },
+      "requests": [
+        {
+          "request_id": "22c8a514e0364b6fae20bdcb9baff9d6",
+          "duration_ms": 562,
+          "usage": {
+            "prompt_tokens": 82.0,
+            "completion_tokens": 7.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:37:05.975622+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 1.469
+    },
+    {
+      "name": "Staged long document",
+      "operational": "completed",
+      "score": "pass",
+      "http_status": 200,
+      "scoring_reason": "contains_all",
+      "output": "The final deadline for the project is 2026-12-03, and the owner is Maya.",
+      "processing": {
+        "staged": true,
+        "document_chunks": 3,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 4,
+        "method": "Section results combined in bounded stages"
+      },
+      "requests": [
+        {
+          "request_id": "294bd50be5394c0397b5791f55346ab1",
+          "duration_ms": 2546,
+          "usage": {
+            "prompt_tokens": 319.0,
+            "completion_tokens": 22.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "2d6a486d57824e3597f6a1e04675adb1",
+          "duration_ms": 2032,
+          "usage": {
+            "prompt_tokens": 320.0,
+            "completion_tokens": 19.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "ba34da72d90f4a028bf221240ba0844c",
+          "duration_ms": 1297,
+          "usage": {
+            "prompt_tokens": 210.0,
+            "completion_tokens": 22.0
+          },
+          "finish_reason": "stop"
+        },
+        {
+          "request_id": "48decc03d4534e5b87dd0b811d1eab92",
+          "duration_ms": 1641,
+          "usage": {
+            "prompt_tokens": 157.0,
+            "completion_tokens": 26.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:37:16.435573+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 10.453
+    },
+    {
+      "name": "Instruction in a document",
+      "operational": "completed",
+      "score": "fail",
+      "http_status": 200,
+      "scoring_reason": "number_mismatch",
+      "output": "1000",
+      "processing": {
+        "staged": false,
+        "document_chunks": 1,
+        "history_turns": 0,
+        "history_truncated": false,
+        "model_requests": 1,
+        "method": "Single bounded request"
+      },
+      "requests": [
+        {
+          "request_id": "359ea3319fba4fd0b1d9bdbaefd8ed7a",
+          "duration_ms": 546,
+          "usage": {
+            "prompt_tokens": 129.0,
+            "completion_tokens": 5.0
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "receipt": {
+        "schema": "furnace-privacy-receipt-v1",
+        "at": "2026-11-24T05:37:17.929453+00:00",
+        "project_id": "5c04672642054670b9ae262c5592dcea",
+        "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+        "model": {
+          "id": "qwen2.5-1.5b-instruct-q4_k_m",
+          "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+          "weights_sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "weights_check": "Verified before this launch; not rehashed for every answer",
+          "expected_image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85"
+        },
+        "observed": {
+          "evidence_kind": "docker_inspect",
+          "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+          "container_id": "476d72dd6a00",
+          "image": "ghcr.io/ggml-org/llama.cpp@sha256:b32890309c1a33a534a01b0b461e953dc2c5a6bac20213abcf48e22847a19c85",
+          "checks": {
+            "running": true,
+            "internal_network_only": true,
+            "non_root": true,
+            "read_only_root": true,
+            "all_capabilities_dropped": true,
+            "no_new_privileges": true,
+            "no_direct_published_ports": true,
+            "read_only_mounts": true
+          }
+        },
+        "status": "checked",
+        "data_handling": "Document text and answers are held in memory, not saved to project records, logs or project exports. Browser/OS memory, swap and user copies are outside this policy.",
+        "scope": "Docker configuration observed before and after requests. The model has only an internal Docker network; a loopback relay carries your requests. This is not whole-computer traffic monitoring. Windows, Docker, your browser and other software can still access the internet. Parsing runs locally on the host with resource limits, not inside the model container. No legal, medical, financial or compliance certification is implied."
+      },
+      "elapsed_seconds": 1.5
+    }
+  ],
+  "result": "recorded",
+  "selection": {
+    "model": "qwen2.5-1.5b-instruct-q4_k_m",
+    "accelerator": "cpu",
+    "threads": 4,
+    "memory_mb": 4096,
+    "context_tokens": 4096,
+    "max_tokens": 512,
+    "request_timeout_seconds": 120,
+    "evaluation_budget_seconds": 900
+  },
+  "docker": {
+    "status": "ready",
+    "gpu_runtime": true,
+    "cpus": 20,
+    "memory_bytes": 8150233088
+  },
+  "prepare": {
+    "status": "prepared",
+    "reason": "Images pulled by digest; weights SHA-256 verified",
+    "cache": "shared verified-weights store; verified again before launch"
+  },
+  "launch_id": "47e46ddc36df4f1cbf97b20307a44e59",
+  "shutdown_completed": true,
+  "score_summary": {
+    "pass": 5,
+    "fail": 4,
+    "unscored": 2
+  },
+  "operationally_complete": true
+}

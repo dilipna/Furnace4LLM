@@ -10,12 +10,14 @@ agreement during the demo. Describe it that way everywhere support is mentioned.
 
 ## What to ask for
 
-1. Studio version: the bundle file name (`furnace-studio-<version>+<commit>.zip`) or
+1. Studio version: the installer name (`Furnace-<version>-<commit>-windows-x64.exe`),
+   the bundle file name (`furnace-studio-<version>+<commit>.zip`) or
    `git rev-parse HEAD` for a source checkout.
 2. Operating system, Docker Desktop version, and for GPU problems the GPU model and driver.
 3. The status line text from the model page and the **Show health, metrics and logs** output.
 4. The relevant lines of `<workspace>/logs/operations.jsonl`. It contains event kinds, IDs,
-   durations, token counts and error categories only, so it can be shared without redaction.
+   durations, token counts and error categories. Review identifying metadata before
+   sharing; excluded prompt/key fields do not make every log appropriate to publish.
 5. If a run looks wrong: the exported kit's `workspace-plan.json` and `serving-manifest.json`.
    These include the project's own cases and expectations; ask before requesting them.
 
