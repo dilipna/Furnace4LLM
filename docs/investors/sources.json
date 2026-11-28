@@ -1,0 +1,177 @@
+[
+  {
+    "id": "hf-population",
+    "url": "https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026",
+    "resolved_url": "https://huggingface.co/blog/huggingface/state-of-os-hf-spring-2026",
+    "checked_on": "2026-11-27",
+    "response_sha256": "8191c944b82d8b549e394cf790230b4ba25f598def9ab881dee1e8df6d9afccb",
+    "excerpt": "13 million users, more than 2 million public models",
+    "excerpt_verified": true,
+    "excerpt_sha256": "e74f7dced99876a203ac77ce324fc71448c706691348aff40a831bd0652b8a88"
+  },
+  {
+    "id": "neurips-population",
+    "url": "https://blog.neurips.cc/2025/09/30/reflections-on-the-2025-review-process-from-the-program-committee-chairs/",
+    "resolved_url": "https://blog.neurips.cc/2025/09/30/reflections-on-the-2025-review-process-from-the-program-committee-chairs/",
+    "checked_on": "2026-11-27",
+    "response_sha256": null,
+    "excerpt": "21,575 valid paper submissions, of which 5,290 were accepted.",
+    "excerpt_verified": true,
+    "verification_method": "Read in browser search tool on 2026-11-27; local urllib receives HTTP 200 bot challenge, not article. Online verifier must fail that challenge.",
+    "excerpt_sha256": "e9ff97d2bf83cf3d764dd4d6c706fab077c84efffee5aaf0b31e9886956d4d87"
+  },
+  {
+    "id": "modal",
+    "url": "https://modal.com/pricing",
+    "resolved_url": "https://modal.com/pricing",
+    "checked_on": "2026-11-27",
+    "response_sha256": "905ecf25dea1baf4c64b6f47c46e16faeb2c478863ff74a18c809b978e2f7ca2",
+    "excerpt": "Nvidia T4 $ 0.000164",
+    "excerpt_verified": true,
+    "additional_excerpts": [
+      "CPU $ 0.0000131",
+      "Memory $ 0.00000222"
+    ],
+    "excerpt_sha256": "bd658aaaaeee6b0add626863a736f331a5d801ddb40b957d33358ed4d693e0ea"
+  },
+  {
+    "id": "replicate",
+    "url": "https://replicate.com/docs",
+    "resolved_url": "https://replicate.com/docs",
+    "checked_on": "2026-11-27",
+    "response_sha256": "fa165f2be139acef60010b1904e4b966befd6658f6594e1bd39c33d8b8553804",
+    "excerpt": "Deploy a custom model",
+    "excerpt_verified": true,
+    "excerpt_sha256": "43c17fdea742a47d1acd5a13b4918ac17f0ea9d5925360c385d6696f7af6f95d"
+  },
+  {
+    "id": "hf-endpoints",
+    "url": "https://huggingface.co/docs/inference-endpoints/index",
+    "resolved_url": "https://huggingface.co/docs/inference-endpoints/index",
+    "checked_on": "2026-11-27",
+    "response_sha256": "7ef5299b068f6f9acf78a90fba82c816a8f9293fe7a2b6c70fc83e732b733baa",
+    "excerpt": "logs & metrics",
+    "excerpt_verified": true,
+    "excerpt_sha256": "740fd711b95f8ba38df2bb94e9d3fc68e8c348ab536c162af8d89f4f5e8cbecf"
+  },
+  {
+    "id": "baseten",
+    "url": "https://docs.baseten.co/overview",
+    "resolved_url": "https://docs.baseten.co/overview",
+    "checked_on": "2026-11-27",
+    "response_sha256": "61b0967f99ffefdc1660002ecdd0d35413e9b8e2a245dec8ae23b1d049a4cc79",
+    "excerpt": "Every dedicated deployment includes",
+    "excerpt_verified": true,
+    "excerpt_sha256": "615005354e3a343eae30fa0b1b47409d3d07eef048a9e99de45a97902b616375"
+  },
+  {
+    "id": "ollama",
+    "url": "https://docs.ollama.com/",
+    "resolved_url": "https://docs.ollama.com/",
+    "checked_on": "2026-11-27",
+    "response_sha256": "7aa49a81cce61b8959fb241a98b75675e5b810da65f8300648e3e432af3c99b5",
+    "excerpt": "Choose cloud models or run models on your computer.",
+    "excerpt_verified": true,
+    "excerpt_sha256": "63cbb27b3eb5f7c7b9b91935a757039d2c38cdbd1083da3ce8c8dfae5bc2d663"
+  },
+  {
+    "id": "lmstudio",
+    "url": "https://lmstudio.ai/docs/app",
+    "resolved_url": "https://lmstudio.ai/docs/app",
+    "checked_on": "2026-11-27",
+    "response_sha256": "9dd92d605aa03202d979ad5aaf4a81eb7aad9de4bf60449de7be52c8900738a0",
+    "excerpt": "Chat with Documents",
+    "excerpt_verified": true,
+    "excerpt_sha256": "fcafc53dc222b23447380d2e5993389ab8a566d61743f2544aff3a97aa1f4561"
+  },
+  {
+    "id": "harness",
+    "url": "https://github.com/EleutherAI/lm-evaluation-harness",
+    "resolved_url": "https://github.com/EleutherAI/lm-evaluation-harness",
+    "checked_on": "2026-11-27",
+    "response_sha256": "bc4754c144ba6c25133b0d040b615e0b45fc7fc5485b42c12e53781a1b62b815",
+    "excerpt": "A framework for few-shot evaluation of language models.",
+    "excerpt_verified": true,
+    "excerpt_sha256": "439f29a3f4d01b30e2fac0c3760534ae0d0179e592250b7687539f1150bb0d8a"
+  },
+  {
+    "id": "pickle",
+    "url": "https://huggingface.co/docs/hub/security-pickle",
+    "resolved_url": "https://huggingface.co/docs/hub/security-pickle",
+    "checked_on": "2026-11-27",
+    "response_sha256": "3549b712438d0e15d1ac7c24ae94d5625fb586c892f3679e425c14066696b646",
+    "excerpt": "Pickle",
+    "excerpt_verified": true,
+    "excerpt_sha256": "f85d4cb7f5b57d83fb8770b6275ea2dffcfae67f11be1960ce00a92f8bba385e"
+  },
+  {
+    "id": "remote-code",
+    "url": "https://huggingface.co/docs/transformers/custom_models",
+    "resolved_url": "https://huggingface.co/docs/transformers/custom_models",
+    "checked_on": "2026-11-27",
+    "response_sha256": "6431dc1f49c3417a8dd94281775feb6193a55808f06995ce5e3a9c8ee255952e",
+    "excerpt": "trust_remote_code=True",
+    "excerpt_verified": true,
+    "excerpt_sha256": "e2be500c97a4cbc0fa34c8007833af0dfeea8f587940012c40ecbd1bf621c48e"
+  },
+  {
+    "id": "jfrog",
+    "url": "https://jfrog.com/markdown/blog/data-scientists-targeted-by-malicious-hugging-face-ml-models-with-silent-backdoor.md",
+    "resolved_url": "https://jfrog.com/markdown/blog/data-scientists-targeted-by-malicious-hugging-face-ml-models-with-silent-backdoor.md",
+    "checked_on": "2026-11-27",
+    "response_sha256": "11d8a71d2c1a085966b4e4cbbe7d9bc060f4c79b12790ad8687ece66446a8de2",
+    "excerpt": "loading leads to code execution",
+    "excerpt_verified": true,
+    "excerpt_sha256": "bc983a2d24348136816782e242fdbbbc63e94fc519825d6198347e25f8d22045"
+  },
+  {
+    "id": "reproducibility",
+    "url": "https://neurips.cc/public/guides/PaperChecklist",
+    "resolved_url": "https://neurips.cc/public/guides/PaperChecklist",
+    "checked_on": "2026-11-27",
+    "response_sha256": "d78810da1ba8abb026148a4f8ac241319c199fdf9b3a9885bc105139b9e9e7b8",
+    "excerpt": "reproducibility, transparency, research ethics, and societal impact",
+    "excerpt_verified": true,
+    "excerpt_sha256": "e174179b559fdac1a2b9a5292a20c9ed3345d3b1d0a0b85dbbdf6fa74ffa78b1"
+  },
+  {
+    "id": "mdlm-card",
+    "url": "https://huggingface.co/kuleshov-group/mdlm-owt/raw/main/README.md",
+    "resolved_url": "https://huggingface.co/kuleshov-group/mdlm-owt/raw/main/README.md",
+    "checked_on": "2026-11-27",
+    "response_sha256": "393eb53038b34d16312006a3f0e7baacd3142e2a0514aea8f0d19241264f4ee1",
+    "excerpt": "license: apache-2.0",
+    "excerpt_verified": true,
+    "excerpt_sha256": "f3cae36c4cdc3eb2e8a8d88ad4f1462364f750a68b490ba70821491d55f8de9e"
+  },
+  {
+    "id": "mdlm-config",
+    "url": "https://huggingface.co/kuleshov-group/mdlm-owt/raw/main/config.json",
+    "resolved_url": "https://huggingface.co/kuleshov-group/mdlm-owt/raw/main/config.json",
+    "checked_on": "2026-11-27",
+    "response_sha256": "605429edee54b28322b94c3a018982ddb74bf94e3bf15f4ae7d5fbc73613138c",
+    "excerpt": "\"model_type\": \"mdlm\"",
+    "excerpt_verified": true,
+    "excerpt_sha256": "32ed36778f478b39565c4d058a97dbb41ede87782272d57a2e32418757bb7b28"
+  },
+  {
+    "id": "mdlm-license",
+    "url": "https://raw.githubusercontent.com/kuleshov-group/mdlm/master/LICENSE",
+    "resolved_url": "https://raw.githubusercontent.com/kuleshov-group/mdlm/master/LICENSE",
+    "checked_on": "2026-11-27",
+    "response_sha256": "4b713c6f22b67534d59113080a81138b990bbdd0d0b02fc1f2b5ef537ada2118",
+    "excerpt": "Apache License",
+    "excerpt_verified": true,
+    "excerpt_sha256": "b142bb415e882507276996b922f14995136b23d512ba933262d8904e4f124779"
+  },
+  {
+    "id": "engine-inventory",
+    "url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/3c809f44383bcebc318b8cddd8c6d11aaa861e9b/src/llama-arch.cpp",
+    "resolved_url": "https://raw.githubusercontent.com/ggml-org/llama.cpp/3c809f44383bcebc318b8cddd8c6d11aaa861e9b/src/llama-arch.cpp",
+    "checked_on": "2026-11-27",
+    "response_sha256": "c842acb4e32c7a3f6394772708ddd7cd6f2decf16668d6dc761f37f8575e1fb6",
+    "excerpt": "LLM_ARCH_NAMES",
+    "excerpt_verified": true,
+    "excerpt_sha256": "b5efef0de3e8efe6405cb21ebeca2c6b3b8a3ed7fbd69a624cca3c88803497ce"
+  }
+]

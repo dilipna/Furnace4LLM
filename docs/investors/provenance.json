@@ -1,0 +1,58 @@
+[
+  {
+    "file": "evidence/qwen-cpu.json",
+    "sha256": "a77b23b91ba2257e0ffe48007b952174b9c0b3bd99ead982e3fb884120968530",
+    "source_path": "docs/release/installer-verification/candidate-9598d6d/qwen-cpu.json",
+    "source_commit": "ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10",
+    "url": "https://github.com/dilipna/Furnace4LLM/blob/ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10/docs/release/installer-verification/candidate-9598d6d/qwen-cpu.json"
+  },
+  {
+    "file": "evidence/granite-cpu.json",
+    "sha256": "3dd522dcb2839201c1d54da45332ca4111c42a3b8508c0238474088cb757ca1b",
+    "source_path": "docs/release/installer-verification/candidate-9598d6d/granite-cpu.json",
+    "source_commit": "ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10",
+    "url": "https://github.com/dilipna/Furnace4LLM/blob/ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10/docs/release/installer-verification/candidate-9598d6d/granite-cpu.json"
+  },
+  {
+    "file": "evidence/qwen3-gpu.json",
+    "sha256": "87b2fc577f42ea3e2b828ce123e9da4383b7592bc7db10af7f4a8da1115275f3",
+    "source_path": "docs/product/verification/everyday/full42-qwen3-gpu.json",
+    "source_commit": "ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10",
+    "url": "https://github.com/dilipna/Furnace4LLM/blob/ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10/docs/product/verification/everyday/full42-qwen3-gpu.json"
+  },
+  {
+    "file": "evidence/roadmap.md",
+    "sha256": "2fcd6fa5adfe275d61ecdca0096e975ff2184b77ffc1cf665a1239b6cca78d8b",
+    "source_path": "docs/release/roadmap-status.md",
+    "source_commit": "ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10",
+    "url": "https://github.com/dilipna/Furnace4LLM/blob/ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10/docs/release/roadmap-status.md"
+  },
+  {
+    "file": "evidence/boundary.md",
+    "sha256": "4d4f6cedf80d045fec8a281a5b1f0d212e489ea20e8c581dec07849544b82b5e",
+    "source_path": "docs/product/managed-local-runtime.md",
+    "source_commit": "ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10",
+    "url": "https://github.com/dilipna/Furnace4LLM/blob/ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10/docs/product/managed-local-runtime.md"
+  },
+  {
+    "file": "evidence/product-direction.md",
+    "sha256": "1b50d1cf6409823f7e2c02034ea2bce82e4dd8632615ac0c09aeffd157641a89",
+    "source_path": "docs/product/product-direction.md",
+    "source_commit": "ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10",
+    "url": "https://github.com/dilipna/Furnace4LLM/blob/ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10/docs/product/product-direction.md"
+  },
+  {
+    "file": "evidence/delivery.md",
+    "sha256": "5fb6021743ea39493467dcbb010fff04948f650d1aafae53c8b6d812fb3b1dce",
+    "source_path": "docs/release/researcher-delivery.md",
+    "source_commit": "ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10",
+    "url": "https://github.com/dilipna/Furnace4LLM/blob/ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10/docs/release/researcher-delivery.md"
+  },
+  {
+    "file": "evidence/installed-document.json",
+    "sha256": "ef69c07ea16cb58ba1998393fae0b786653884721321235dd2732f505777496e",
+    "source_path": "docs/product/verification/everyday/installed-qwen4-gpu-04.json",
+    "source_commit": "ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10",
+    "url": "https://github.com/dilipna/Furnace4LLM/blob/ca9d9d9b4c915bd5f6d0256e1fd2b2366e0b3d10/docs/product/verification/everyday/installed-qwen4-gpu-04.json"
+  }
+]

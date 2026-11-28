@@ -1,0 +1,2 @@
+# Preserve raw Git blob bytes, including historical CRLF records.
+evidence/** -text whitespace=cr-at-eol
