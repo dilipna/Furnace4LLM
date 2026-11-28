@@ -1,6 +1,6 @@
 # Proposed operation — transparent costs
 
-Nothing provisioned or charged. [Roadmap section six](evidence/roadmap.md) proposes
+Nothing provisioned or charged. [Roadmap section six](evidence/roadmap.txt) proposes
 customer compute by default and capped Furnace compute for demo models, best-effort
 support and retained records. Billing/accounts remain inactive.
 

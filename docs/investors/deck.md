@@ -63,7 +63,7 @@ all researchers need a managed product. [Partner kit](design-partners.md).
 
 ## Slide 7 — Business model and unit economics
 
-Proposed [$20/month](evidence/roadmap.md "claim:price") on customer compute; Furnace operates
+Proposed [$20/month](evidence/roadmap.txt "claim:price") on customer compute; Furnace operates
 the software. An illustrative shared control-plane allocation is about
 [$0.50](claims.json "claim:control-per-user") per tenant before support. Furnace GPU
 compute must be capped or usage-priced: the cited GPU-only rate converts to

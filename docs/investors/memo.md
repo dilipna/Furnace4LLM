@@ -12,7 +12,7 @@ inspects their model, selects a pinned recipe or supplies a Python adapter, star
 an isolated service through explicit approvals, evaluates it, examines logs and
 restarts after failure. A document assistant demonstrates an end-user workload on
 this infrastructure; it is not the market definition. Furnace-operated software on
-customer or Furnace compute is a proposed [$20/month](evidence/roadmap.md "claim:price") next
+customer or Furnace compute is a proposed [$20/month](evidence/roadmap.txt "claim:price") next
 step, not an available subscription.
 
 The engineering evidence is concrete but narrow. On a provisional installed Windows

@@ -17,7 +17,7 @@
   and installed CPU trials are not fair rankings or universal hardware-fit evidence.
 - Containers narrow risk, not hostile Docker administrators, kernel flaws or image
   build dependencies. Checked records/logs/exports omit launch keys; Docker admins
-  can inspect live environments. [Boundary snapshot](evidence/boundary.md).
+  can inspect live environments. [Boundary snapshot](evidence/boundary.txt).
 - A blocked public-destination probe is not every-destination reachability proof.
   Host/browser preparation downloads are outside inference network isolation.
 - Injection detection/protection is heuristic, may miss attacks or flag valid text.

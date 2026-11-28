@@ -2,7 +2,7 @@
   "price": {
     "label": "$20/month",
     "kind": "proposal",
-    "file": "evidence/roadmap.md",
+    "file": "evidence/roadmap.txt",
     "contains": "$20/month",
     "value": 20
   },

@@ -26,10 +26,14 @@ onboarding minutes have been measured; [that cell is blank](adapter-proof.md).
 Deck/memo numbers use Markdown links with a `claim:ID` title matching claims.json.
 Each points to a raw JSON value, primary excerpt, proposal or recomputed assumption
 projection. Unregistered numerical text is rejected; slide positions are structural.
-All investor-authored Markdown links are checked. Historical Markdown byte copies
+All investor-authored Markdown links are checked. Historical source-text byte copies
 use their original provenance URL for relative-link context.
 
 Local NeurIPS HTTP fetching returned a bot challenge although the browser research
 tool displayed the article. Online checks must report that distinction. A manual
 read is not successful automated fetching. The validator guards editing errors;
 semantic accuracy and honest generalization still need human review.
+
+Historical document snapshots use `.txt` so their original relative references are
+literal source text, not broken rendered navigation in this room. Open their original
+GitHub provenance URLs for navigation in the original repository context.

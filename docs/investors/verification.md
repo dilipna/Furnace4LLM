@@ -9,6 +9,8 @@
   broken file/anchor, wrong calculation, cyclic inputs and unsourced external value.
 - Ruff check and format check on `docs/investors`: passed with the repository's Ruff.
 - `git diff --check`: passed before commit.
+- Offline checker and nine tests passed again from a fresh `git archive` of committed
+  files, confirming copied byte hashes survive extraction without local workspace state.
 
 ## Live-source verification — incomplete, retained failure
 

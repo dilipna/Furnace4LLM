@@ -26,7 +26,7 @@ another permissive unsupported model rather than manufacture a boundary.
 ## Unchanged-platform protocol
 
 Use a disposable folder outside frozen installation/checkout. Read PythonAdapter in
-the exact frozen source and [boundary snapshot](evidence/boundary.md). Researcher supplies:
+the exact frozen source and [boundary snapshot](evidence/boundary.txt). Researcher supplies:
 
 - Adapter module using existing factory/load/predict response contract. Native masked
   diffusion sampling, not an autoregressive substitute, canned answer or monkeypatch.
