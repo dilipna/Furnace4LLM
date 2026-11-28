@@ -48,7 +48,7 @@ This candidate has fresh CPU acceptance; earlier GPU records keep their original
 | Comprehension | Explain purpose, free/proposed service, fixture/inference, requirements and next action without implementation coaching | Owner and unfamiliar participant |
 | Interactive retention | Observe agreed keep/delete choices in a test account; never delete live project data for the test | Owner/participant |
 | Linux gate | Hosted Ubuntu CI on each exact head is accepted for this release; retain the local diagnostic separately | Maintainer; do not change Docker Desktop settings |
-| Distribution review | Review notices, draft policies and unsigned-preview disclosure; accept or identify changes | Owner |
+| Distribution review | Root-notice packaging omission corrected with regression/installed smoke checks; review all notices, draft policies and unsigned-preview disclosure | Owner; [packaging evidence](distribution-notices/README.md) |
 | Integration | After Dilip's successful-clean-account report, integrate #18 → #19 → #20, then #15/#16; preserve ancestry, retarget and verify exact green heads; keep main green | Conditional owner approval already given |
 | Final frozen installer | Rebuild from final source, record full SHA-256, and accept installed private documents plus Studio Qwen/Granite on the same bytes; any rebuilt replacement repeats both | Maintainer, with human checks separate |
 | Publication | Separately approve the exact artifact/hash and recorded-only site after selected gates pass | Owner explicit approval |

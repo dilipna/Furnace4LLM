@@ -27,7 +27,11 @@ changed by this branch. PRs #15/#16 and the November 24 walkthrough sheet are un
 The build machine needs Git, uv, Windows x64 and the pinned compiler; the installed app
 does not. Runtime dependencies are exported from `uv.lock` with hashes and installed
 into a private CPython 3.12.13 runtime. Inno Setup 6.4.3 is checksum-pinned; its license
-permits free commercial use. Runtime/dependency license files are retained in the app.
+permits free commercial use. Runtime/dependency license files are retained in the app. The builder also copies
+Furnace's root MIT notice to the installed `LICENSE`; the developer ZIP contains it
+at its root. Installed smoke checks require exact notice bytes. See the
+[reproduced notice omission and correction](../release/distribution-notices/README.md).
+This does not replace the owner's broader distribution review.
 
 ```powershell
 uv python install 3.12.13

@@ -51,6 +51,7 @@ def main() -> None:
     runtime = stage / "runtime"
     base = Path(sys.base_prefix)
     runtime.mkdir(parents=True)
+    shutil.copy2(ROOT / "LICENSE", stage / "LICENSE")
     shutil.copy2(ROOT / "packaging/windows/furnace.ico", stage / "furnace.ico")
     for name in ("DLLs", "Lib", "tcl"):
         shutil.copytree(
