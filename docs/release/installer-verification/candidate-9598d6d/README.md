@@ -1,4 +1,9 @@
-# Frozen Windows review candidate: 9598d6d
+# Installed Studio preview: 9598d6d
+
+**Provisional preview, not the December 4 final installer.** These records accept
+the Studio journey only. Installed private-document acceptance is missing here.
+The final source must be rebuilt once and both journeys accepted on that new binary's
+exact bytes; these records must not be transferred to it.
 
 Exact source: `9598d6d83beb25f7a372d6bf3f1299f4e9e7c5b3`.
 SHA-256: `8fdb61c18526a811952edfe3f8aefb90735df22f6a69d2251aa4a7600fc9a02d`.

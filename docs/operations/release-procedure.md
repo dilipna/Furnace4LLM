@@ -1,5 +1,39 @@
 # Release procedure (Studio download)
 
+## December 4, 2026 release — controlling owner instructions
+
+Deadline: Friday end of day, America/New_York. Deliver a local MVP and private demo:
+the product is researcher infrastructure with the free kit and Studio. Documents
+remains an example application; both installed journeys are required.
+The $20/month plan is Coming later; hosted-service-design.md remains its proposal.
+No public service, billing or accounts are included. Hosted Ubuntu CI is accepted
+as the Linux gate; leave Docker Desktop settings unchanged.
+
+1. Wait for Dilip's explicit successful-clean-account report. Then review/integrate
+   #18 → #19 → #20, followed by #15/#16, only with exact-head green checks and no
+   correctness blocker. Preserve ancestry and verify main after integration.
+2. Preserve researcher-first positioning and finalize both journeys, then rebuild one frozen installer
+   from that final source. Record its version, source, size, full SHA-256 and metadata.
+   9598d6d is a provisional Studio-only acceptance record, not the final release.
+3. Install that exact file and accept **both installed journeys on the same bytes**:
+   private-document import, real summary/question, source comparison, privacy receipt
+   and limits, protection, clearing/navigation; plus real Studio Qwen/Granite serving,
+   evaluations, interruption/recovery, logs/metrics, export and stop. Record actual
+   model/device/caches. Keep wrong answers and failures; do not alter scoring to pass.
+   Source-only or scripted-adapter checks do not close this installed-inference gate.
+4. Keep installer/checksums, build metadata, both acceptance records and actual human
+   install/pilot observations together. If a fix changes the binary, freeze a new
+   hash and repeat both journeys. Never transfer old acceptance to replacement bytes.
+5. Ask for publication approval only after the reviewable package is ready. Publication
+   requires a **separate owner message naming the exact installer SHA-256**. A deadline,
+   clean-account success or merge approval does not authorize it.
+
+Today's [clean-account/pilot packet](pilot-2026-11-29/README.md) has blank observations.
+The earlier wheel-preview procedure below is retained for developer builds; its source
+validation commands do not replace the final installed dual-journey sequence above.
+
+## Earlier developer ZIP procedure
+
 For the self-contained Windows installer and exact artifact/site verification, use
 [Windows download operations](windows-download.md). The wheel-preview procedure below
 still applies to that separate developer-oriented ZIP. Publication remains owner-approved.

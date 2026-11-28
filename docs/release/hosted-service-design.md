@@ -1,5 +1,9 @@
 # Hosted managed service for the first demo models — design proposal
 
+**Coming later.** The owner-approved December 4, 2026 delivery is a local MVP and
+private demonstration. Public subscription, billing, accounts and internet-facing
+hosting are outside that deadline. This document remains a proposal, not an active service.
+
 Status: **proposal for owner review**. Nothing here is built, provisioned or paid for. It
 describes how the local components that already work would become a hosted service for one
 or two demo models, and which owner decisions it waits on.

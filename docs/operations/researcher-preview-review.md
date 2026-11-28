@@ -1,5 +1,10 @@
 # Researcher product review — actual results blank
 
+The owner-directed December 4 release preserves researcher infrastructure as the
+product and also requires installed document-example acceptance. Use the current
+[November 29 participant packet](pilot-2026-11-29/README.md). This earlier
+researcher-first review is retained; its observations remain blank.
+
 Purpose: verify the owner-defined model-infrastructure product in the current theme.
 This is separate from the original November 24 walkthrough. No human participation
 or approval is recorded here.
