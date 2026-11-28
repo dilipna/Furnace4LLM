@@ -1,0 +1,11 @@
+{
+  "schema": "furnace-installed-acceptance-inputs-v1",
+  "studio_install": "install.json",
+  "document_install": "document-2026-11-28/install.json",
+  "smoke": "installed-smoke.json",
+  "qwen": "qwen-cpu.json",
+  "granite": "granite-cpu.json",
+  "document_suite": "document-2026-11-28/everyday-cpu.json",
+  "document_ui": "document-2026-11-28/browser-3/record.json",
+  "suite": "document-2026-11-28/suite.json"
+}
