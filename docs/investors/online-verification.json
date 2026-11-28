@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-27",
+  "command": "python docs/investors/check_evidence.py --online",
+  "exit_code": 1,
+  "result": "incomplete",
+  "failures": [
+    {
+      "url": "https://blog.neurips.cc/2025/09/30/reflections-on-the-2025-review-process-from-the-program-committee-chairs/",
+      "reason": "HTTP 200 bot challenge, not source content; live excerpt unavailable"
+    }
+  ],
+  "manual_read": "Browser research tool displayed the official article and counts; not automated verification.",
+  "new_inference": false
+}

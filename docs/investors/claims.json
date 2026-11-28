@@ -1,0 +1,289 @@
+{
+  "price": {
+    "label": "$20/month",
+    "kind": "proposal",
+    "file": "evidence/roadmap.txt",
+    "contains": "$20/month",
+    "value": 20
+  },
+  "qwen-cases": {
+    "label": "12",
+    "kind": "measured",
+    "file": "evidence/qwen-cpu.json",
+    "pointer": "/steps/suite/cases",
+    "value": 12
+  },
+  "qwen-quality": {
+    "label": "11",
+    "kind": "measured",
+    "file": "evidence/qwen-cpu.json",
+    "pointer": "/steps/evaluation_1/passed",
+    "value": 11
+  },
+  "granite-quality": {
+    "label": "7",
+    "kind": "measured",
+    "file": "evidence/granite-cpu.json",
+    "pointer": "/steps/evaluation_1/passed",
+    "value": 7
+  },
+  "qwen-repeat": {
+    "label": "12",
+    "kind": "measured",
+    "file": "evidence/qwen-cpu.json",
+    "pointer": "/steps/restart/reproducibility/identical",
+    "value": 12
+  },
+  "granite-repeat": {
+    "label": "12",
+    "kind": "measured",
+    "file": "evidence/granite-cpu.json",
+    "pointer": "/steps/restart/reproducibility/identical",
+    "value": 12
+  },
+  "gpu-pass": {
+    "label": "40",
+    "kind": "measured",
+    "file": "evidence/qwen3-gpu.json",
+    "pointer": "/score_summary/pass",
+    "value": 40
+  },
+  "gpu-total": {
+    "label": "42",
+    "kind": "derived",
+    "operation": "length",
+    "file": "evidence/qwen3-gpu.json",
+    "pointer": "/cases",
+    "value": 42
+  },
+  "installed-pass": {
+    "label": "31",
+    "kind": "measured",
+    "file": "evidence/installed-document.json",
+    "pointer": "/score_summary/pass",
+    "value": 31
+  },
+  "installed-total": {
+    "label": "36",
+    "kind": "derived",
+    "operation": "length",
+    "file": "evidence/installed-document.json",
+    "pointer": "/cases",
+    "value": 36
+  },
+  "hf-models": {
+    "label": "more than 2 million",
+    "kind": "external",
+    "source": "hf-population",
+    "contains": "more than 2 million",
+    "value": 2000000,
+    "qualification": "lower bound, model repositories, not people"
+  },
+  "accepted": {
+    "label": "5,290",
+    "kind": "external",
+    "source": "neurips-population",
+    "contains": "5,290",
+    "value": 5290
+  },
+  "gpu-rate": {
+    "label": "$0.000164",
+    "kind": "external",
+    "source": "modal",
+    "contains": "0.000164",
+    "value": 0.000164
+  },
+  "cpu-rate": {
+    "label": "$0.0000131",
+    "kind": "external",
+    "source": "modal",
+    "contains": "0.0000131",
+    "value": 1.31e-05
+  },
+  "ram-rate": {
+    "label": "$0.00000222",
+    "kind": "external",
+    "source": "modal",
+    "contains": "0.00000222",
+    "value": 2.22e-06
+  },
+  "seconds-hour": {
+    "label": "3600",
+    "kind": "assumption",
+    "value": 3600,
+    "rationale": "Unit conversion, seconds in hour"
+  },
+  "hours-month": {
+    "label": "730",
+    "kind": "assumption",
+    "value": 730,
+    "rationale": "Planning month, not billing guarantee"
+  },
+  "eligible": {
+    "label": "0.1",
+    "kind": "assumption",
+    "value": 0.1,
+    "rationale": "Assumed share of accepted papers with a service-relevant project"
+  },
+  "unique": {
+    "label": "0.5",
+    "kind": "assumption",
+    "value": 0.5,
+    "rationale": "Assumed deduplication/overlap factor; must measure"
+  },
+  "conversion": {
+    "label": "0.05",
+    "kind": "assumption",
+    "value": 0.05,
+    "rationale": "Assumed willingness to pay; no observed conversion"
+  },
+  "control-cores": {
+    "label": "0.125",
+    "kind": "assumption",
+    "value": 0.125,
+    "rationale": "Estimated allocated physical cores for shared control plane"
+  },
+  "control-ram": {
+    "label": "0.125",
+    "kind": "assumption",
+    "value": 0.125,
+    "rationale": "Estimated allocated GiB for shared control plane"
+  },
+  "customers": {
+    "label": "20",
+    "kind": "assumption",
+    "value": 20,
+    "rationale": "Hypothetical active paying tenants sharing instance"
+  },
+  "overhead": {
+    "label": "5",
+    "kind": "assumption",
+    "value": 5,
+    "rationale": "Assumed total dollars per month DB/backup/log reserve, not supplier quote"
+  },
+  "support-minutes": {
+    "label": "15",
+    "kind": "assumption",
+    "value": 15,
+    "rationale": "Assumed support minutes per customer monthly"
+  },
+  "support-rate": {
+    "label": "30",
+    "kind": "assumption",
+    "value": 30,
+    "rationale": "Assumed founder time value dollars per hour"
+  },
+  "minutes-hour": {
+    "label": "60",
+    "kind": "assumption",
+    "value": 60,
+    "rationale": "Unit conversion"
+  },
+  "months-year": {
+    "label": "12",
+    "kind": "assumption",
+    "value": 12,
+    "rationale": "Unit conversion"
+  },
+  "gpu-cap": {
+    "label": "5",
+    "kind": "assumption",
+    "value": 5,
+    "rationale": "Illustrative GPU hours cap, not approved entitlement"
+  },
+  "gpu-hour": {
+    "label": "$0.5904",
+    "kind": "projection",
+    "inputs": [
+      "gpu-rate",
+      "seconds-hour"
+    ],
+    "operation": "product",
+    "value": 0.5904
+  },
+  "gpu-month": {
+    "label": "$430.99",
+    "kind": "projection",
+    "inputs": [
+      "gpu-hour",
+      "hours-month"
+    ],
+    "operation": "product",
+    "value": 430.99
+  },
+  "control-month": {
+    "label": "$5.03",
+    "kind": "projection",
+    "inputs": [
+      "control-cores",
+      "cpu-rate",
+      "control-ram",
+      "ram-rate",
+      "hours-month",
+      "seconds-hour"
+    ],
+    "operation": "control_month",
+    "value": 5.03
+  },
+  "control-per-user": {
+    "label": "$0.50",
+    "kind": "projection",
+    "inputs": [
+      "control-month",
+      "overhead",
+      "customers"
+    ],
+    "operation": "control_per_user",
+    "value": 0.5
+  },
+  "support-per-user": {
+    "label": "$7.50",
+    "kind": "projection",
+    "inputs": [
+      "support-minutes",
+      "minutes-hour",
+      "support-rate"
+    ],
+    "operation": "support",
+    "value": 7.5
+  },
+  "paper-projects": {
+    "label": "264.5",
+    "kind": "projection",
+    "inputs": [
+      "accepted",
+      "eligible",
+      "unique"
+    ],
+    "operation": "product",
+    "value": 264.5
+  },
+  "paying-scenario": {
+    "label": "13.225",
+    "kind": "projection",
+    "inputs": [
+      "paper-projects",
+      "conversion"
+    ],
+    "operation": "product",
+    "value": 13.225
+  },
+  "annual-scenario": {
+    "label": "$3,174",
+    "kind": "projection",
+    "inputs": [
+      "paying-scenario",
+      "price",
+      "months-year"
+    ],
+    "operation": "product",
+    "value": 3174
+  },
+  "granite-cases": {
+    "label": "12",
+    "kind": "measured",
+    "file": "evidence/granite-cpu.json",
+    "pointer": "/steps/suite/cases",
+    "value": 12
+  }
+}
