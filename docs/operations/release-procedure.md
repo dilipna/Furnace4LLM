@@ -14,7 +14,10 @@ as the Linux gate; leave Docker Desktop settings unchanged.
    correctness blocker. Preserve ancestry and verify main after integration.
 2. Preserve researcher-first positioning and finalize both journeys, then rebuild one frozen installer
    from that final source. Record its version, source, size, full SHA-256 and metadata.
-   9598d6d is a provisional Studio-only acceptance record, not the final release.
+   9598d6d has provisional Studio and document CPU developer acceptance, not final
+   release acceptance. The final installer must also include Furnace's root MIT
+   `LICENSE`; [the distribution notice check](../release/distribution-notices/README.md)
+   must pass without replacing dependency/runtime notices.
 3. Install that exact file and accept **both installed journeys on the same bytes**:
    private-document import, real summary/question, source comparison, privacy receipt
    and limits, protection, clearing/navigation; plus real Studio Qwen/Granite serving,

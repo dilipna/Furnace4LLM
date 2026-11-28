@@ -63,6 +63,13 @@ def main() -> None:
         assert child.stdout is not None
         ready = json.loads(child.stdout.readline())
         assert ready["url"].startswith("http://127.0.0.1:")
+        notice = args.app / "LICENSE"
+        checks["project_notice_matches_source"] = (
+            notice.is_file() and notice.read_bytes() == (ROOT / "LICENSE").read_bytes()
+        )
+        assert checks["project_notice_matches_source"], (
+            "Installed Furnace license is missing or stale"
+        )
         checks["installed_code_with_no_python_uv_git_on_path"] = True
         record["installed_module"] = ready["installed_module"]
         headers = {"x-furnace-session": ready["token"]}
