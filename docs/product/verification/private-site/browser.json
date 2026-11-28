@@ -1,0 +1,21 @@
+{
+  "schema": "furnace-download-site-v1",
+  "recorded_at": "2026-11-25T01:32:03.929606+00:00",
+  "installer_commit": "2c250d642a1af2b648b67cb34fd190f535f24d8a",
+  "checks": {
+    "windows_download_target": true,
+    "checksum_matches_build_metadata": true,
+    "downloaded_bytes_match_checksum": true,
+    "local_links_and_images": true,
+    "document_recording_status_honest": true,
+    "recorded_tour": true,
+    "header_navigation": true,
+    "theme_toggle": true,
+    "mobile_layout": true,
+    "unsupported_os_options": true,
+    "no_browser_errors": true
+  },
+  "local_links_checked": 25,
+  "result": "passed",
+  "model_inference": false
+}

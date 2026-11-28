@@ -7,11 +7,11 @@ const sans = localFont({src:"./fonts/IBMPlexSans[wdth,wght].ttf",variable:"--fon
 const mono = localFont({src:[{path:"./fonts/IBMPlexMono-Regular.ttf",weight:"400"},{path:"./fonts/IBMPlexMono-Medium.ttf",weight:"500"}],variable:"--font-plex-mono",display:"swap",preload:false});
 
 export const metadata: Metadata = {
-  title: "Furnace — Your model. Your machine.",
+  title: "Furnace — Infrastructure for your model.",
   description:
-    "Run open-weight models locally with isolated serving, evaluations, logs and crash recovery. Free local app. Windows installer preview.",
+    "Connect a research model, get a free infrastructure starter kit and operate supported models locally. Furnace-operated hosting is proposed at $20/month.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://furnace-5h6.pages.dev"),
-  openGraph: { title: "Furnace — Your model. Your machine.", description: "A home for your local model. Isolated serving, evaluations and crash recovery.", type: "website", images: ["/product/og.svg"] },
+  openGraph: { title: "Furnace — Infrastructure for your model.", description: "A free infrastructure starter kit and local serving, evaluations, monitoring, logs and recovery for model researchers.", type: "website", images: ["/product/og.svg"] },
   robots: { index: true, follow: true },
 };
 

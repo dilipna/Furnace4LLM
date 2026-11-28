@@ -35,7 +35,12 @@ def main() -> None:
         errors = []
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(args.url)
-        expect(page.get_by_role("heading", name="Your model. Your machine.")).to_be_visible()
+        expect(
+            page.get_by_role("heading", name="You build the model.", exact=False)
+        ).to_be_visible()
+        expect(page.locator("main")).to_contain_text("free infrastructure starter kit")
+        expect(page.locator("main")).to_contain_text("proposed at $20/month")
+        checks["researcher_product_and_proposed_service_clear"] = True
         button = page.get_by_role("link", name="Download Furnace", exact=False)
         expect(button).to_have_attribute("href", "/downloads/" + metadata["file"])
         checks["windows_download_target"] = True
@@ -70,6 +75,7 @@ def main() -> None:
             "/privacy",
             "/terms",
             "/earlier-work",
+            "/examples/documents",
         ):
             response = page.goto(args.url + route)
             assert response is not None and response.status == 200, route
@@ -90,7 +96,16 @@ def main() -> None:
             response = context.request.get(args.url + href)
             assert response.ok, (href, response.status)
         checks["local_links_and_images"] = True
-        page.goto(args.url + "/demo")
+        page.goto(args.url + "/examples/documents")
+        expect(
+            page.get_by_role("heading", name="A document. An answer. Its checks.")
+        ).to_be_visible()
+        if page.locator("video").count() == 0:
+            expect(
+                page.get_by_role("heading", name="Recording not staged in this build")
+            ).to_be_visible()
+        checks["document_recording_status_honest"] = True
+        page.goto(args.url + "/researchers/tour")
         page.get_by_role("button", name="3. Explore").click()
         expect(page.get_by_role("heading", name="3. Explore the guided example")).to_be_visible()
         checks["recorded_tour"] = True
@@ -104,6 +119,16 @@ def main() -> None:
         page.get_by_role("button", name="Switch color theme").click()
         expect(page.locator(".download-site")).to_have_attribute("data-theme", "dark")
         checks["theme_toggle"] = True
+        page.goto(args.url + "/security")
+        expect(page.get_by_role("heading", name="Manipulated documents")).to_be_visible()
+        expect(page.locator("main")).to_contain_text("no internet route")
+        page.goto(args.url + "/faq")
+        expect(
+            page.get_by_role("heading", name="What if a document tries to instruct the AI?")
+        ).to_be_visible()
+        expect(page.locator("main")).to_contain_text("These mitigations are incomplete")
+        checks["manipulated_document_limits_disclosed"] = True
+
         mobile = browser.new_context(
             viewport={"width": 390, "height": 844},
             is_mobile=True,
